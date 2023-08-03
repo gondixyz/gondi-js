@@ -1,0 +1,10 @@
+{
+  "root": true,
+  "extends": ["@floridastreet/eslint-config"],
+  "ignorePatterns": ["src/test/**/*", "dist/", "node_modules/"],
+  "parserOptions": {
+    "ecmaVersion": 2018,
+    "sourceType": "module",
+    "project": "./tsconfig.json"
+  }
+}

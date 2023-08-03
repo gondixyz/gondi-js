@@ -1,0 +1,18 @@
+mutation generateRenegotiationOfferHash($renegotiationInput: RenegotiationOfferInput!) {
+  offer: generateRenegotiationOfferToBeSigned(renegotiationInput: $renegotiationInput) {
+    loanId
+    renegotiationId
+    offerHash
+    lenderAddress
+    signerAddress
+
+    nft {
+      tokenId
+      collection {
+        contractData {
+          contractAddress
+        }
+      }
+    }
+  }
+}

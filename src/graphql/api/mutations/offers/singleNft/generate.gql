@@ -1,0 +1,23 @@
+mutation generateSingleNftOfferHash($offerInput: SingleNFTOfferInput!) {
+  offer: generateSingleNftOfferToBeSigned(offerInput: $offerInput) {
+    offerHash
+    offerId
+    lenderAddress
+    signerAddress
+    borrowerAddress
+
+    validators {
+      validator
+      arguments
+    }
+
+    nft {
+      tokenId
+      collection {
+        contractData {
+          contractAddress
+        }
+      }
+    }
+  }
+}

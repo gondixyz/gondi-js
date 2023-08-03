@@ -1,0 +1,13 @@
+mutation saveSingleNftOffer($offer: SingleNFTSignedOfferInput!) {
+  offer: saveSignedSingleNftOffer(signedOfferInput: $offer) {
+    status
+    nft {
+      tokenId
+      collection {
+        contractData {
+          contractAddress
+        }
+      }
+    }
+  }
+}

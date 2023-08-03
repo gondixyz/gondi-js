@@ -1,0 +1,10 @@
+mutation saveCollectionOffer($offer: CollectionSignedOfferInput!) {
+  offer: saveSignedCollectionOffer(signedOfferInput: $offer) {
+    status
+    collection {
+      contractData {
+        contractAddress
+      }
+    }
+  }
+}

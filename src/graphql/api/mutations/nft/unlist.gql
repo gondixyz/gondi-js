@@ -1,0 +1,5 @@
+mutation unlistNft($nftId: Int!) {
+    removeListing(nftId: $nftId) {
+        id
+    }
+}
