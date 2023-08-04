@@ -1,0 +1,33 @@
+{
+  "exclude": ["node_modules/", "dist/", "examples/**/*"],
+  "include": ["**/*.d.ts", "**/*.ts"],
+  "compilerOptions": {
+    /* Emit */
+    "noEmit": false,
+    "skipLibCheck": true,
+    "declaration": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "declarationDir": "dist",
+
+    /* Type Checking */
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noErrorTruncation": true, // set to true to see full types on error
+
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "lib": ["esnext"],
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "esnext",
+    "target": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "isolatedModules": true,
+    "incremental": true
+  }
+}

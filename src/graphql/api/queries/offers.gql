@@ -1,0 +1,83 @@
+query listOffers(
+  $lenderAddress: String
+  $sortBy: OffersSortInput!
+  $terms: TermsFilter
+  $statuses: [OfferStatus!] = [ACTIVE, CANCELLED, INACTIVE, EXPIRED]
+  $nfts: [Int!]
+  $collections: [Int!]
+  $onlySingleNftOffers: Boolean
+  $onlyCollectionOffers: Boolean
+  $first: Int = 24
+  $after: String
+) {
+  result: listOffers(
+    lenderAddress: $lenderAddress
+    sortBy: [$sortBy]
+    terms: $terms
+    nfts: $nfts
+    collections: $collections
+    onlySingleNftOffers: $onlySingleNftOffers
+    onlyCollectionOffers: $onlyCollectionOffers
+    statuses: $statuses
+    first: $first
+    after: $after
+  ) {
+    pageInfo {
+      endCursor
+    }
+    edges {
+      node {
+        id
+        offerId
+        lenderAddress
+        borrowerAddress
+        signerAddress
+        requiresLiquidation
+        principalAddress
+        principalAmount
+        currency {
+          symbol
+          decimals
+          address
+        }
+        aprBps
+        fee
+        capacity
+        expirationTime
+        duration
+        status
+        offerHash
+        signature
+        createdDate
+        repayment
+        hidden
+        validators {
+          arguments
+          validator
+        }
+        ... on SingleNFTOffer {
+          nft {
+            id
+            tokenId
+            collection {
+              id
+              slug
+              contractData {
+                contractAddress
+              }
+            }
+          }
+        }
+        ... on CollectionOffer {
+          collection {
+            id
+            slug
+            contractData {
+              contractAddress
+            }
+          }
+        }
+      }
+    }
+  }
+}
