@@ -24,11 +24,7 @@ import {
   zeroAddress as zeroAddressViem,
 } from "viem";
 
-import {
-  erc20ABI,
-  erc721ABI,
-  multiSourceLoanABI,
-} from "@/blockchain-generated/generated";
+import { erc20ABI, erc721ABI, multiSourceLoanABI } from "@blockchain-generated";
 
 import { getContracts } from "./deploys";
 export type Wallet = WalletClient<Transport, Chain, Account>;

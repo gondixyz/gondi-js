@@ -1,6 +1,6 @@
 {
   "name": "@gondi/sdk",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "types": "dist/index.d.ts",
@@ -10,10 +10,8 @@
   ],
   "scripts": {
     "build": "node esbuild.js && tsc --emitDeclarationOnly  --declarationDir dist && tsc-alias",
-    "build-check": "run tsc --noEmit",
+    "build-unbundle": "tsc --outDir dist && tsc-alias",
     "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
-    "fmt": "prettier --config ../../.prettierrc --ignore-path ../../.prettierignore --write .",
-    "run-test": "yarn build && tsx --async-stack-traces",
     "gql:types": "graphql-codegen"
   },
   "devDependencies": {
@@ -39,10 +37,8 @@
   "dependencies": {
     "@apollo/client": "^3.7.16",
     "@babel/core": "^7.0.0-0",
-    "@types/crypto-js": "^4.1.1",
     "abitype": "^0.8.7",
     "apollo-link-scalars": "^4.0.2",
-    "crypto-js": "^4.1.1",
     "ethers": "^6.0.8",
     "graphql": "^16.7.1",
     "graphql-tag": "^2.12.6",

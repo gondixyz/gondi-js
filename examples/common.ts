@@ -1,12 +1,6 @@
 import * as dotenv from "dotenv";
 import { Gondi } from "@gondi/sdk";
-import {
-  Address,
-  createWalletClient,
-  http,
-  isAddress,
-  zeroAddress,
-} from "viem";
+import { Address, createWalletClient, http, isHex, zeroAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
 dotenv.config();
@@ -51,7 +45,7 @@ if (!process.env.TEST_WALLETS) {
   );
 }
 export const wallets = process.env.TEST_WALLETS.split(",").map((privateKey) => {
-  if (!isAddress(privateKey)) throw new Error("invalid private keys");
+  if (!isHex(privateKey)) throw new Error("invalid private keys");
   return createWalletClient({
     account: privateKeyToAccount(privateKey as unknown as Address),
     transport,

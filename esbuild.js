@@ -1,25 +1,26 @@
-import { buildSync } from 'esbuild';
+import { buildSync } from "esbuild";
 
-import packageJson from './package.json' assert { type: 'json' };
+import packageJson from "./package.json" assert { type: "json" };
 
 buildSync({
-  entryPoints: ['index.ts'],
+  entryPoints: ["index.ts"],
 
   allowOverwrite: true,
   sourcemap: true,
   bundle: true,
-  minify: true,
+  minify: false,
   keepNames: true,
-  format: 'esm',
-  platform: 'browser',
-  target: ['esnext'],
+  format: "esm",
+  platform: "node",
+  target: ["esnext"],
 
-  tsconfig: './tsconfig.json',
-  outdir: 'dist',
+  tsconfig: "./tsconfig.json",
+  outfile: "./dist/index.js",
 
-  loader: { '.graphql': 'text' },
+  loader: { ".graphql": "text" },
   external: [
-    ...Object.keys(packageJson.devDependencies),
     ...Object.keys(packageJson.peerDependencies || {}),
+    ...Object.keys(packageJson.devDependencies),
+    ...Object.keys(packageJson.dependencies || {}),
   ],
 });

@@ -1,15 +1,15 @@
 {
   "name": "examples",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "scripts": {
     "run-test": "tsx --async-stack-traces"
   },
   "devDependencies": {
-    "@gondi/sdk": "file:./../dist",
     "@types/node": "^20.4.6",
     "tsx": "^3.12.7",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "@gondi/sdk": "link:.."
   }
 }

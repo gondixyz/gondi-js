@@ -1,8 +1,6 @@
 {
   "exclude": ["node_modules/", "dist/", "examples/**/*"],
-  "include": ["**/*.ts", "**/*.ts"],
-  "esm": true,
-  "experimentalSpecifierResolution": "node",
+  "include": ["**/*.d.ts", "**/*.ts"],
   "compilerOptions": {
     /* Emit */
     "noEmit": false,
@@ -11,9 +9,6 @@
     "sourceMap": true,
     "outDir": "dist",
     "declarationDir": "dist",
-
-    /* Interop Constraints */
-    "allowSyntheticDefaultImports": true,
 
     /* Type Checking */
     "noImplicitAny": true,
@@ -24,20 +19,18 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@/blockchain-generated/*": ["blockchain/*"],
-      "@/graphql-generated/*": ["graphql/*"]
+      "@blockchain-generated": ["generated/blockchain"],
+      "@graphql-generated": ["generated/graphql"]
     },
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
+    "lib": ["esnext"],
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "esModuleInterop": true,
     "module": "esnext",
     "target": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
     "isolatedModules": true,
-    "jsx": "preserve",
     "incremental": true
   }
 }

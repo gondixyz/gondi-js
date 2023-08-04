@@ -6,7 +6,7 @@ import {
 } from "@apollo/client/core";
 import { DocumentNode } from "graphql";
 
-import { getSdk, Requester } from "@/graphql-generated/generated";
+import { getSdk, Requester } from "@graphql-generated";
 
 export type ApolloRequesterOptions<V, R> =
   | Omit<QueryOptions<V>, "variables" | "query">

@@ -2,11 +2,11 @@ import {
   CollectionSignedOfferInput,
   ListOffersQueryVariables,
   SingleNftSignedOfferInput,
-} from '@/graphql-generated/generated';
+} from "generated/graphql";
 
-import { Wallet, zeroAddress } from './blockchain';
-import { apolloClient } from './graphql/client';
-import { getSdkApollo } from './graphql/sdk';
+import { Wallet, zeroAddress } from "@/blockchain";
+import { apolloClient } from "@/graphql/client";
+import { getSdkApollo } from "@/graphql/sdk";
 
 export type Props = { apiClient?: never; wallet: Wallet };
 
@@ -30,7 +30,8 @@ export class Api {
 
     this.generateSingleNftOfferHash = this.api.generateSingleNftOfferHash;
     this.generateCollectionOfferHash = this.api.generateCollectionOfferHash;
-    this.generateRenegotiationOfferHash = this.api.generateRenegotiationOfferHash;
+    this.generateRenegotiationOfferHash =
+      this.api.generateRenegotiationOfferHash;
     this.saveRefinanceOffer = this.api.saveRenegotiationOffer;
     this.listListings = this.api.listListings;
     this.nftId = this.api.nftId;
@@ -48,7 +49,8 @@ export class Api {
     };
     const response = await this.api.saveSingleNftOffer({ offer });
     const nftCollateralAddress =
-      response.offer.nft.collection?.contractData?.contractAddress || zeroAddress;
+      response.offer.nft.collection?.contractData?.contractAddress ||
+      zeroAddress;
     return {
       nftCollateralAddress,
       nftCollateralTokenId: response.offer.nft.tokenId,
@@ -77,7 +79,13 @@ export class Api {
       ...props,
     });
     const offers = edges.map((edge) => {
-      const { __typename, lenderAddress, borrowerAddress, signerAddress, ...node } = edge.node;
+      const {
+        __typename,
+        lenderAddress,
+        borrowerAddress,
+        signerAddress,
+        ...node
+      } = edge.node;
       return {
         type: __typename,
         lender: lenderAddress,

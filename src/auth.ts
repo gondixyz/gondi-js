@@ -2,14 +2,14 @@ import {
   ApolloClient,
   ApolloLink,
   createHttpLink,
-  gql,
   GraphQLRequest,
   InMemoryCache,
 } from "@apollo/client/core";
 import { SiweMessage } from "siwe";
+import { gql } from "graphql-tag";
 
-import { Wallet } from "./blockchain";
-import { authApiUrl } from "./const";
+import { Wallet } from "@/blockchain";
+import { authApiUrl } from "@/const";
 
 export type Credential = SessionToken;
 
@@ -17,7 +17,7 @@ export const getAuthClient = async () => {
   const link = ApolloLink.from([
     createHttpLink({
       uri: ({ operationName }) =>
-        `${authApiUrl}?operation=${encodeURIComponent(operationName)}`,
+        `${authApiUrl()}?operation=${encodeURIComponent(operationName)}`,
     }) as unknown as ApolloLink,
   ]);
   return new ApolloClient({
