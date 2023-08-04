@@ -16,7 +16,11 @@ import {
   zeroHex,
   Wallet,
 } from "@/blockchain";
-import { MarketplaceEnum, OffersSortField, Ordering } from "generated/graphql";
+import {
+  MarketplaceEnum,
+  OffersSortField,
+  Ordering,
+} from "@/generated/graphql";
 
 import { Api, Props as ApiProps } from "@/api";
 import * as model from "@/model";

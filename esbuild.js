@@ -3,7 +3,7 @@ import { buildSync } from "esbuild";
 import packageJson from "./package.json" assert { type: "json" };
 
 buildSync({
-  entryPoints: ["index.ts"],
+  entryPoints: ["src/index.ts"],
 
   allowOverwrite: true,
   sourcemap: true,

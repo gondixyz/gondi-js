@@ -2,7 +2,7 @@ import {
   CollectionSignedOfferInput,
   ListOffersQueryVariables,
   SingleNftSignedOfferInput,
-} from "generated/graphql";
+} from "@/generated/graphql";
 
 import { Wallet, zeroAddress } from "@/blockchain";
 import { apolloClient } from "@/graphql/client";

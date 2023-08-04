@@ -16,10 +16,8 @@
     "noUnusedParameters": true,
     "noErrorTruncation": true, // set to true to see full types on error
 
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@generated/*": ["generated/*"]
+      "@/*": ["./src/*"]
     },
     "lib": ["esnext"],
     "strict": true,

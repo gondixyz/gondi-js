@@ -9,7 +9,9 @@
   "devDependencies": {
     "@types/node": "^20.4.6",
     "tsx": "^3.12.7",
-    "typescript": "^5.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
     "@gondi/sdk": "link:.."
   }
 }

@@ -11,7 +11,7 @@ import { buildSchema } from "graphql";
 import { Credential, SessionToken } from "@/auth";
 import { Wallet } from "@/blockchain";
 import { apiUrl } from "@/const";
-import lendingSchemaText from "@generated/graphql/lending-schema.graphql";
+import lendingSchemaText from "@/generated/graphql/lending-schema.graphql";
 
 const lendingSchema = buildSchema(lendingSchemaText);
 
