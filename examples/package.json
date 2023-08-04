@@ -12,6 +12,6 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@gondi/sdk": "link:.."
+    "gondi": "link:.."
   }
 }

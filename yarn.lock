@@ -2699,10 +2699,6 @@ dir-glob@^3.0.1:
   dependencies:
     path-type "^4.0.0"
 
-"dist@link:../dist":
-  version "0.0.0"
-  uid ""
-
 doctrine@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/doctrine/-/doctrine-3.0.0.tgz#addebead72a6574db783639dc87a121773973961"

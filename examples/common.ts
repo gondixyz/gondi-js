@@ -1,5 +1,5 @@
 import * as dotenv from "dotenv";
-import { Gondi } from "@gondi/sdk";
+import { Gondi } from "gondi";
 import { Address, createWalletClient, http, isHex, zeroAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
@@ -30,7 +30,7 @@ export const localChain = {
 
 export const secret = "0".repeat(64);
 export const transport = http(localChain.rpcUrls.default.http[0]);
-export const testTokenId = 10n;
+export const testTokenId = BigInt(process.env.TEST_TOKEN_ID ?? 0);
 export const testCollection = {
   slug: process.env.TEST_COLLECTION_SLUG as unknown as string,
   address: process.env.TEST_COLLECTION_ADDRESS as unknown as Address,

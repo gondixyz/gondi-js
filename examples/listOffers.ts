@@ -1,5 +1,5 @@
 import { testCollectionOfferInput, users } from "./common";
-import { OfferStatus } from "@gondi/sdk";
+import { OfferStatus } from "gondi";
 
 async function main() {
   await users[0].makeCollectionOffer(testCollectionOfferInput);
