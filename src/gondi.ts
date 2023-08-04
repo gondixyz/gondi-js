@@ -1,5 +1,4 @@
 import {
-  Account,
   Address,
   Chain,
   createPublicClient,
@@ -7,7 +6,6 @@ import {
   isAddress,
   PublicClient,
   Transport,
-  WalletClient,
 } from "viem";
 
 import {

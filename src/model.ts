@@ -11,7 +11,7 @@ import {
   SingleNftSignedOfferInput,
   MarketplaceEnum,
   UserFilter,
-} from "@graphql-generated";
+} from "@generated/graphql";
 
 import { Loan as BlockchainLoan, Signature } from "@/blockchain";
 
