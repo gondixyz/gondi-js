@@ -6,7 +6,7 @@ async function main() {
   console.log("offer placed successfully");
 
   const { offers } = await users[0].offers({
-    filterBy: [{ status: [OfferStatus.Active] }],
+    filterBy: { status: [OfferStatus.Active] },
   });
   console.log("offers placed");
   for (const offer of offers) {

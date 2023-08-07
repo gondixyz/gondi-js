@@ -39,6 +39,12 @@ export const testCollection = {
 export const testCurrency = process.env
   .TEST_PRINCIPAL_CURRENCY as unknown as Address;
 
+if (!testCurrency) {
+  throw new Error(
+    "TEST_PRINCIPAL_CURRENCY not provided, please provide address"
+  );
+}
+
 if (!process.env.TEST_WALLETS) {
   throw new Error(
     "TEST_WALLETS not provided, please provide comma separated list"

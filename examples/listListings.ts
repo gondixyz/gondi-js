@@ -1,4 +1,4 @@
-import { testNftId, users } from './common';
+import { testNftId, users } from "./common";
 
 const logListings = async () => {
   const { listings } = await users[0].listings({});

@@ -64,9 +64,16 @@ export const apolloClient = (wallet: Wallet) => {
     defaultOptions: {
       query: {
         errorPolicy: "all",
+        fetchPolicy: "no-cache",
       },
       mutate: {
         errorPolicy: "all",
+        fetchPolicy: "no-cache",
+      },
+      watchQuery: {
+        fetchPolicy: "no-cache",
+        nextFetchPolicy: "no-cache",
+        errorPolicy: "ignore",
       },
     },
     cache: new InMemoryCache({}),
