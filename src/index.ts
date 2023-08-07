@@ -1,4 +1,7 @@
-import { Gondi } from "@/gondi";
-import { OfferStatus } from "@/generated/graphql";
-
-export { Gondi, OfferStatus };
+export { Gondi } from "@/gondi";
+export {
+  OfferStatus,
+  OffersSortField,
+  Ordering,
+  MarketplaceEnum,
+} from "@/generated/graphql";
