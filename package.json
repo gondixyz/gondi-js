@@ -1,6 +1,7 @@
 {
   "name": "gondi",
   "version": "0.0.1b1",
+  "license": "MIT",
   "type": "module",
   "main": "dist/index.mjs",
   "module": "dist/index.mjs",
@@ -12,7 +13,7 @@
     "build": "node esbuild.js && tsc && tsc-alias",
     "build-unbundle": "tsc --outDir dist && tsc-alias",
     "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
-    "gql:types": "graphql-codegen"
+    "gql:types": "graphql-code-generator"
   },
   "devDependencies": {
     "@graphql-codegen/add": "^5.0.0",

@@ -1,5 +1,5 @@
 generates:
-  graphql/generated.ts:
+  src/generated/graphql/index.ts:
     schema:
       - https://api.gondi.xyz/lending/graphql
     documents:
@@ -26,7 +26,7 @@ generates:
         Address: Address
         Signature: Hex
         Hex: Hex
-  graphql/lending-schema.graphql:
+  src/generated/graphql/lending-schema.graphql:
     schema:
       - https://api.gondi.xyz/lending/graphql
     plugins:
