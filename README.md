@@ -49,18 +49,18 @@ const collectionId = await gondi.collectionId({slug: 'collection-slug'});
 #### Single NFT Offer.
 ```javascript
 const offers = await gondi.makeSingleNftOffer({
-    nftId,
-    principalAddress,                   // Principal currency address.
-    principalAmount,                    // Principal amount. In units of currency (e.g. WETH is wei)
-    capacity,                           // How much money do you want to loan in total, 
-                                        // valid for collection offers.
-                                        // If you want N loans for example, it should be N*principalAmount.
-    fee,                                // Origination fee.
-    aprBps,                             // Apr expressed in basis points.
-    expirationTime,                     // Expiration time expressed in seconds since epoch.
-    duration,                           // Duration expressed in secconds.
-    requiresLiquidation,                // Sets the collateral to be liquidated on default.
-    borrowerAddress,                    // Optional: allow only this borrower to accept the offer.
+    nftId=1,
+    principalAddress="0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",  // Principal currency address. (e.g. WETH)
+    principalAmount=1_000_000_000_000_000_000n,                     // Principal amount. In units of currency (e.g. WETH is wei)(e.g. 1WETH)
+    capacity=1_000_000_000_000_000_000n,                            // How much money do you want to loan in total, 
+                                                                    // valid for collection offers.
+                                                                    // If you want N loans for example, it should be N*principalAmount.
+    fee=0n,                                                         // Origination fee.
+    aprBps=100n,                                                    // Apr expressed in basis points. (e.g. 1% apr)
+    expirationTime=1700000000n,                                     // Expiration time expressed in seconds since epoch. (e.g. 2023/11/14)
+    duration=31_536_000n,                                           // Duration expressed in secconds. (e.g. 1 year)
+    requiresLiquidation,                                            // Sets the collateral to be liquidated on default.
+    borrowerAddress,                                                // Optional: allow only this borrower to accept the offer.
 });
 ```
 
@@ -77,11 +77,16 @@ const offer = await gondi.makeCollectionOffer({
 ### Listing Offers
 
 ```javascript
+import { OffersSortField, Ordering } from 'gondi'
 const offer = await gondi.offers({
     cusor,                              // Cursor returned by previous calls.
     limit,                              // Number results.
-    sortBy,                             // Sort criteria.
+    sortBy: {                           // Sort criteria.
+        field: OffersSortField.CreatedDate, 
+        order: Ordering.Asc,
+    },
     filterBy                            // Filter criteria, result is conjunction of components.
+
 });
 ```
 
