@@ -4,6 +4,7 @@
   "compilerOptions": {
     /* Emit */
     "noEmit": false,
+    "emitDeclarationOnly": true,
     "skipLibCheck": true,
     "declaration": true,
     "sourceMap": true,

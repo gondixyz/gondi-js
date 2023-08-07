@@ -3,14 +3,14 @@
   "version": "0.0.1b1",
   "private": true,
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
+  "main": "dist/index.mjs",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "node esbuild.js && tsc --emitDeclarationOnly  --declarationDir dist && tsc-alias",
+    "build": "node esbuild.js && tsc && tsc-alias",
     "build-unbundle": "tsc --outDir dist && tsc-alias",
     "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
     "gql:types": "graphql-codegen"

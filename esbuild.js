@@ -8,14 +8,14 @@ buildSync({
   allowOverwrite: true,
   sourcemap: true,
   bundle: true,
-  minify: false,
+  minify: true,
   keepNames: true,
   format: "esm",
   platform: "node",
   target: ["esnext"],
 
   tsconfig: "./tsconfig.json",
-  outfile: "./dist/index.js",
+  outfile: "./dist/index.mjs",
 
   loader: { ".graphql": "text" },
   external: [
