@@ -435,11 +435,13 @@ export class Gondi {
     sortBy = { field: OffersSortField.CreatedDate, order: Ordering.Desc },
     filterBy = {},
   }: model.ListOffersProps) {
+    const { status: statuses, ...fields } = filterBy;
     return await this.api.listOffers({
       first: limit,
       after: cursor,
       sortBy,
-      ...filterBy,
+      statuses,
+      ...fields,
     });
   }
 

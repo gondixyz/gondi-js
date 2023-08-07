@@ -52,6 +52,7 @@ export class Api {
       response.offer.nft.collection?.contractData?.contractAddress ||
       zeroAddress;
     return {
+      id: response.offer.id,
       nftCollateralAddress,
       nftCollateralTokenId: response.offer.nft.tokenId,
       ...offerInput,
@@ -67,6 +68,7 @@ export class Api {
     const nftCollateralAddress =
       response.offer.collection?.contractData?.contractAddress || zeroAddress;
     return {
+      id: response.offer.id,
       nftCollateralAddress,
       nftCollateralTokenId: 0n,
       ...offerInput,

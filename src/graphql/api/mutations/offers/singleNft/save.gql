@@ -1,5 +1,6 @@
 mutation saveSingleNftOffer($offer: SingleNFTSignedOfferInput!) {
   offer: saveSignedSingleNftOffer(signedOfferInput: $offer) {
+    id
     status
     nft {
       tokenId

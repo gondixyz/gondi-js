@@ -9,9 +9,7 @@ async function main() {
     filterBy: { status: [OfferStatus.Active] },
   });
   console.log("offers placed");
-  for (const offer of offers) {
-    console.log(offer);
-  }
+  console.log(offers);
 }
 
 main();

@@ -659,9 +659,15 @@ type MultiSourceLoanHistory implements Node {
 type Mutation {
   addListing(nftId: Int!): Listing!
   addListingsOfNftsFromUser: Void
-  generateCollectionOfferToBeSigned(offerInput: CollectionOfferInput!): CollectionOffer!
-  generateRenegotiationOfferToBeSigned(renegotiationInput: RenegotiationOfferInput!): Renegotiation!
-  generateSingleNftOfferToBeSigned(offerInput: SingleNFTOfferInput!): SingleNFTOffer!
+  generateCollectionOfferToBeSigned(
+    offerInput: CollectionOfferInput!
+  ): CollectionOffer!
+  generateRenegotiationOfferToBeSigned(
+    renegotiationInput: RenegotiationOfferInput!
+  ): Renegotiation!
+  generateSingleNftOfferToBeSigned(
+    offerInput: SingleNFTOfferInput!
+  ): SingleNFTOffer!
   hideAllOffers(contractAddress: Address!, minOfferId: String!): [Offer!]!
   hideOffer(contractAddress: Address!, offerId: String!): Offer!
   hideRenegotiation(renegotiationId: String!): Renegotiation!
@@ -672,8 +678,12 @@ type Mutation {
   saveRenegotiationSignedOffer(
     signedRenegotiationInput: SignedRenegotiationOfferInput!
   ): Renegotiation!
-  saveSignedCollectionOffer(signedOfferInput: CollectionSignedOfferInput!): CollectionOffer!
-  saveSignedSingleNftOffer(signedOfferInput: SingleNFTSignedOfferInput!): SingleNFTOffer!
+  saveSignedCollectionOffer(
+    signedOfferInput: CollectionSignedOfferInput!
+  ): CollectionOffer!
+  saveSignedSingleNftOffer(
+    signedOfferInput: SingleNFTSignedOfferInput!
+  ): SingleNFTOffer!
   setReferral(referrerId: Int!): Void
   showOffer(contractAddress: Address!, offerId: String!): Offer!
   showRenegotiation(renegotiationId: String!): Renegotiation!
@@ -976,7 +986,10 @@ type Query {
   getNftBySlugAndTokenId(slug: String!, tokenId: BigInt!): NFT
   getPointsFromReferrals: Int!
   getReferredWallets: Int!
-  getUserPointActivities(after: String, first: Int = 10): PointActivityConnection!
+  getUserPointActivities(
+    after: String
+    first: Int = 10
+  ): PointActivityConnection!
   getUserPoints: Int!
   listAuctions(
     after: String
@@ -992,7 +1005,11 @@ type Query {
     onlyLatest: Boolean! = false
     sortBy: [BidSortInput!] = null
   ): BidConnection!
-  listCollections(after: String, first: Int = 10, searchTerm: String = null): CollectionConnection!
+  listCollections(
+    after: String
+    first: Int = 10
+    searchTerm: String = null
+  ): CollectionConnection!
   listCollectionsWithListings(
     after: String
     first: Int! = 10

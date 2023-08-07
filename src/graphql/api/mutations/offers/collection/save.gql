@@ -1,5 +1,6 @@
 mutation saveCollectionOffer($offer: CollectionSignedOfferInput!) {
   offer: saveSignedCollectionOffer(signedOfferInput: $offer) {
+    id
     status
     collection {
       contractData {

@@ -33,6 +33,8 @@ const wallet = createWalletClient({
 const gondi = new Gondi({ wallet });
 ```
 
+Typescript types are included in the package.
+
 ### Getting NFT/Collection ids
 We use integer ids to identify collections and NFTs. We provide helper functions to get them:
 
