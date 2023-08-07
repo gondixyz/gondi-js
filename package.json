@@ -1,7 +1,6 @@
 {
   "name": "gondi",
   "version": "0.0.1b1",
-  "private": true,
   "type": "module",
   "main": "dist/index.mjs",
   "module": "dist/index.mjs",
