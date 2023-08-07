@@ -433,42 +433,13 @@ export class Gondi {
     limit = 20,
     cursor,
     sortBy = { field: OffersSortField.CreatedDate, order: Ordering.Desc },
-    filterBy = [],
+    filterBy = {},
   }: model.ListOffersProps) {
-    const filters = {
-      lenderAddress: null as Address | null,
-      borrowerAddress: null as Address | null,
-      collections: [] as number[],
-      nfts: [] as number[],
-      onlyCollectionOffers: false,
-      onlySingleNftOffers: false,
-      statuses: null,
-    };
-    for (const filter of filterBy) {
-      if ("nft" in filter) {
-        filters.nfts.push(filter.nft);
-      }
-      if ("collection" in filter) {
-        filters.collections.push(filter.collection);
-      }
-      if ("borrower" in filter) {
-        filters.borrowerAddress = filter.borrower;
-      }
-      if ("lender" in filter) {
-        filters.lenderAddress = filter.lender;
-      }
-      if ("onlyCollectionOffers" in filter) {
-        filters.onlyCollectionOffers = filter.onlyCollectionOffers;
-      }
-      if ("onlySingleNftOffers" in filter) {
-        filters.onlySingleNftOffers = filter.onlySingleNftOffers;
-      }
-    }
     return await this.api.listOffers({
       first: limit,
       after: cursor,
       sortBy,
-      ...filters,
+      ...filterBy,
     });
   }
 

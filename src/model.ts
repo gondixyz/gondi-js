@@ -81,21 +81,15 @@ export type ListOffersProps = {
   limit?: number;
   cursor?: string;
   sortBy?: OffersSortInput;
-  filterBy?: (
-    | {
-        nft: number;
-      }
-    | {
-        collection: number;
-      }
-    | { borrower: Address }
-    | { lender: Address }
-    | { status: OfferStatus[] }
-    | { onlyCollectionOffers: boolean }
-    | {
-        onlySingleNftOffers: boolean;
-      }
-  )[];
+  filterBy?: {
+    nft?: number;
+    onlySingleNftOffers?: boolean;
+    collection?: number;
+    onlyCollectionOffers?: boolean;
+    borrower?: Address;
+    lender?: Address;
+    status?: OfferStatus[];
+  };
 };
 
 export type ListListingsProps = {
