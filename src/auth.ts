@@ -4,7 +4,7 @@ import {
   createHttpLink,
   GraphQLRequest,
   InMemoryCache,
-} from "@apollo/client/core";
+} from "@apollo/client/core/index.js";
 import { SiweMessage } from "siwe";
 import { gql } from "graphql-tag";
 

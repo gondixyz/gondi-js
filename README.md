@@ -20,6 +20,7 @@ To get started, you need to provide a wallet only.
 ```javascript
 import { Gondi } from 'gondi'
 import { createWalletClient, http } from 'viem'
+import { privateKeyToAccount } from "viem/accounts";
 import { mainnet } from 'viem/chains'
 const transport = http('https://eth-mainnet.g.alchemy.com/v2/...')
 
@@ -29,7 +30,7 @@ const wallet = createWalletClient({
     transport,
     chain: mainnet,
 });
-const gondi = new Gondi(wallet);
+const gondi = new Gondi({ wallet });
 ```
 
 ### Getting NFT/Collection ids
@@ -64,7 +65,7 @@ const offers = await gondi.makeSingleNftOffer({
 #### Collection Offer
 
 ```javascript
-const offer = await gondi.makeSingleNftOffer({
+const offer = await gondi.makeCollectionOffer({
     collectionId,
     ... // Same as Single NFT Offer
 

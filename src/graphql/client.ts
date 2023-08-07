@@ -3,8 +3,8 @@ import {
   ApolloLink,
   createHttpLink,
   InMemoryCache,
-} from "@apollo/client/core";
-import { setContext } from "@apollo/client/link/context";
+} from "@apollo/client/core/index.js";
+import { setContext } from "@apollo/client/link/context/index.js";
 import { withScalars } from "apollo-link-scalars";
 import { buildSchema } from "graphql";
 

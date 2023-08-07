@@ -1,9 +1,10 @@
 {
   "name": "gondi",
-  "version": "0.0.1",
+  "version": "0.0.1b1",
   "private": true,
   "type": "module",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
@@ -32,12 +33,11 @@
     "tsconfig-paths": "^4.2.0",
     "tslib": "^2.4.0",
     "tsx": "^3.12.7",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.4",
+    "abitype": "^0.8.7"
   },
   "dependencies": {
     "@apollo/client": "^3.7.16",
-    "@babel/core": "^7.0.0-0",
-    "abitype": "^0.8.7",
     "apollo-link-scalars": "^4.0.2",
     "ethers": "^6.0.8",
     "graphql": "^16.7.1",
