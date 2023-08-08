@@ -97,3 +97,6 @@ for (const user of users) {
   const approveNFT = await user.approveNFTForAll(testCollection.address);
   await approveNFT.waitTxInBlock();
 }
+
+export const sleep = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));

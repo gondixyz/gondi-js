@@ -1,4 +1,5 @@
 import {
+  sleep,
   testCollectionOfferInput,
   testSingleNftOfferInput,
   users,
@@ -15,7 +16,7 @@ async function main() {
     let { waitTxInBlock } = await users[0].cancelOffer(offer);
     await waitTxInBlock();
   }
-  new Promise((resolve) => setTimeout(resolve, 10000));
+  await sleep(10000);
   const { offers: listedOffers } = await users[0].offers({
     filterBy: { status: [OfferStatus.Active] },
   });

@@ -1,4 +1,5 @@
 import {
+  sleep,
   testCollectionOfferInput,
   testSingleNftOfferInput,
   users,
@@ -14,7 +15,7 @@ async function main() {
   for (const offer of offers) {
     await users[0].hideOffer(offer);
   }
-  new Promise((resolve) => setTimeout(resolve, 10000));
+  await sleep(10000);
   const { offers: listedOffers } = await users[1].offers({
     filterBy: { status: [OfferStatus.Active] },
   });
