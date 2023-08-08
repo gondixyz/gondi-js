@@ -446,11 +446,11 @@ export class Gondi {
   }
 
   async list({ nft }: { nft: number }) {
-    await this.api.listNft({ nftId: nft });
+    return await this.api.listNft({ nftId: nft });
   }
 
   async unlist({ nft }: { nft: number }) {
-    await this.api.unlistNft({ nftId: nft });
+    return await this.api.unlistNft({ nftId: nft });
   }
 
   async listings({
