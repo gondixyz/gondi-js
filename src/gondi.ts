@@ -251,7 +251,7 @@ export class Gondi {
     if (!isAddress(contract)) {
       throw new Error("invalid id");
     }
-    this.api.hideOffer({ contract, id: contractOfferId });
+    return this.api.hideOffer({ contract, id: contractOfferId });
   }
 
   async makeRefinanceOffer(
@@ -342,7 +342,7 @@ export class Gondi {
   }
 
   async hideRenegotiationOffer({ id }: { id: string }) {
-    this.api.hideRenegotiationOffer({ id });
+    return this.api.hideRenegotiationOffer({ id });
   }
 
   async cancelAllRenegotiations({
