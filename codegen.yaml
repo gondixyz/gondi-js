@@ -1,0 +1,36 @@
+generates:
+  src/generated/graphql/index.ts:
+    schema:
+      - https://api.gondi.xyz/lending/graphql
+    documents:
+      - './src/graphql/api/**/*.gql'
+    plugins:
+      - typescript
+      - typescript-operations
+      - typescript-apollo-client-helpers
+      - typescript-generic-sdk
+      - add:
+          content:
+            - "/* eslint-disable */"
+            - "//@ts-nocheck"
+            - "import { Address, Hash, Hex } from 'viem'"
+    config:
+      defaultBaseOptions:
+        context:
+          clientName: lending
+      scalars:
+        datetime: Date
+        Decimal: decimal
+        BigInt: bigint
+        Hash: Hash
+        Address: Address
+        Signature: Hex
+        Hex: Hex
+  src/generated/graphql/lending-schema.graphql:
+    schema:
+      - https://api.gondi.xyz/lending/graphql
+    plugins:
+      - schema-ast
+hooks:
+  afterOneFileWrite:
+    - prettier --write
