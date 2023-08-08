@@ -1889,7 +1889,7 @@ export type SaveRenegotiationOfferMutationVariables = Exact<{
 
 export type SaveRenegotiationOfferMutation = {
   __typename?: "Mutation";
-  offer: { __typename?: "Renegotiation"; status: string };
+  offer: { __typename?: "Renegotiation"; id: string; status: string };
 };
 
 export type UnhideRenegotiationOfferMutationVariables = Exact<{
@@ -4808,6 +4808,7 @@ export const HideRenegotiationOfferDocument = gql`
 export const SaveRenegotiationOfferDocument = gql`
   mutation saveRenegotiationOffer($offer: SignedRenegotiationOfferInput!) {
     offer: saveRenegotiationSignedOffer(signedRenegotiationInput: $offer) {
+      id
       status
     }
   }

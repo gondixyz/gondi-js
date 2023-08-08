@@ -7,6 +7,7 @@ import {
 import { Wallet, zeroAddress } from "@/blockchain";
 import { apolloClient } from "@/graphql/client";
 import { getSdkApollo } from "@/graphql/sdk";
+import { RenegotiationOffer } from "./model";
 
 export type Props = { apiClient?: never; wallet: Wallet };
 
@@ -15,7 +16,6 @@ export class Api {
   generateSingleNftOfferHash;
   generateCollectionOfferHash;
   generateRenegotiationOfferHash;
-  saveRefinanceOffer;
   listListings;
   nftId;
   collectionId;
@@ -32,7 +32,6 @@ export class Api {
     this.generateCollectionOfferHash = this.api.generateCollectionOfferHash;
     this.generateRenegotiationOfferHash =
       this.api.generateRenegotiationOfferHash;
-    this.saveRefinanceOffer = this.api.saveRenegotiationOffer;
     this.listListings = this.api.listListings;
     this.nftId = this.api.nftId;
     this.collectionId = this.api.collectionId;
@@ -71,6 +70,16 @@ export class Api {
       id: response.offer.id,
       nftCollateralAddress,
       nftCollateralTokenId: 0n,
+      ...offerInput,
+    };
+  }
+
+  async saveRefinanceOffer(offerInput: RenegotiationOffer) {
+    const response = await this.api.saveRenegotiationOffer({
+      offer: offerInput,
+    });
+    return {
+      id: response.offer.id,
       ...offerInput,
     };
   }

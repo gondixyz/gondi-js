@@ -303,11 +303,10 @@ export class Gondi {
       offerHash: offerHash ?? zeroHash,
       renegotiationId,
     };
-    await this.api.saveRefinanceOffer({ offer: renegotiationOffer });
-    return renegotiationOffer;
+    return await this.api.saveRefinanceOffer(renegotiationOffer);
   }
 
-  async cancelRenegotiation({ id }: { id: string }) {
+  async cancelRefinanceOffer({ id }: { id: string }) {
     const contractId = BigInt(id.split(".").at(-1) ?? "0");
     const txHash =
       await this.contracts.MultiSourceLoan.write.cancelRenegotiationOffer([

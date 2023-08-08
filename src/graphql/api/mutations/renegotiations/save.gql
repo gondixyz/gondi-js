@@ -1,5 +1,6 @@
 mutation saveRenegotiationOffer($offer: SignedRenegotiationOfferInput!) {
   offer: saveRenegotiationSignedOffer(signedRenegotiationInput: $offer) {
+    id
     status
   }
 }
