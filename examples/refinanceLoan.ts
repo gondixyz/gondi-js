@@ -16,7 +16,7 @@ async function main() {
   }
 
   const emitLoan = await users[1].emitLoan(signedOffer, testTokenId);
-  const { loan } = await emitLoan.waitTxInBlock();
+  let { loan } = await emitLoan.waitTxInBlock();
   console.log("loan emitted");
 
   await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -39,7 +39,7 @@ async function main() {
       renegotiationOffer,
       loan
     );
-    await refinanceFullLoan.waitTxInBlock();
+    loan = (await refinanceFullLoan.waitTxInBlock()).loan;
     console.log("loan refinanced");
   } finally {
     const repayLoan = await users[1].repayLoan(loan);

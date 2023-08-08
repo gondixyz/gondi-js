@@ -272,7 +272,7 @@ export class Gondi {
       lender: lenderAddress ?? renegotiationInput.lenderAddress,
       signer: signerAddress ?? renegotiationInput.signerAddress,
       strictImprovement: false,
-      loanId: BigInt(loanId),
+      loanId,
       renegotiationId,
     };
 
@@ -516,7 +516,18 @@ export class Gondi {
           await this.contracts.MultiSourceLoan.createEventFilter.LoanRefinanced();
         const events = filterLogs(receipt, filter);
         if (events.length == 0) throw new Error("Loan not refinanced");
-        return events[0].args;
+        const args = events[0].args;
+        return {
+          loan: {
+            id: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${
+              args.newLoanId
+            }`,
+            ...args.loan,
+          },
+          renegotiationId: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
+            args.renegotiationId
+          }`,
+        };
       },
     };
   }
