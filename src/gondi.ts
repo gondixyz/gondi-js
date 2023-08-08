@@ -254,10 +254,7 @@ export class Gondi {
     return this.api.hideOffer({ contract, id: contractOfferId });
   }
 
-  async makeRefinanceOffer(
-    renegotiation: model.RenegotiationInput,
-    skipSignature?: boolean
-  ) {
+  async makeRefinanceOffer(renegotiation: model.RenegotiationInput) {
     const renegotiationInput = {
       lenderAddress: await this.wallet.account?.address,
       signerAddress: await this.wallet.account?.address,
@@ -278,15 +275,6 @@ export class Gondi {
       loanId: BigInt(loanId),
       renegotiationId,
     };
-
-    if (skipSignature) {
-      return {
-        ...renegotiationInput,
-        offerHash: offerHash ?? zeroHash,
-        loanId: BigInt(loanId),
-        renegotiationId,
-      };
-    }
 
     const signature = await this.wallet.signTypedData({
       domain: this.getDomain(),
@@ -316,7 +304,7 @@ export class Gondi {
       renegotiationId,
     };
     await this.api.saveRefinanceOffer({ offer: renegotiationOffer });
-    return { ...renegotiationOffer, loanId: BigInt(loanId) };
+    return renegotiationOffer;
   }
 
   async cancelRenegotiation({ id }: { id: string }) {
@@ -400,7 +388,18 @@ export class Gondi {
           await this.contracts.MultiSourceLoan.createEventFilter.LoanEmitted();
         const events = filterLogs(receipt, filter);
         if (events.length == 0) throw new Error("Loan not emitted");
-        return events[0].args;
+        const args = events[0].args;
+        return {
+          loan: {
+            id: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${
+              args.loanId
+            }`,
+            ...args.loan,
+          },
+          offerId: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
+            args.offerId
+          }`,
+        };
       },
     };
   }
@@ -494,12 +493,11 @@ export class Gondi {
   async refinanceFullLoan(offer: model.RenegotiationOffer, loan: model.Loan) {
     const offerInput = {
       ...offer,
-      loanId: 0n,
+      loanId: BigInt(offer.loanId.split(".").at(-1) ?? "0"),
       strictImprovement: offer.strictImprovement ?? false,
       lender: offer.lenderAddress,
       signer: offer.signerAddress,
       fee: offer.feeAmount,
-      targetPrincipal: [offer.principalAmount],
     };
 
     const txHash = await this.contracts.MultiSourceLoan.write.refinanceFull([

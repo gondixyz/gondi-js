@@ -23,7 +23,7 @@ async function main() {
 
   try {
     const renegotiationOffer = await users[0].makeRefinanceOffer({
-      loanId: loan.source[0].loanId.toString(),
+      loanId: loan.id,
       feeAmount: 0n,
       aprBps: signedOffer.aprBps,
       duration: signedOffer.duration,
@@ -31,7 +31,7 @@ async function main() {
       principalAmount: signedOffer.principalAmount,
       strictImprovement: false,
       requiresLiquidation: signedOffer.requiresLiquidation,
-      targetPrincipal: [0n],
+      targetPrincipal: loan.source.map((_) => 0n),
     });
     console.log("refinance offer placed successfully");
 
