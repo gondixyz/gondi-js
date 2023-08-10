@@ -15,6 +15,11 @@
     "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
     "gql:types": "graphql-code-generator"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gondixyz/gondi-js.git"
+  },
+  "homepage": "https://github.com/gondixyz/gondi-js",
   "devDependencies": {
     "@graphql-codegen/add": "^5.0.0",
     "@graphql-codegen/cli": "^3.3.1",
