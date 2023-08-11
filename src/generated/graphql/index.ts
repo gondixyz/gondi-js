@@ -1156,8 +1156,10 @@ export type PointActivityEdge = {
 export type Query = {
   __typename?: "Query";
   getCollectionBySlug?: Maybe<Collection>;
+  getCollectionsByContractAddress: Array<Collection>;
   getListingById?: Maybe<Listing>;
   getLoanById?: Maybe<Loan>;
+  getNftByContractAddressAndTokenId?: Maybe<Nft>;
   getNftBySlugAndTokenId?: Maybe<Nft>;
   getPointsFromReferrals: Scalars["Int"];
   getReferredWallets: Scalars["Int"];
@@ -1183,6 +1185,10 @@ export type QueryGetCollectionBySlugArgs = {
   slug: Scalars["String"];
 };
 
+export type QueryGetCollectionsByContractAddressArgs = {
+  contractAddress: Scalars["String"];
+};
+
 export type QueryGetListingByIdArgs = {
   listingId: Scalars["Int"];
 };
@@ -1190,6 +1196,11 @@ export type QueryGetListingByIdArgs = {
 export type QueryGetLoanByIdArgs = {
   address: Scalars["String"];
   loanId: Scalars["Int"];
+};
+
+export type QueryGetNftByContractAddressAndTokenIdArgs = {
+  contractAddress: Scalars["String"];
+  tokenId: Scalars["BigInt"];
 };
 
 export type QueryGetNftBySlugAndTokenIdArgs = {
@@ -1901,11 +1912,20 @@ export type UnhideRenegotiationOfferMutation = {
   showRenegotiation: { __typename?: "Renegotiation"; id: string };
 };
 
-export type CollectionIdQueryVariables = Exact<{
+export type CollectionsIdByContractAddressQueryVariables = Exact<{
+  contractAddress: Scalars["String"];
+}>;
+
+export type CollectionsIdByContractAddressQuery = {
+  __typename?: "Query";
+  collections: Array<{ __typename?: "Collection"; id: string }>;
+};
+
+export type CollectionIdBySlugQueryVariables = Exact<{
   slug: Scalars["String"];
 }>;
 
-export type CollectionIdQuery = {
+export type CollectionIdBySlugQuery = {
   __typename?: "Query";
   collection?: { __typename?: "Collection"; id: string } | null;
 };
@@ -1950,12 +1970,22 @@ export type ListListingsQuery = {
   };
 };
 
-export type NftIdQueryVariables = Exact<{
+export type NftIdByContractAddressAndTokenIdQueryVariables = Exact<{
+  contractAddress: Scalars["String"];
+  tokenId: Scalars["BigInt"];
+}>;
+
+export type NftIdByContractAddressAndTokenIdQuery = {
+  __typename?: "Query";
+  nft?: { __typename?: "NFT"; id: string } | null;
+};
+
+export type NftIdBySlugTokenIdQueryVariables = Exact<{
   slug: Scalars["String"];
   tokenId: Scalars["BigInt"];
 }>;
 
-export type NftIdQuery = {
+export type NftIdBySlugTokenIdQuery = {
   __typename?: "Query";
   nft?: { __typename?: "NFT"; id: string } | null;
 };
@@ -3549,8 +3579,10 @@ export type PointActivityEdgeFieldPolicy = {
 };
 export type QueryKeySpecifier = (
   | "getCollectionBySlug"
+  | "getCollectionsByContractAddress"
   | "getListingById"
   | "getLoanById"
+  | "getNftByContractAddressAndTokenId"
   | "getNftBySlugAndTokenId"
   | "getPointsFromReferrals"
   | "getReferredWallets"
@@ -3574,8 +3606,10 @@ export type QueryKeySpecifier = (
 )[];
 export type QueryFieldPolicy = {
   getCollectionBySlug?: FieldPolicy<any> | FieldReadFunction<any>;
+  getCollectionsByContractAddress?: FieldPolicy<any> | FieldReadFunction<any>;
   getListingById?: FieldPolicy<any> | FieldReadFunction<any>;
   getLoanById?: FieldPolicy<any> | FieldReadFunction<any>;
+  getNftByContractAddressAndTokenId?: FieldPolicy<any> | FieldReadFunction<any>;
   getNftBySlugAndTokenId?: FieldPolicy<any> | FieldReadFunction<any>;
   getPointsFromReferrals?: FieldPolicy<any> | FieldReadFunction<any>;
   getReferredWallets?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -4820,8 +4854,17 @@ export const UnhideRenegotiationOfferDocument = gql`
     }
   }
 `;
-export const CollectionIdDocument = gql`
-  query collectionId($slug: String!) {
+export const CollectionsIdByContractAddressDocument = gql`
+  query collectionsIdByContractAddress($contractAddress: String!) {
+    collections: getCollectionsByContractAddress(
+      contractAddress: $contractAddress
+    ) {
+      id
+    }
+  }
+`;
+export const CollectionIdBySlugDocument = gql`
+  query collectionIdBySlug($slug: String!) {
     collection: getCollectionBySlug(slug: $slug) {
       id
     }
@@ -4869,8 +4912,21 @@ export const ListListingsDocument = gql`
     }
   }
 `;
-export const NftIdDocument = gql`
-  query nftId($slug: String!, $tokenId: BigInt!) {
+export const NftIdByContractAddressAndTokenIdDocument = gql`
+  query nftIdByContractAddressAndTokenId(
+    $contractAddress: String!
+    $tokenId: BigInt!
+  ) {
+    nft: getNftByContractAddressAndTokenId(
+      contractAddress: $contractAddress
+      tokenId: $tokenId
+    ) {
+      id
+    }
+  }
+`;
+export const NftIdBySlugTokenIdDocument = gql`
+  query nftIdBySlugTokenId($slug: String!, $tokenId: BigInt!) {
     nft: getNftBySlugAndTokenId(slug: $slug, tokenId: $tokenId) {
       id
     }
@@ -5112,15 +5168,31 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
         options
       ) as Promise<UnhideRenegotiationOfferMutation>;
     },
-    collectionId(
-      variables: CollectionIdQueryVariables,
+    collectionsIdByContractAddress(
+      variables: CollectionsIdByContractAddressQueryVariables,
       options?: C
-    ): Promise<CollectionIdQuery> {
-      return requester<CollectionIdQuery, CollectionIdQueryVariables>(
-        CollectionIdDocument,
+    ): Promise<CollectionsIdByContractAddressQuery> {
+      return requester<
+        CollectionsIdByContractAddressQuery,
+        CollectionsIdByContractAddressQueryVariables
+      >(
+        CollectionsIdByContractAddressDocument,
         variables,
         options
-      ) as Promise<CollectionIdQuery>;
+      ) as Promise<CollectionsIdByContractAddressQuery>;
+    },
+    collectionIdBySlug(
+      variables: CollectionIdBySlugQueryVariables,
+      options?: C
+    ): Promise<CollectionIdBySlugQuery> {
+      return requester<
+        CollectionIdBySlugQuery,
+        CollectionIdBySlugQueryVariables
+      >(
+        CollectionIdBySlugDocument,
+        variables,
+        options
+      ) as Promise<CollectionIdBySlugQuery>;
     },
     listListings(
       variables?: ListListingsQueryVariables,
@@ -5132,12 +5204,31 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
         options
       ) as Promise<ListListingsQuery>;
     },
-    nftId(variables: NftIdQueryVariables, options?: C): Promise<NftIdQuery> {
-      return requester<NftIdQuery, NftIdQueryVariables>(
-        NftIdDocument,
+    nftIdByContractAddressAndTokenId(
+      variables: NftIdByContractAddressAndTokenIdQueryVariables,
+      options?: C
+    ): Promise<NftIdByContractAddressAndTokenIdQuery> {
+      return requester<
+        NftIdByContractAddressAndTokenIdQuery,
+        NftIdByContractAddressAndTokenIdQueryVariables
+      >(
+        NftIdByContractAddressAndTokenIdDocument,
         variables,
         options
-      ) as Promise<NftIdQuery>;
+      ) as Promise<NftIdByContractAddressAndTokenIdQuery>;
+    },
+    nftIdBySlugTokenId(
+      variables: NftIdBySlugTokenIdQueryVariables,
+      options?: C
+    ): Promise<NftIdBySlugTokenIdQuery> {
+      return requester<
+        NftIdBySlugTokenIdQuery,
+        NftIdBySlugTokenIdQueryVariables
+      >(
+        NftIdBySlugTokenIdDocument,
+        variables,
+        options
+      ) as Promise<NftIdBySlugTokenIdQuery>;
     },
     listOffers(
       variables: ListOffersQueryVariables,

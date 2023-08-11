@@ -1,4 +1,4 @@
-query collectionId($slug: String!) {
+query collectionIdBySlug($slug: String!) {
     collection: getCollectionBySlug(slug: $slug) {
         id
     }

@@ -17,8 +17,10 @@ export class Api {
   generateCollectionOfferHash;
   generateRenegotiationOfferHash;
   listListings;
-  nftId;
-  collectionId;
+  nftIdBySlugTokenId;
+  nftIdByContractAddressAndTokenId;
+  collectionIdBySlug;
+  collectionsIdByContractAddress;
   listNft;
   unlistNft;
   hideOffer;
@@ -33,8 +35,12 @@ export class Api {
     this.generateRenegotiationOfferHash =
       this.api.generateRenegotiationOfferHash;
     this.listListings = this.api.listListings;
-    this.nftId = this.api.nftId;
-    this.collectionId = this.api.collectionId;
+    this.nftIdBySlugTokenId = this.api.nftIdBySlugTokenId;
+    this.nftIdByContractAddressAndTokenId =
+      this.api.nftIdByContractAddressAndTokenId;
+    this.collectionIdBySlug = this.api.collectionIdBySlug;
+    this.collectionsIdByContractAddress =
+      this.api.collectionsIdByContractAddress;
     this.listNft = this.api.listNft;
     this.unlistNft = this.api.unlistNft;
     this.hideOffer = this.api.hideOffer;
