@@ -1,4 +1,4 @@
-query collectionsIdByContractAddress($contractAddress: String!) {
+query collectionsIdByContractAddress($contractAddress: Address!) {
     collections: getCollectionsByContractAddress(contractAddress: $contractAddress) {
         id
     }

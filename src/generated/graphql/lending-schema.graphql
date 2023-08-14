@@ -981,11 +981,11 @@ type PointActivityEdge {
 
 type Query {
   getCollectionBySlug(slug: String!): Collection
-  getCollectionsByContractAddress(contractAddress: String!): [Collection!]!
+  getCollectionsByContractAddress(contractAddress: Address!): [Collection!]!
   getListingById(listingId: Int!): Listing
   getLoanById(address: String!, loanId: Int!): Loan
   getNftByContractAddressAndTokenId(
-    contractAddress: String!
+    contractAddress: Address!
     tokenId: BigInt!
   ): NFT
   getNftBySlugAndTokenId(slug: String!, tokenId: BigInt!): NFT

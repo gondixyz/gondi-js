@@ -1186,7 +1186,7 @@ export type QueryGetCollectionBySlugArgs = {
 };
 
 export type QueryGetCollectionsByContractAddressArgs = {
-  contractAddress: Scalars["String"];
+  contractAddress: Scalars["Address"];
 };
 
 export type QueryGetListingByIdArgs = {
@@ -1199,7 +1199,7 @@ export type QueryGetLoanByIdArgs = {
 };
 
 export type QueryGetNftByContractAddressAndTokenIdArgs = {
-  contractAddress: Scalars["String"];
+  contractAddress: Scalars["Address"];
   tokenId: Scalars["BigInt"];
 };
 
@@ -1913,7 +1913,7 @@ export type UnhideRenegotiationOfferMutation = {
 };
 
 export type CollectionsIdByContractAddressQueryVariables = Exact<{
-  contractAddress: Scalars["String"];
+  contractAddress: Scalars["Address"];
 }>;
 
 export type CollectionsIdByContractAddressQuery = {
@@ -1971,7 +1971,7 @@ export type ListListingsQuery = {
 };
 
 export type NftIdByContractAddressAndTokenIdQueryVariables = Exact<{
-  contractAddress: Scalars["String"];
+  contractAddress: Scalars["Address"];
   tokenId: Scalars["BigInt"];
 }>;
 
@@ -4855,7 +4855,7 @@ export const UnhideRenegotiationOfferDocument = gql`
   }
 `;
 export const CollectionsIdByContractAddressDocument = gql`
-  query collectionsIdByContractAddress($contractAddress: String!) {
+  query collectionsIdByContractAddress($contractAddress: Address!) {
     collections: getCollectionsByContractAddress(
       contractAddress: $contractAddress
     ) {
@@ -4914,7 +4914,7 @@ export const ListListingsDocument = gql`
 `;
 export const NftIdByContractAddressAndTokenIdDocument = gql`
   query nftIdByContractAddressAndTokenId(
-    $contractAddress: String!
+    $contractAddress: Address!
     $tokenId: BigInt!
   ) {
     nft: getNftByContractAddressAndTokenId(
