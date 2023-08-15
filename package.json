@@ -14,7 +14,11 @@
     "build": "node esbuild.js && tsc && tsc-alias",
     "build-unbundle": "tsc --outDir dist && tsc-alias",
     "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
-    "gql:types": "graphql-code-generator"
+    "gql:types": "graphql-code-generator",
+    "prepare": "husky install",
+    "postinstall": "husky install",
+    "prepack": "pinst --disable",
+    "postpack": "pinst --enable"
   },
   "repository": {
     "type": "git",
@@ -40,7 +44,9 @@
     "eslint-plugin-react-camel-case": "^1.1.1",
     "eslint-plugin-simple-import-sort": "^8.0.0",
     "graphql-codegen": "^0.4.0",
+    "husky": "^8.0.3",
     "jest": "^29.6.2",
+    "pinst": "^3.0.0",
     "prettier": "2.6.2",
     "ts-jest": "^29.0.0",
     "tsc-alias": "^1.8.7",
