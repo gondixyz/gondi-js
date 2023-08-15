@@ -473,20 +473,56 @@ export class Gondi {
     };
   }
 
-  async nftId(props: { slug: string; tokenId: bigint }) {
-    const result = await this.api.nftId(props);
+  async nftId(
+    props: (
+      | { slug: string; contractAddress?: never }
+      | { slug?: never; contractAddress: Address }
+    ) & { tokenId: bigint }
+  ) {
+    let result;
+    if (props.slug) result = await this.api.nftIdBySlugTokenId(props);
+    if (props.contractAddress)
+      result = await this.api.nftIdByContractAddressAndTokenId(props);
     if (!result?.nft) {
       throw new Error(`invalid nft ${props}`);
     }
     return Number(result.nft.id);
   }
 
-  async collectionId(props: { slug: string }) {
-    const result = await this.api.collectionId(props);
-    if (!result?.collection) {
-      throw new Error(`invalid collection ${props}`);
+  async collectionId(props: {
+    slug: string;
+    contractAddress?: never;
+  }): Promise<number>;
+  async collectionId(props: {
+    slug?: never;
+    contractAddress: Address;
+  }): Promise<number[]>;
+  async collectionId(
+    props:
+      | {
+          slug: string;
+          contractAddress?: never;
+        }
+      | {
+          slug?: never;
+          contractAddress: Address;
+        }
+  ) {
+    let result;
+    if (props.slug) {
+      result = await this.api.collectionIdBySlug(props);
+      if (!result?.collection) {
+        throw new Error(`invalid collection ${props}`);
+      }
+      return Number(result.collection.id);
     }
-    return Number(result.collection.id);
+    if (props.contractAddress) {
+      result = await this.api.collectionsIdByContractAddress(props);
+      if (!result?.collections) {
+        throw new Error(`invalid collection ${props}`);
+      }
+      return result.collections.map((collection) => Number(collection.id));
+    }
   }
 
   async refinanceFullLoan(offer: model.RenegotiationOffer, loan: model.Loan) {

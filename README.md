@@ -42,6 +42,7 @@ We use integer ids to identify collections and NFTs. We provide helper functions
 ```javascript
 const nftId = await gondi.nftId({slug: 'collection-slug', tokenId: 0n});
 const collectionId = await gondi.collectionId({slug: 'collection-slug'});
+const collectionId = (await gondi.collectionId({contractAddress: '0x0000000000000000000000000000000000000000'}))[0];    // It's an array because some collections use same contract (e.g. Artblocks)
 ```
 
 ### Making Offers

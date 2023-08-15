@@ -32,10 +32,8 @@ export const secret = "0".repeat(64);
 export const transport = http(localChain.rpcUrls.default.http[0]);
 export const testTokenId = BigInt(process.env.TEST_TOKEN_ID ?? 0);
 export const testCollection = {
-  slug: process.env.TEST_COLLECTION_SLUG as unknown as string,
-  address: process.env.TEST_COLLECTION_ADDRESS as unknown as Address,
+  contractAddress: process.env.TEST_COLLECTION as unknown as Address,
 };
-
 export const testCurrency = process.env
   .TEST_PRINCIPAL_CURRENCY as unknown as Address;
 
@@ -63,7 +61,9 @@ if (wallets.length < 3) throw new Error("not enough wallets, need 3");
 
 export const users = wallets.map((wallet) => new Gondi({ wallet }));
 
-export const testCollectionId = await users[0].collectionId(testCollection);
+export const testCollectionId = (
+  await users[0].collectionId(testCollection)
+)[0];
 export const testNftId = await users[0].nftId({
   ...testCollection,
   tokenId: testTokenId,
@@ -94,7 +94,9 @@ export const testSingleNftOfferInput = {
 for (const user of users) {
   const approveToken = await user.approveToken(testCurrency);
   await approveToken.waitTxInBlock();
-  const approveNFT = await user.approveNFTForAll(testCollection.address);
+  const approveNFT = await user.approveNFTForAll(
+    testCollection.contractAddress
+  );
   await approveNFT.waitTxInBlock();
 }
 
