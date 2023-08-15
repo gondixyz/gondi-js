@@ -1,0 +1,37 @@
+name: Docs
+
+on:
+  push:
+    branches: ['main']
+
+permissions:
+  contents: write
+
+jobs:
+  install-build-lint-and-deploy:
+    name: Generate docs
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: '.npmrc'
+
+      - name: Install dependencies
+        run: yarn
+
+      - name: Build
+        run: yarn build
+
+      - name: Lint
+        run: yarn lint
+
+      - name: Generate docs
+        run: yarn docs
+
+      - name: Publish docs
+        uses: JamesIves/github-pages-deploy-action@v4.3.3
+        with:
+          branch: gh-pages
+          folder: docs

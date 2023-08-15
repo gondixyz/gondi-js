@@ -1,0 +1,25 @@
+name: Lint
+
+on:
+  push:
+    branches: ['**']
+
+jobs:
+  install-build-lint-and-deploy:
+    name: Install dependencies, build and lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: '.npmrc'
+
+      - name: Install dependencies
+        run: yarn
+
+      - name: Build
+        run: yarn build
+
+      - name: Lint
+        run: yarn lint
