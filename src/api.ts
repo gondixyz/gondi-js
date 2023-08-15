@@ -1,12 +1,12 @@
+import { Wallet, zeroAddress } from "@/blockchain";
 import {
   CollectionSignedOfferInput,
   ListOffersQueryVariables,
   SingleNftSignedOfferInput,
 } from "@/generated/graphql";
-
-import { Wallet, zeroAddress } from "@/blockchain";
 import { apolloClient } from "@/graphql/client";
 import { getSdkApollo } from "@/graphql/sdk";
+
 import { RenegotiationOffer } from "./model";
 
 export type Props = { apiClient?: never; wallet: Wallet };

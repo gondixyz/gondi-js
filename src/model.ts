@@ -1,19 +1,18 @@
 import { Address, Hash } from "viem";
 
+import { Loan as BlockchainLoan, Signature } from "@/blockchain";
 import {
   CollectionOfferInput as ApiCollectionOfferInput,
   CollectionSignedOfferInput,
+  MarketplaceEnum,
   OffersSortInput,
   OfferStatus,
   RenegotiationOfferInput as ApiRenegotiationInput,
   SignedRenegotiationOfferInput,
   SingleNftOfferInput as ApiSingleNftOfferInput,
   SingleNftSignedOfferInput,
-  MarketplaceEnum,
   UserFilter,
 } from "@/generated/graphql";
-
-import { Loan as BlockchainLoan, Signature } from "@/blockchain";
 
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 

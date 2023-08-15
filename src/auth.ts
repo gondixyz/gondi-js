@@ -5,8 +5,8 @@ import {
   GraphQLRequest,
   InMemoryCache,
 } from "@apollo/client/core/index.js";
-import { SiweMessage } from "siwe";
 import { gql } from "graphql-tag";
+import { SiweMessage } from "siwe";
 
 import { Wallet } from "@/blockchain";
 import { authApiUrl } from "@/const";
