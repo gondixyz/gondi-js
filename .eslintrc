@@ -3,7 +3,7 @@
   "ignorePatterns": ["src/test/**/*", "dist/", "node_modules/"],
 
   "parser": "@typescript-eslint/parser",
-  "plugins": ["@typescript-eslint", "import", "simple-import-sort", "react-camel-case"],
+  "plugins": ["@typescript-eslint", "import", "simple-import-sort"],
   "extends": ["prettier", "plugin:@typescript-eslint/recommended"],
   "rules": {
     "simple-import-sort/imports": 2,
@@ -26,8 +26,6 @@
     "prefer-const": "error",
     "import/named": "error",
     "import/no-unresolved": "error",
-
-    "react-camel-case/react-camel-case": "error",
 
     "@typescript-eslint/ban-ts-comment": "off",
   },

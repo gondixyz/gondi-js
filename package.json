@@ -41,7 +41,6 @@
     "eslint-config-prettier": "^8.6.0",
     "eslint-import-resolver-typescript": "^3.5.3",
     "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-react-camel-case": "^1.1.1",
     "eslint-plugin-simple-import-sort": "^8.0.0",
     "graphql-codegen": "^0.4.0",
     "husky": "^8.0.3",
