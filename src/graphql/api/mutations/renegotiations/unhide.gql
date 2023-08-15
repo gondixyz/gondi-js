@@ -1,5 +1,0 @@
-mutation unhideRenegotiationOffer($id: String!) {
-    showRenegotiation(renegotiationId: $id) {
-        id
-    }
-}

@@ -1,5 +1,0 @@
-mutation listNft($nftId: Int!) {
-    addListing(nftId: $nftId) {
-        id
-    }
-}

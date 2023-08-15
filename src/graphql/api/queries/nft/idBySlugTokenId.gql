@@ -1,5 +1,0 @@
-query nftIdBySlugTokenId($slug: String!, $tokenId: BigInt!) {
-    nft: getNftBySlugAndTokenId(slug: $slug tokenId: $tokenId) {
-        id
-    }
-}
