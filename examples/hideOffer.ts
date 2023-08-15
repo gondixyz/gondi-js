@@ -1,10 +1,11 @@
+import { OfferStatus } from "gondi";
+
 import {
   sleep,
   testCollectionOfferInput,
   testSingleNftOfferInput,
   users,
 } from "./common";
-import { OfferStatus } from "gondi";
 
 async function main() {
   const offers = [
@@ -21,7 +22,7 @@ async function main() {
   });
   console.log(listedOffers);
   for (const offer of offers) {
-    let { waitTxInBlock } = await users[0].cancelOffer(offer);
+    const { waitTxInBlock } = await users[0].cancelOffer(offer);
     await waitTxInBlock();
   }
 }

@@ -1,4 +1,4 @@
-import { testTokenId, users, testCollectionOfferInput } from './common';
+import { testCollectionOfferInput,testTokenId, users } from './common';
 
 async function main() {
   const signedOffer = await users[0].makeCollectionOffer(testCollectionOfferInput);

@@ -1,9 +1,10 @@
+import { OffersSortField, OfferStatus, Ordering } from "gondi";
+
 import {
   testCollectionOfferInput,
   testSingleNftOfferInput,
   users,
 } from "./common";
-import { OfferStatus, OffersSortField, Ordering } from "gondi";
 
 async function main() {
   await users[0].makeCollectionOffer(testCollectionOfferInput);
@@ -12,7 +13,7 @@ async function main() {
 
   let cursor;
   while (true) {
-    let response = await users[0].offers({
+    const response = await users[0].offers({
       limit: 1,
       cursor,
       sortBy: { field: OffersSortField.CreatedDate, order: Ordering.Asc },
