@@ -47,7 +47,7 @@ const collectionId = (await gondi.collectionId({contractAddress: '0x000000000000
 
 ### Making Offers
 
-#### Single NFT Offer.
+#### Single NFT Offer
 ```javascript
 const offers = await gondi.makeSingleNftOffer({
     nftId=1,

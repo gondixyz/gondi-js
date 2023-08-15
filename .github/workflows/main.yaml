@@ -1,0 +1,67 @@
+name: Main
+
+on:
+  push:
+    branches: ['main']
+
+permissions:
+  contents: write
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: '.npmrc'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: yarn
+
+      - name: Build
+        run: yarn build
+
+      - name: Lint
+        run: yarn lint
+
+      # Set package.json version as env var
+      - name: Set version
+        run: node -p -e '`PACKAGE_VERSION=${require("./package.json").version}`' >> $GITHUB_ENV
+
+      # Push tag to GitHub
+      - name: Push Tag
+        uses: pkgdeps/git-tag-action@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_repo: ${{ github.repository }}
+          version: ${{ env.PACKAGE_VERSION }}
+          git_commit_sha: ${{ github.sha }}
+          git_tag_prefix: "v"
+
+      # Create a GitHub release
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: v${{ env.PACKAGE_VERSION }}
+          name: v${{ env.PACKAGE_VERSION }}
+          body: ${{ github.sha }}
+
+      # Publish to NPM if version is not published
+      - name: NPM Publish
+        run: |
+          npx can-npm-publish --verbose && npm publish || echo "Does not publish"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_SECRET }}
+
+      # Generate docs
+      - name: Generate docs
+        run: yarn docs
+
+      - name: Publish docs
+        uses: JamesIves/github-pages-deploy-action@v4.3.3
+        with:
+          branch: gh-pages
+          folder: docs

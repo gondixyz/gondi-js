@@ -1,5 +1,5 @@
 {
-  "exclude": ["node_modules/", "dist/", "examples/**/*"],
+  "exclude": ["node_modules/", "dist/", "docs/", "examples/"],
   "include": ["**/*.d.ts", "**/*.ts"],
   "compilerOptions": {
     /* Emit */

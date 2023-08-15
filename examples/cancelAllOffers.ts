@@ -1,10 +1,10 @@
+import { OfferStatus } from "gondi";
+
 import {
   sleep,
-  testCollectionOfferInput,
   testSingleNftOfferInput,
   users,
 } from "./common";
-import { OfferStatus } from "gondi";
 
 async function main() {
   const user = users[0];
