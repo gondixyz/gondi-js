@@ -46,7 +46,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           tag: v${{ env.PACKAGE_VERSION }}
-          name: Release v${{ env.PACKAGE_VERSION }}
+          name: v${{ env.PACKAGE_VERSION }}
           body: ${{ github.sha }}
 
       # Publish to NPM if version is not published
@@ -54,7 +54,7 @@ jobs:
         run: |
           npx can-npm-publish --verbose && npm publish || echo "Does not publish"
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_SECRET }}
 
       # Generate docs
       - name: Generate docs

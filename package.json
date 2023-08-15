@@ -24,7 +24,7 @@
     "type": "git",
     "url": "git+https://github.com/gondixyz/gondi-js.git"
   },
-  "homepage": "https://github.com/gondixyz/gondi-js",
+  "homepage": "https://gondixyz.github.io/gondi-js",
   "devDependencies": {
     "@graphql-codegen/add": "^5.0.0",
     "@graphql-codegen/cli": "^3.3.1",
