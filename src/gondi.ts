@@ -253,7 +253,10 @@ export class Gondi {
     return this.api.hideOffer({ contract, id: contractOfferId });
   }
 
-  async makeRefinanceOffer(renegotiation: model.RenegotiationInput) {
+  async makeRefinanceOffer(
+    renegotiation: model.RenegotiationInput,
+    skipSignature?: boolean
+  ) {
     const renegotiationInput = {
       lenderAddress: await this.wallet.account?.address,
       signerAddress: await this.wallet.account?.address,
@@ -274,6 +277,14 @@ export class Gondi {
       loanId,
       renegotiationId,
     };
+
+    if (skipSignature) {
+      return {
+        ...renegotiationInput,
+        offerHash: offerHash ?? zeroHash,
+        renegotiationId,
+      };
+    }
 
     const signature = await this.wallet.signTypedData({
       domain: this.getDomain(),
@@ -538,6 +549,50 @@ export class Gondi {
       offerInput,
       loan,
       offer.signature,
+    ]);
+
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        const filter =
+          await this.contracts.MultiSourceLoan.createEventFilter.LoanRefinanced();
+        const events = filterLogs(receipt, filter);
+        if (events.length == 0) throw new Error("Loan not refinanced");
+        const args = events[0].args;
+        return {
+          loan: {
+            id: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${
+              args.newLoanId
+            }`,
+            ...args.loan,
+          },
+          renegotiationId: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
+            args.renegotiationId
+          }`,
+        };
+      },
+    };
+  }
+
+  async refinancePartialLoan(
+    offer: model.UnsignedRenegotiationOffer,
+    loan: model.Loan
+  ) {
+    const offerInput = {
+      ...offer,
+      loanId: BigInt(offer.loanId.split(".").at(-1) ?? "0"),
+      strictImprovement: offer.strictImprovement ?? false,
+      lender: offer.lenderAddress,
+      signer: offer.signerAddress,
+      fee: offer.feeAmount,
+    };
+
+    const txHash = await this.contracts.MultiSourceLoan.write.refinancePartial([
+      offerInput,
+      loan,
     ]);
 
     return {
