@@ -577,6 +577,75 @@ export class Gondi {
     };
   }
 
+  async refinancePartialLoan(
+    offer: model.UnsignedRenegotiationOffer,
+    loan: model.Loan
+  ) {
+    const offerInput = {
+      ...offer,
+      loanId: BigInt(offer.loanId.split(".").at(-1) ?? "0"),
+      strictImprovement: offer.strictImprovement ?? false,
+      lender: offer.lenderAddress,
+      signer: offer.signerAddress,
+      fee: offer.feeAmount,
+    };
+
+    const txHash = await this.contracts.MultiSourceLoan.write.refinancePartial([
+      offerInput,
+      loan,
+    ]);
+
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        const filter =
+          await this.contracts.MultiSourceLoan.createEventFilter.LoanRefinanced();
+        const events = filterLogs(receipt, filter);
+        if (events.length == 0) throw new Error("Loan not refinanced");
+        const args = events[0].args;
+        return {
+          loan: {
+            id: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${
+              args.newLoanId
+            }`,
+            ...args.loan,
+          },
+          renegotiationId: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
+            args.renegotiationId
+          }`,
+        };
+      },
+    };
+  }
+
+  async liquidateLoan(loan: model.Loan & { loanId: bigint }) {
+    const txHash = await this.contracts.MultiSourceLoan.write.liquidateLoan([
+      loan.loanId,
+      loan,
+    ]);
+
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        const filterForeclosed =
+          await this.contracts.MultiSourceLoan.createEventFilter.LoanForeclosed();
+        const filterLiquidated =
+          await this.contracts.MultiSourceLoan.createEventFilter.LoanForeclosed();
+        const foreclosedEvents = filterLogs(receipt, filterForeclosed);
+        const liquidatedEvents = filterLogs(receipt, filterLiquidated);
+        if (foreclosedEvents.length === 0 && liquidatedEvents.length === 0)
+          throw new Error("Loan not liquidated");
+        return foreclosedEvents?.[0]?.args ?? liquidatedEvents?.[0]?.args;
+      },
+    };
+  }
+
   async approveNFTForAll(nftAddress: Address) {
     const erc721 = this.contracts.ERC721(nftAddress);
     const MultiSourceLoanAddress = this.contracts.MultiSourceLoan.address;
