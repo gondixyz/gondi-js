@@ -11,15 +11,10 @@ import { getSdkApollo } from "@/graphql/sdk";
 
 import { RenegotiationOffer } from "./model";
 
-export type Props =
-  | {
-      apiClient: ApolloClient<NormalizedCacheObject>;
-      wallet?: never;
-    }
-  | {
-      wallet: Wallet;
-      apiClient?: never;
-    };
+export type Props = {
+  apiClient?: ApolloClient<NormalizedCacheObject>;
+  wallet: Wallet;
+};
 
 export class Api {
   api: ReturnType<typeof getSdkApollo>;

@@ -26,7 +26,8 @@ import * as model from "@/model";
 
 type GondiProps = {
   wallet: Wallet;
-} & ApiProps;
+  apiClient?: ApiProps["apiClient"];
+};
 
 export class Gondi {
   contracts: Contracts;
@@ -34,14 +35,14 @@ export class Gondi {
   bcClient: PublicClient<Transport, Chain>;
   api: Api;
 
-  constructor({ wallet, ...apiProps }: GondiProps) {
+  constructor({ wallet, apiClient }: GondiProps) {
     this.wallet = wallet;
     this.bcClient = createPublicClient({
       transport: ({ chain: _chain }: { chain?: Chain }) =>
         createTransport(wallet.transport),
     });
     this.contracts = new Contracts(this.bcClient, wallet);
-    this.api = new Api({ wallet, ...apiProps });
+    this.api = new Api({ wallet, apiClient });
   }
 
   async makeSingleNftOffer(offer: model.SingleNftOfferInput) {
