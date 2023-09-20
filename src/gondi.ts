@@ -621,6 +621,31 @@ export class Gondi {
     };
   }
 
+  async liquidateLoan(loan: model.Loan & { loanId: bigint }) {
+    const txHash = await this.contracts.MultiSourceLoan.write.liquidateLoan([
+      loan.loanId,
+      loan,
+    ]);
+
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        const filterForeclosed =
+          await this.contracts.MultiSourceLoan.createEventFilter.LoanForeclosed();
+        const filterLiquidated =
+          await this.contracts.MultiSourceLoan.createEventFilter.LoanForeclosed();
+        const foreclosedEvents = filterLogs(receipt, filterForeclosed);
+        const liquidatedEvents = filterLogs(receipt, filterLiquidated);
+        if (foreclosedEvents.length === 0 && liquidatedEvents.length === 0)
+          throw new Error("Loan not liquidated");
+        return foreclosedEvents?.[0]?.args ?? liquidatedEvents?.[0]?.args;
+      },
+    };
+  }
+
   async approveNFTForAll(nftAddress: Address) {
     const erc721 = this.contracts.ERC721(nftAddress);
     const MultiSourceLoanAddress = this.contracts.MultiSourceLoan.address;
