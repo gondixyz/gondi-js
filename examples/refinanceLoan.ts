@@ -19,7 +19,7 @@ async function main() {
   let { loan } = await emitLoan.waitTxInBlock();
   console.log("loan emitted");
 
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  await new Promise((resolve) => setTimeout(resolve, 5000));
 
   try {
     const renegotiationOffer = await users[0].makeRefinanceOffer({
@@ -32,7 +32,7 @@ async function main() {
       strictImprovement: false,
       requiresLiquidation: signedOffer.requiresLiquidation,
       targetPrincipal: loan.source.map((_) => 0n),
-    });
+    }, false);
     console.log("refinance offer placed successfully");
 
     const refinanceFullLoan = await users[1].refinanceFullLoan(
