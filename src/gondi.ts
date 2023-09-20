@@ -253,7 +253,10 @@ export class Gondi {
     return this.api.hideOffer({ contract, id: contractOfferId });
   }
 
-  async makeRefinanceOffer(renegotiation: model.RenegotiationInput) {
+  async makeRefinanceOffer(
+    renegotiation: model.RenegotiationInput,
+    skipSignature?: boolean
+  ) {
     const renegotiationInput = {
       lenderAddress: await this.wallet.account?.address,
       signerAddress: await this.wallet.account?.address,
@@ -274,6 +277,14 @@ export class Gondi {
       loanId,
       renegotiationId,
     };
+
+    if (skipSignature) {
+      return {
+        ...renegotiationInput,
+        offerHash: offerHash ?? zeroHash,
+        renegotiationId,
+      };
+    }
 
     const signature = await this.wallet.signTypedData({
       domain: this.getDomain(),

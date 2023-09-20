@@ -1,3 +1,5 @@
+import { ApolloClient, NormalizedCacheObject } from "@apollo/client";
+
 import { Wallet, zeroAddress } from "@/blockchain";
 import {
   CollectionSignedOfferInput,
@@ -9,7 +11,15 @@ import { getSdkApollo } from "@/graphql/sdk";
 
 import { RenegotiationOffer } from "./model";
 
-export type Props = { apiClient?: never; wallet: Wallet };
+export type Props =
+  | {
+      apiClient: ApolloClient<NormalizedCacheObject>;
+      wallet?: never;
+    }
+  | {
+      wallet: Wallet;
+      apiClient?: never;
+    };
 
 export class Api {
   api: ReturnType<typeof getSdkApollo>;
