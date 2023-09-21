@@ -220,7 +220,7 @@ export class Gondi {
           await this.contracts.MultiSourceLoan.createEventFilter.OfferCancelled();
         const events = filterLogs(receipt, filter);
         if (events.length == 0) throw new Error("Offer not cancelled");
-        return events[0].args;
+        return { ...events[0].args, ...receipt };
       },
     };
   }
@@ -241,7 +241,7 @@ export class Gondi {
           await this.contracts.MultiSourceLoan.createEventFilter.AllOffersCancelled();
         const events = filterLogs(receipt, filter);
         if (events.length == 0) throw new Error("Offer not cancelled");
-        return events[0].args;
+        return { ...events[0].args, ...receipt };
       },
     };
   }
@@ -334,7 +334,7 @@ export class Gondi {
           await this.contracts.MultiSourceLoan.createEventFilter.RenegotiationOfferCancelled();
         const events = filterLogs(receipt, filter);
         if (events.length == 0) throw new Error("Offer not cancelled");
-        return events[0].args;
+        return { ...events[0].args, ...receipt };
       },
     };
   }
@@ -364,7 +364,7 @@ export class Gondi {
           await this.contracts.MultiSourceLoan.createEventFilter.RenegotiationOfferCancelled();
         const events = filterLogs(receipt, filter);
         if (events.length == 0) throw new Error("Offer not cancelled");
-        return events[0].args;
+        return { ...events[0].args, ...receipt };
       },
     };
   }
@@ -409,6 +409,7 @@ export class Gondi {
           offerId: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
             args.offerId
           }`,
+          ...receipt,
         };
       },
     };
@@ -433,7 +434,7 @@ export class Gondi {
           await this.contracts.MultiSourceLoan.createEventFilter.LoanRepaid();
         const events = filterLogs(receipt, filter);
         if (events.length == 0) throw new Error("Loan not repaid");
-        return events[0].args;
+        return { ...events[0].args, ...receipt };
       },
     };
   }
@@ -573,6 +574,7 @@ export class Gondi {
           renegotiationId: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
             args.renegotiationId
           }`,
+          ...receipt,
         };
       },
     };
@@ -617,6 +619,7 @@ export class Gondi {
           renegotiationId: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
             args.renegotiationId
           }`,
+          ...receipt,
         };
       },
     };
@@ -642,7 +645,10 @@ export class Gondi {
         const liquidatedEvents = filterLogs(receipt, filterLiquidated);
         if (foreclosedEvents.length === 0 && liquidatedEvents.length === 0)
           throw new Error("Loan not liquidated");
-        return foreclosedEvents?.[0]?.args ?? liquidatedEvents?.[0]?.args;
+        return {
+          ...(foreclosedEvents?.[0]?.args ?? liquidatedEvents?.[0]?.args),
+          ...receipt,
+        };
       },
     };
   }
@@ -665,7 +671,7 @@ export class Gondi {
         const events = filterLogs(receipt, filter);
         if (events.length == 0)
           throw new Error("ERC721 approval for all not set");
-        return events[0].args;
+        return { ...events[0].args, ...receipt };
       },
     };
   }
@@ -684,7 +690,7 @@ export class Gondi {
         const filter = await erc20.createEventFilter.Approval({});
         const events = filterLogs(receipt, filter);
         if (events.length == 0) throw new Error("ERC20 approval not set");
-        return events[0].args;
+        return { ...events[0].args, ...receipt };
       },
     };
   }
