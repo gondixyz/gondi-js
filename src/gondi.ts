@@ -50,7 +50,7 @@ export class Gondi {
       lenderAddress: await this.wallet.account?.address,
       signerAddress: await this.wallet.account?.address,
       borrowerAddress: offer.borrowerAddress ?? zeroAddress,
-      contractAddress: this.contracts.MultiSourceLoan.address,
+      contractAddress: this.contracts.MultiSourceLoanV4.address,
       offerValidators: [], // This is ignored by the API but it was required in the mutation
       ...offer,
     };
@@ -127,7 +127,7 @@ export class Gondi {
       lenderAddress: await this.wallet.account?.address,
       signerAddress: await this.wallet.account?.address,
       borrowerAddress: offer.borrowerAddress ?? zeroAddress,
-      contractAddress: this.contracts.MultiSourceLoan.address,
+      contractAddress: this.contracts.MultiSourceLoanV4.address,
       offerValidators: [
         // This is ignored by the API but it was required in the mutation
         {
@@ -206,7 +206,7 @@ export class Gondi {
 
   async cancelOffer({ id }: { id: string }) {
     const contractId = BigInt(id.split(".").at(-1) ?? "0");
-    const txHash = await this.contracts.MultiSourceLoan.write.cancelOffer([
+    const txHash = await this.contracts.MultiSourceLoanV4.write.cancelOffer([
       this.wallet.account.address,
       contractId,
     ]);
@@ -217,7 +217,7 @@ export class Gondi {
           hash: txHash,
         });
         const filter =
-          await this.contracts.MultiSourceLoan.createEventFilter.OfferCancelled();
+          await this.contracts.MultiSourceLoanV4.createEventFilter.OfferCancelled();
         const events = filterLogs(receipt, filter);
         if (events.length == 0) throw new Error("Offer not cancelled");
         return { ...events[0].args, ...receipt };
@@ -226,7 +226,7 @@ export class Gondi {
   }
 
   async cancelAllOffers({ minId }: { minId: bigint; contract: string }) {
-    const txHash = await this.contracts.MultiSourceLoan.write.cancelAllOffers([
+    const txHash = await this.contracts.MultiSourceLoanV4.write.cancelAllOffers([
       this.wallet.account.address,
       minId,
     ]);
@@ -238,7 +238,7 @@ export class Gondi {
           hash: txHash,
         });
         const filter =
-          await this.contracts.MultiSourceLoan.createEventFilter.AllOffersCancelled();
+          await this.contracts.MultiSourceLoanV4.createEventFilter.AllOffersCancelled();
         const events = filterLogs(receipt, filter);
         if (events.length == 0) throw new Error("Offer not cancelled");
         return { ...events[0].args, ...receipt };
@@ -320,7 +320,7 @@ export class Gondi {
   async cancelRefinanceOffer({ id }: { id: string }) {
     const contractId = BigInt(id.split(".").at(-1) ?? "0");
     const txHash =
-      await this.contracts.MultiSourceLoan.write.cancelRenegotiationOffer([
+      await this.contracts.MultiSourceLoanV4.write.cancelRenegotiationOffer([
         this.wallet.account.address,
         contractId,
       ]);
@@ -331,7 +331,7 @@ export class Gondi {
           hash: txHash,
         });
         const filter =
-          await this.contracts.MultiSourceLoan.createEventFilter.RenegotiationOfferCancelled();
+          await this.contracts.MultiSourceLoanV4.createEventFilter.RenegotiationOfferCancelled();
         const events = filterLogs(receipt, filter);
         if (events.length == 0) throw new Error("Offer not cancelled");
         return { ...events[0].args, ...receipt };
@@ -350,7 +350,7 @@ export class Gondi {
     contract: string;
   }) {
     const txHash =
-      await this.contracts.MultiSourceLoan.write.cancelAllRenegotiationOffers([
+      await this.contracts.MultiSourceLoanV4.write.cancelAllRenegotiationOffers([
         this.wallet.account.address,
         minId,
       ]);
@@ -361,7 +361,7 @@ export class Gondi {
           hash: txHash,
         });
         const filter =
-          await this.contracts.MultiSourceLoan.createEventFilter.RenegotiationOfferCancelled();
+          await this.contracts.MultiSourceLoanV4.createEventFilter.RenegotiationOfferCancelled();
         const events = filterLogs(receipt, filter);
         if (events.length == 0) throw new Error("Offer not cancelled");
         return { ...events[0].args, ...receipt };
@@ -381,7 +381,7 @@ export class Gondi {
       validators: offer.offerValidators,
     };
 
-    const txHash = await this.contracts.MultiSourceLoan.write.emitLoan([
+    const txHash = await this.contracts.MultiSourceLoanV4.write.emitLoan([
       contractOffer,
       tokenId,
       offer.signature,
@@ -395,18 +395,18 @@ export class Gondi {
           hash: txHash,
         });
         const filter =
-          await this.contracts.MultiSourceLoan.createEventFilter.LoanEmitted();
+          await this.contracts.MultiSourceLoanV4.createEventFilter.LoanEmitted();
         const events = filterLogs(receipt, filter);
         if (events.length == 0) throw new Error("Loan not emitted");
         const args = events[0].args;
         return {
           loan: {
-            id: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${
+            id: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${
               args.loanId
             }`,
             ...args.loan,
           },
-          offerId: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
+          offerId: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
             args.offerId
           }`,
           ...receipt,
@@ -417,7 +417,7 @@ export class Gondi {
 
   async repayLoan(loan: model.Loan, nftReceiver?: Address) {
     const receiver = nftReceiver ?? this.wallet.account.address;
-    const txHash = await this.contracts.MultiSourceLoan.write.repayLoan([
+    const txHash = await this.contracts.MultiSourceLoanV4.write.repayLoan([
       receiver,
       loan.source[0].loanId,
       loan,
@@ -431,7 +431,7 @@ export class Gondi {
           hash: txHash,
         });
         const filter =
-          await this.contracts.MultiSourceLoan.createEventFilter.LoanRepaid();
+          await this.contracts.MultiSourceLoanV4.createEventFilter.LoanRepaid();
         const events = filterLogs(receipt, filter);
         if (events.length == 0) throw new Error("Loan not repaid");
         return { ...events[0].args, ...receipt };
@@ -547,7 +547,7 @@ export class Gondi {
       fee: offer.feeAmount,
     };
 
-    const txHash = await this.contracts.MultiSourceLoan.write.refinanceFull([
+    const txHash = await this.contracts.MultiSourceLoanV4.write.refinanceFull([
       offerInput,
       loan,
       offer.signature,
@@ -560,18 +560,18 @@ export class Gondi {
           hash: txHash,
         });
         const filter =
-          await this.contracts.MultiSourceLoan.createEventFilter.LoanRefinanced();
+          await this.contracts.MultiSourceLoanV4.createEventFilter.LoanRefinanced();
         const events = filterLogs(receipt, filter);
         if (events.length == 0) throw new Error("Loan not refinanced");
         const args = events[0].args;
         return {
           loan: {
-            id: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${
+            id: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${
               args.newLoanId
             }`,
             ...args.loan,
           },
-          renegotiationId: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
+          renegotiationId: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
             args.renegotiationId
           }`,
           ...receipt,
@@ -593,7 +593,7 @@ export class Gondi {
       fee: offer.feeAmount,
     };
 
-    const txHash = await this.contracts.MultiSourceLoan.write.refinancePartial([
+    const txHash = await this.contracts.MultiSourceLoanV4.write.refinancePartial([
       offerInput,
       loan,
     ]);
@@ -605,18 +605,18 @@ export class Gondi {
           hash: txHash,
         });
         const filter =
-          await this.contracts.MultiSourceLoan.createEventFilter.LoanRefinanced();
+          await this.contracts.MultiSourceLoanV4.createEventFilter.LoanRefinanced();
         const events = filterLogs(receipt, filter);
         if (events.length == 0) throw new Error("Loan not refinanced");
         const args = events[0].args;
         return {
           loan: {
-            id: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${
+            id: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${
               args.newLoanId
             }`,
             ...args.loan,
           },
-          renegotiationId: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
+          renegotiationId: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
             args.renegotiationId
           }`,
           ...receipt,
@@ -626,7 +626,7 @@ export class Gondi {
   }
 
   async liquidateLoan(loan: model.Loan & { loanId: bigint }) {
-    const txHash = await this.contracts.MultiSourceLoan.write.liquidateLoan([
+    const txHash = await this.contracts.MultiSourceLoanV4.write.liquidateLoan([
       loan.loanId,
       loan,
     ]);
@@ -638,9 +638,9 @@ export class Gondi {
           hash: txHash,
         });
         const filterForeclosed =
-          await this.contracts.MultiSourceLoan.createEventFilter.LoanForeclosed();
+          await this.contracts.MultiSourceLoanV4.createEventFilter.LoanForeclosed();
         const filterLiquidated =
-          await this.contracts.MultiSourceLoan.createEventFilter.LoanForeclosed();
+          await this.contracts.MultiSourceLoanV4.createEventFilter.LoanForeclosed();
         const foreclosedEvents = filterLogs(receipt, filterForeclosed);
         const liquidatedEvents = filterLogs(receipt, filterLiquidated);
         if (foreclosedEvents.length === 0 && liquidatedEvents.length === 0)
@@ -655,7 +655,7 @@ export class Gondi {
 
   async approveNFTForAll(nftAddress: Address) {
     const erc721 = this.contracts.ERC721(nftAddress);
-    const MultiSourceLoanAddress = this.contracts.MultiSourceLoan.address;
+    const MultiSourceLoanAddress = this.contracts.MultiSourceLoanV4.address;
     const txHash = await erc721.write.setApprovalForAll([
       MultiSourceLoanAddress,
       true,
@@ -678,7 +678,7 @@ export class Gondi {
 
   async approveToken(tokenAddress: Address, amount: bigint = model.MAX_NUMBER) {
     const erc20 = this.contracts.ERC20(tokenAddress);
-    const MultiSourceLoanAddress = this.contracts.MultiSourceLoan.address;
+    const MultiSourceLoanAddress = this.contracts.MultiSourceLoanV4.address;
     const txHash = await erc20.write.approve([MultiSourceLoanAddress, amount]);
 
     return {
@@ -700,7 +700,7 @@ export class Gondi {
       name: "GONDI_MULTI_SOURCE_LOAN",
       version: "1",
       chainId: this.wallet.chain.id,
-      verifyingContract: this.contracts.MultiSourceLoan.address,
+      verifyingContract: this.contracts.MultiSourceLoanV4.address,
     };
   }
 }

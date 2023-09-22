@@ -24,11 +24,12 @@ import {
   zeroAddress as zeroAddressViem,
 } from "viem";
 
+import { multiSourceLoanABI as multiSourceLoanABIV4 } from "@/generated/blockchain/v4";
 import {
   erc20ABI,
   erc721ABI,
-  multiSourceLoanABI,
-} from "@/generated/blockchain";
+  multiSourceLoanABI as multiSourceLoanABIV5,
+} from "@/generated/blockchain/v5";
 
 import { getContracts } from "./deploys";
 export type Wallet = WalletClient<Transport, Chain, Account>;
@@ -36,8 +37,14 @@ export type Wallet = WalletClient<Transport, Chain, Account>;
 export class Contracts {
   walletClient: Wallet;
   publicClient: PublicClient;
-  MultiSourceLoan: GetContractReturnType<
-    typeof multiSourceLoanABI,
+  MultiSourceLoanV4: GetContractReturnType<
+    typeof multiSourceLoanABIV4,
+    PublicClient,
+    Wallet,
+    Address
+  >;
+  MultiSourceLoanV5: GetContractReturnType<
+    typeof multiSourceLoanABIV5,
     PublicClient,
     Wallet,
     Address
@@ -47,10 +54,18 @@ export class Contracts {
     this.walletClient = walletClient;
     this.publicClient = publicClient;
 
-    const { MultiSourceLoanAddress } = getContracts(walletClient.chain);
-    this.MultiSourceLoan = getContract({
-      address: MultiSourceLoanAddress,
-      abi: multiSourceLoanABI,
+    const { MultiSourceLoanV4Address, MultiSourceLoanV5Address } = getContracts(
+      walletClient.chain
+    );
+    this.MultiSourceLoanV4 = getContract({
+      address: MultiSourceLoanV4Address,
+      abi: multiSourceLoanABIV4,
+      walletClient,
+      publicClient,
+    });
+    this.MultiSourceLoanV5 = getContract({
+      address: MultiSourceLoanV5Address,
+      abi: multiSourceLoanABIV5,
       walletClient,
       publicClient,
     });
@@ -80,7 +95,7 @@ export class Contracts {
 }
 
 type AbiType = AbiParametersToPrimitiveTypes<
-  ExtractAbiFunction<typeof multiSourceLoanABI, "repayLoan">["inputs"]
+  ExtractAbiFunction<typeof multiSourceLoanABIV4, "repayLoan">["inputs"]
 >;
 
 export type Loan = AbiType[2];
