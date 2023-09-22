@@ -39,11 +39,12 @@ export type SingleNftOffer = UnsignedSingleNftOffer &
   };
 
 export type CollectionOfferInput = Optional<
-  Omit<
-    ApiCollectionOfferInput,
-    "lenderAddress" | "signerAddress" | "offerValidators" | "contractAddress"
-  >,
-  "borrowerAddress"
+  ApiCollectionOfferInput,
+  | "borrowerAddress"
+  | "lenderAddress"
+  | "signerAddress"
+  | "offerValidators"
+  | "contractAddress"
 >;
 
 export type UnsignedCollectionOffer = Omit<

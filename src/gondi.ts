@@ -126,10 +126,10 @@ export class Gondi {
 
   async makeCollectionOffer(offer: model.CollectionOfferInput) {
     const offerInput = {
-      lenderAddress: await this.wallet.account?.address,
-      signerAddress: await this.wallet.account?.address,
+      lenderAddress: this.wallet.account?.address,
+      signerAddress: this.wallet.account?.address,
       borrowerAddress: offer.borrowerAddress ?? zeroAddress,
-      contractAddress: this.contracts.MultiSourceLoanV4.address,
+      contractAddress: this.contracts.MultiSourceLoanV4.address, // TODO: change this to be v5 by default
       offerValidators: [
         // This is ignored by the API but it was required in the mutation
         {
@@ -165,7 +165,7 @@ export class Gondi {
     };
 
     const signature = await this.wallet.signTypedData({
-      domain: this.getDomain(),
+      domain: this.getDomain(offerInput.contractAddress),
       primaryType: "LoanOffer",
       types: {
         LoanOffer: [
