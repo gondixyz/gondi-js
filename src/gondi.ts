@@ -333,8 +333,8 @@ export class Gondi {
     skipSignature?: boolean
   ) {
     const renegotiationInput = {
-      lenderAddress: await this.wallet.account?.address,
-      signerAddress: await this.wallet.account?.address,
+      lenderAddress: this.wallet.account?.address,
+      signerAddress: this.wallet.account?.address,
       ...renegotiation,
     };
     const response = await this.api.generateRenegotiationOfferHash({
@@ -362,7 +362,7 @@ export class Gondi {
     }
 
     const signature = await this.wallet.signTypedData({
-      domain: this.getDomain(),
+      domain: this.getDomain(renegotiationInput.contractAddress),
       primaryType: "RenegotiationOffer",
       types: {
         RenegotiationOffer: [

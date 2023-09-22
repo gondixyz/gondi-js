@@ -59,10 +59,10 @@ export type CollectionOffer = UnsignedCollectionOffer & {
   nftCollateralTokenId: 0n;
 };
 
-export type RenegotiationInput = Omit<
+export type RenegotiationInput = Optional<
   ApiRenegotiationInput,
   "lenderAddress" | "signerAddress"
->;
+> & { contractAddress: Address };
 
 export type UnsignedRenegotiationOffer = Omit<
   SignedRenegotiationOfferInput,
