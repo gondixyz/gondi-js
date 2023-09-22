@@ -719,7 +719,13 @@ export class Gondi {
     }
   }
 
-  async refinanceFullLoan(offer: model.RenegotiationOffer, loan: model.Loan) {
+  async refinanceFullLoan({
+    offer,
+    loan,
+  }: {
+    offer: model.RenegotiationOffer;
+    loan: model.Loan;
+  }) {
     const offerInput = {
       ...offer,
       loanId: loan.source[0].loanId,
@@ -806,10 +812,13 @@ export class Gondi {
     throw new Error(`Contract Address ${loan.contractAddress} not supported`);
   }
 
-  async refinancePartialLoan(
-    offer: model.UnsignedRenegotiationOffer,
-    loan: model.Loan
-  ) {
+  async refinancePartialLoan({
+    offer,
+    loan,
+  }: {
+    offer: model.RenegotiationOffer;
+    loan: model.Loan;
+  }) {
     const offerInput = {
       ...offer,
       loanId: loan.source[0].loanId,
