@@ -330,10 +330,15 @@ export class Gondi {
     return this.api.hideOffer({ contract, id: contractOfferId });
   }
 
-  async makeRefinanceOffer(
-    renegotiation: model.RenegotiationInput,
-    skipSignature?: boolean
-  ) {
+  async makeRefinanceOffer({
+    renegotiation,
+    contractAddress,
+    skipSignature,
+  }: {
+    renegotiation: model.RenegotiationInput;
+    contractAddress: Address;
+    skipSignature?: boolean;
+  }) {
     const renegotiationInput = {
       lenderAddress: this.wallet.account?.address,
       signerAddress: this.wallet.account?.address,
@@ -359,12 +364,13 @@ export class Gondi {
       return {
         ...renegotiationInput,
         offerHash: offerHash ?? zeroHash,
+        signature: zeroHash,
         renegotiationId,
       };
     }
 
     const signature = await this.wallet.signTypedData({
-      domain: this.getDomain(renegotiationInput.contractAddress),
+      domain: this.getDomain(contractAddress),
       primaryType: "RenegotiationOffer",
       types: {
         RenegotiationOffer: [
@@ -550,6 +556,7 @@ export class Gondi {
                 args.loanId
               }`,
               ...args.loan,
+              contractAddress: this.contracts.MultiSourceLoanV4.address,
             },
             offerId: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
               args.offerId
@@ -594,6 +601,7 @@ export class Gondi {
                 args.loanId
               }`,
               ...args.loan,
+              contractAddress: this.contracts.MultiSourceLoanV5.address,
             },
             offerId: `${this.contracts.MultiSourceLoanV5.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
               args.offerId
@@ -818,6 +826,7 @@ export class Gondi {
                 args.newLoanId
               }`,
               ...args.loan,
+              contractAddress: this.contracts.MultiSourceLoanV4.address,
             },
             renegotiationId: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
               args.renegotiationId
@@ -855,6 +864,7 @@ export class Gondi {
                 args.newLoanId
               }`,
               ...args.loan,
+              contractAddress: this.contracts.MultiSourceLoanV5.address,
             },
             renegotiationId: `${this.contracts.MultiSourceLoanV5.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
               args.renegotiationId
@@ -913,6 +923,7 @@ export class Gondi {
                 args.newLoanId
               }`,
               ...args.loan,
+              contractAddress: this.contracts.MultiSourceLoanV4.address,
             },
             renegotiationId: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
               args.renegotiationId
@@ -952,6 +963,7 @@ export class Gondi {
                 args.newLoanId
               }`,
               ...args.loan,
+              contractAddress: this.contracts.MultiSourceLoanV5.address,
             },
             renegotiationId: `${this.contracts.MultiSourceLoanV5.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
               args.renegotiationId

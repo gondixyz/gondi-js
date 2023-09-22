@@ -62,7 +62,7 @@ export type CollectionOffer = UnsignedCollectionOffer & {
 export type RenegotiationInput = Optional<
   ApiRenegotiationInput,
   "lenderAddress" | "signerAddress"
-> & { contractAddress: Address };
+>;
 
 export type UnsignedRenegotiationOffer = Omit<
   SignedRenegotiationOfferInput,
