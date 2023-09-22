@@ -808,32 +808,72 @@ export class Gondi {
     };
   }
 
-  async liquidateLoan(loan: model.Loan & { loanId: bigint }) {
-    const txHash = await this.contracts.MultiSourceLoanV4.write.liquidateLoan([
-      loan.loanId,
-      loan,
-    ]);
+  async liquidateLoan(loan: model.Loan) {
+    if (
+      areSameAddress(
+        loan.contractAddress,
+        this.contracts.MultiSourceLoanV4.address
+      )
+    ) {
+      const txHash = await this.contracts.MultiSourceLoanV4.write.liquidateLoan(
+        [loan.source[0].loanId, loan]
+      );
 
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const filterForeclosed =
-          await this.contracts.MultiSourceLoanV4.createEventFilter.LoanForeclosed();
-        const filterLiquidated =
-          await this.contracts.MultiSourceLoanV4.createEventFilter.LoanForeclosed();
-        const foreclosedEvents = filterLogs(receipt, filterForeclosed);
-        const liquidatedEvents = filterLogs(receipt, filterLiquidated);
-        if (foreclosedEvents.length === 0 && liquidatedEvents.length === 0)
-          throw new Error("Loan not liquidated");
-        return {
-          ...(foreclosedEvents?.[0]?.args ?? liquidatedEvents?.[0]?.args),
-          ...receipt,
-        };
-      },
-    };
+      return {
+        txHash,
+        waitTxInBlock: async () => {
+          const receipt = await this.bcClient.waitForTransactionReceipt({
+            hash: txHash,
+          });
+          const filterForeclosed =
+            await this.contracts.MultiSourceLoanV4.createEventFilter.LoanForeclosed();
+          const filterLiquidated =
+            await this.contracts.MultiSourceLoanV4.createEventFilter.LoanForeclosed();
+          const foreclosedEvents = filterLogs(receipt, filterForeclosed);
+          const liquidatedEvents = filterLogs(receipt, filterLiquidated);
+          if (foreclosedEvents.length === 0 && liquidatedEvents.length === 0)
+            throw new Error("Loan not liquidated");
+          return {
+            ...(foreclosedEvents?.[0]?.args ?? liquidatedEvents?.[0]?.args),
+            ...receipt,
+          };
+        },
+      };
+    }
+
+    if (
+      areSameAddress(
+        loan.contractAddress,
+        this.contracts.MultiSourceLoanV5.address
+      )
+    ) {
+      const txHash = await this.contracts.MultiSourceLoanV5.write.liquidateLoan(
+        [loan.source[0].loanId, loan]
+      );
+
+      return {
+        txHash,
+        waitTxInBlock: async () => {
+          const receipt = await this.bcClient.waitForTransactionReceipt({
+            hash: txHash,
+          });
+          const filterForeclosed =
+            await this.contracts.MultiSourceLoanV5.createEventFilter.LoanForeclosed();
+          const filterLiquidated =
+            await this.contracts.MultiSourceLoanV5.createEventFilter.LoanForeclosed();
+          const foreclosedEvents = filterLogs(receipt, filterForeclosed);
+          const liquidatedEvents = filterLogs(receipt, filterLiquidated);
+          if (foreclosedEvents.length === 0 && liquidatedEvents.length === 0)
+            throw new Error("Loan not liquidated");
+          return {
+            ...(foreclosedEvents?.[0]?.args ?? liquidatedEvents?.[0]?.args),
+            ...receipt,
+          };
+        },
+      };
+    }
+
+    throw new Error(`Contract Address ${loan.contractAddress} not supported`);
   }
 
   async approveNFTForAll(nftAddress: Address) {
