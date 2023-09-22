@@ -24,6 +24,8 @@ import {
 } from "@/generated/graphql";
 import * as model from "@/model";
 
+import { areSameAddress } from "./utils";
+
 type GondiProps = {
   wallet: Wallet;
   apiClient?: ApiProps["apiClient"];
@@ -206,25 +208,60 @@ export class Gondi {
     return await this.api.saveCollectionOffer(signedOffer);
   }
 
-  async cancelOffer({ id }: { id: string }) {
-    const contractId = BigInt(id.split(".").at(-1) ?? "0");
-    const txHash = await this.contracts.MultiSourceLoanV4.write.cancelOffer([
-      this.wallet.account.address,
-      contractId,
-    ]);
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const filter =
-          await this.contracts.MultiSourceLoanV4.createEventFilter.OfferCancelled();
-        const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Offer not cancelled");
-        return { ...events[0].args, ...receipt };
-      },
-    };
+  async cancelOffer({
+    id,
+    contractAddress,
+  }: {
+    id: bigint;
+    contractAddress: Address;
+  }) {
+    if (
+      areSameAddress(contractAddress, this.contracts.MultiSourceLoanV4.address)
+    ) {
+      const txHash = await this.contracts.MultiSourceLoanV4.write.cancelOffer([
+        this.wallet.account.address,
+        id,
+      ]);
+      return {
+        txHash,
+        waitTxInBlock: async () => {
+          const receipt = await this.bcClient.waitForTransactionReceipt({
+            hash: txHash,
+          });
+
+          const filter =
+            await this.contracts.MultiSourceLoanV4.createEventFilter.OfferCancelled();
+          const events = filterLogs(receipt, filter);
+          if (events.length == 0) throw new Error("Offer not cancelled");
+          return { ...events[0].args, ...receipt };
+        },
+      };
+    }
+
+    if (
+      areSameAddress(contractAddress, this.contracts.MultiSourceLoanV5.address)
+    ) {
+      const txHash = await this.contracts.MultiSourceLoanV5.write.cancelOffer([
+        this.wallet.account.address,
+        id,
+      ]);
+      return {
+        txHash,
+        waitTxInBlock: async () => {
+          const receipt = await this.bcClient.waitForTransactionReceipt({
+            hash: txHash,
+          });
+
+          const filter =
+            await this.contracts.MultiSourceLoanV5.createEventFilter.OfferCancelled();
+          const events = filterLogs(receipt, filter);
+          if (events.length == 0) throw new Error("Offer not cancelled");
+          return { ...events[0].args, ...receipt };
+        },
+      };
+    }
+
+    throw new Error(`Contract Address ${contractAddress} not supported`);
   }
 
   async cancelAllOffers({ minId }: { minId: bigint; contract: string }) {
