@@ -551,28 +551,74 @@ export class Gondi {
     };
   }
 
-  async repayLoan(loan: model.Loan, nftReceiver?: Address) {
+  async repayLoan({
+    loan,
+    nftReceiver,
+  }: {
+    loan: model.Loan;
+    nftReceiver?: Address;
+  }) {
     const receiver = nftReceiver ?? this.wallet.account.address;
-    const txHash = await this.contracts.MultiSourceLoanV4.write.repayLoan([
-      receiver,
-      loan.source[0].loanId,
-      loan,
-      false,
-    ]);
 
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const filter =
-          await this.contracts.MultiSourceLoanV4.createEventFilter.LoanRepaid();
-        const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Loan not repaid");
-        return { ...events[0].args, ...receipt };
-      },
-    };
+    if (
+      areSameAddress(
+        loan.contractAddress,
+        this.contracts.MultiSourceLoanV4.address
+      )
+    ) {
+      const txHash = await this.contracts.MultiSourceLoanV4.write.repayLoan([
+        receiver,
+        loan.source[0].loanId,
+        loan,
+        false,
+      ]);
+
+      return {
+        txHash,
+        waitTxInBlock: async () => {
+          const receipt = await this.bcClient.waitForTransactionReceipt({
+            hash: txHash,
+          });
+          const filter =
+            await this.contracts.MultiSourceLoanV4.createEventFilter.LoanRepaid();
+          const events = filterLogs(receipt, filter);
+          if (events.length == 0) throw new Error("Loan not repaid");
+          return { ...events[0].args, ...receipt };
+        },
+      };
+    }
+
+    if (
+      areSameAddress(
+        loan.contractAddress,
+        this.contracts.MultiSourceLoanV5.address
+      )
+    ) {
+      const txHash = await this.contracts.MultiSourceLoanV5.write.repayLoan([
+        {
+          loanId: loan.source[0].loanId,
+          loan,
+          borrowerLoanSignature: "0x0", // TODO: fix this
+          callbackData: "0x0", // TODO: fix this,
+        },
+      ]);
+
+      return {
+        txHash,
+        waitTxInBlock: async () => {
+          const receipt = await this.bcClient.waitForTransactionReceipt({
+            hash: txHash,
+          });
+          const filter =
+            await this.contracts.MultiSourceLoanV5.createEventFilter.LoanRepaid();
+          const events = filterLogs(receipt, filter);
+          if (events.length == 0) throw new Error("Loan not repaid");
+          return { ...events[0].args, ...receipt };
+        },
+      };
+    }
+
+    throw new Error(`Contract Address ${loan.contractAddress} not supported`);
   }
 
   async offers({

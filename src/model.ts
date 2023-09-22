@@ -77,7 +77,7 @@ export type RenegotiationOffer = UnsignedRenegotiationOffer & {
 export const MAX_NUMBER =
   115792089237316195423570985008687907853269984665640564039457584007913129639935n;
 
-export type Loan = BlockchainLoan;
+export type Loan = BlockchainLoan & { contractAddress: Address };
 
 export type ListOffersProps = {
   limit?: number;
