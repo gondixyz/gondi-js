@@ -1,4 +1,4 @@
-import { testSingleNftOfferInput, testTokenId, users } from "./common";
+import { testSingleNftOfferInput, testTokenId, users, zeroHash } from "./common";
 
 async function main() {
   const signedOffer = await users[0].makeSingleNftOffer(
@@ -15,7 +15,10 @@ async function main() {
     await approveNFT.waitTxInBlock();
   }
 
-  const emitLoan = await users[1].emitLoan(signedOffer, testTokenId);
+  const emitLoan = await users[1].emitLoan({
+    offer: signedOffer,
+    tokenId: testTokenId,
+  });
   let { loan } = await emitLoan.waitTxInBlock();
   console.log("loan emitted");
 
@@ -23,26 +26,29 @@ async function main() {
 
   try {
     const renegotiationOffer = await users[0].makeRefinanceOffer({
-      loanId: loan.id,
-      feeAmount: 0n,
-      aprBps: signedOffer.aprBps,
-      duration: signedOffer.duration,
-      expirationTime: signedOffer.expirationTime,
-      principalAmount: signedOffer.principalAmount,
-      strictImprovement: false,
-      requiresLiquidation: signedOffer.requiresLiquidation,
-      targetPrincipal: loan.source.map((_) => 0n),
-    }, false);
+      renegotiation: {
+        loanId: loan.id,
+        feeAmount: 0n,
+        aprBps: signedOffer.aprBps,
+        duration: signedOffer.duration,
+        expirationTime: signedOffer.expirationTime,
+        principalAmount: signedOffer.principalAmount,
+        strictImprovement: false,
+        requiresLiquidation: signedOffer.requiresLiquidation,
+        targetPrincipal: loan.source.map((_) => 0n),
+      },
+      contractAddress: signedOffer.contractAddress,
+      skipSignature: false,
+    });
     console.log("refinance offer placed successfully");
-
-    const refinanceFullLoan = await users[1].refinanceFullLoan(
-      renegotiationOffer,
-      loan
-    );
+    const refinanceFullLoan = await users[1].refinanceFullLoan({
+      offer: renegotiationOffer,
+      loan,
+    });
     loan = (await refinanceFullLoan.waitTxInBlock()).loan;
     console.log("loan refinanced");
   } finally {
-    const repayLoan = await users[1].repayLoan(loan);
+    const repayLoan = await users[1].repayLoan({ loan });
     await repayLoan.waitTxInBlock();
     console.log("loan repaid");
   }

@@ -22,7 +22,10 @@ async function main() {
   });
   console.log(listedOffers);
   for (const offer of offers) {
-    const { waitTxInBlock } = await users[0].cancelOffer(offer);
+    const { waitTxInBlock } = await users[0].cancelOffer({
+      id: offer.offerId,
+      contractAddress: offer.contractAddress,
+    });
     await waitTxInBlock();
   }
 }
