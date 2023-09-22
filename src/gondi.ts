@@ -264,24 +264,60 @@ export class Gondi {
     throw new Error(`Contract Address ${contractAddress} not supported`);
   }
 
-  async cancelAllOffers({ minId }: { minId: bigint; contract: string }) {
-    const txHash = await this.contracts.MultiSourceLoanV4.write.cancelAllOffers(
-      [this.wallet.account.address, minId]
-    );
+  async cancelAllOffers({
+    minId,
+    contractAddress,
+  }: {
+    minId: bigint;
+    contractAddress: Address;
+  }) {
+    if (
+      areSameAddress(contractAddress, this.contracts.MultiSourceLoanV4.address)
+    ) {
+      const txHash =
+        await this.contracts.MultiSourceLoanV4.write.cancelAllOffers([
+          this.wallet.account.address,
+          minId,
+        ]);
 
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const filter =
-          await this.contracts.MultiSourceLoanV4.createEventFilter.AllOffersCancelled();
-        const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Offer not cancelled");
-        return { ...events[0].args, ...receipt };
-      },
-    };
+      return {
+        txHash,
+        waitTxInBlock: async () => {
+          const receipt = await this.bcClient.waitForTransactionReceipt({
+            hash: txHash,
+          });
+          const filter =
+            await this.contracts.MultiSourceLoanV4.createEventFilter.AllOffersCancelled();
+          const events = filterLogs(receipt, filter);
+          if (events.length == 0) throw new Error("Offers not cancelled");
+          return { ...events[0].args, ...receipt };
+        },
+      };
+    }
+
+    if (
+      areSameAddress(contractAddress, this.contracts.MultiSourceLoanV5.address)
+    ) {
+      const txHash =
+        await this.contracts.MultiSourceLoanV5.write.cancelAllOffers([
+          this.wallet.account.address,
+          minId,
+        ]);
+
+      return {
+        txHash,
+        waitTxInBlock: async () => {
+          const receipt = await this.bcClient.waitForTransactionReceipt({
+            hash: txHash,
+          });
+          const filter =
+            await this.contracts.MultiSourceLoanV5.createEventFilter.AllOffersCancelled();
+          const events = filterLogs(receipt, filter);
+          if (events.length == 0) throw new Error("Offers not cancelled");
+          return { ...events[0].args, ...receipt };
+        },
+      };
+    }
   }
 
   async hideOffer({ id }: { id: string }) {
