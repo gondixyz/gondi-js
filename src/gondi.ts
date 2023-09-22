@@ -47,13 +47,14 @@ export class Gondi {
 
   async makeSingleNftOffer(offer: model.SingleNftOfferInput) {
     const offerInput = {
-      lenderAddress: await this.wallet.account?.address,
-      signerAddress: await this.wallet.account?.address,
+      lenderAddress: this.wallet.account?.address,
+      signerAddress: this.wallet.account?.address,
       borrowerAddress: offer.borrowerAddress ?? zeroAddress,
-      contractAddress: this.contracts.MultiSourceLoanV4.address,
+      contractAddress: this.contracts.MultiSourceLoanV4.address, // TODO: change this to be v5 by default
       offerValidators: [], // This is ignored by the API but it was required in the mutation
       ...offer,
     };
+
     const response = await this.api.generateSingleNftOfferHash({ offerInput });
 
     const {
@@ -81,7 +82,7 @@ export class Gondi {
     };
 
     const signature = await this.wallet.signTypedData({
-      domain: this.getDomain(),
+      domain: this.getDomain(offerInput.contractAddress),
       primaryType: "LoanOffer",
       types: {
         LoanOffer: [
@@ -119,6 +120,7 @@ export class Gondi {
       offerId,
       signature,
     };
+
     return await this.api.saveSingleNftOffer(signedOffer);
   }
 
@@ -226,10 +228,9 @@ export class Gondi {
   }
 
   async cancelAllOffers({ minId }: { minId: bigint; contract: string }) {
-    const txHash = await this.contracts.MultiSourceLoanV4.write.cancelAllOffers([
-      this.wallet.account.address,
-      minId,
-    ]);
+    const txHash = await this.contracts.MultiSourceLoanV4.write.cancelAllOffers(
+      [this.wallet.account.address, minId]
+    );
 
     return {
       txHash,
@@ -350,10 +351,9 @@ export class Gondi {
     contract: string;
   }) {
     const txHash =
-      await this.contracts.MultiSourceLoanV4.write.cancelAllRenegotiationOffers([
-        this.wallet.account.address,
-        minId,
-      ]);
+      await this.contracts.MultiSourceLoanV4.write.cancelAllRenegotiationOffers(
+        [this.wallet.account.address, minId]
+      );
     return {
       txHash,
       waitTxInBlock: async () => {
@@ -593,10 +593,11 @@ export class Gondi {
       fee: offer.feeAmount,
     };
 
-    const txHash = await this.contracts.MultiSourceLoanV4.write.refinancePartial([
-      offerInput,
-      loan,
-    ]);
+    const txHash =
+      await this.contracts.MultiSourceLoanV4.write.refinancePartial([
+        offerInput,
+        loan,
+      ]);
 
     return {
       txHash,
@@ -695,12 +696,13 @@ export class Gondi {
     };
   }
 
-  private getDomain() {
+  private getDomain(contractAddress?: Address) {
     return {
       name: "GONDI_MULTI_SOURCE_LOAN",
       version: "1",
       chainId: this.wallet.chain.id,
-      verifyingContract: this.contracts.MultiSourceLoanV4.address,
+      verifyingContract:
+        contractAddress ?? this.contracts.MultiSourceLoanV4.address,
     };
   }
 }
