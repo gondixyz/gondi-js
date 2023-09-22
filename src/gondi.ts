@@ -722,44 +722,88 @@ export class Gondi {
   async refinanceFullLoan(offer: model.RenegotiationOffer, loan: model.Loan) {
     const offerInput = {
       ...offer,
-      loanId: BigInt(offer.loanId.split(".").at(-1) ?? "0"),
+      loanId: loan.source[0].loanId,
       strictImprovement: offer.strictImprovement ?? false,
       lender: offer.lenderAddress,
       signer: offer.signerAddress,
       fee: offer.feeAmount,
     };
 
-    const txHash = await this.contracts.MultiSourceLoanV4.write.refinanceFull([
-      offerInput,
-      loan,
-      offer.signature,
-    ]);
+    if (
+      areSameAddress(
+        loan.contractAddress,
+        this.contracts.MultiSourceLoanV4.address
+      )
+    ) {
+      const txHash = await this.contracts.MultiSourceLoanV4.write.refinanceFull(
+        [offerInput, loan, offer.signature]
+      );
 
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const filter =
-          await this.contracts.MultiSourceLoanV4.createEventFilter.LoanRefinanced();
-        const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Loan not refinanced");
-        const args = events[0].args;
-        return {
-          loan: {
-            id: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${
-              args.newLoanId
+      return {
+        txHash,
+        waitTxInBlock: async () => {
+          const receipt = await this.bcClient.waitForTransactionReceipt({
+            hash: txHash,
+          });
+          const filter =
+            await this.contracts.MultiSourceLoanV4.createEventFilter.LoanRefinanced();
+          const events = filterLogs(receipt, filter);
+          if (events.length == 0) throw new Error("Loan not refinanced");
+          const args = events[0].args;
+          return {
+            loan: {
+              id: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${
+                args.newLoanId
+              }`,
+              ...args.loan,
+            },
+            renegotiationId: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
+              args.renegotiationId
             }`,
-            ...args.loan,
-          },
-          renegotiationId: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
-            args.renegotiationId
-          }`,
-          ...receipt,
-        };
-      },
-    };
+            ...receipt,
+          };
+        },
+      };
+    }
+
+    if (
+      areSameAddress(
+        loan.contractAddress,
+        this.contracts.MultiSourceLoanV5.address
+      )
+    ) {
+      const txHash = await this.contracts.MultiSourceLoanV5.write.refinanceFull(
+        [offerInput, loan, offer.signature]
+      );
+
+      return {
+        txHash,
+        waitTxInBlock: async () => {
+          const receipt = await this.bcClient.waitForTransactionReceipt({
+            hash: txHash,
+          });
+          const filter =
+            await this.contracts.MultiSourceLoanV5.createEventFilter.LoanRefinanced();
+          const events = filterLogs(receipt, filter);
+          if (events.length == 0) throw new Error("Loan not refinanced");
+          const args = events[0].args;
+          return {
+            loan: {
+              id: `${this.contracts.MultiSourceLoanV5.address.toLowerCase()}.${
+                args.newLoanId
+              }`,
+              ...args.loan,
+            },
+            renegotiationId: `${this.contracts.MultiSourceLoanV5.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
+              args.renegotiationId
+            }`,
+            ...receipt,
+          };
+        },
+      };
+    }
+
+    throw new Error(`Contract Address ${loan.contractAddress} not supported`);
   }
 
   async refinancePartialLoan(
