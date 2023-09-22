@@ -505,10 +505,13 @@ export class Gondi {
     throw new Error(`Contract Address ${contractAddress} not supported`);
   }
 
-  async emitLoan(
-    offer: model.SingleNftOffer | model.CollectionOffer,
-    tokenId: bigint
-  ) {
+  async emitLoan({
+    offer,
+    tokenId,
+  }: {
+    offer: model.SingleNftOffer | model.CollectionOffer;
+    tokenId: bigint;
+  }) {
     const contractOffer = {
       ...offer,
       lender: offer.lenderAddress,
@@ -517,38 +520,91 @@ export class Gondi {
       validators: offer.offerValidators,
     };
 
-    const txHash = await this.contracts.MultiSourceLoanV4.write.emitLoan([
-      contractOffer,
-      tokenId,
-      offer.signature,
-      false,
-    ]);
+    if (
+      areSameAddress(
+        offer.contractAddress,
+        this.contracts.MultiSourceLoanV4.address
+      )
+    ) {
+      const txHash = await this.contracts.MultiSourceLoanV4.write.emitLoan([
+        contractOffer,
+        tokenId,
+        offer.signature,
+        false,
+      ]);
 
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const filter =
-          await this.contracts.MultiSourceLoanV4.createEventFilter.LoanEmitted();
-        const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Loan not emitted");
-        const args = events[0].args;
-        return {
-          loan: {
-            id: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${
-              args.loanId
+      return {
+        txHash,
+        waitTxInBlock: async () => {
+          const receipt = await this.bcClient.waitForTransactionReceipt({
+            hash: txHash,
+          });
+          const filter =
+            await this.contracts.MultiSourceLoanV4.createEventFilter.LoanEmitted();
+          const events = filterLogs(receipt, filter);
+          if (events.length == 0) throw new Error("Loan not emitted");
+          const args = events[0].args;
+          return {
+            loan: {
+              id: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${
+                args.loanId
+              }`,
+              ...args.loan,
+            },
+            offerId: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
+              args.offerId
             }`,
-            ...args.loan,
-          },
-          offerId: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
-            args.offerId
-          }`,
-          ...receipt,
-        };
-      },
-    };
+            ...receipt,
+          };
+        },
+      };
+    }
+    if (
+      areSameAddress(
+        offer.contractAddress,
+        this.contracts.MultiSourceLoanV5.address
+      )
+    ) {
+      const txHash = await this.contracts.MultiSourceLoanV5.write.emitLoan([
+        {
+          offer: contractOffer,
+          tokenId,
+          amount: 0n, // TODO: fix this
+          borrower: contractOffer.borrowerAddress,
+          lenderOfferSignature: contractOffer.signature,
+          borrowerOfferSignature: "0x0", // TODO: fix this
+          callbackData: "0x0", // TODO: fix this
+        },
+      ]);
+
+      return {
+        txHash,
+        waitTxInBlock: async () => {
+          const receipt = await this.bcClient.waitForTransactionReceipt({
+            hash: txHash,
+          });
+          const filter =
+            await this.contracts.MultiSourceLoanV5.createEventFilter.LoanEmitted();
+          const events = filterLogs(receipt, filter);
+          if (events.length == 0) throw new Error("Loan not emitted");
+          const args = events[0].args;
+          return {
+            loan: {
+              id: `${this.contracts.MultiSourceLoanV5.address.toLowerCase()}.${
+                args.loanId
+              }`,
+              ...args.loan,
+            },
+            offerId: `${this.contracts.MultiSourceLoanV5.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
+              args.offerId
+            }`,
+            ...receipt,
+          };
+        },
+      };
+    }
+
+    throw new Error(`Contract Address ${offer.contractAddress} not supported`);
   }
 
   async repayLoan({
