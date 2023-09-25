@@ -639,14 +639,14 @@ export class Gondi {
         });
         const filterForeclosed =
           await this.contracts.MultiSourceLoan.createEventFilter.LoanForeclosed();
-        const filterLiquidated =
-          await this.contracts.MultiSourceLoan.createEventFilter.LoanLiquidated();
+        const filterSentToLiquidator =
+          await this.contracts.MultiSourceLoan.createEventFilter.LoanSentToLiquidator();
         const foreclosedEvents = filterLogs(receipt, filterForeclosed);
-        const liquidatedEvents = filterLogs(receipt, filterLiquidated);
-        if (foreclosedEvents.length === 0 && liquidatedEvents.length === 0)
+        const sentToLiquidatorEvents = filterLogs(receipt, filterSentToLiquidator);
+        if (foreclosedEvents.length === 0 && sentToLiquidatorEvents.length === 0)
           throw new Error("Loan not liquidated");
         return {
-          ...(foreclosedEvents?.[0]?.args ?? liquidatedEvents?.[0]?.args),
+          ...(foreclosedEvents?.[0]?.args ?? sentToLiquidatorEvents?.[0]?.args),
           ...receipt,
         };
       },
