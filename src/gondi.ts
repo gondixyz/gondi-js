@@ -640,7 +640,7 @@ export class Gondi {
         const filterForeclosed =
           await this.contracts.MultiSourceLoan.createEventFilter.LoanForeclosed();
         const filterLiquidated =
-          await this.contracts.MultiSourceLoan.createEventFilter.LoanForeclosed();
+          await this.contracts.MultiSourceLoan.createEventFilter.LoanLiquidated();
         const foreclosedEvents = filterLogs(receipt, filterForeclosed);
         const liquidatedEvents = filterLogs(receipt, filterLiquidated);
         if (foreclosedEvents.length === 0 && liquidatedEvents.length === 0)
