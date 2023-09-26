@@ -19,7 +19,7 @@ async function main() {
       sortBy: { field: OffersSortField.CreatedDate, order: Ordering.Asc },
       filterBy: { status: [OfferStatus.Active] },
     });
-    if (cursor == response.cursor) break;
+    if (cursor == response.cursor || response.cursor === null) break;
     cursor = response.cursor;
     console.log(response.offers);
   }
