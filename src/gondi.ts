@@ -47,13 +47,14 @@ export class Gondi {
 
   async makeSingleNftOffer(offer: model.SingleNftOfferInput) {
     const offerInput = {
-      lenderAddress: await this.wallet.account?.address,
-      signerAddress: await this.wallet.account?.address,
+      lenderAddress: this.wallet.account?.address,
+      signerAddress: this.wallet.account?.address,
       borrowerAddress: offer.borrowerAddress ?? zeroAddress,
-      contractAddress: this.contracts.MultiSourceLoan.address,
+      contractAddress: this.contracts.MultiSourceLoanV4.address, // TODO: change this to be v5 by default
       offerValidators: [], // This is ignored by the API but it was required in the mutation
       ...offer,
     };
+
     const response = await this.api.generateSingleNftOfferHash({ offerInput });
 
     const {
@@ -81,7 +82,7 @@ export class Gondi {
     };
 
     const signature = await this.wallet.signTypedData({
-      domain: this.getDomain(),
+      domain: this.getDomain(offerInput.contractAddress),
       primaryType: "LoanOffer",
       types: {
         LoanOffer: [
@@ -119,15 +120,16 @@ export class Gondi {
       offerId,
       signature,
     };
+
     return await this.api.saveSingleNftOffer(signedOffer);
   }
 
   async makeCollectionOffer(offer: model.CollectionOfferInput) {
     const offerInput = {
-      lenderAddress: await this.wallet.account?.address,
-      signerAddress: await this.wallet.account?.address,
+      lenderAddress: this.wallet.account?.address,
+      signerAddress: this.wallet.account?.address,
       borrowerAddress: offer.borrowerAddress ?? zeroAddress,
-      contractAddress: this.contracts.MultiSourceLoan.address,
+      contractAddress: this.contracts.MultiSourceLoanV4.address, // TODO: change this to be v5 by default
       offerValidators: [
         // This is ignored by the API but it was required in the mutation
         {
@@ -163,7 +165,7 @@ export class Gondi {
     };
 
     const signature = await this.wallet.signTypedData({
-      domain: this.getDomain(),
+      domain: this.getDomain(offerInput.contractAddress),
       primaryType: "LoanOffer",
       types: {
         LoanOffer: [
@@ -204,46 +206,28 @@ export class Gondi {
     return await this.api.saveCollectionOffer(signedOffer);
   }
 
-  async cancelOffer({ id }: { id: string }) {
-    const contractId = BigInt(id.split(".").at(-1) ?? "0");
-    const txHash = await this.contracts.MultiSourceLoan.write.cancelOffer([
-      this.wallet.account.address,
-      contractId,
-    ]);
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const filter =
-          await this.contracts.MultiSourceLoan.createEventFilter.OfferCancelled();
-        const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Offer not cancelled");
-        return { ...events[0].args, ...receipt };
-      },
-    };
+  async cancelOffer({
+    id,
+    contractAddress,
+  }: {
+    id: bigint;
+    contractAddress: Address;
+  }) {
+    return this.contracts.Msl(contractAddress).cancelOffer({
+      id,
+    });
   }
 
-  async cancelAllOffers({ minId }: { minId: bigint; contract: string }) {
-    const txHash = await this.contracts.MultiSourceLoan.write.cancelAllOffers([
-      this.wallet.account.address,
+  async cancelAllOffers({
+    minId,
+    contractAddress,
+  }: {
+    minId: bigint;
+    contractAddress: Address;
+  }) {
+    return this.contracts.Msl(contractAddress).cancelAllOffers({
       minId,
-    ]);
-
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const filter =
-          await this.contracts.MultiSourceLoan.createEventFilter.AllOffersCancelled();
-        const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Offer not cancelled");
-        return { ...events[0].args, ...receipt };
-      },
-    };
+    });
   }
 
   async hideOffer({ id }: { id: string }) {
@@ -254,13 +238,18 @@ export class Gondi {
     return this.api.hideOffer({ contract, id: contractOfferId });
   }
 
-  async makeRefinanceOffer(
-    renegotiation: model.RenegotiationInput,
-    skipSignature?: boolean
-  ) {
+  async makeRefinanceOffer({
+    renegotiation,
+    contractAddress,
+    skipSignature,
+  }: {
+    renegotiation: model.RenegotiationInput;
+    contractAddress: Address;
+    skipSignature?: boolean;
+  }) {
     const renegotiationInput = {
-      lenderAddress: await this.wallet.account?.address,
-      signerAddress: await this.wallet.account?.address,
+      lenderAddress: this.wallet.account?.address,
+      signerAddress: this.wallet.account?.address,
       ...renegotiation,
     };
     const response = await this.api.generateRenegotiationOfferHash({
@@ -283,12 +272,13 @@ export class Gondi {
       return {
         ...renegotiationInput,
         offerHash: offerHash ?? zeroHash,
+        signature: zeroHash,
         renegotiationId,
       };
     }
 
     const signature = await this.wallet.signTypedData({
-      domain: this.getDomain(),
+      domain: this.getDomain(contractAddress),
       primaryType: "RenegotiationOffer",
       types: {
         RenegotiationOffer: [
@@ -317,26 +307,16 @@ export class Gondi {
     return await this.api.saveRefinanceOffer(renegotiationOffer);
   }
 
-  async cancelRefinanceOffer({ id }: { id: string }) {
-    const contractId = BigInt(id.split(".").at(-1) ?? "0");
-    const txHash =
-      await this.contracts.MultiSourceLoan.write.cancelRenegotiationOffer([
-        this.wallet.account.address,
-        contractId,
-      ]);
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const filter =
-          await this.contracts.MultiSourceLoan.createEventFilter.RenegotiationOfferCancelled();
-        const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Offer not cancelled");
-        return { ...events[0].args, ...receipt };
-      },
-    };
+  async cancelRefinanceOffer({
+    id,
+    contractAddress,
+  }: {
+    id: bigint;
+    contractAddress: Address;
+  }) {
+    return this.contracts.Msl(contractAddress).cancelRefinanceOffer({
+      id,
+    });
   }
 
   async hideRenegotiationOffer({ id }: { id: string }) {
@@ -345,34 +325,23 @@ export class Gondi {
 
   async cancelAllRenegotiations({
     minId,
+    contractAddress,
   }: {
     minId: bigint;
-    contract: string;
+    contractAddress: Address;
   }) {
-    const txHash =
-      await this.contracts.MultiSourceLoan.write.cancelAllRenegotiationOffers([
-        this.wallet.account.address,
-        minId,
-      ]);
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const filter =
-          await this.contracts.MultiSourceLoan.createEventFilter.RenegotiationOfferCancelled();
-        const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Offer not cancelled");
-        return { ...events[0].args, ...receipt };
-      },
-    };
+    return this.contracts.Msl(contractAddress).cancelAllRenegotiations({
+      minId,
+    });
   }
 
-  async emitLoan(
-    offer: model.SingleNftOffer | model.CollectionOffer,
-    tokenId: bigint
-  ) {
+  async emitLoan({
+    offer,
+    tokenId,
+  }: {
+    offer: model.SingleNftOffer | model.CollectionOffer;
+    tokenId: bigint;
+  }) {
     const contractOffer = {
       ...offer,
       lender: offer.lenderAddress,
@@ -381,62 +350,24 @@ export class Gondi {
       validators: offer.offerValidators,
     };
 
-    const txHash = await this.contracts.MultiSourceLoan.write.emitLoan([
-      contractOffer,
+    return this.contracts.Msl(offer.contractAddress).emitLoan({
+      offer: contractOffer,
+      signature: contractOffer.signature,
       tokenId,
-      offer.signature,
-      false,
-    ]);
-
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const filter =
-          await this.contracts.MultiSourceLoan.createEventFilter.LoanEmitted();
-        const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Loan not emitted");
-        const args = events[0].args;
-        return {
-          loan: {
-            id: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${
-              args.loanId
-            }`,
-            ...args.loan,
-          },
-          offerId: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
-            args.offerId
-          }`,
-          ...receipt,
-        };
-      },
-    };
+    });
   }
 
-  async repayLoan(loan: model.Loan, nftReceiver?: Address) {
-    const receiver = nftReceiver ?? this.wallet.account.address;
-    const txHash = await this.contracts.MultiSourceLoan.write.repayLoan([
-      receiver,
-      loan.source[0].loanId,
+  async repayLoan({
+    loan,
+    nftReceiver,
+  }: {
+    loan: model.Loan;
+    nftReceiver?: Address;
+  }) {
+    return this.contracts.Msl(loan.contractAddress).repayLoan({
       loan,
-      false,
-    ]);
-
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const filter =
-          await this.contracts.MultiSourceLoan.createEventFilter.LoanRepaid();
-        const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Loan not repaid");
-        return { ...events[0].args, ...receipt };
-      },
-    };
+      nftReceiver,
+    });
   }
 
   async offers({
@@ -537,125 +468,60 @@ export class Gondi {
     }
   }
 
-  async refinanceFullLoan(offer: model.RenegotiationOffer, loan: model.Loan) {
+  async refinanceFullLoan({
+    offer,
+    loan,
+  }: {
+    offer: model.RenegotiationOffer;
+    loan: model.Loan;
+  }) {
     const offerInput = {
       ...offer,
-      loanId: BigInt(offer.loanId.split(".").at(-1) ?? "0"),
+      loanId: loan.source[0].loanId,
       strictImprovement: offer.strictImprovement ?? false,
       lender: offer.lenderAddress,
       signer: offer.signerAddress,
       fee: offer.feeAmount,
     };
 
-    const txHash = await this.contracts.MultiSourceLoan.write.refinanceFull([
-      offerInput,
+    return this.contracts.Msl(loan.contractAddress).refinanceFullLoan({
+      offer: offerInput,
       loan,
-      offer.signature,
-    ]);
-
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const filter =
-          await this.contracts.MultiSourceLoan.createEventFilter.LoanRefinanced();
-        const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Loan not refinanced");
-        const args = events[0].args;
-        return {
-          loan: {
-            id: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${
-              args.newLoanId
-            }`,
-            ...args.loan,
-          },
-          renegotiationId: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
-            args.renegotiationId
-          }`,
-          ...receipt,
-        };
-      },
-    };
+      signature: offer.signature,
+    });
   }
 
-  async refinancePartialLoan(
-    offer: model.UnsignedRenegotiationOffer,
-    loan: model.Loan
-  ) {
+  async refinancePartialLoan({
+    offer,
+    loan,
+  }: {
+    offer: model.RenegotiationOffer;
+    loan: model.Loan;
+  }) {
     const offerInput = {
       ...offer,
-      loanId: BigInt(offer.loanId.split(".").at(-1) ?? "0"),
+      loanId: loan.source[0].loanId,
       strictImprovement: offer.strictImprovement ?? false,
       lender: offer.lenderAddress,
       signer: offer.signerAddress,
       fee: offer.feeAmount,
     };
 
-    const txHash = await this.contracts.MultiSourceLoan.write.refinancePartial([
-      offerInput,
+    return this.contracts.Msl(loan.contractAddress).refinancePartialLoan({
+      offer: offerInput,
       loan,
-    ]);
-
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const filter =
-          await this.contracts.MultiSourceLoan.createEventFilter.LoanRefinanced();
-        const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Loan not refinanced");
-        const args = events[0].args;
-        return {
-          loan: {
-            id: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${
-              args.newLoanId
-            }`,
-            ...args.loan,
-          },
-          renegotiationId: `${this.contracts.MultiSourceLoan.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
-            args.renegotiationId
-          }`,
-          ...receipt,
-        };
-      },
-    };
+    });
   }
 
-  async liquidateLoan(loan: model.Loan & { loanId: bigint }) {
-    const txHash = await this.contracts.MultiSourceLoan.write.liquidateLoan([
-      loan.loanId,
+  async liquidateLoan(loan: model.Loan) {
+    return this.contracts.Msl(loan.contractAddress).liquidateLoan({
       loan,
-    ]);
-
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const filterForeclosed =
-          await this.contracts.MultiSourceLoan.createEventFilter.LoanForeclosed();
-        const filterSentToLiquidator =
-          await this.contracts.MultiSourceLoan.createEventFilter.LoanSentToLiquidator();
-        const foreclosedEvents = filterLogs(receipt, filterForeclosed);
-        const sentToLiquidatorEvents = filterLogs(receipt, filterSentToLiquidator);
-        if (foreclosedEvents.length === 0 && sentToLiquidatorEvents.length === 0)
-          throw new Error("Loan not liquidated");
-        return {
-          ...(foreclosedEvents?.[0]?.args ?? sentToLiquidatorEvents?.[0]?.args),
-          ...receipt,
-        };
-      },
-    };
+    });
   }
 
   async approveNFTForAll(nftAddress: Address) {
     const erc721 = this.contracts.ERC721(nftAddress);
-    const MultiSourceLoanAddress = this.contracts.MultiSourceLoan.address;
+    const MultiSourceLoanAddress = this.contracts.MultiSourceLoanV4.address;
     const txHash = await erc721.write.setApprovalForAll([
       MultiSourceLoanAddress,
       true,
@@ -678,7 +544,7 @@ export class Gondi {
 
   async approveToken(tokenAddress: Address, amount: bigint = model.MAX_NUMBER) {
     const erc20 = this.contracts.ERC20(tokenAddress);
-    const MultiSourceLoanAddress = this.contracts.MultiSourceLoan.address;
+    const MultiSourceLoanAddress = this.contracts.MultiSourceLoanV4.address;
     const txHash = await erc20.write.approve([MultiSourceLoanAddress, amount]);
 
     return {
@@ -695,12 +561,13 @@ export class Gondi {
     };
   }
 
-  private getDomain() {
+  private getDomain(contractAddress?: Address) {
     return {
       name: "GONDI_MULTI_SOURCE_LOAN",
       version: "1",
       chainId: this.wallet.chain.id,
-      verifyingContract: this.contracts.MultiSourceLoan.address,
+      verifyingContract:
+        contractAddress ?? this.contracts.MultiSourceLoanV4.address,
     };
   }
 }

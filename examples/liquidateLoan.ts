@@ -21,7 +21,10 @@ async function main() {
     await approveNFT.waitTxInBlock();
   }
 
-  const emitLoan = await users[1].emitLoan(signedOffer, testTokenId);
+  const emitLoan = await users[1].emitLoan({
+    offer: signedOffer,
+    tokenId: testTokenId,
+  });
   const { loan } = await emitLoan.waitTxInBlock();
   console.log("loan emitted");
 
@@ -31,14 +34,17 @@ async function main() {
   const collectionOfferToCancel = await users[0].makeCollectionOffer(
     testCollectionOfferInput
   );
-  await users[0].cancelOffer(collectionOfferToCancel);
+  await users[0].cancelOffer({
+    id: collectionOfferToCancel.offerId,
+    contractAddress: collectionOfferToCancel.contractAddress,
+  });
   console.log("loan defaulted");
 
   await new Promise((resolve) => setTimeout(resolve, 1000));
 
   const liquidatedLoan = await users[0].liquidateLoan({
     ...loan,
-    loanId: BigInt(loan.id.split(".").at(-1) ?? "0"),
+    contractAddress: signedOffer.contractAddress,
   });
 
   await liquidatedLoan.waitTxInBlock();

@@ -16,7 +16,7 @@ async function main() {
   const lastOffer = offers[1];
   const { txHash, waitTxInBlock } = await user.cancelAllOffers({
     minId: lastOffer.offerId,
-    contract: lastOffer.contractAddress,
+    contractAddress: lastOffer.contractAddress,
   });
   console.log("sent transaction", txHash);
   await waitTxInBlock();

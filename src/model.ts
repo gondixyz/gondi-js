@@ -17,11 +17,12 @@ import {
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
 export type SingleNftOfferInput = Optional<
-  Omit<
-    ApiSingleNftOfferInput,
-    "lenderAddress" | "signerAddress" | "offerValidators" | "contractAddress"
-  >,
-  "borrowerAddress"
+  ApiSingleNftOfferInput,
+  | "borrowerAddress"
+  | "lenderAddress"
+  | "signerAddress"
+  | "offerValidators"
+  | "contractAddress"
 >;
 
 export type UnsignedSingleNftOffer = Omit<
@@ -38,11 +39,12 @@ export type SingleNftOffer = UnsignedSingleNftOffer &
   };
 
 export type CollectionOfferInput = Optional<
-  Omit<
-    ApiCollectionOfferInput,
-    "lenderAddress" | "signerAddress" | "offerValidators" | "contractAddress"
-  >,
-  "borrowerAddress"
+  ApiCollectionOfferInput,
+  | "borrowerAddress"
+  | "lenderAddress"
+  | "signerAddress"
+  | "offerValidators"
+  | "contractAddress"
 >;
 
 export type UnsignedCollectionOffer = Omit<
@@ -57,7 +59,7 @@ export type CollectionOffer = UnsignedCollectionOffer & {
   nftCollateralTokenId: 0n;
 };
 
-export type RenegotiationInput = Omit<
+export type RenegotiationInput = Optional<
   ApiRenegotiationInput,
   "lenderAddress" | "signerAddress"
 >;
@@ -75,7 +77,7 @@ export type RenegotiationOffer = UnsignedRenegotiationOffer & {
 export const MAX_NUMBER =
   115792089237316195423570985008687907853269984665640564039457584007913129639935n;
 
-export type Loan = BlockchainLoan;
+export type Loan = BlockchainLoan & { contractAddress: Address };
 
 export type ListOffersProps = {
   limit?: number;
@@ -99,3 +101,8 @@ export type ListListingsProps = {
   limit?: number;
   cursor?: string;
 };
+
+export type {
+  Offer as BlockchainOffer,
+  Renegotiation as BlockchainRenegotiation,
+} from "@/blockchain";

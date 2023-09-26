@@ -1,3 +1,4 @@
+import { zeroAddress } from "viem";
 import { testSingleNftOfferInput, testTokenId, users } from "./common";
 
 async function main() {
@@ -15,15 +16,18 @@ async function main() {
     await approveNFT.waitTxInBlock();
   }
 
-  const emitLoan = await users[1].emitLoan(signedOffer, testTokenId);
+  const emitLoan = await users[1].emitLoan({
+    offer: signedOffer,
+    tokenId: testTokenId,
+  });
   let { loan } = await emitLoan.waitTxInBlock();
   console.log("loan emitted");
 
   await new Promise((resolve) => setTimeout(resolve, 1000));
 
   try {
-    const renegotiationOffer = await users[2].makeRefinanceOffer(
-      {
+    const renegotiationOffer = await users[2].makeRefinanceOffer({
+      renegotiation: {
         loanId: loan.id,
         feeAmount: 0n,
         aprBps: signedOffer.aprBps / 2n,
@@ -36,18 +40,19 @@ async function main() {
           (source) => source.principalAmount / 2n
         ),
       },
-      true,
-    );
+      contractAddress: signedOffer.contractAddress,
+      skipSignature: true,
+    });
     console.log("refinance offer placed successfully");
 
-    const refinanceFullLoan = await users[2].refinancePartialLoan(
-      renegotiationOffer,
-      loan
-    );
+    const refinanceFullLoan = await users[2].refinancePartialLoan({
+      offer: renegotiationOffer,
+      loan,
+    });
     loan = (await refinanceFullLoan.waitTxInBlock()).loan;
     console.log("loan refinanced partially");
   } finally {
-    const repayLoan = await users[1].repayLoan(loan);
+    const repayLoan = await users[1].repayLoan({ loan });
     await repayLoan.waitTxInBlock();
     console.log("loan repaid");
   }

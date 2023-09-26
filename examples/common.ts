@@ -34,6 +34,7 @@ export const testTokenId = BigInt(process.env.TEST_TOKEN_ID ?? 0);
 export const testCollection = {
   contractAddress: process.env.TEST_COLLECTION as unknown as Address,
 };
+export const zeroHash = "0x" + "0".repeat(64);
 export const testCurrency = process.env
   .TEST_PRINCIPAL_CURRENCY as unknown as Address;
 
