@@ -24,51 +24,43 @@ import {
   zeroAddress as zeroAddressViem,
 } from "viem";
 
-import { multiSourceLoanABI as multiSourceLoanABIV4 } from "@/generated/blockchain/v4";
-import {
-  erc20ABI,
-  erc721ABI,
-  multiSourceLoanABI as multiSourceLoanABIV5,
-} from "@/generated/blockchain/v5";
+import type { multiSourceLoanABI as multiSourceLoanABIV4 } from "@/generated/blockchain/v4";
+import { erc20ABI, erc721ABI } from "@/generated/blockchain/v5";
 
-import { getContracts } from "./deploys";
+import { MslV4 } from "./contracts/MslV4";
+import { MslV5 } from "./contracts/MslV5";
+import { areSameAddress } from "./utils";
 export type Wallet = WalletClient<Transport, Chain, Account>;
 
 export class Contracts {
   walletClient: Wallet;
   publicClient: PublicClient;
-  MultiSourceLoanV4: GetContractReturnType<
-    typeof multiSourceLoanABIV4,
-    PublicClient,
-    Wallet,
-    Address
-  >;
-  MultiSourceLoanV5: GetContractReturnType<
-    typeof multiSourceLoanABIV5,
-    PublicClient,
-    Wallet,
-    Address
-  >;
+
+  MultiSourceLoanV4: MslV4;
+  MultiSourceLoanV5: MslV5;
 
   constructor(publicClient: PublicClient, walletClient: Wallet) {
     this.walletClient = walletClient;
     this.publicClient = publicClient;
 
-    const { MultiSourceLoanV4Address, MultiSourceLoanV5Address } = getContracts(
-      walletClient.chain
-    );
-    this.MultiSourceLoanV4 = getContract({
-      address: MultiSourceLoanV4Address,
-      abi: multiSourceLoanABIV4,
-      walletClient,
+    this.MultiSourceLoanV4 = new MslV4({
       publicClient,
-    });
-    this.MultiSourceLoanV5 = getContract({
-      address: MultiSourceLoanV5Address,
-      abi: multiSourceLoanABIV5,
       walletClient,
-      publicClient,
     });
+    this.MultiSourceLoanV5 = new MslV5({
+      publicClient,
+      walletClient,
+    });
+  }
+
+  Msl(contractAddress: Address) {
+    if (areSameAddress(contractAddress, this.MultiSourceLoanV4.address)) {
+      return this.MultiSourceLoanV4;
+    }
+    if (areSameAddress(contractAddress, this.MultiSourceLoanV5.address)) {
+      return this.MultiSourceLoanV5;
+    }
+    throw new Error(`Invalid Contract Address ${contractAddress}`);
   }
 
   ERC721(
@@ -94,11 +86,19 @@ export class Contracts {
   }
 }
 
-type AbiType = AbiParametersToPrimitiveTypes<
+type RepayAbiType = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof multiSourceLoanABIV4, "repayLoan">["inputs"]
 >;
+type EmitAbiType = AbiParametersToPrimitiveTypes<
+  ExtractAbiFunction<typeof multiSourceLoanABIV4, "emitLoan">["inputs"]
+>;
+type RefiAbiType = AbiParametersToPrimitiveTypes<
+  ExtractAbiFunction<typeof multiSourceLoanABIV4, "refinanceFull">["inputs"]
+>;
 
-export type Loan = AbiType[2];
+export type Loan = RepayAbiType[2];
+export type Offer = EmitAbiType[0];
+export type Renegotiation = RefiAbiType[0];
 
 export type HexString = `0x${string}`;
 export type Signature = HexString;

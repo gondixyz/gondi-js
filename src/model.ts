@@ -101,3 +101,8 @@ export type ListListingsProps = {
   limit?: number;
   cursor?: string;
 };
+
+export type {
+  Offer as BlockchainOffer,
+  Renegotiation as BlockchainRenegotiation,
+} from "@/blockchain";

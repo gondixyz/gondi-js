@@ -24,8 +24,6 @@ import {
 } from "@/generated/graphql";
 import * as model from "@/model";
 
-import { areSameAddress } from "./utils";
-
 type GondiProps = {
   wallet: Wallet;
   apiClient?: ApiProps["apiClient"];
@@ -215,53 +213,9 @@ export class Gondi {
     id: bigint;
     contractAddress: Address;
   }) {
-    if (
-      areSameAddress(contractAddress, this.contracts.MultiSourceLoanV4.address)
-    ) {
-      const txHash = await this.contracts.MultiSourceLoanV4.write.cancelOffer([
-        this.wallet.account.address,
-        id,
-      ]);
-      return {
-        txHash,
-        waitTxInBlock: async () => {
-          const receipt = await this.bcClient.waitForTransactionReceipt({
-            hash: txHash,
-          });
-
-          const filter =
-            await this.contracts.MultiSourceLoanV4.createEventFilter.OfferCancelled();
-          const events = filterLogs(receipt, filter);
-          if (events.length == 0) throw new Error("Offer not cancelled");
-          return { ...events[0].args, ...receipt };
-        },
-      };
-    }
-
-    if (
-      areSameAddress(contractAddress, this.contracts.MultiSourceLoanV5.address)
-    ) {
-      const txHash = await this.contracts.MultiSourceLoanV5.write.cancelOffer([
-        this.wallet.account.address,
-        id,
-      ]);
-      return {
-        txHash,
-        waitTxInBlock: async () => {
-          const receipt = await this.bcClient.waitForTransactionReceipt({
-            hash: txHash,
-          });
-
-          const filter =
-            await this.contracts.MultiSourceLoanV5.createEventFilter.OfferCancelled();
-          const events = filterLogs(receipt, filter);
-          if (events.length == 0) throw new Error("Offer not cancelled");
-          return { ...events[0].args, ...receipt };
-        },
-      };
-    }
-
-    throw new Error(`Contract Address ${contractAddress} not supported`);
+    return this.contracts.Msl(contractAddress).cancelOffer({
+      id,
+    });
   }
 
   async cancelAllOffers({
@@ -271,55 +225,9 @@ export class Gondi {
     minId: bigint;
     contractAddress: Address;
   }) {
-    if (
-      areSameAddress(contractAddress, this.contracts.MultiSourceLoanV4.address)
-    ) {
-      const txHash =
-        await this.contracts.MultiSourceLoanV4.write.cancelAllOffers([
-          this.wallet.account.address,
-          minId,
-        ]);
-
-      return {
-        txHash,
-        waitTxInBlock: async () => {
-          const receipt = await this.bcClient.waitForTransactionReceipt({
-            hash: txHash,
-          });
-          const filter =
-            await this.contracts.MultiSourceLoanV4.createEventFilter.AllOffersCancelled();
-          const events = filterLogs(receipt, filter);
-          if (events.length == 0) throw new Error("Offers not cancelled");
-          return { ...events[0].args, ...receipt };
-        },
-      };
-    }
-
-    if (
-      areSameAddress(contractAddress, this.contracts.MultiSourceLoanV5.address)
-    ) {
-      const txHash =
-        await this.contracts.MultiSourceLoanV5.write.cancelAllOffers([
-          this.wallet.account.address,
-          minId,
-        ]);
-
-      return {
-        txHash,
-        waitTxInBlock: async () => {
-          const receipt = await this.bcClient.waitForTransactionReceipt({
-            hash: txHash,
-          });
-          const filter =
-            await this.contracts.MultiSourceLoanV5.createEventFilter.AllOffersCancelled();
-          const events = filterLogs(receipt, filter);
-          if (events.length == 0) throw new Error("Offers not cancelled");
-          return { ...events[0].args, ...receipt };
-        },
-      };
-    }
-
-    throw new Error(`Contract Address ${contractAddress} not supported`);
+    return this.contracts.Msl(contractAddress).cancelAllOffers({
+      minId,
+    });
   }
 
   async hideOffer({ id }: { id: string }) {
@@ -406,52 +314,9 @@ export class Gondi {
     id: bigint;
     contractAddress: Address;
   }) {
-    if (
-      areSameAddress(contractAddress, this.contracts.MultiSourceLoanV4.address)
-    ) {
-      const txHash =
-        await this.contracts.MultiSourceLoanV4.write.cancelRenegotiationOffer([
-          this.wallet.account.address,
-          id,
-        ]);
-      return {
-        txHash,
-        waitTxInBlock: async () => {
-          const receipt = await this.bcClient.waitForTransactionReceipt({
-            hash: txHash,
-          });
-          const filter =
-            await this.contracts.MultiSourceLoanV4.createEventFilter.RenegotiationOfferCancelled();
-          const events = filterLogs(receipt, filter);
-          if (events.length == 0) throw new Error("Offer not cancelled");
-          return { ...events[0].args, ...receipt };
-        },
-      };
-    }
-    if (
-      areSameAddress(contractAddress, this.contracts.MultiSourceLoanV5.address)
-    ) {
-      const txHash =
-        await this.contracts.MultiSourceLoanV5.write.cancelRenegotiationOffer([
-          this.wallet.account.address,
-          id,
-        ]);
-      return {
-        txHash,
-        waitTxInBlock: async () => {
-          const receipt = await this.bcClient.waitForTransactionReceipt({
-            hash: txHash,
-          });
-          const filter =
-            await this.contracts.MultiSourceLoanV5.createEventFilter.RenegotiationOfferCancelled();
-          const events = filterLogs(receipt, filter);
-          if (events.length == 0) throw new Error("Offer not cancelled");
-          return { ...events[0].args, ...receipt };
-        },
-      };
-    }
-
-    throw new Error(`Contract Address ${contractAddress} not supported`);
+    return this.contracts.Msl(contractAddress).cancelRefinanceOffer({
+      id,
+    });
   }
 
   async hideRenegotiationOffer({ id }: { id: string }) {
@@ -465,50 +330,9 @@ export class Gondi {
     minId: bigint;
     contractAddress: Address;
   }) {
-    if (
-      areSameAddress(contractAddress, this.contracts.MultiSourceLoanV4.address)
-    ) {
-      const txHash =
-        await this.contracts.MultiSourceLoanV4.write.cancelAllRenegotiationOffers(
-          [this.wallet.account.address, minId]
-        );
-      return {
-        txHash,
-        waitTxInBlock: async () => {
-          const receipt = await this.bcClient.waitForTransactionReceipt({
-            hash: txHash,
-          });
-          const filter =
-            await this.contracts.MultiSourceLoanV4.createEventFilter.RenegotiationOfferCancelled();
-          const events = filterLogs(receipt, filter);
-          if (events.length == 0) throw new Error("Offer not cancelled");
-          return { ...events[0].args, ...receipt };
-        },
-      };
-    }
-    if (
-      areSameAddress(contractAddress, this.contracts.MultiSourceLoanV5.address)
-    ) {
-      const txHash =
-        await this.contracts.MultiSourceLoanV5.write.cancelAllRenegotiationOffers(
-          [this.wallet.account.address, minId]
-        );
-      return {
-        txHash,
-        waitTxInBlock: async () => {
-          const receipt = await this.bcClient.waitForTransactionReceipt({
-            hash: txHash,
-          });
-          const filter =
-            await this.contracts.MultiSourceLoanV5.createEventFilter.RenegotiationOfferCancelled();
-          const events = filterLogs(receipt, filter);
-          if (events.length == 0) throw new Error("Offer not cancelled");
-          return { ...events[0].args, ...receipt };
-        },
-      };
-    }
-
-    throw new Error(`Contract Address ${contractAddress} not supported`);
+    return this.contracts.Msl(contractAddress).cancelAllRenegotiations({
+      minId,
+    });
   }
 
   async emitLoan({
@@ -526,93 +350,11 @@ export class Gondi {
       validators: offer.offerValidators,
     };
 
-    if (
-      areSameAddress(
-        offer.contractAddress,
-        this.contracts.MultiSourceLoanV4.address
-      )
-    ) {
-      const txHash = await this.contracts.MultiSourceLoanV4.write.emitLoan([
-        contractOffer,
-        tokenId,
-        offer.signature,
-        false,
-      ]);
-
-      return {
-        txHash,
-        waitTxInBlock: async () => {
-          const receipt = await this.bcClient.waitForTransactionReceipt({
-            hash: txHash,
-          });
-          const filter =
-            await this.contracts.MultiSourceLoanV4.createEventFilter.LoanEmitted();
-          const events = filterLogs(receipt, filter);
-          if (events.length == 0) throw new Error("Loan not emitted");
-          const args = events[0].args;
-          return {
-            loan: {
-              id: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${
-                args.loanId
-              }`,
-              ...args.loan,
-              contractAddress: this.contracts.MultiSourceLoanV4.address,
-            },
-            offerId: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
-              args.offerId
-            }`,
-            ...receipt,
-          };
-        },
-      };
-    }
-    if (
-      areSameAddress(
-        offer.contractAddress,
-        this.contracts.MultiSourceLoanV5.address
-      )
-    ) {
-      const txHash = await this.contracts.MultiSourceLoanV5.write.emitLoan([
-        {
-          offer: contractOffer,
-          tokenId,
-          amount: 0n, // TODO: fix this
-          borrower: contractOffer.borrowerAddress,
-          lenderOfferSignature: contractOffer.signature,
-          borrowerOfferSignature: "0x0", // TODO: fix this
-          callbackData: "0x0", // TODO: fix this
-        },
-      ]);
-
-      return {
-        txHash,
-        waitTxInBlock: async () => {
-          const receipt = await this.bcClient.waitForTransactionReceipt({
-            hash: txHash,
-          });
-          const filter =
-            await this.contracts.MultiSourceLoanV5.createEventFilter.LoanEmitted();
-          const events = filterLogs(receipt, filter);
-          if (events.length == 0) throw new Error("Loan not emitted");
-          const args = events[0].args;
-          return {
-            loan: {
-              id: `${this.contracts.MultiSourceLoanV5.address.toLowerCase()}.${
-                args.loanId
-              }`,
-              ...args.loan,
-              contractAddress: this.contracts.MultiSourceLoanV5.address,
-            },
-            offerId: `${this.contracts.MultiSourceLoanV5.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
-              args.offerId
-            }`,
-            ...receipt,
-          };
-        },
-      };
-    }
-
-    throw new Error(`Contract Address ${offer.contractAddress} not supported`);
+    return this.contracts.Msl(offer.contractAddress).emitLoan({
+      offer: contractOffer,
+      signature: contractOffer.signature,
+      tokenId,
+    });
   }
 
   async repayLoan({
@@ -622,67 +364,10 @@ export class Gondi {
     loan: model.Loan;
     nftReceiver?: Address;
   }) {
-    const receiver = nftReceiver ?? this.wallet.account.address;
-
-    if (
-      areSameAddress(
-        loan.contractAddress,
-        this.contracts.MultiSourceLoanV4.address
-      )
-    ) {
-      const txHash = await this.contracts.MultiSourceLoanV4.write.repayLoan([
-        receiver,
-        loan.source[0].loanId,
-        loan,
-        false,
-      ]);
-
-      return {
-        txHash,
-        waitTxInBlock: async () => {
-          const receipt = await this.bcClient.waitForTransactionReceipt({
-            hash: txHash,
-          });
-          const filter =
-            await this.contracts.MultiSourceLoanV4.createEventFilter.LoanRepaid();
-          const events = filterLogs(receipt, filter);
-          if (events.length == 0) throw new Error("Loan not repaid");
-          return { ...events[0].args, ...receipt };
-        },
-      };
-    }
-
-    if (
-      areSameAddress(
-        loan.contractAddress,
-        this.contracts.MultiSourceLoanV5.address
-      )
-    ) {
-      const txHash = await this.contracts.MultiSourceLoanV5.write.repayLoan([
-        {
-          loanId: loan.source[0].loanId,
-          loan,
-          borrowerLoanSignature: "0x0", // TODO: fix this
-          callbackData: "0x0", // TODO: fix this,
-        },
-      ]);
-
-      return {
-        txHash,
-        waitTxInBlock: async () => {
-          const receipt = await this.bcClient.waitForTransactionReceipt({
-            hash: txHash,
-          });
-          const filter =
-            await this.contracts.MultiSourceLoanV5.createEventFilter.LoanRepaid();
-          const events = filterLogs(receipt, filter);
-          if (events.length == 0) throw new Error("Loan not repaid");
-          return { ...events[0].args, ...receipt };
-        },
-      };
-    }
-
-    throw new Error(`Contract Address ${loan.contractAddress} not supported`);
+    return this.contracts.Msl(loan.contractAddress).repayLoan({
+      loan,
+      nftReceiver,
+    });
   }
 
   async offers({
@@ -799,83 +484,11 @@ export class Gondi {
       fee: offer.feeAmount,
     };
 
-    if (
-      areSameAddress(
-        loan.contractAddress,
-        this.contracts.MultiSourceLoanV4.address
-      )
-    ) {
-      const txHash = await this.contracts.MultiSourceLoanV4.write.refinanceFull(
-        [offerInput, loan, offer.signature]
-      );
-
-      return {
-        txHash,
-        waitTxInBlock: async () => {
-          const receipt = await this.bcClient.waitForTransactionReceipt({
-            hash: txHash,
-          });
-          const filter =
-            await this.contracts.MultiSourceLoanV4.createEventFilter.LoanRefinanced();
-          const events = filterLogs(receipt, filter);
-          if (events.length == 0) throw new Error("Loan not refinanced");
-          const args = events[0].args;
-          return {
-            loan: {
-              id: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${
-                args.newLoanId
-              }`,
-              ...args.loan,
-              contractAddress: this.contracts.MultiSourceLoanV4.address,
-            },
-            renegotiationId: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
-              args.renegotiationId
-            }`,
-            ...receipt,
-          };
-        },
-      };
-    }
-
-    if (
-      areSameAddress(
-        loan.contractAddress,
-        this.contracts.MultiSourceLoanV5.address
-      )
-    ) {
-      const txHash = await this.contracts.MultiSourceLoanV5.write.refinanceFull(
-        [offerInput, loan, offer.signature]
-      );
-
-      return {
-        txHash,
-        waitTxInBlock: async () => {
-          const receipt = await this.bcClient.waitForTransactionReceipt({
-            hash: txHash,
-          });
-          const filter =
-            await this.contracts.MultiSourceLoanV5.createEventFilter.LoanRefinanced();
-          const events = filterLogs(receipt, filter);
-          if (events.length == 0) throw new Error("Loan not refinanced");
-          const args = events[0].args;
-          return {
-            loan: {
-              id: `${this.contracts.MultiSourceLoanV5.address.toLowerCase()}.${
-                args.newLoanId
-              }`,
-              ...args.loan,
-              contractAddress: this.contracts.MultiSourceLoanV5.address,
-            },
-            renegotiationId: `${this.contracts.MultiSourceLoanV5.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
-              args.renegotiationId
-            }`,
-            ...receipt,
-          };
-        },
-      };
-    }
-
-    throw new Error(`Contract Address ${loan.contractAddress} not supported`);
+    return this.contracts.Msl(loan.contractAddress).refinanceFullLoan({
+      offer: offerInput,
+      loan,
+      signature: offer.signature,
+    });
   }
 
   async refinancePartialLoan({
@@ -894,155 +507,16 @@ export class Gondi {
       fee: offer.feeAmount,
     };
 
-    if (
-      areSameAddress(
-        loan.contractAddress,
-        this.contracts.MultiSourceLoanV4.address
-      )
-    ) {
-      const txHash =
-        await this.contracts.MultiSourceLoanV4.write.refinancePartial([
-          offerInput,
-          loan,
-        ]);
-
-      return {
-        txHash,
-        waitTxInBlock: async () => {
-          const receipt = await this.bcClient.waitForTransactionReceipt({
-            hash: txHash,
-          });
-          const filter =
-            await this.contracts.MultiSourceLoanV4.createEventFilter.LoanRefinanced();
-          const events = filterLogs(receipt, filter);
-          if (events.length == 0) throw new Error("Loan not refinanced");
-          const args = events[0].args;
-          return {
-            loan: {
-              id: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${
-                args.newLoanId
-              }`,
-              ...args.loan,
-              contractAddress: this.contracts.MultiSourceLoanV4.address,
-            },
-            renegotiationId: `${this.contracts.MultiSourceLoanV4.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
-              args.renegotiationId
-            }`,
-            ...receipt,
-          };
-        },
-      };
-    }
-
-    if (
-      areSameAddress(
-        loan.contractAddress,
-        this.contracts.MultiSourceLoanV5.address
-      )
-    ) {
-      const txHash =
-        await this.contracts.MultiSourceLoanV5.write.refinancePartial([
-          offerInput,
-          loan,
-        ]);
-
-      return {
-        txHash,
-        waitTxInBlock: async () => {
-          const receipt = await this.bcClient.waitForTransactionReceipt({
-            hash: txHash,
-          });
-          const filter =
-            await this.contracts.MultiSourceLoanV5.createEventFilter.LoanRefinanced();
-          const events = filterLogs(receipt, filter);
-          if (events.length == 0) throw new Error("Loan not refinanced");
-          const args = events[0].args;
-          return {
-            loan: {
-              id: `${this.contracts.MultiSourceLoanV5.address.toLowerCase()}.${
-                args.newLoanId
-              }`,
-              ...args.loan,
-              contractAddress: this.contracts.MultiSourceLoanV5.address,
-            },
-            renegotiationId: `${this.contracts.MultiSourceLoanV5.address.toLowerCase()}.${offer.lenderAddress.toLowerCase()}.${
-              args.renegotiationId
-            }`,
-            ...receipt,
-          };
-        },
-      };
-    }
-
-    throw new Error(`Contract Address ${loan.contractAddress} not supported`);
+    return this.contracts.Msl(loan.contractAddress).refinancePartialLoan({
+      offer: offerInput,
+      loan,
+    });
   }
 
   async liquidateLoan(loan: model.Loan) {
-    if (
-      areSameAddress(
-        loan.contractAddress,
-        this.contracts.MultiSourceLoanV4.address
-      )
-    ) {
-      const txHash = await this.contracts.MultiSourceLoanV4.write.liquidateLoan(
-        [loan.source[0].loanId, loan]
-      );
-
-      return {
-        txHash,
-        waitTxInBlock: async () => {
-          const receipt = await this.bcClient.waitForTransactionReceipt({
-            hash: txHash,
-          });
-          const filterForeclosed =
-            await this.contracts.MultiSourceLoanV4.createEventFilter.LoanForeclosed();
-          const filterLiquidated =
-            await this.contracts.MultiSourceLoanV4.createEventFilter.LoanForeclosed();
-          const foreclosedEvents = filterLogs(receipt, filterForeclosed);
-          const liquidatedEvents = filterLogs(receipt, filterLiquidated);
-          if (foreclosedEvents.length === 0 && liquidatedEvents.length === 0)
-            throw new Error("Loan not liquidated");
-          return {
-            ...(foreclosedEvents?.[0]?.args ?? liquidatedEvents?.[0]?.args),
-            ...receipt,
-          };
-        },
-      };
-    }
-
-    if (
-      areSameAddress(
-        loan.contractAddress,
-        this.contracts.MultiSourceLoanV5.address
-      )
-    ) {
-      const txHash = await this.contracts.MultiSourceLoanV5.write.liquidateLoan(
-        [loan.source[0].loanId, loan]
-      );
-
-      return {
-        txHash,
-        waitTxInBlock: async () => {
-          const receipt = await this.bcClient.waitForTransactionReceipt({
-            hash: txHash,
-          });
-          const filterForeclosed =
-            await this.contracts.MultiSourceLoanV5.createEventFilter.LoanForeclosed();
-          const filterLiquidated =
-            await this.contracts.MultiSourceLoanV5.createEventFilter.LoanForeclosed();
-          const foreclosedEvents = filterLogs(receipt, filterForeclosed);
-          const liquidatedEvents = filterLogs(receipt, filterLiquidated);
-          if (foreclosedEvents.length === 0 && liquidatedEvents.length === 0)
-            throw new Error("Loan not liquidated");
-          return {
-            ...(foreclosedEvents?.[0]?.args ?? liquidatedEvents?.[0]?.args),
-            ...receipt,
-          };
-        },
-      };
-    }
-
-    throw new Error(`Contract Address ${loan.contractAddress} not supported`);
+    return this.contracts.Msl(loan.contractAddress).liquidateLoan({
+      loan,
+    });
   }
 
   async approveNFTForAll(nftAddress: Address) {
