@@ -10,7 +10,7 @@
     "dist"
   ],
   "scripts": {
-    "docs": "typedoc --options ./typedocconfig.ts",
+    "docs": "typedoc --options ./typedocconfig.ts --out docs/$npm_package_version && cp -r docs/$npm_package_version docs/lts",
     "build": "node esbuild.js && tsc && tsc-alias",
     "build-unbundle": "tsc --outDir dist && tsc-alias",
     "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
