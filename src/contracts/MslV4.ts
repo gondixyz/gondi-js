@@ -293,14 +293,20 @@ export class MslV4 {
         });
         const filterForeclosed =
           await this.contract.createEventFilter.LoanForeclosed();
-        const filterLiquidated =
-          await this.contract.createEventFilter.LoanForeclosed();
+        const filterSentToLiquidator =
+          await this.contract.createEventFilter.LoanSentToLiquidator();
         const foreclosedEvents = filterLogs(receipt, filterForeclosed);
-        const liquidatedEvents = filterLogs(receipt, filterLiquidated);
-        if (foreclosedEvents.length === 0 && liquidatedEvents.length === 0)
+        const sentToLiquidatorEvents = filterLogs(
+          receipt,
+          filterSentToLiquidator
+        );
+        if (
+          foreclosedEvents.length === 0 &&
+          sentToLiquidatorEvents.length === 0
+        )
           throw new Error("Loan not liquidated");
         return {
-          ...(foreclosedEvents?.[0]?.args ?? liquidatedEvents?.[0]?.args),
+          ...(foreclosedEvents?.[0]?.args ?? sentToLiquidatorEvents?.[0]?.args),
           ...receipt,
         };
       },
