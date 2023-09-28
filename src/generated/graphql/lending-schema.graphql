@@ -166,6 +166,7 @@ type CollectionOffer implements Node & Offer {
   borrowerAddress: Address
   capacity: BigInt!
   collection: Collection!
+  contractAddress: Address!
   createdDate: DateTime
   currency: Currency
   duration: BigInt!
@@ -248,42 +249,23 @@ input CollectionSignedOfferInput {
 }
 
 type CollectionStatistics {
-  averageHoldingTime: Float
-  bestBid: Float
-  bestOffer: Float
-  collectionsCount: Float
-  floorPrice: Float
+  bestOffer: CurrencyAmount
+  floorPrice: CurrencyAmount
   floorPrice7d: Float
   floorPrice30d: Float
-  floorPriceExpiration: DateTime
   lastSale: Sale
-  maxFloor1d: Float
-  maxFloor1m: Float
-  maxFloor1w: Float
-  maxFloor1y: Float
-  maxFloor2m: Float
-  maxFloor3m: Float
-  maxFloor4m: Float
-  minFloor1d: Float
-  minFloor1m: Float
-  minFloor1w: Float
-  minFloor1y: Float
-  minFloor2m: Float
-  minFloor3m: Float
-  minFloor4m: Float
   nftsCount: Float
-  numberOfOwners: Int
+  numberOfOffers(currencyAddress: Address!): Float!
   percentageInOutstandingLoans: Float!
-  percentageListed: Float
   repaymentRate: Float!
-  totalLoanVolume: Float
-  totalLoanVolume1d: Float
-  totalLoanVolume1m: Float
-  totalLoanVolume1w: Float
-  totalLoanVolume1y: Float
-  totalLoanVolume2m: Float
-  totalLoanVolume3m: Float
-  totalLoanVolume4m: Float
+  totalLoanVolume(currencyAddress: Address!): BigInt!
+  totalLoanVolume1d(currencyAddress: Address!): BigInt!
+  totalLoanVolume1m(currencyAddress: Address!): BigInt!
+  totalLoanVolume1w(currencyAddress: Address!): BigInt!
+  totalLoanVolume1y(currencyAddress: Address!): BigInt!
+  totalLoanVolume2m(currencyAddress: Address!): BigInt!
+  totalLoanVolume3m(currencyAddress: Address!): BigInt!
+  totalLoanVolume4m(currencyAddress: Address!): BigInt!
   totalVolume: Float
   totalVolume1d: Float
   totalVolume1m: Float
@@ -309,6 +291,11 @@ type Currency implements Node {
   symbol: String!
 }
 
+type CurrencyAmount {
+  amount: Float!
+  currency: Currency!
+}
+
 """
 Date with time (isoformat)
 """
@@ -325,6 +312,8 @@ input Interval {
 
 type Listing implements Node {
   createdDate: DateTime!
+  desiredDuration: Int
+  desiredPrincipalAddress: Address
   id: String!
   marketplaceName: MarketplaceEnum!
   nft: NFT!
@@ -343,6 +332,7 @@ type ListingEdge {
 }
 
 interface Loan implements Node {
+  activities: [LoanActivity!]!
   address: Address!
   borrowerAddress: Address!
   currency: Currency
@@ -525,6 +515,7 @@ type LoanSentToAuction implements LoanActivity & Node {
 enum LoanSortField {
   APR_BPS
   DURATION
+  EXPECTED_INTEREST
   EXPIRATION_DATE
   ORIGINATION_FEE
   PAID_INTEREST
@@ -569,32 +560,12 @@ type LostSourceNotification implements Node & Notification {
 }
 
 type ManyNftsStatistics {
-  averageHoldingTime: Float
-  bestBid: Float
-  bestOffer: Float
-  collectionsCount: Float
-  floorPrice: Float
+  bestOffer: CurrencyAmount
+  floorPrice: CurrencyAmount
   floorPrice7d: Float
   floorPrice30d: Float
-  floorPriceExpiration: DateTime
   lastSale: Sale
-  maxFloor1d: Float
-  maxFloor1m: Float
-  maxFloor1w: Float
-  maxFloor1y: Float
-  maxFloor2m: Float
-  maxFloor3m: Float
-  maxFloor4m: Float
-  minFloor1d: Float
-  minFloor1m: Float
-  minFloor1w: Float
-  minFloor1y: Float
-  minFloor2m: Float
-  minFloor3m: Float
-  minFloor4m: Float
   nftsCount: Float
-  numberOfOwners: Int
-  percentageListed: Float
   totalVolume: Float
   totalVolume1d: Float
   totalVolume1m: Float
@@ -611,6 +582,7 @@ enum MarketplaceEnum {
 }
 
 type MultiSourceLoan implements Loan & Node {
+  activities: [LoanActivity!]!
   address: Address!
   auction: Auction
   blendedAprBps: Float!
@@ -657,8 +629,15 @@ type MultiSourceLoanHistory implements Node {
 }
 
 type Mutation {
-  addListing(nftId: Int!): Listing!
-  addListingsOfNftsFromUser: Void
+  addListingsOfNftsFromUser(
+    desiredDuration: Int = null
+    desiredPrincipalAddress: Address = null
+  ): Void
+  addOrUpdateListing(
+    desiredDuration: Int = null
+    desiredPrincipalAddress: Address = null
+    nftId: Int!
+  ): Listing!
   generateCollectionOfferToBeSigned(
     offerInput: CollectionOfferInput!
   ): CollectionOffer!
@@ -749,34 +728,17 @@ enum NftSortField {
 input NftSortInput {
   field: NftSortField!
   order: Ordering!
+  principalAddress: Address = null
 }
 
 type NftStatistics {
-  averageHoldingTime: Float
-  bestOffer: Float
-  collectionsCount: Float
-  floorPrice: Float
+  bestOffer: CurrencyAmount
+  floorPrice: CurrencyAmount
   floorPrice7d: Float
   floorPrice30d: Float
-  floorPriceExpiration: DateTime
   lastSale: Sale
-  loansTotalVolume(currencyAddress: Address!): Float!
-  maxFloor1d: Float
-  maxFloor1m: Float
-  maxFloor1w: Float
-  maxFloor1y: Float
-  maxFloor2m: Float
-  maxFloor3m: Float
-  maxFloor4m: Float
-  minFloor1d: Float
-  minFloor1m: Float
-  minFloor1w: Float
-  minFloor1y: Float
-  minFloor2m: Float
-  minFloor3m: Float
-  minFloor4m: Float
-  numberOfOffers: Float!
-  percentageListed: Float
+  loansTotalVolume(currencyAddress: Address!): BigInt!
+  numberOfOffers(currencyAddress: Address!): Float!
   totalVolume: Float
   totalVolume1d: Float
   totalVolume1m: Float
@@ -827,6 +789,7 @@ interface Offer implements Node {
   aprBps: BigInt!
   borrowerAddress: Address
   capacity: BigInt!
+  contractAddress: Address!
   createdDate: DateTime
   currency: Currency
   duration: BigInt!
@@ -905,8 +868,10 @@ type OffersAndRenegotiationsEdge {
 enum OffersSortField {
   APR_BPS
   CREATED_DATE
+  DAILY_INTEREST
   DURATION
   EXPIRATION
+  NET_PRINCIPAL
   PRINCIPAL_AMOUNT
   REPAYMENT
   STATUS
@@ -962,6 +927,7 @@ type PageInfo {
 
 type PointActivity implements Node {
   id: String!
+  loanActivity: LoanActivity!
   points: BigInt!
   reason: String!
   timestamp: DateTime!
@@ -998,6 +964,7 @@ type Query {
   getUserPoints: Int!
   listAuctions(
     after: String
+    currencyAddress: Address = null
     first: Int = 10
     sortBy: [AuctionSortInput!] = null
     statuses: [AuctionStatus!] = null
@@ -1006,6 +973,7 @@ type Query {
     after: String
     auctionId: String = null
     bidder: String = null
+    currencyAddress: Address = null
     first: Int = 10
     onlyLatest: Boolean! = false
     sortBy: [BidSortInput!] = null
@@ -1045,6 +1013,7 @@ type Query {
     after: String
     borrowerAddress: String = null
     collections: [Int!] = null
+    currencyAddress: Address = null
     first: Int! = 10
     nfts: [Int!] = null
     orderByStatuses: Boolean = true
@@ -1054,7 +1023,9 @@ type Query {
   ): MultiSourceLoanConnection!
   listNftOffersAndRenegotiations(
     after: String
+    currencyAddress: Address = null
     first: Int = 20
+    hidden: Boolean = null
     lenderAddress: String = null
     sortBy: OffersSortInput = null
     statuses: [OfferStatus!] = null
@@ -1078,6 +1049,7 @@ type Query {
     after: String
     borrowerAddress: String = null
     collections: [Int!] = null
+    currencyAddress: Address = null
     first: Int = 10
     hidden: Boolean = null
     lenderAddress: String = null
@@ -1100,6 +1072,7 @@ type Query {
   ): RenegotiationConnection!
   listSources(
     after: String
+    currencyAddress: Address = null
     first: Int! = 10
     includeLost: Boolean = false
     lenderAddress: String = null
@@ -1107,6 +1080,7 @@ type Query {
     statuses: [LoanStatusType!] = null
     terms: TermsFilter = null
   ): SourcesAndLostSourcesConnection!
+  me: User
 }
 
 input RangeInput {
@@ -1117,6 +1091,8 @@ input RangeInput {
 input RefinanceTermsFilter {
   aprBps: Interval = null
   duration: Interval = null
+  fee: Interval = null
+  netPrincipal: Interval = null
   principal: Interval = null
   remainingTime: Interval = null
 }
@@ -1130,6 +1106,7 @@ type Renegotiation implements Node {
   hidden: Boolean
   id: String!
   lenderAddress: Address
+  loanAddress: Address!
   loanId: BigInt!
   loanReferenceId: String!
   nft: NFT!
@@ -1247,6 +1224,7 @@ type SingleNFTOffer implements Node & Offer {
   aprBps: BigInt!
   borrowerAddress: Address
   capacity: BigInt!
+  contractAddress: Address!
   createdDate: DateTime
   currency: Currency
   duration: BigInt!
@@ -1326,6 +1304,7 @@ input SingleNFTSignedOfferInput {
 
 type SingleSourceLoan implements Loan & Node {
   accruedInterest: BigInt!
+  activities: [LoanActivity!]!
   address: Address!
   aprBps: BigInt!
   borrowerAddress: Address!
@@ -1408,6 +1387,8 @@ type Tag implements Node {
 input TermsFilter {
   aprBps: Interval = null
   duration: Interval = null
+  fee: Interval = null
+  netPrincipal: Interval = null
   principal: Interval = null
 }
 
@@ -1445,6 +1426,7 @@ type User implements Node {
   size512ProfilePicture: String
   twitterHandle: String
   updatedAt: DateTime
+  usedProduct: Boolean!
   username: String
   walletAddress: Address!
 }

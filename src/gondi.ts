@@ -361,8 +361,8 @@ export class Gondi {
   }: {
     offer: model.SingleNftOffer | model.CollectionOffer;
     tokenId: bigint;
-    amount: bigint | undefined;
-    expirationTime: bigint | undefined;
+    amount?: bigint;
+    expirationTime?: bigint;
   }) {
     const contractOffer = {
       ...offer,
