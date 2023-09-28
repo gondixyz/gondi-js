@@ -46,11 +46,19 @@ export class Gondi {
   }
 
   async makeSingleNftOffer(offer: model.SingleNftOfferInput) {
+    return await this._makeSingleNftOffer(offer);
+  }
+
+  /** @internal */
+  async _makeSingleNftOffer(offer: model.SingleNftOfferInput, mslContractAddress?: Address) {
+    const contractAddress = mslContractAddress ?
+      this.contracts.Msl(mslContractAddress).address : this.contracts.MultiSourceLoanV5.address;
+
     const offerInput = {
       lenderAddress: this.wallet.account?.address,
       signerAddress: this.wallet.account?.address,
       borrowerAddress: offer.borrowerAddress ?? zeroAddress,
-      contractAddress: this.contracts.MultiSourceLoanV4.address, // TODO: change this to be v5 by default
+      contractAddress,
       offerValidators: [], // This is ignored by the API but it was required in the mutation
       ...offer,
     };
@@ -125,11 +133,19 @@ export class Gondi {
   }
 
   async makeCollectionOffer(offer: model.CollectionOfferInput) {
+    return await this._makeCollectionOffer(offer);
+  }
+
+  /** @internal */
+  async _makeCollectionOffer(offer: model.CollectionOfferInput, mslContractAddress?: Address) {
+    const contractAddress = mslContractAddress ?
+      this.contracts.Msl(mslContractAddress).address : this.contracts.MultiSourceLoanV5.address;
+
     const offerInput = {
       lenderAddress: this.wallet.account?.address,
       signerAddress: this.wallet.account?.address,
       borrowerAddress: offer.borrowerAddress ?? zeroAddress,
-      contractAddress: this.contracts.MultiSourceLoanV4.address, // TODO: change this to be v5 by default
+      contractAddress,
       offerValidators: [
         // This is ignored by the API but it was required in the mutation
         {

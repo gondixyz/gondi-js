@@ -55,7 +55,6 @@ export class MslV5 {
 
   async cancelOffer({ id }: { id: bigint }) {
     const txHash = await this.contract.write.cancelOffer([
-      this.wallet.account.address,
       id,
     ]);
     return {
@@ -75,7 +74,6 @@ export class MslV5 {
 
   async cancelAllOffers({ minId }: { minId: bigint }) {
     const txHash = await this.contract.write.cancelAllOffers([
-      this.wallet.account.address,
       minId,
     ]);
 
@@ -96,7 +94,6 @@ export class MslV5 {
 
   async cancelRefinanceOffer({ id }: { id: bigint }) {
     const txHash = await this.contract.write.cancelRenegotiationOffer([
-      this.wallet.account.address,
       id,
     ]);
     return {
@@ -108,7 +105,7 @@ export class MslV5 {
         const filter =
           await this.contract.createEventFilter.RenegotiationOfferCancelled();
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Offer not cancelled");
+        if (events.length == 0) throw new Error("Renegotiation offer not cancelled");
         return { ...events[0].args, ...receipt };
       },
     };
@@ -116,7 +113,6 @@ export class MslV5 {
 
   async cancelAllRenegotiations({ minId }: { minId: bigint }) {
     const txHash = await this.contract.write.cancelAllRenegotiationOffers([
-      this.wallet.account.address,
       minId,
     ]);
     return {
@@ -126,9 +122,9 @@ export class MslV5 {
           hash: txHash,
         });
         const filter =
-          await this.contract.createEventFilter.RenegotiationOfferCancelled();
+          await this.contract.createEventFilter.AllRenegotiationOffersCancelled();
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Offer not cancelled");
+        if (events.length == 0) throw new Error("Renegotiation offers not cancelled");
         return { ...events[0].args, ...receipt };
       },
     };
