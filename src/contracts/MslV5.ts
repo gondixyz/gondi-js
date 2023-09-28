@@ -134,20 +134,61 @@ export class MslV5 {
     offer,
     signature,
     tokenId,
+    amount,
+    expirationTime,
   }: {
     offer: model.BlockchainOffer;
     signature: Hash;
     tokenId: bigint;
+    amount: bigint;
+    expirationTime: bigint;
   }) {
+    const executionData = {
+      offer,
+      tokenId,
+      amount,
+      expirationTime,
+    };
+    // const borrowerOfferSignature = await this.wallet.signTypedData({
+    //   domain: getDomain(this.wallet.chain.id, this.address),
+    //   primaryType: "ExecutionData",
+    //   types: {
+    //     ExecutionData: [
+    //       { name: "offer", type: "LoanOffer" },
+    //       { name: "tokenId", type: "uint256" },
+    //       { name: "amount", type: "uint256" },
+    //       { name: "expirationTime", type: "uint256" },
+    //     ],
+    //     LoanOffer: [
+    //       { name: "offerId", type: "uint256" },
+    //       { name: "lender", type: "address" },
+    //       { name: "fee", type: "uint256" },
+    //       { name: "borrower", type: "address" },
+    //       { name: "capacity", type: "uint256" },
+    //       { name: "nftCollateralAddress", type: "address" },
+    //       { name: "nftCollateralTokenId", type: "uint256" },
+    //       { name: "principalAddress", type: "address" },
+    //       { name: "principalAmount", type: "uint256" },
+    //       { name: "aprBps", type: "uint256" },
+    //       { name: "expirationTime", type: "uint256" },
+    //       { name: "duration", type: "uint256" },
+    //       { name: "validators", type: "OfferValidator[]" },
+    //     ],
+    //     OfferValidator: [
+    //       { name: "validator", type: "address" },
+    //       { name: "arguments", type: "bytes" },
+    //     ],
+    //   },
+    //   message: executionData,
+    // });
+
     const txHash = await this.contract.write.emitLoan([
       {
-        offer,
-        tokenId,
-        amount: 0n, // TODO: fix this
+        executionData,
         borrower: offer.borrower,
         lenderOfferSignature: signature,
-        borrowerOfferSignature: "0x0", // TODO: fix this
-        callbackData: "0x0", // TODO: fix this
+        borrowerOfferSignature: "0x0", // No signature data is expected here, only for BNPL [Levearage call]
+        callbackData: "0x0", // No callback data is expected here, only for BNPL [Levearage call]
       },
     ]);
 
@@ -177,12 +218,37 @@ export class MslV5 {
   }
 
   async repayLoan({ loan }: { loan: model.Loan }) {
+    // const borrowerLoanSignature = await this.wallet.signTypedData({
+    //   domain: getDomain(this.wallet.chain.id, this.address),
+    //   primaryType: "Loan",
+    //   types: {
+    //     Loan: [
+    //       { name: 'borrower', type: 'address' },
+    //       { name: 'nftCollateralTokenId', type: 'uint256' },
+    //       { name: 'nftCollateralAddress', type: 'address' },
+    //       { name: 'principalAddress', type: 'address' },
+    //       { name: 'principalAmount', type: 'uint256' },
+    //       { name: 'startTime', type: 'uint256' },
+    //       { name: 'duration', type: 'uint256' },
+    //       { name: "source", type: "Source[]" },
+    //     ],
+    //     Source: [
+    //       { name: 'loanId', type: 'uint256' },
+    //       { name: 'lender', type: 'address' },
+    //       { name: 'principalAmount', type: 'uint256' },
+    //       { name: 'accruedInterest', type: 'uint256' },
+    //       { name: 'startTime', type: 'uint256' },
+    //       { name: 'aprBps', type: 'uint256' },
+    //     ],
+    //   },
+    //   message: loan,
+    // });
     const txHash = await this.contract.write.repayLoan([
       {
         loanId: loan.source[0].loanId,
         loan,
-        borrowerLoanSignature: "0x0", // TODO: fix this
-        callbackData: "0x0", // TODO: fix this,
+        borrowerLoanSignature: "0x0", // No signature data is expected here, only for BNPL [Levearage call]
+        callbackData: "0x0", // No callback data is expected here, only for BNPL [Levearage call]
       },
     ]);
 

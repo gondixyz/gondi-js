@@ -24,6 +24,8 @@ import {
 } from "@/generated/graphql";
 import * as model from "@/model";
 
+import { getDomain, millisToSeconds, SECONDS_IN_DAY } from "./utils";
+
 type GondiProps = {
   wallet: Wallet;
   apiClient?: ApiProps["apiClient"];
@@ -354,9 +356,13 @@ export class Gondi {
   async emitLoan({
     offer,
     tokenId,
+    amount,
+    expirationTime,
   }: {
     offer: model.SingleNftOffer | model.CollectionOffer;
     tokenId: bigint;
+    amount: bigint | undefined;
+    expirationTime: bigint | undefined;
   }) {
     const contractOffer = {
       ...offer,
@@ -370,6 +376,8 @@ export class Gondi {
       offer: contractOffer,
       signature: contractOffer.signature,
       tokenId,
+      amount: amount ?? contractOffer.principalAmount,
+      expirationTime: expirationTime ?? BigInt(millisToSeconds(Date.now()) + SECONDS_IN_DAY),
     });
   }
 
@@ -577,13 +585,7 @@ export class Gondi {
     };
   }
 
-  private getDomain(contractAddress?: Address) {
-    return {
-      name: "GONDI_MULTI_SOURCE_LOAN",
-      version: "1",
-      chainId: this.wallet.chain.id,
-      verifyingContract:
-        contractAddress ?? this.contracts.MultiSourceLoanV4.address,
-    };
+  private getDomain(verifyingContract: Address) {
+    return getDomain(this.wallet.chain.id, verifyingContract);
   }
 }
