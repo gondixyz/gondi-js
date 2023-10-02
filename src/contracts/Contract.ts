@@ -1,3 +1,4 @@
+import { ExtractAbiFunctionNames } from "abitype";
 import {
   Abi,
   Account,
@@ -7,6 +8,7 @@ import {
   createTransport,
   getContract,
   GetContractReturnType,
+  Hash,
   PublicClient,
   SimulateContractParameters,
   Transport,
@@ -22,6 +24,12 @@ export class Contract<TAbi extends Abi> {
   wallet: Wallet;
   contract: GetContractReturnType<TAbi, PublicClient, Wallet, Address>;
 
+  safeContractWrite: {
+    [TFunctionName in ExtractAbiFunctionNames<TAbi>]: (
+      args: SimulateContractParameters<TAbi, TFunctionName>["args"]
+    ) => Promise<Hash>;
+  };
+
   constructor({
     walletClient,
     address,
@@ -32,10 +40,11 @@ export class Contract<TAbi extends Abi> {
     abi: TAbi;
   }) {
     this.wallet = walletClient;
-    this.bcClient = createPublicClient({
+    const bcClient = createPublicClient({
       transport: ({ chain: _chain }: { chain?: Chain }) =>
         createTransport(walletClient.transport),
     });
+    this.bcClient = bcClient;
     this.address = address;
     this.abi = abi;
     // @ts-ignore TODO: fix this
@@ -45,22 +54,31 @@ export class Contract<TAbi extends Abi> {
       walletClient,
       publicClient: this.bcClient,
     });
-  }
 
-  protected async safeContractWrite<TFunctionName extends string>(
-    functionName: TFunctionName,
-    args: SimulateContractParameters<TAbi, TFunctionName>["args"]
-  ) {
-    // The typecast here is necessary,
-    // we still enjoy the type checking on the arguments themselves so it's not the end of the world
-    const { request } = await this.bcClient.simulateContract({
-      address: this.address,
-      abi: this.abi,
-      functionName,
-      args,
-      account: this.wallet.account,
-    } as SimulateContractParameters);
+    this.safeContractWrite = new Proxy(
+      {} as typeof this.safeContractWrite,
+      {
+        get<TFunctionName extends string>(
+          _: unknown,
+          functionName: TFunctionName
+        ) {
+          return async (
+            args: SimulateContractParameters<TAbi, TFunctionName>["args"]
+          ) => {
+            // The typecast here is necessary,
+            // we still enjoy the type checking on the arguments themselves so it's not the end of the world
+            const { request } = await bcClient.simulateContract({
+              address: address,
+              abi: abi,
+              functionName,
+              args,
+              account: walletClient.account,
+            } as SimulateContractParameters);
 
-    return this.wallet.writeContract(request);
+            return walletClient.writeContract(request);
+          };
+        },
+      }
+    );
   }
 }

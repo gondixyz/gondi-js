@@ -1,11 +1,4 @@
-import {
-  Account,
-  Address,
-  Chain,
-  Hash,
-  Transport,
-  WalletClient,
-} from "viem";
+import { Account, Address, Chain, Hash, Transport, WalletClient } from "viem";
 
 import { filterLogs } from "@/blockchain";
 import { getContracts } from "@/deploys";
@@ -17,11 +10,7 @@ import { Contract } from "./Contract";
 export type Wallet = WalletClient<Transport, Chain, Account>;
 
 export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
-  constructor({
-    walletClient,
-  }: {
-    walletClient: Wallet;
-  }) {
+  constructor({ walletClient }: { walletClient: Wallet }) {
     const { MultiSourceLoanV4Address } = getContracts(walletClient.chain);
 
     super({
@@ -32,7 +21,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
   }
 
   async cancelOffer({ id }: { id: bigint }) {
-    const txHash = await this.safeContractWrite("cancelOffer", [
+    const txHash = await this.safeContractWrite.cancelOffer([
       this.wallet.account.address,
       id,
     ]);
@@ -52,7 +41,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
   }
 
   async cancelAllOffers({ minId }: { minId: bigint }) {
-    const txHash = await this.safeContractWrite("cancelAllOffers", [
+    const txHash = await this.safeContractWrite.cancelAllOffers([
       this.wallet.account.address,
       minId,
     ]);
@@ -73,7 +62,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
   }
 
   async cancelRefinanceOffer({ id }: { id: bigint }) {
-    const txHash = await this.safeContractWrite("cancelRenegotiationOffer", [
+    const txHash = await this.safeContractWrite.cancelRenegotiationOffer([
       this.wallet.account.address,
       id,
     ]);
@@ -93,10 +82,10 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
   }
 
   async cancelAllRenegotiations({ minId }: { minId: bigint }) {
-    const txHash = await this.safeContractWrite(
-      "cancelAllRenegotiationOffers",
-      [this.wallet.account.address, minId]
-    );
+    const txHash = await this.safeContractWrite.cancelAllRenegotiationOffers([
+      this.wallet.account.address,
+      minId,
+    ]);
     return {
       txHash,
       waitTxInBlock: async () => {
@@ -121,7 +110,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
     signature: Hash;
     tokenId: bigint;
   }) {
-    const txHash = await this.safeContractWrite("emitLoan", [
+    const txHash = await this.safeContractWrite.emitLoan([
       offer,
       tokenId,
       signature,
@@ -162,7 +151,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
   }) {
     const receiver = nftReceiver ?? this.wallet.account.address;
 
-    const txHash = await this.safeContractWrite("repayLoan", [
+    const txHash = await this.safeContractWrite.repayLoan([
       receiver,
       loan.source[0].loanId,
       loan,
@@ -192,7 +181,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
     signature: Hash;
     loan: model.Loan;
   }) {
-    const txHash = await this.safeContractWrite("refinanceFull", [
+    const txHash = await this.safeContractWrite.refinanceFull([
       offer,
       loan,
       signature,
@@ -230,7 +219,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
     offer: model.BlockchainRenegotiation;
     loan: model.Loan;
   }) {
-    const txHash = await this.safeContractWrite("refinancePartial", [
+    const txHash = await this.safeContractWrite.refinancePartial([
       offer,
       loan,
     ]);
@@ -261,7 +250,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
   }
 
   async liquidateLoan({ loan }: { loan: model.Loan }) {
-    const txHash = await this.safeContractWrite("liquidateLoan", [
+    const txHash = await this.safeContractWrite.liquidateLoan([
       loan.source[0].loanId,
       loan,
     ]);
