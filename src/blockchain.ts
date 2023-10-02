@@ -43,14 +43,8 @@ export class Contracts {
     this.walletClient = walletClient;
     this.publicClient = publicClient;
 
-    this.MultiSourceLoanV4 = new MslV4({
-      publicClient,
-      walletClient,
-    });
-    this.MultiSourceLoanV5 = new MslV5({
-      publicClient,
-      walletClient,
-    });
+    this.MultiSourceLoanV4 = new MslV4({ walletClient });
+    this.MultiSourceLoanV5 = new MslV5({ walletClient });
   }
 
   Msl(contractAddress: Address) {

@@ -1,11 +1,4 @@
-import {
-  Account,
-  Chain,
-  Hash,
-  PublicClient,
-  Transport,
-  WalletClient,
-} from "viem";
+import { Account, Chain, Hash, Transport, WalletClient } from "viem";
 
 import { filterLogs } from "@/blockchain";
 import { getContracts } from "@/deploys";
@@ -17,17 +10,10 @@ import { Contract } from "./Contract";
 export type Wallet = WalletClient<Transport, Chain, Account>;
 
 export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
-  constructor({
-    publicClient,
-    walletClient,
-  }: {
-    publicClient: PublicClient;
-    walletClient: Wallet;
-  }) {
+  constructor({ walletClient }: { walletClient: Wallet }) {
     const { MultiSourceLoanV5Address } = getContracts(walletClient.chain);
 
     super({
-      publicClient,
       walletClient,
       address: MultiSourceLoanV5Address,
       abi: multiSourceLoanABIV5,

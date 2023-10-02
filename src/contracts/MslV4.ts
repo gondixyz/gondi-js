@@ -3,7 +3,6 @@ import {
   Address,
   Chain,
   Hash,
-  PublicClient,
   Transport,
   WalletClient,
 } from "viem";
@@ -19,16 +18,13 @@ export type Wallet = WalletClient<Transport, Chain, Account>;
 
 export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
   constructor({
-    publicClient,
     walletClient,
   }: {
-    publicClient: PublicClient;
     walletClient: Wallet;
   }) {
     const { MultiSourceLoanV4Address } = getContracts(walletClient.chain);
 
     super({
-      publicClient,
       walletClient,
       address: MultiSourceLoanV4Address,
       abi: multiSourceLoanABIV4,

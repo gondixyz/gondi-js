@@ -23,12 +23,10 @@ export class Contract<TAbi extends Abi> {
   contract: GetContractReturnType<TAbi, PublicClient, Wallet, Address>;
 
   constructor({
-    // publicClient,
     walletClient,
     address,
     abi,
   }: {
-    publicClient: PublicClient;
     walletClient: Wallet;
     address: Address;
     abi: TAbi;
