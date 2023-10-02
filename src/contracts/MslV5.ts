@@ -1,11 +1,6 @@
 import {
   Account,
-  Address,
   Chain,
-  createPublicClient,
-  createTransport,
-  getContract,
-  GetContractReturnType,
   Hash,
   PublicClient,
   Transport,
@@ -17,19 +12,11 @@ import { getContracts } from "@/deploys";
 import { multiSourceLoanABI as multiSourceLoanABIV5 } from "@/generated/blockchain/v5";
 import * as model from "@/model";
 
+import { Contract } from "./Contract";
+
 export type Wallet = WalletClient<Transport, Chain, Account>;
 
-export class MslV5 {
-  address: Address;
-  wallet: Wallet;
-  bcClient: PublicClient<Transport, Chain>;
-  contract: GetContractReturnType<
-    typeof multiSourceLoanABIV5,
-    PublicClient,
-    Wallet,
-    Address
-  >;
-
+export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
   constructor({
     publicClient,
     walletClient,
@@ -39,22 +26,16 @@ export class MslV5 {
   }) {
     const { MultiSourceLoanV5Address } = getContracts(walletClient.chain);
 
-    this.wallet = walletClient;
-    this.bcClient = createPublicClient({
-      transport: ({ chain: _chain }: { chain?: Chain }) =>
-        createTransport(walletClient.transport),
-    });
-    this.address = MultiSourceLoanV5Address;
-    this.contract = getContract({
+    super({
+      publicClient,
+      walletClient,
       address: MultiSourceLoanV5Address,
       abi: multiSourceLoanABIV5,
-      walletClient,
-      publicClient,
     });
   }
 
   async cancelOffer({ id }: { id: bigint }) {
-    const txHash = await this.contract.write.cancelOffer([
+    const txHash = await this.safeContractWrite("cancelOffer", [
       this.wallet.account.address,
       id,
     ]);
@@ -74,11 +55,10 @@ export class MslV5 {
   }
 
   async cancelAllOffers({ minId }: { minId: bigint }) {
-    const txHash = await this.contract.write.cancelAllOffers([
+    const txHash = await this.safeContractWrite("cancelAllOffers", [
       this.wallet.account.address,
       minId,
     ]);
-
     return {
       txHash,
       waitTxInBlock: async () => {
@@ -95,7 +75,7 @@ export class MslV5 {
   }
 
   async cancelRefinanceOffer({ id }: { id: bigint }) {
-    const txHash = await this.contract.write.cancelRenegotiationOffer([
+    const txHash = await this.safeContractWrite("cancelRenegotiationOffer", [
       this.wallet.account.address,
       id,
     ]);
@@ -115,10 +95,10 @@ export class MslV5 {
   }
 
   async cancelAllRenegotiations({ minId }: { minId: bigint }) {
-    const txHash = await this.contract.write.cancelAllRenegotiationOffers([
-      this.wallet.account.address,
-      minId,
-    ]);
+    const txHash = await this.safeContractWrite(
+      "cancelAllRenegotiationOffers",
+      [this.wallet.account.address, minId]
+    );
     return {
       txHash,
       waitTxInBlock: async () => {
@@ -143,7 +123,7 @@ export class MslV5 {
     signature: Hash;
     tokenId: bigint;
   }) {
-    const txHash = await this.contract.write.emitLoan([
+    const txHash = await this.safeContractWrite("emitLoan", [
       {
         offer,
         tokenId,
@@ -154,7 +134,6 @@ export class MslV5 {
         callbackData: "0x0", // TODO: fix this
       },
     ]);
-
     return {
       txHash,
       waitTxInBlock: async () => {
@@ -181,7 +160,7 @@ export class MslV5 {
   }
 
   async repayLoan({ loan }: { loan: model.Loan }) {
-    const txHash = await this.contract.write.repayLoan([
+    const txHash = await this.safeContractWrite("repayLoan", [
       {
         loanId: loan.source[0].loanId,
         loan,
@@ -189,7 +168,6 @@ export class MslV5 {
         callbackData: "0x0", // TODO: fix this,
       },
     ]);
-
     return {
       txHash,
       waitTxInBlock: async () => {
@@ -213,12 +191,11 @@ export class MslV5 {
     signature: Hash;
     loan: model.Loan;
   }) {
-    const txHash = await this.contract.write.refinanceFull([
+    const txHash = await this.safeContractWrite("refinanceFull", [
       offer,
       loan,
       signature,
     ]);
-
     return {
       txHash,
       waitTxInBlock: async () => {
@@ -251,8 +228,10 @@ export class MslV5 {
     offer: model.BlockchainRenegotiation;
     loan: model.Loan;
   }) {
-    const txHash = await this.contract.write.refinancePartial([offer, loan]);
-
+    const txHash = await this.safeContractWrite("refinancePartial", [
+      offer,
+      loan,
+    ]);
     return {
       txHash,
       waitTxInBlock: async () => {
@@ -279,11 +258,10 @@ export class MslV5 {
   }
 
   async liquidateLoan({ loan }: { loan: model.Loan }) {
-    const txHash = await this.contract.write.liquidateLoan([
+    const txHash = await this.safeContractWrite("liquidateLoan", [
       loan.source[0].loanId,
       loan,
     ]);
-
     return {
       txHash,
       waitTxInBlock: async () => {
