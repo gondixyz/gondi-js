@@ -28,7 +28,7 @@ async function main() {
   let { loan } = await emitLoan.waitTxInBlock();
   console.log("loan emitted");
 
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  await new Promise((resolve) => setTimeout(resolve, 5000));
 
   const renegotiationOffer = await users[2].makeRefinanceOffer({
     renegotiation: {
@@ -54,7 +54,7 @@ async function main() {
   loan = (await refinanceFullLoan.waitTxInBlock()).loan;
   console.log("loan refinanced partially");
 
-  await new Promise((resolve) => setTimeout(resolve, 6000));
+  await new Promise((resolve) => setTimeout(resolve, 10000));
 
   // We need to push a new block into the blockchain
   const collectionOfferToCancel = await users[0].makeCollectionOffer(
@@ -66,7 +66,7 @@ async function main() {
   });
   console.log("loan defaulted");
 
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  await new Promise((resolve) => setTimeout(resolve, 10000));
 
   const liquidatedLoan = await users[0].liquidateLoan(loan);
 
