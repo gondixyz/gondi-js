@@ -41,8 +41,7 @@ export class Contract<TAbi extends Abi> {
   }) {
     this.wallet = walletClient;
     const bcClient = createPublicClient({
-      transport: ({ chain: _chain }: { chain?: Chain }) =>
-        createTransport(walletClient.transport),
+      transport: () => createTransport(walletClient.transport),
     });
     this.bcClient = bcClient;
     this.address = address;
@@ -54,30 +53,27 @@ export class Contract<TAbi extends Abi> {
       publicClient: this.bcClient,
     });
 
-    this.safeContractWrite = new Proxy(
-      {} as typeof this.safeContractWrite,
-      {
-        get<TFunctionName extends string>(
-          _: unknown,
-          functionName: TFunctionName
-        ) {
-          return async (
-            args: SimulateContractParameters<TAbi, TFunctionName>["args"]
-          ) => {
-            // The typecast here is necessary,
-            // we still enjoy the type checking on the arguments themselves so it's not the end of the world
-            const { request } = await bcClient.simulateContract({
-              address: address,
-              abi: abi,
-              functionName,
-              args,
-              account: walletClient.account,
-            } as SimulateContractParameters);
+    this.safeContractWrite = new Proxy({} as typeof this.safeContractWrite, {
+      get<TFunctionName extends string>(
+        _: unknown,
+        functionName: TFunctionName
+      ) {
+        return async (
+          args: SimulateContractParameters<TAbi, TFunctionName>["args"]
+        ) => {
+          // The typecast here is necessary,
+          // we still enjoy the type checking on the arguments themselves so it's not the end of the world
+          const { request } = await bcClient.simulateContract({
+            address: address,
+            abi: abi,
+            functionName,
+            args,
+            account: walletClient.account,
+          } as SimulateContractParameters);
 
-            return walletClient.writeContract(request);
-          };
-        },
-      }
-    );
+          return walletClient.writeContract(request);
+        };
+      },
+    });
   }
 }
