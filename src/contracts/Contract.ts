@@ -47,7 +47,6 @@ export class Contract<TAbi extends Abi> {
     this.bcClient = bcClient;
     this.address = address;
     this.abi = abi;
-    // @ts-ignore TODO: fix this
     this.contract = getContract({
       address: this.address,
       abi: this.abi,
