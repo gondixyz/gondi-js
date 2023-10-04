@@ -15,5 +15,4 @@ async function main() {
   await logListings();
 }
 
-// TODO: fix this github action since addListing mutation is not working
-// main();
+main();
