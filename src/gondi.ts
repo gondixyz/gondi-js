@@ -3,7 +3,6 @@ import {
   Chain,
   createPublicClient,
   createTransport,
-  isAddress,
   PublicClient,
   Transport,
 } from "viem";
@@ -230,12 +229,27 @@ export class Gondi {
     });
   }
 
-  async hideOffer({ id }: { id: string }) {
-    const [contract, _lender, contractOfferId] = id.split(".");
-    if (!isAddress(contract)) {
-      throw new Error("invalid id");
-    }
-    return this.api.hideOffer({ contract, id: contractOfferId });
+  async hideOffer({
+    id,
+    contractAddress,
+  }: {
+    id: bigint;
+    contractAddress: Address;
+  }) {
+    return this.api.hideOffer({ contract: contractAddress, id: id.toString() });
+  }
+
+  async unhideOffer({
+    id,
+    contractAddress,
+  }: {
+    id: bigint;
+    contractAddress: Address;
+  }) {
+    return this.api.unhideOffer({
+      contract: contractAddress,
+      id: id.toString(),
+    });
   }
 
   async makeRefinanceOffer({
@@ -319,8 +333,30 @@ export class Gondi {
     });
   }
 
-  async hideRenegotiationOffer({ id }: { id: string }) {
-    return this.api.hideRenegotiationOffer({ id });
+  async hideRenegotiationOffer({
+    id,
+    contractAddress,
+  }: {
+    id: bigint;
+    contractAddress: Address;
+  }) {
+    return this.api.hideRenegotiationOffer({
+      id: id.toString(),
+      contractAddress,
+    });
+  }
+
+  async unhideRenegotiationOffer({
+    id,
+    contractAddress,
+  }: {
+    id: bigint;
+    contractAddress: Address;
+  }) {
+    return this.api.unhideRenegotiationOffer({
+      id: id.toString(),
+      contractAddress,
+    });
   }
 
   async cancelAllRenegotiations({
