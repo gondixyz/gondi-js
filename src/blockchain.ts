@@ -25,8 +25,11 @@ import {
 } from "viem";
 
 import type { multiSourceLoanABI as multiSourceLoanABIV4 } from "@/generated/blockchain/v4";
+import type { auctionLoanLiquidatorABI as auctionLoanLiquidatorABIV5 } from "@/generated/blockchain/v5";
 import { erc20ABI, erc721ABI } from "@/generated/blockchain/v5";
 
+import { AllV4 } from "./contracts/AllV4";
+import { AllV5 } from "./contracts/AllV5";
 import { MslV4 } from "./contracts/MslV4";
 import { MslV5 } from "./contracts/MslV5";
 import { areSameAddress } from "./utils";
@@ -38,6 +41,8 @@ export class Contracts {
 
   MultiSourceLoanV4: MslV4;
   MultiSourceLoanV5: MslV5;
+  AuctionLoanLiquidatorV4: AllV4;
+  AuctionLoanLiquidatorV5: AllV5;
 
   constructor(publicClient: PublicClient, walletClient: Wallet) {
     this.walletClient = walletClient;
@@ -45,6 +50,8 @@ export class Contracts {
 
     this.MultiSourceLoanV4 = new MslV4({ walletClient });
     this.MultiSourceLoanV5 = new MslV5({ walletClient });
+    this.AuctionLoanLiquidatorV4 = new AllV4({ walletClient });
+    this.AuctionLoanLiquidatorV5 = new AllV5({ walletClient });
   }
 
   Msl(contractAddress: Address) {
@@ -53,6 +60,21 @@ export class Contracts {
     }
     if (areSameAddress(contractAddress, this.MultiSourceLoanV5.address)) {
       return this.MultiSourceLoanV5;
+    }
+    throw new Error(`Invalid Contract Address ${contractAddress}`);
+  }
+
+  /**
+   *
+   * @param contractAddress The contract address of the MultiSourceLoanV4 or MultiSourceLoanV5 contract
+   * @returns The corresponding AuctionLoanLiquidator contract
+   */
+  All(contractAddress: Address) {
+    if (areSameAddress(contractAddress, this.MultiSourceLoanV4.address)) {
+      return this.AuctionLoanLiquidatorV4;
+    }
+    if (areSameAddress(contractAddress, this.MultiSourceLoanV5.address)) {
+      return this.AuctionLoanLiquidatorV5;
     }
     throw new Error(`Invalid Contract Address ${contractAddress}`);
   }
@@ -89,10 +111,14 @@ type EmitAbiType = AbiParametersToPrimitiveTypes<
 type RefiAbiType = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof multiSourceLoanABIV4, "refinanceFull">["inputs"]
 >;
+type PlaceBidAbiType = AbiParametersToPrimitiveTypes<
+  ExtractAbiFunction<typeof auctionLoanLiquidatorABIV5, "placeBid">["inputs"]
+>;
 
 export type Loan = RepayAbiType[2];
 export type Offer = EmitAbiType[0];
 export type Renegotiation = RefiAbiType[0];
+export type Auction = PlaceBidAbiType[2];
 
 export type HexString = `0x${string}`;
 export type Signature = HexString;
