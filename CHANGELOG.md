@@ -1,6 +1,6 @@
-# Breaking Changes 0.1.1
+# Breaking Changes 0.2.0
 
-This document outlines the breaking changes introduced in our codebase for version 0.1.1. Please review these changes carefully to ensure a smooth migration.
+This document outlines the breaking changes introduced in our codebase for version 0.2.0. Please review these changes carefully to ensure a smooth migration.
 
 ## Table of Contents
 
