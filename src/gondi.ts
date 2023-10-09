@@ -53,8 +53,8 @@ export class Gondi {
 
   /** @internal */
   async _makeSingleNftOffer(offer: model.SingleNftOfferInput, mslContractAddress?: Address) {
-    const contractAddress = mslContractAddress ?
-      this.contracts.Msl(mslContractAddress).address : this.contracts.MultiSourceLoanV5.address;
+    const contract = mslContractAddress ? this.contracts.Msl(mslContractAddress) : this.contracts.MultiSourceLoanV5;
+    const contractAddress = contract.address;
 
     const offerInput = {
       lenderAddress: this.wallet.account?.address,
@@ -91,33 +91,9 @@ export class Gondi {
       offerId,
     };
 
-    const signature = await this.wallet.signTypedData({
-      domain: this.getDomain(offerInput.contractAddress),
-      primaryType: "LoanOffer",
-      types: {
-        LoanOffer: [
-          { name: "offerId", type: "uint256" },
-          { name: "lender", type: "address" },
-          { name: "fee", type: "uint256" },
-          { name: "borrower", type: "address" },
-          { name: "capacity", type: "uint256" },
-          { name: "signer", type: "address" },
-          { name: "requiresLiquidation", type: "bool" },
-          { name: "nftCollateralAddress", type: "address" },
-          { name: "nftCollateralTokenId", type: "uint256" },
-          { name: "principalAddress", type: "address" },
-          { name: "principalAmount", type: "uint256" },
-          { name: "aprBps", type: "uint256" },
-          { name: "expirationTime", type: "uint256" },
-          { name: "duration", type: "uint256" },
-          { name: "validators", type: "OfferValidator[]" },
-        ],
-        OfferValidator: [
-          { name: "validator", type: "address" },
-          { name: "arguments", type: "bytes" },
-        ],
-      },
-      message: structToSign,
+    const signature = await contract.signSOffer({
+      verifyingContract: offerInput.contractAddress,
+      structToSign,
     });
 
     const signedOffer = {
@@ -140,8 +116,8 @@ export class Gondi {
 
   /** @internal */
   async _makeCollectionOffer(offer: model.CollectionOfferInput, mslContractAddress?: Address) {
-    const contractAddress = mslContractAddress ?
-      this.contracts.Msl(mslContractAddress).address : this.contracts.MultiSourceLoanV5.address;
+    const contract = mslContractAddress ? this.contracts.Msl(mslContractAddress) : this.contracts.MultiSourceLoanV5;
+    const contractAddress = contract.address;
 
     const offerInput = {
       lenderAddress: this.wallet.account?.address,
@@ -182,33 +158,9 @@ export class Gondi {
       offerId,
     };
 
-    const signature = await this.wallet.signTypedData({
-      domain: this.getDomain(offerInput.contractAddress),
-      primaryType: "LoanOffer",
-      types: {
-        LoanOffer: [
-          { name: "offerId", type: "uint256" },
-          { name: "lender", type: "address" },
-          { name: "fee", type: "uint256" },
-          { name: "borrower", type: "address" },
-          { name: "capacity", type: "uint256" },
-          { name: "signer", type: "address" },
-          { name: "requiresLiquidation", type: "bool" },
-          { name: "nftCollateralAddress", type: "address" },
-          { name: "nftCollateralTokenId", type: "uint256" },
-          { name: "principalAddress", type: "address" },
-          { name: "principalAmount", type: "uint256" },
-          { name: "aprBps", type: "uint256" },
-          { name: "expirationTime", type: "uint256" },
-          { name: "duration", type: "uint256" },
-          { name: "validators", type: "OfferValidator[]" },
-        ],
-        OfferValidator: [
-          { name: "validator", type: "address" },
-          { name: "arguments", type: "bytes" },
-        ],
-      },
-      message: structToSign,
+    const signature = await contract.signSOffer({
+      verifyingContract: offerInput.contractAddress,
+      structToSign,
     });
 
     const signedOffer = {

@@ -1,5 +1,7 @@
 import { Address } from "abitype";
 
+import { getContracts } from "./deploys";
+
 export const areSameAddress = (
   adr1: Address | null | undefined,
   adr2: Address | null | undefined
@@ -7,12 +9,16 @@ export const areSameAddress = (
   return adr1 && adr2 && adr1.toLowerCase() === adr2.toLowerCase();
 };
 
-export const getDomain = (chainId: number, verifyingContract: Address) => ({
-  name: "GONDI_MULTI_SOURCE_LOAN",
-  version: "1",
-  chainId,
-  verifyingContract,
-});
+export const getDomain = (chainId: number, verifyingContract: Address) => {
+  const contracts = getContracts({ id: chainId });
+  const version = areSameAddress(verifyingContract, contracts.MultiSourceLoanV4Address) ? "1" : "2";
+  return {
+    name: "GONDI_MULTI_SOURCE_LOAN",
+    version,
+    chainId,
+    verifyingContract,
+  };
+};
 
 const toInteger = (bn: bigint | number): number => Number(bn.valueOf());
 

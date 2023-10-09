@@ -25,6 +25,7 @@ import {
 } from "viem";
 
 import type { multiSourceLoanABI as multiSourceLoanABIV4 } from "@/generated/blockchain/v4";
+import type { multiSourceLoanABI as multiSourceLoanABIV5 } from "@/generated/blockchain/v5";
 import { erc20ABI, erc721ABI } from "@/generated/blockchain/v5";
 
 import { MslV4 } from "./contracts/MslV4";
@@ -92,12 +93,16 @@ type RepayAbiType = AbiParametersToPrimitiveTypes<
 type EmitAbiType = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof multiSourceLoanABIV4, "emitLoan">["inputs"]
 >;
+type EmitAbiTypeV5 = AbiParametersToPrimitiveTypes<
+  ExtractAbiFunction<typeof multiSourceLoanABIV5, "emitLoan">["inputs"]
+>;
 type RefiAbiType = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof multiSourceLoanABIV4, "refinanceFull">["inputs"]
 >;
 
 export type Loan = RepayAbiType[2];
 export type Offer = EmitAbiType[0];
+export type OfferV5 = EmitAbiTypeV5[0]['executionData']['offer'];
 export type Renegotiation = RefiAbiType[0];
 
 export type HexString = `0x${string}`;
