@@ -828,6 +828,7 @@ export type MutationHideOfferArgs = {
 };
 
 export type MutationHideRenegotiationArgs = {
+  contractAddress?: InputMaybe<Scalars["Address"]>;
   renegotiationId: Scalars["String"];
 };
 
@@ -861,6 +862,7 @@ export type MutationShowOfferArgs = {
 };
 
 export type MutationShowRenegotiationArgs = {
+  contractAddress?: InputMaybe<Scalars["Address"]>;
   renegotiationId: Scalars["String"];
 };
 
@@ -1940,6 +1942,7 @@ export type GenerateRenegotiationOfferHashMutation = {
 
 export type HideRenegotiationOfferMutationVariables = Exact<{
   id: Scalars["String"];
+  contractAddress: Scalars["Address"];
 }>;
 
 export type HideRenegotiationOfferMutation = {
@@ -1958,6 +1961,7 @@ export type SaveRenegotiationOfferMutation = {
 
 export type UnhideRenegotiationOfferMutationVariables = Exact<{
   id: Scalars["String"];
+  contractAddress: Scalars["Address"];
 }>;
 
 export type UnhideRenegotiationOfferMutation = {
@@ -4864,8 +4868,8 @@ export const GenerateRenegotiationOfferHashDocument = gql`
   }
 `;
 export const HideRenegotiationOfferDocument = gql`
-  mutation hideRenegotiationOffer($id: String!) {
-    hideRenegotiation(renegotiationId: $id) {
+  mutation hideRenegotiationOffer($id: String!, $contractAddress: Address!) {
+    hideRenegotiation(renegotiationId: $id, contractAddress: $contractAddress) {
       id
     }
   }
@@ -4879,8 +4883,8 @@ export const SaveRenegotiationOfferDocument = gql`
   }
 `;
 export const UnhideRenegotiationOfferDocument = gql`
-  mutation unhideRenegotiationOffer($id: String!) {
-    showRenegotiation(renegotiationId: $id) {
+  mutation unhideRenegotiationOffer($id: String!, $contractAddress: Address!) {
+    showRenegotiation(renegotiationId: $id, contractAddress: $contractAddress) {
       id
     }
   }

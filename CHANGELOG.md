@@ -1,4 +1,43 @@
-# Breaking Changes
+# Breaking Changes 0.2.0
+
+This document outlines the breaking changes introduced in our codebase for version 0.2.0. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [Hide Offer](#hide-offer)
+- [Hide Renegotiation Offer](#hide-renegotiation-offer)
+
+---
+
+## Hide Offer
+
+**Description:**  
+`hideOffer` method now expects an object with an id and contract address inside. This id should be the `offerId` of the offer you want to hide, not the full id.
+
+**Reason:**  
+Consistency accross other methods.
+
+**Migration Steps:**
+
+Change the argument sent to `hideOffer` to an object containing the `offerId` of the offer you want to hide, and the contract address of the offer
+
+---
+
+## Hide Renegotiation Offer
+
+**Description:**  
+`hideRenegotiationOffer` method now expects an object with an id and contract address inside. This id should be the `renegotiationId` of the renegotiation you want to hide, not the full id.
+
+**Reason:**  
+Consistency accross other methods.
+
+**Migration Steps:**
+
+Change the argument sent to `hideRenegotiationOffer` to an object containing the `renegotiationId` of the renegotiation you want to hide, and the `loanAddress` of the renegotiation
+
+---
+
+# Breaking Changes 0.1.0
 
 This document outlines the breaking changes introduced in our codebase for version 0.1.0. Please review these changes carefully to ensure a smooth migration.
 
