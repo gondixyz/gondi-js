@@ -3,6 +3,8 @@ import {
   Chain,
   createPublicClient,
   createTransport,
+  Hash,
+  isAddress,
   PublicClient,
   Transport,
 } from "viem";
@@ -12,6 +14,7 @@ import {
   Contracts,
   filterLogs,
   LoanV4V5,
+  OfferV5 as BlockchainOfferV5,
   Wallet,
   zeroAddress,
   zeroHash,
@@ -455,13 +458,13 @@ export class Gondi {
   async collectionId(
     props:
       | {
-        slug: string;
-        contractAddress?: never;
-      }
+          slug: string;
+          contractAddress?: never;
+        }
       | {
-        slug?: never;
-        contractAddress: Address;
-      }
+          slug?: never;
+          contractAddress: Address;
+        }
   ) {
     let result;
     if (props.slug) {
@@ -563,6 +566,41 @@ export class Gondi {
     return this.contracts
       .All(auction.loanAddress)
       .settleAuction({ loan, auction });
+  }
+
+  async leverageBuy({
+    leverageBuyData,
+  }: {
+    leverageBuyData: {
+      offer: BlockchainOfferV5 & { signature: Hash };
+      expirationTime: bigint;
+      amount: bigint;
+      nft: {
+        collectionContractAddress: Address;
+        tokenId: bigint;
+        price: bigint;
+      };
+    }[];
+  }) {
+    const dataForLeverageContract = leverageBuyData.map((data) => ({
+      ...data,
+      callbackData: "0x0" as Hash, // TODO: fix this
+    }));
+
+    return this.contracts.Leverage.buy({
+      leverageBuyData: dataForLeverageContract,
+    });
+  }
+
+  async leverageSell({ loan }: { loan: model.Loan; price: bigint }) {
+    const callbackData = "0x0" as Hash; // TODO: fix this
+    const shouldDelegate = false; // TODO: fix this
+
+    return this.contracts.Leverage.sell({
+      loan,
+      callbackData,
+      shouldDelegate,
+    });
   }
 
   async approveNFTForAll({
