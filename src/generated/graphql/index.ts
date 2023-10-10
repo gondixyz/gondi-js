@@ -2071,6 +2071,7 @@ export type ListOffersQuery = {
             lenderAddress?: Address | null;
             borrowerAddress?: Address | null;
             signerAddress?: Address | null;
+            contractAddress: Address;
             requiresLiquidation: boolean;
             principalAddress: Address;
             principalAmount: bigint;
@@ -2113,6 +2114,7 @@ export type ListOffersQuery = {
             lenderAddress?: Address | null;
             borrowerAddress?: Address | null;
             signerAddress?: Address | null;
+            contractAddress: Address;
             requiresLiquidation: boolean;
             principalAddress: Address;
             principalAmount: bigint;
@@ -4998,6 +5000,7 @@ export const ListOffersDocument = gql`
           lenderAddress
           borrowerAddress
           signerAddress
+          contractAddress
           requiresLiquidation
           principalAddress
           principalAmount

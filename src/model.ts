@@ -109,6 +109,6 @@ export type ListListingsProps = {
 };
 
 export type {
-  Offer as BlockchainOffer,
+  OfferV4 as BlockchainOffer,
   Renegotiation as BlockchainRenegotiation,
 } from "@/blockchain";

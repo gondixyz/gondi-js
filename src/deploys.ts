@@ -10,11 +10,11 @@ interface Contracts {
   AuctionLoanLiquidatorV5Address: Address;
 }
 
-export const getContracts = (chain: Chain): Contracts => {
+export const getContracts = (chain: Pick<Chain, "id">): Contracts => {
   if (chain?.id === ANVIL_CHAIN_ID) {
     return {
       MultiSourceLoanV4Address: "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
-      MultiSourceLoanV5Address: "0xTODO", // TODO: deploy
+      MultiSourceLoanV5Address: "0x68B1D87F95878fE05B998F19b66F4baba5De1aed",
       AuctionLoanLiquidatorV4Address:
         "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
       AuctionLoanLiquidatorV5Address: "0xTODO", // TODO: deploy

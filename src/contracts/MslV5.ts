@@ -1,9 +1,10 @@
 import { Account, Chain, Hash, Transport, WalletClient } from "viem";
 
-import { filterLogs } from "@/blockchain";
+import { filterLogs, OfferV5 as BlockchainOfferV5 } from "@/blockchain";
 import { getContracts } from "@/deploys";
 import { multiSourceLoanABI as multiSourceLoanABIV5 } from "@/generated/blockchain/v5";
 import * as model from "@/model";
+import { getDomain } from "@/utils";
 
 import { Contract } from "./Contract";
 
@@ -20,11 +21,43 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     });
   }
 
+  async signSOffer({
+    verifyingContract,
+    structToSign,
+  }: {
+    verifyingContract: Address;
+    structToSign: BlockchainOfferV5;
+  }) {
+    return this.wallet.signTypedData({
+      domain: getDomain(this.wallet.chain.id, verifyingContract),
+      primaryType: "LoanOffer",
+      types: {
+        LoanOffer: [
+          { name: "offerId", type: "uint256" },
+          { name: "lender", type: "address" },
+          { name: "fee", type: "uint256" },
+          { name: "borrower", type: "address" },
+          { name: "capacity", type: "uint256" },
+          { name: "nftCollateralAddress", type: "address" },
+          { name: "nftCollateralTokenId", type: "uint256" },
+          { name: "principalAddress", type: "address" },
+          { name: "principalAmount", type: "uint256" },
+          { name: "aprBps", type: "uint256" },
+          { name: "expirationTime", type: "uint256" },
+          { name: "duration", type: "uint256" },
+          { name: "validators", type: "OfferValidator[]" },
+        ],
+        OfferValidator: [
+          { name: "validator", type: "address" },
+          { name: "arguments", type: "bytes" },
+        ],
+      },
+      message: structToSign,
+    });
+  }
+
   async cancelOffer({ id }: { id: bigint }) {
-    const txHash = await this.safeContractWrite.cancelOffer([
-      this.wallet.account.address,
-      id,
-    ]);
+    const txHash = await this.contract.write.cancelOffer([id]);
     return {
       txHash,
       waitTxInBlock: async () => {
@@ -41,10 +74,8 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
   }
 
   async cancelAllOffers({ minId }: { minId: bigint }) {
-    const txHash = await this.safeContractWrite.cancelAllOffers([
-      this.wallet.account.address,
-      minId,
-    ]);
+    const txHash = await this.contract.write.cancelAllOffers([minId]);
+
     return {
       txHash,
       waitTxInBlock: async () => {
@@ -61,10 +92,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
   }
 
   async cancelRefinanceOffer({ id }: { id: bigint }) {
-    const txHash = await this.safeContractWrite.cancelRenegotiationOffer([
-      this.wallet.account.address,
-      id,
-    ]);
+    const txHash = await this.contract.write.cancelRenegotiationOffer([id]);
     return {
       txHash,
       waitTxInBlock: async () => {
@@ -74,15 +102,15 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
         const filter =
           await this.contract.createEventFilter.RenegotiationOfferCancelled();
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Offer not cancelled");
+        if (events.length == 0)
+          throw new Error("Renegotiation offer not cancelled");
         return { ...events[0].args, ...receipt };
       },
     };
   }
 
   async cancelAllRenegotiations({ minId }: { minId: bigint }) {
-    const txHash = await this.safeContractWrite.cancelAllRenegotiationOffers([
-      this.wallet.account.address,
+    const txHash = await this.contract.write.cancelAllRenegotiationOffers([
       minId,
     ]);
     return {
@@ -92,9 +120,10 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
           hash: txHash,
         });
         const filter =
-          await this.contract.createEventFilter.RenegotiationOfferCancelled();
+          await this.contract.createEventFilter.AllRenegotiationOffersCancelled();
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Offer not cancelled");
+        if (events.length == 0)
+          throw new Error("Renegotiation offers not cancelled");
         return { ...events[0].args, ...receipt };
       },
     };
@@ -104,20 +133,62 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     offer,
     signature,
     tokenId,
+    amount,
+    expirationTime,
   }: {
     offer: model.BlockchainOffer;
     signature: Hash;
     tokenId: bigint;
+    amount: bigint;
+    expirationTime: bigint;
   }) {
-    const txHash = await this.safeContractWrite.emitLoan([
+    const executionData = {
+      offer,
+      tokenId,
+      amount,
+      expirationTime,
+    };
+    // const borrowerOfferSignature = await this.wallet.signTypedData({
+    //   domain: getDomain(this.wallet.chain.id, this.address),
+    //   primaryType: "ExecutionData",
+    //   types: {
+    //     ExecutionData: [
+    //       { name: "offer", type: "LoanOffer" },
+    //       { name: "tokenId", type: "uint256" },
+    //       { name: "amount", type: "uint256" },
+    //       { name: "expirationTime", type: "uint256" },
+    //     ],
+    //     LoanOffer: [
+    //       { name: "offerId", type: "uint256" },
+    //       { name: "lender", type: "address" },
+    //       { name: "fee", type: "uint256" },
+    //       { name: "borrower", type: "address" },
+    //       { name: "capacity", type: "uint256" },
+    //       { name: "nftCollateralAddress", type: "address" },
+    //       { name: "nftCollateralTokenId", type: "uint256" },
+    //       { name: "principalAddress", type: "address" },
+    //       { name: "principalAmount", type: "uint256" },
+    //       { name: "aprBps", type: "uint256" },
+    //       { name: "expirationTime", type: "uint256" },
+    //       { name: "duration", type: "uint256" },
+    //       { name: "validators", type: "OfferValidator[]" },
+    //     ],
+    //     OfferValidator: [
+    //       { name: "validator", type: "address" },
+    //       { name: "arguments", type: "bytes" },
+    //     ],
+    //   },
+    //   message: executionData,
+    // });
+
+    const txHash = await this.contract.write.emitLoan([
       {
-        offer,
-        tokenId,
-        amount: 0n, // TODO: fix this
+        executionData,
         borrower: offer.borrower,
         lenderOfferSignature: signature,
-        borrowerOfferSignature: "0x0", // TODO: fix this
-        callbackData: "0x0", // TODO: fix this
+        borrowerOfferSignature: "0x0", // No signature data is expected here, only for BNPL [Levearage call]
+        lender: offer.lender,
+        callbackData: "0x0", // No callback data is expected here, only for BNPL [Levearage call]
       },
     ]);
     return {
@@ -146,12 +217,38 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
   }
 
   async repayLoan({ loan }: { loan: model.Loan }) {
-    const txHash = await this.safeContractWrite.repayLoan([
+    // const borrowerLoanSignature = await this.wallet.signTypedData({
+    //   domain: getDomain(this.wallet.chain.id, this.address),
+    //   primaryType: "Loan",
+    //   types: {
+    //     Loan: [
+    //       { name: 'borrower', type: 'address' },
+    //       { name: 'nftCollateralTokenId', type: 'uint256' },
+    //       { name: 'nftCollateralAddress', type: 'address' },
+    //       { name: 'principalAddress', type: 'address' },
+    //       { name: 'principalAmount', type: 'uint256' },
+    //       { name: 'startTime', type: 'uint256' },
+    //       { name: 'duration', type: 'uint256' },
+    //       { name: "source", type: "Source[]" },
+    //     ],
+    //     Source: [
+    //       { name: 'loanId', type: 'uint256' },
+    //       { name: 'lender', type: 'address' },
+    //       { name: 'principalAmount', type: 'uint256' },
+    //       { name: 'accruedInterest', type: 'uint256' },
+    //       { name: 'startTime', type: 'uint256' },
+    //       { name: 'aprBps', type: 'uint256' },
+    //     ],
+    //   },
+    //   message: loan,
+    // });
+    const txHash = await this.contract.write.repayLoan([
       {
         loanId: loan.source[0].loanId,
         loan,
-        borrowerLoanSignature: "0x0", // TODO: fix this
-        callbackData: "0x0", // TODO: fix this,
+        borrowerLoanSignature: "0x0", // No signature data is expected here, only for BNPL [Levearage call]
+        shouldDelegate: false, // No need to delegate
+        callbackData: "0x0", // No callback data is expected here, only for BNPL [Levearage call]
       },
     ]);
     return {
@@ -179,7 +276,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
   }) {
     const txHash = await this.safeContractWrite.refinanceFull([
       offer,
-      loan,
+      { ...loan, refinanceProceeds: [] },
       signature,
     ]);
     return {

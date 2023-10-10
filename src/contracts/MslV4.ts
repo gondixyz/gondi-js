@@ -1,9 +1,10 @@
 import { Account, Address, Chain, Hash, Transport, WalletClient } from "viem";
 
-import { filterLogs } from "@/blockchain";
+import { filterLogs, OfferV4 as BlockchainOffer } from "@/blockchain";
 import { getContracts } from "@/deploys";
 import { multiSourceLoanABI as multiSourceLoanABIV4 } from "@/generated/blockchain/v4";
 import * as model from "@/model";
+import { getDomain } from "@/utils";
 
 import { Contract } from "./Contract";
 
@@ -17,6 +18,43 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
       walletClient,
       address: MultiSourceLoanV4Address,
       abi: multiSourceLoanABIV4,
+    });
+  }
+
+  async signSOffer({
+    verifyingContract,
+    structToSign,
+  }: {
+    verifyingContract: Address;
+    structToSign: BlockchainOffer;
+  }) {
+    return this.wallet.signTypedData({
+      domain: getDomain(this.wallet.chain.id, verifyingContract),
+      primaryType: "LoanOffer",
+      types: {
+        LoanOffer: [
+          { name: "offerId", type: "uint256" },
+          { name: "lender", type: "address" },
+          { name: "fee", type: "uint256" },
+          { name: "borrower", type: "address" },
+          { name: "capacity", type: "uint256" },
+          { name: "signer", type: "address" },
+          { name: "requiresLiquidation", type: "bool" },
+          { name: "nftCollateralAddress", type: "address" },
+          { name: "nftCollateralTokenId", type: "uint256" },
+          { name: "principalAddress", type: "address" },
+          { name: "principalAmount", type: "uint256" },
+          { name: "aprBps", type: "uint256" },
+          { name: "expirationTime", type: "uint256" },
+          { name: "duration", type: "uint256" },
+          { name: "validators", type: "OfferValidator[]" },
+        ],
+        OfferValidator: [
+          { name: "validator", type: "address" },
+          { name: "arguments", type: "bytes" },
+        ],
+      },
+      message: structToSign,
     });
   }
 
