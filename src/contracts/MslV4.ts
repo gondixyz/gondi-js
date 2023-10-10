@@ -21,7 +21,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
     });
   }
 
-  async signSOffer({
+  async signOffer({
     verifyingContract,
     structToSign,
   }: {

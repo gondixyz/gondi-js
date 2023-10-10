@@ -48,18 +48,22 @@ export class Gondi {
   }
 
   async makeSingleNftOffer(offer: model.SingleNftOfferInput) {
-    const contract = offer.contractAddress
-      ? this.contracts.Msl(offer.contractAddress)
-      : this.contracts.MultiSourceLoanV5;
+    return await this._makeSingleNftOffer(offer);
+  }
+
+  /** @internal */
+  async _makeSingleNftOffer(offer: model.SingleNftOfferInput, mslContractAddress?: Address) {
+    const contract = mslContractAddress ? this.contracts.Msl(mslContractAddress) : this.contracts.MultiSourceLoanV5;
     const contractAddress = contract.address;
 
     const offerInput = {
+      ...offer,
       lenderAddress: this.wallet.account?.address,
       signerAddress: this.wallet.account?.address,
       borrowerAddress: offer.borrowerAddress ?? zeroAddress,
+      requiresLiquidation: !!offer.requiresLiquidation,
       contractAddress,
       offerValidators: [], // This is ignored by the API but it was required in the mutation
-      ...offer,
     };
 
     const response = await this.api.generateSingleNftOfferHash({ offerInput });
@@ -88,7 +92,7 @@ export class Gondi {
       offerId,
     };
 
-    const signature = await contract.signSOffer({
+    const signature = await contract.signOffer({
       verifyingContract: offerInput.contractAddress,
       structToSign,
     });
@@ -108,15 +112,20 @@ export class Gondi {
   }
 
   async makeCollectionOffer(offer: model.CollectionOfferInput) {
-    const contract = offer.contractAddress
-      ? this.contracts.Msl(offer.contractAddress)
-      : this.contracts.MultiSourceLoanV5;
+    return await this._makeCollectionOffer(offer);
+  }
+
+  /** @internal */
+  async _makeCollectionOffer(offer: model.CollectionOfferInput, mslContractAddress?: Address) {
+    const contract = mslContractAddress ? this.contracts.Msl(mslContractAddress) : this.contracts.MultiSourceLoanV5;
     const contractAddress = contract.address;
 
     const offerInput = {
+      ...offer,
       lenderAddress: this.wallet.account?.address,
       signerAddress: this.wallet.account?.address,
       borrowerAddress: offer.borrowerAddress ?? zeroAddress,
+      requiresLiquidation: !!offer.requiresLiquidation,
       contractAddress,
       offerValidators: [
         // This is ignored by the API but it was required in the mutation
@@ -125,7 +134,6 @@ export class Gondi {
           arguments: zeroHex,
         },
       ],
-      ...offer,
     };
     const response = await this.api.generateCollectionOfferHash({ offerInput });
     const collateralAddress =
@@ -152,7 +160,7 @@ export class Gondi {
       offerId,
     };
 
-    const signature = await contract.signSOffer({
+    const signature = await contract.signOffer({
       verifyingContract: offerInput.contractAddress,
       structToSign,
     });
@@ -314,8 +322,9 @@ export class Gondi {
       ...offer,
       lender: offer.lenderAddress,
       borrower: offer.borrowerAddress,
-      signer: offer.signerAddress,
+      signer: offer.signerAddress ?? zeroAddress,
       validators: offer.offerValidators,
+      requiresLiquidation: !!offer.requiresLiquidation,
     };
 
     return this.contracts.Msl(offer.contractAddress).emitLoan({

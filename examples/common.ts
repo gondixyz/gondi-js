@@ -78,9 +78,7 @@ const offerInput = {
   aprBps: 100n,
   expirationTime: 1714841411n,
   duration: 1294967295n,
-  requiresLiquidation: false,
   borrowerAddress: zeroAddress,
-  contractAddress: process.env.MULTI_SOURCE_LOAN_CONTRACT,
 };
 
 export const testCollectionOfferInput = {

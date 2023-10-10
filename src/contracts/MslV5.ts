@@ -21,7 +21,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     });
   }
 
-  async signSOffer({
+  async signOffer({
     verifyingContract,
     structToSign,
   }: {
@@ -136,7 +136,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     amount,
     expirationTime,
   }: {
-    offer: model.BlockchainOffer;
+    offer: BlockchainOfferV5;
     signature: Hash;
     tokenId: bigint;
     amount: bigint;
