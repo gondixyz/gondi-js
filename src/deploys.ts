@@ -17,7 +17,7 @@ export const getContracts = (chain: Pick<Chain, "id">): Contracts => {
       MultiSourceLoanV5Address: "0x68B1D87F95878fE05B998F19b66F4baba5De1aed",
       AuctionLoanLiquidatorV4Address:
         "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
-      AuctionLoanLiquidatorV5Address: "0xTODO", // TODO: deploy
+      AuctionLoanLiquidatorV5Address: "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE",
     };
   }
 
