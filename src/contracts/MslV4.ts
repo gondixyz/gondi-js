@@ -12,7 +12,7 @@ import {
   WalletClient,
 } from "viem";
 
-import { filterLogs, Offer as BlockchainOffer } from "@/blockchain";
+import { filterLogs, OfferV4 as BlockchainOffer } from "@/blockchain";
 import { getContracts } from "@/deploys";
 import { multiSourceLoanABI as multiSourceLoanABIV4 } from "@/generated/blockchain/v4";
 import * as model from "@/model";

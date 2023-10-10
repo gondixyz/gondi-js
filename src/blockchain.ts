@@ -87,22 +87,22 @@ export class Contracts {
   }
 }
 
-type RepayAbiType = AbiParametersToPrimitiveTypes<
-  ExtractAbiFunction<typeof multiSourceLoanABIV4, "repayLoan">["inputs"]
->;
-type EmitAbiType = AbiParametersToPrimitiveTypes<
+type EmitAbiTypeV4 = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof multiSourceLoanABIV4, "emitLoan">["inputs"]
 >;
-type EmitAbiTypeV5 = AbiParametersToPrimitiveTypes<
+type RepayAbiType = AbiParametersToPrimitiveTypes<
+  ExtractAbiFunction<typeof multiSourceLoanABIV5, "repayLoan">["inputs"]
+>;
+type EmitAbiType = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof multiSourceLoanABIV5, "emitLoan">["inputs"]
 >;
 type RefiAbiType = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof multiSourceLoanABIV4, "refinanceFull">["inputs"]
 >;
 
-export type Loan = RepayAbiType[2];
-export type Offer = EmitAbiType[0];
-export type OfferV5 = EmitAbiTypeV5[0]['executionData']['offer'];
+export type Loan = RepayAbiType[0]["loan"];
+export type OfferV4 = EmitAbiTypeV4[0];
+export type OfferV5 = EmitAbiType[0]["executionData"]["offer"];
 export type Renegotiation = RefiAbiType[0];
 
 export type HexString = `0x${string}`;

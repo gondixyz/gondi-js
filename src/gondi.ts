@@ -48,12 +48,9 @@ export class Gondi {
   }
 
   async makeSingleNftOffer(offer: model.SingleNftOfferInput) {
-    return await this._makeSingleNftOffer(offer);
-  }
-
-  /** @internal */
-  async _makeSingleNftOffer(offer: model.SingleNftOfferInput, mslContractAddress?: Address) {
-    const contract = mslContractAddress ? this.contracts.Msl(mslContractAddress) : this.contracts.MultiSourceLoanV5;
+    const contract = offer.contractAddress
+      ? this.contracts.Msl(offer.contractAddress)
+      : this.contracts.MultiSourceLoanV5;
     const contractAddress = contract.address;
 
     const offerInput = {
@@ -111,12 +108,9 @@ export class Gondi {
   }
 
   async makeCollectionOffer(offer: model.CollectionOfferInput) {
-    return await this._makeCollectionOffer(offer);
-  }
-
-  /** @internal */
-  async _makeCollectionOffer(offer: model.CollectionOfferInput, mslContractAddress?: Address) {
-    const contract = mslContractAddress ? this.contracts.Msl(mslContractAddress) : this.contracts.MultiSourceLoanV5;
+    const contract = offer.contractAddress
+      ? this.contracts.Msl(offer.contractAddress)
+      : this.contracts.MultiSourceLoanV5;
     const contractAddress = contract.address;
 
     const offerInput = {
@@ -329,7 +323,8 @@ export class Gondi {
       signature: contractOffer.signature,
       tokenId,
       amount: amount ?? contractOffer.principalAmount,
-      expirationTime: expirationTime ?? BigInt(millisToSeconds(Date.now()) + SECONDS_IN_DAY),
+      expirationTime:
+        expirationTime ?? BigInt(millisToSeconds(Date.now()) + SECONDS_IN_DAY),
     });
   }
 

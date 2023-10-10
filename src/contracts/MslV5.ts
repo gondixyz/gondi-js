@@ -90,9 +90,7 @@ export class MslV5 {
   }
 
   async cancelOffer({ id }: { id: bigint }) {
-    const txHash = await this.contract.write.cancelOffer([
-      id,
-    ]);
+    const txHash = await this.contract.write.cancelOffer([id]);
     return {
       txHash,
       waitTxInBlock: async () => {
@@ -109,9 +107,7 @@ export class MslV5 {
   }
 
   async cancelAllOffers({ minId }: { minId: bigint }) {
-    const txHash = await this.contract.write.cancelAllOffers([
-      minId,
-    ]);
+    const txHash = await this.contract.write.cancelAllOffers([minId]);
 
     return {
       txHash,
@@ -129,9 +125,7 @@ export class MslV5 {
   }
 
   async cancelRefinanceOffer({ id }: { id: bigint }) {
-    const txHash = await this.contract.write.cancelRenegotiationOffer([
-      id,
-    ]);
+    const txHash = await this.contract.write.cancelRenegotiationOffer([id]);
     return {
       txHash,
       waitTxInBlock: async () => {
@@ -141,7 +135,8 @@ export class MslV5 {
         const filter =
           await this.contract.createEventFilter.RenegotiationOfferCancelled();
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Renegotiation offer not cancelled");
+        if (events.length == 0)
+          throw new Error("Renegotiation offer not cancelled");
         return { ...events[0].args, ...receipt };
       },
     };
@@ -160,7 +155,8 @@ export class MslV5 {
         const filter =
           await this.contract.createEventFilter.AllRenegotiationOffersCancelled();
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Renegotiation offers not cancelled");
+        if (events.length == 0)
+          throw new Error("Renegotiation offers not cancelled");
         return { ...events[0].args, ...receipt };
       },
     };
@@ -224,6 +220,7 @@ export class MslV5 {
         borrower: offer.borrower,
         lenderOfferSignature: signature,
         borrowerOfferSignature: "0x0", // No signature data is expected here, only for BNPL [Levearage call]
+        lender: offer.lender,
         callbackData: "0x0", // No callback data is expected here, only for BNPL [Levearage call]
       },
     ]);
@@ -284,6 +281,7 @@ export class MslV5 {
         loanId: loan.source[0].loanId,
         loan,
         borrowerLoanSignature: "0x0", // No signature data is expected here, only for BNPL [Levearage call]
+        shouldDelegate: false, // No need to delegate
         callbackData: "0x0", // No callback data is expected here, only for BNPL [Levearage call]
       },
     ]);
@@ -313,7 +311,7 @@ export class MslV5 {
   }) {
     const txHash = await this.contract.write.refinanceFull([
       offer,
-      loan,
+      { ...loan, refinanceProceeds: [] },
       signature,
     ]);
 

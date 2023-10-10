@@ -80,6 +80,7 @@ const offerInput = {
   duration: 1294967295n,
   requiresLiquidation: false,
   borrowerAddress: zeroAddress,
+  contractAddress: process.env.MULTI_SOURCE_LOAN_CONTRACT,
 };
 
 export const testCollectionOfferInput = {

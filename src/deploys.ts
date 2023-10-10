@@ -8,11 +8,11 @@ interface Contracts {
   MultiSourceLoanV5Address: Address;
 }
 
-export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
+export const getContracts = (chain: Pick<Chain, "id">): Contracts => {
   if (chain?.id === ANVIL_CHAIN_ID) {
     return {
       MultiSourceLoanV4Address: "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
-      MultiSourceLoanV5Address: "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+      MultiSourceLoanV5Address: "0x68B1D87F95878fE05B998F19b66F4baba5De1aed",
     };
   }
 
