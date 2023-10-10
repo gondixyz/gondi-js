@@ -490,6 +490,38 @@ export class Gondi {
     });
   }
 
+  async placeBid({
+    collectionContractAddress,
+    tokenId,
+    bid,
+    auction,
+  }: {
+    collectionContractAddress: Address;
+    tokenId: bigint;
+    bid: bigint;
+    auction: model.Auction;
+  }) {
+    return this.contracts
+      .All(auction.loanAddress)
+      .placeBid({ collectionContractAddress, tokenId, bid, auction });
+  }
+
+  async settleAuction({
+    collectionContractAddress,
+    tokenId,
+    loan,
+    auction,
+  }: {
+    collectionContractAddress: Address;
+    tokenId: bigint;
+    loan: model.Loan;
+    auction: model.Auction;
+  }) {
+    return this.contracts
+      .All(auction.loanAddress)
+      .settleAuction({ collectionContractAddress, tokenId, loan, auction });
+  }
+
   async approveNFTForAll(nftAddress: Address) {
     const erc721 = this.contracts.ERC721(nftAddress);
     const MultiSourceLoanAddress = this.contracts.MultiSourceLoanV4.address;

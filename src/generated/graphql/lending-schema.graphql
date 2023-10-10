@@ -1,3 +1,12 @@
+type ActiveOfferNotification implements Node & Notification {
+  createdOn: DateTime!
+  id: String!
+  notificationType: String!
+  offer: Offer!
+  readOn: DateTime
+  user: User!
+}
+
 interface Activity implements Node {
   id: String!
   timestamp: DateTime!
@@ -207,6 +216,7 @@ input CollectionOfferInput {
 
 type CollectionOfferStatistics {
   acceptedLoans: Int!
+  consumedCapacity: BigInt!
 }
 
 type CollectionOrder implements Activity & Node & Order {
@@ -677,9 +687,12 @@ type NFT implements Node {
   image: Asset
   isFlagged: Boolean
   listed: Listing
+  marketPlaceOfPrice: String
   name: String
   nftId: String!
   owner: Address
+  price: BigInt
+  priceCurrencyAddress: String
   rarityRank: Int
   rarityScore: Float
   statistics: NftStatistics!
@@ -739,6 +752,7 @@ type NftStatistics {
   lastSale: Sale
   loansTotalVolume(currencyAddress: Address!): BigInt!
   numberOfOffers(currencyAddress: Address!): Float!
+  topTraitFloorPrice: CurrencyAmount
   totalVolume: Float
   totalVolume1d: Float
   totalVolume1m: Float
@@ -829,6 +843,10 @@ type OfferConnection {
 type OfferEdge {
   cursor: String!
   node: Offer!
+}
+
+type OfferStatistics {
+  consumedCapacity: BigInt!
 }
 
 enum OfferStatus {
@@ -1031,6 +1049,12 @@ type Query {
     statuses: [OfferStatus!] = null
     terms: TermsFilter = null
   ): OffersAndRenegotiationsConnection!
+  listNftsFromCollection(
+    after: String
+    collectionId: Int!
+    first: Int = 10
+    searchTerm: String = null
+  ): NFTConnection!
   listNftsFromUser(
     after: String
     first: Int = 10
@@ -1242,6 +1266,7 @@ type SingleNFTOffer implements Node & Offer {
   requiresLiquidation: Boolean!
   signature: Signature
   signerAddress: Address
+  statistics: OfferStatistics!
   status: String!
   validators: [OfferValidator!]!
 }

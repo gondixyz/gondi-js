@@ -36,6 +36,17 @@ export type Scalars = {
   Void: any;
 };
 
+export type ActiveOfferNotification = Node &
+  Notification & {
+    __typename?: "ActiveOfferNotification";
+    createdOn: Scalars["DateTime"];
+    id: Scalars["String"];
+    notificationType: Scalars["String"];
+    offer: Offer;
+    readOn?: Maybe<Scalars["DateTime"]>;
+    user: User;
+  };
+
 export type Activity = {
   id: Scalars["String"];
   timestamp: Scalars["DateTime"];
@@ -268,6 +279,7 @@ export type CollectionOfferInput = {
 export type CollectionOfferStatistics = {
   __typename?: "CollectionOfferStatistics";
   acceptedLoans: Scalars["Int"];
+  consumedCapacity: Scalars["BigInt"];
 };
 
 export type CollectionOrder = Activity &
@@ -862,9 +874,12 @@ export type Nft = Node & {
   image?: Maybe<Asset>;
   isFlagged?: Maybe<Scalars["Boolean"]>;
   listed?: Maybe<Listing>;
+  marketPlaceOfPrice?: Maybe<Scalars["String"]>;
   name?: Maybe<Scalars["String"]>;
   nftId: Scalars["String"];
   owner?: Maybe<Scalars["Address"]>;
+  price?: Maybe<Scalars["BigInt"]>;
+  priceCurrencyAddress?: Maybe<Scalars["String"]>;
   rarityRank?: Maybe<Scalars["Int"]>;
   rarityScore?: Maybe<Scalars["Float"]>;
   statistics: NftStatistics;
@@ -931,6 +946,7 @@ export type NftStatistics = {
   lastSale?: Maybe<Sale>;
   loansTotalVolume: Scalars["BigInt"];
   numberOfOffers: Scalars["Float"];
+  topTraitFloorPrice?: Maybe<CurrencyAmount>;
   totalVolume?: Maybe<Scalars["Float"]>;
   totalVolume1d?: Maybe<Scalars["Float"]>;
   totalVolume1m?: Maybe<Scalars["Float"]>;
@@ -1035,6 +1051,11 @@ export type OfferEdge = {
   __typename?: "OfferEdge";
   cursor: Scalars["String"];
   node: Offer;
+};
+
+export type OfferStatistics = {
+  __typename?: "OfferStatistics";
+  consumedCapacity: Scalars["BigInt"];
 };
 
 export enum OfferStatus {
@@ -1181,6 +1202,7 @@ export type Query = {
   listLoanActivities: LoanActivityConnection;
   listLoans: MultiSourceLoanConnection;
   listNftOffersAndRenegotiations: OffersAndRenegotiationsConnection;
+  listNftsFromCollection: NftConnection;
   listNftsFromUser: NftConnection;
   listNotifications: NotificationConnection;
   listOffers: OfferConnection;
@@ -1297,6 +1319,13 @@ export type QueryListNftOffersAndRenegotiationsArgs = {
   sortBy?: InputMaybe<OffersSortInput>;
   statuses?: InputMaybe<Array<OfferStatus>>;
   terms?: InputMaybe<TermsFilter>;
+};
+
+export type QueryListNftsFromCollectionArgs = {
+  after?: InputMaybe<Scalars["String"]>;
+  collectionId: Scalars["Int"];
+  first?: InputMaybe<Scalars["Int"]>;
+  searchTerm?: InputMaybe<Scalars["String"]>;
 };
 
 export type QueryListNftsFromUserArgs = {
@@ -1527,6 +1556,7 @@ export type SingleNftOffer = Node &
     requiresLiquidation: Scalars["Boolean"];
     signature?: Maybe<Scalars["Signature"]>;
     signerAddress?: Maybe<Scalars["Address"]>;
+    statistics: OfferStatistics;
     status: Scalars["String"];
     validators: Array<OfferValidator>;
   };
@@ -2129,6 +2159,23 @@ export type ListOffersQuery = {
   };
 };
 
+export type ActiveOfferNotificationKeySpecifier = (
+  | "createdOn"
+  | "id"
+  | "notificationType"
+  | "offer"
+  | "readOn"
+  | "user"
+  | ActiveOfferNotificationKeySpecifier
+)[];
+export type ActiveOfferNotificationFieldPolicy = {
+  createdOn?: FieldPolicy<any> | FieldReadFunction<any>;
+  id?: FieldPolicy<any> | FieldReadFunction<any>;
+  notificationType?: FieldPolicy<any> | FieldReadFunction<any>;
+  offer?: FieldPolicy<any> | FieldReadFunction<any>;
+  readOn?: FieldPolicy<any> | FieldReadFunction<any>;
+  user?: FieldPolicy<any> | FieldReadFunction<any>;
+};
 export type ActivityKeySpecifier = (
   | "id"
   | "timestamp"
@@ -2428,10 +2475,12 @@ export type CollectionOfferFieldPolicy = {
 };
 export type CollectionOfferStatisticsKeySpecifier = (
   | "acceptedLoans"
+  | "consumedCapacity"
   | CollectionOfferStatisticsKeySpecifier
 )[];
 export type CollectionOfferStatisticsFieldPolicy = {
   acceptedLoans?: FieldPolicy<any> | FieldReadFunction<any>;
+  consumedCapacity?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type CollectionOrderKeySpecifier = (
   | "collection"
@@ -3126,9 +3175,12 @@ export type NFTKeySpecifier = (
   | "image"
   | "isFlagged"
   | "listed"
+  | "marketPlaceOfPrice"
   | "name"
   | "nftId"
   | "owner"
+  | "price"
+  | "priceCurrencyAddress"
   | "rarityRank"
   | "rarityScore"
   | "statistics"
@@ -3146,9 +3198,12 @@ export type NFTFieldPolicy = {
   image?: FieldPolicy<any> | FieldReadFunction<any>;
   isFlagged?: FieldPolicy<any> | FieldReadFunction<any>;
   listed?: FieldPolicy<any> | FieldReadFunction<any>;
+  marketPlaceOfPrice?: FieldPolicy<any> | FieldReadFunction<any>;
   name?: FieldPolicy<any> | FieldReadFunction<any>;
   nftId?: FieldPolicy<any> | FieldReadFunction<any>;
   owner?: FieldPolicy<any> | FieldReadFunction<any>;
+  price?: FieldPolicy<any> | FieldReadFunction<any>;
+  priceCurrencyAddress?: FieldPolicy<any> | FieldReadFunction<any>;
   rarityRank?: FieldPolicy<any> | FieldReadFunction<any>;
   rarityScore?: FieldPolicy<any> | FieldReadFunction<any>;
   statistics?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -3216,6 +3271,7 @@ export type NftStatisticsKeySpecifier = (
   | "lastSale"
   | "loansTotalVolume"
   | "numberOfOffers"
+  | "topTraitFloorPrice"
   | "totalVolume"
   | "totalVolume1d"
   | "totalVolume1m"
@@ -3234,6 +3290,7 @@ export type NftStatisticsFieldPolicy = {
   lastSale?: FieldPolicy<any> | FieldReadFunction<any>;
   loansTotalVolume?: FieldPolicy<any> | FieldReadFunction<any>;
   numberOfOffers?: FieldPolicy<any> | FieldReadFunction<any>;
+  topTraitFloorPrice?: FieldPolicy<any> | FieldReadFunction<any>;
   totalVolume?: FieldPolicy<any> | FieldReadFunction<any>;
   totalVolume1d?: FieldPolicy<any> | FieldReadFunction<any>;
   totalVolume1m?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -3369,6 +3426,13 @@ export type OfferEdgeKeySpecifier = (
 export type OfferEdgeFieldPolicy = {
   cursor?: FieldPolicy<any> | FieldReadFunction<any>;
   node?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type OfferStatisticsKeySpecifier = (
+  | "consumedCapacity"
+  | OfferStatisticsKeySpecifier
+)[];
+export type OfferStatisticsFieldPolicy = {
+  consumedCapacity?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type OfferValidatorKeySpecifier = (
   | "arguments"
@@ -3531,6 +3595,7 @@ export type QueryKeySpecifier = (
   | "listLoanActivities"
   | "listLoans"
   | "listNftOffersAndRenegotiations"
+  | "listNftsFromCollection"
   | "listNftsFromUser"
   | "listNotifications"
   | "listOffers"
@@ -3559,6 +3624,7 @@ export type QueryFieldPolicy = {
   listLoanActivities?: FieldPolicy<any> | FieldReadFunction<any>;
   listLoans?: FieldPolicy<any> | FieldReadFunction<any>;
   listNftOffersAndRenegotiations?: FieldPolicy<any> | FieldReadFunction<any>;
+  listNftsFromCollection?: FieldPolicy<any> | FieldReadFunction<any>;
   listNftsFromUser?: FieldPolicy<any> | FieldReadFunction<any>;
   listNotifications?: FieldPolicy<any> | FieldReadFunction<any>;
   listOffers?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -3760,6 +3826,7 @@ export type SingleNFTOfferKeySpecifier = (
   | "requiresLiquidation"
   | "signature"
   | "signerAddress"
+  | "statistics"
   | "status"
   | "validators"
   | SingleNFTOfferKeySpecifier
@@ -3786,6 +3853,7 @@ export type SingleNFTOfferFieldPolicy = {
   requiresLiquidation?: FieldPolicy<any> | FieldReadFunction<any>;
   signature?: FieldPolicy<any> | FieldReadFunction<any>;
   signerAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  statistics?: FieldPolicy<any> | FieldReadFunction<any>;
   status?: FieldPolicy<any> | FieldReadFunction<any>;
   validators?: FieldPolicy<any> | FieldReadFunction<any>;
 };
@@ -4024,6 +4092,13 @@ export type UserFieldPolicy = {
   walletAddress?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type StrictTypedTypePolicies = {
+  ActiveOfferNotification?: Omit<TypePolicy, "fields" | "keyFields"> & {
+    keyFields?:
+      | false
+      | ActiveOfferNotificationKeySpecifier
+      | (() => undefined | ActiveOfferNotificationKeySpecifier);
+    fields?: ActiveOfferNotificationFieldPolicy;
+  };
   Activity?: Omit<TypePolicy, "fields" | "keyFields"> & {
     keyFields?:
       | false
@@ -4462,6 +4537,13 @@ export type StrictTypedTypePolicies = {
       | OfferEdgeKeySpecifier
       | (() => undefined | OfferEdgeKeySpecifier);
     fields?: OfferEdgeFieldPolicy;
+  };
+  OfferStatistics?: Omit<TypePolicy, "fields" | "keyFields"> & {
+    keyFields?:
+      | false
+      | OfferStatisticsKeySpecifier
+      | (() => undefined | OfferStatisticsKeySpecifier);
+    fields?: OfferStatisticsFieldPolicy;
   };
   OfferValidator?: Omit<TypePolicy, "fields" | "keyFields"> & {
     keyFields?:
