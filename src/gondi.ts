@@ -27,7 +27,8 @@ import {
 } from "@/generated/graphql";
 import * as model from "@/model";
 
-import { millisToSeconds, SECONDS_IN_DAY } from "./utils";
+import { getCallbackDataForBuyToken } from "./reservoir";
+import { getDomain, millisToSeconds, SECONDS_IN_DAY } from "./utils";
 
 type GondiProps = {
   wallet: Wallet;
@@ -582,10 +583,16 @@ export class Gondi {
       };
     }[];
   }) {
-    const dataForLeverageContract = leverageBuyData.map((data) => ({
-      ...data,
-      callbackData: "0x0" as Hash, // TODO: fix this
-    }));
+    const dataForLeverageContract = await Promise.all(
+      leverageBuyData.map(async (data) => ({
+        ...data,
+        callbackData: await getCallbackDataForBuyToken({
+          wallet: this.wallet,
+          collectionContractAddress: data.nft.collectionContractAddress,
+          tokenId: data.nft.tokenId,
+        }),
+      }))
+    );
 
     return this.contracts.Leverage.buy({
       leverageBuyData: dataForLeverageContract,
