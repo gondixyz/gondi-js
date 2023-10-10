@@ -1,4 +1,4 @@
-import { Account, Chain, Hash, Transport, WalletClient } from "viem";
+import { Account, Address, Chain, Hash, Transport, WalletClient } from "viem";
 
 import { filterLogs, OfferV5 as BlockchainOfferV5 } from "@/blockchain";
 import { getContracts } from "@/deploys";
@@ -57,7 +57,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
   }
 
   async cancelOffer({ id }: { id: bigint }) {
-    const txHash = await this.contract.write.cancelOffer([id]);
+    const txHash = await this.safeContractWrite.cancelOffer([id]);
     return {
       txHash,
       waitTxInBlock: async () => {
@@ -74,7 +74,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
   }
 
   async cancelAllOffers({ minId }: { minId: bigint }) {
-    const txHash = await this.contract.write.cancelAllOffers([minId]);
+    const txHash = await this.safeContractWrite.cancelAllOffers([minId]);
 
     return {
       txHash,
@@ -92,7 +92,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
   }
 
   async cancelRefinanceOffer({ id }: { id: bigint }) {
-    const txHash = await this.contract.write.cancelRenegotiationOffer([id]);
+    const txHash = await this.safeContractWrite.cancelRenegotiationOffer([id]);
     return {
       txHash,
       waitTxInBlock: async () => {
@@ -110,7 +110,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
   }
 
   async cancelAllRenegotiations({ minId }: { minId: bigint }) {
-    const txHash = await this.contract.write.cancelAllRenegotiationOffers([
+    const txHash = await this.safeContractWrite.cancelAllRenegotiationOffers([
       minId,
     ]);
     return {
@@ -181,7 +181,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     //   message: executionData,
     // });
 
-    const txHash = await this.contract.write.emitLoan([
+    const txHash = await this.safeContractWrite.emitLoan([
       {
         executionData,
         borrower: offer.borrower,
@@ -242,7 +242,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     //   },
     //   message: loan,
     // });
-    const txHash = await this.contract.write.repayLoan([
+    const txHash = await this.safeContractWrite.repayLoan([
       {
         loanId: loan.source[0].loanId,
         loan,
