@@ -1,6 +1,6 @@
 import { Account, Address, Chain, Hash, Transport, WalletClient } from "viem";
 
-import { filterLogs, OfferV4 as BlockchainOffer } from "@/blockchain";
+import { filterLogs, LoanV4, OfferV4 } from "@/blockchain";
 import { getContracts } from "@/deploys";
 import { multiSourceLoanABI as multiSourceLoanABIV4 } from "@/generated/blockchain/v4";
 import * as model from "@/model";
@@ -26,7 +26,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
     structToSign,
   }: {
     verifyingContract: Address;
-    structToSign: BlockchainOffer;
+    structToSign: OfferV4;
   }) {
     return this.wallet.signTypedData({
       domain: getDomain(this.wallet.chain.id, verifyingContract),
@@ -144,7 +144,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
     signature,
     tokenId,
   }: {
-    offer: model.BlockchainOffer;
+    offer: OfferV4;
     signature: Hash;
     tokenId: bigint;
   }) {
@@ -184,7 +184,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
     loan,
     nftReceiver,
   }: {
-    loan: model.Loan;
+    loan: LoanV4;
     nftReceiver?: Address;
   }) {
     const receiver = nftReceiver ?? this.wallet.account.address;
@@ -217,7 +217,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
   }: {
     offer: model.BlockchainRenegotiation;
     signature: Hash;
-    loan: model.Loan;
+    loan: LoanV4;
   }) {
     const txHash = await this.safeContractWrite.refinanceFull([
       offer,
@@ -255,7 +255,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
     loan,
   }: {
     offer: model.BlockchainRenegotiation;
-    loan: model.Loan;
+    loan: LoanV4;
   }) {
     const txHash = await this.safeContractWrite.refinancePartial([
       offer,
@@ -287,7 +287,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
     };
   }
 
-  async liquidateLoan({ loan }: { loan: model.Loan }) {
+  async liquidateLoan({ loan }: { loan: LoanV4 }) {
     const txHash = await this.safeContractWrite.liquidateLoan([
       loan.source[0].loanId,
       loan,

@@ -12,6 +12,7 @@ import { Api, Props as ApiProps } from "@/api";
 import {
   Contracts,
   filterLogs,
+  LoanV4V5,
   Wallet,
   zeroAddress,
   zeroHash,
@@ -351,11 +352,14 @@ export class Gondi {
     loan,
     nftReceiver,
   }: {
-    loan: model.Loan;
+    loan: LoanV4V5;
     nftReceiver?: Address;
   }) {
     return this.contracts.Msl(loan.contractAddress).repayLoan({
-      loan,
+      loan: {
+        ...loan,
+        refinanceProceeds: loan.refinanceProceeds ?? [],
+      },
       nftReceiver,
     });
   }
@@ -433,13 +437,13 @@ export class Gondi {
   async collectionId(
     props:
       | {
-          slug: string;
-          contractAddress?: never;
-        }
+        slug: string;
+        contractAddress?: never;
+      }
       | {
-          slug?: never;
-          contractAddress: Address;
-        }
+        slug?: never;
+        contractAddress: Address;
+      }
   ) {
     let result;
     if (props.slug) {
@@ -463,7 +467,7 @@ export class Gondi {
     loan,
   }: {
     offer: model.RenegotiationOffer;
-    loan: model.Loan;
+    loan: LoanV4V5;
   }) {
     const offerInput = {
       ...offer,
@@ -476,6 +480,7 @@ export class Gondi {
 
     return this.contracts.Msl(loan.contractAddress).refinanceFullLoan({
       offer: offerInput,
+      // @ts-ignore TODO: fix this
       loan,
       signature: offer.signature,
     });
@@ -486,7 +491,7 @@ export class Gondi {
     loan,
   }: {
     offer: model.RenegotiationOffer;
-    loan: model.Loan;
+    loan: LoanV4V5;
   }) {
     const offerInput = {
       ...offer,
@@ -499,12 +504,14 @@ export class Gondi {
 
     return this.contracts.Msl(loan.contractAddress).refinancePartialLoan({
       offer: offerInput,
+      // @ts-ignore TODO: fix this
       loan,
     });
   }
 
-  async liquidateLoan(loan: model.Loan) {
+  async liquidateLoan(loan: LoanV4V5) {
     return this.contracts.Msl(loan.contractAddress).liquidateLoan({
+      // @ts-ignore TODO: fix this
       loan,
     });
   }
@@ -533,11 +540,11 @@ export class Gondi {
   }: {
     collectionContractAddress: Address;
     tokenId: bigint;
-    loan: model.Loan;
+    loan: LoanV4V5;
     auction: model.Auction;
   }) {
     return this.contracts
-      .All(auction.loanAddress)
+      .All(auction.loanAddress) // @ts-ignore TODO: fix this
       .settleAuction({ collectionContractAddress, tokenId, loan, auction });
   }
 

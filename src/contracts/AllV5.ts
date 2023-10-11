@@ -7,7 +7,7 @@ import {
   WalletClient,
 } from "viem";
 
-import { filterLogs } from "@/blockchain";
+import { filterLogs, LoanV5 } from "@/blockchain";
 import { getContracts } from "@/deploys";
 import { auctionLoanLiquidatorABI as auctionLoanLiquidatorABIV5 } from "@/generated/blockchain/v5";
 import * as model from "@/model";
@@ -104,7 +104,7 @@ export class AllV5 extends Contract<typeof auctionLoanLiquidatorABIV5> {
   }: {
     collectionContractAddress: Address;
     tokenId: bigint;
-    loan: model.Loan;
+    loan: LoanV5;
     auction: model.Auction;
   }) {
     const loanStruct = {

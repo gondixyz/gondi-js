@@ -2,7 +2,6 @@ import { Address, Hash } from "viem";
 
 import {
   Auction as BlockchainAuction,
-  Loan as BlockchainLoan,
   Signature,
 } from "@/blockchain";
 import {
@@ -81,8 +80,6 @@ export type RenegotiationOffer = UnsignedRenegotiationOffer & {
 export const MAX_NUMBER =
   115792089237316195423570985008687907853269984665640564039457584007913129639935n;
 
-export type Loan = BlockchainLoan & { contractAddress: Address };
-
 export type Auction = BlockchainAuction;
 
 export type ListOffersProps = {
@@ -109,6 +106,5 @@ export type ListListingsProps = {
 };
 
 export type {
-  OfferV4 as BlockchainOffer,
   Renegotiation as BlockchainRenegotiation,
 } from "@/blockchain";

@@ -103,15 +103,20 @@ export class Contracts {
   }
 }
 
+type RepayAbiTypeV4 = AbiParametersToPrimitiveTypes<
+  ExtractAbiFunction<typeof multiSourceLoanABIV4, "repayLoan">["inputs"]
+>;
+type RepayAbiTypeV5 = AbiParametersToPrimitiveTypes<
+  ExtractAbiFunction<typeof multiSourceLoanABIV5, "repayLoan">["inputs"]
+>;
+
 type EmitAbiTypeV4 = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof multiSourceLoanABIV4, "emitLoan">["inputs"]
 >;
-type RepayAbiType = AbiParametersToPrimitiveTypes<
-  ExtractAbiFunction<typeof multiSourceLoanABIV5, "repayLoan">["inputs"]
->;
-type EmitAbiType = AbiParametersToPrimitiveTypes<
+type EmitAbiTypeV5 = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof multiSourceLoanABIV5, "emitLoan">["inputs"]
 >;
+
 type RefiAbiType = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof multiSourceLoanABIV4, "refinanceFull">["inputs"]
 >;
@@ -119,9 +124,13 @@ type PlaceBidAbiType = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof auctionLoanLiquidatorABIV5, "placeBid">["inputs"]
 >;
 
-export type Loan = RepayAbiType[0]["loan"];
+export type LoanV4 = RepayAbiTypeV4[2] & { contractAddress: Address };
+export type LoanV5 = RepayAbiTypeV5[0]["loan"] & { contractAddress: Address };
+export type LoanV4V5 = Omit<LoanV5, 'refinanceProceeds'> & { refinanceProceeds?: LoanV5['refinanceProceeds'] };
+
 export type OfferV4 = EmitAbiTypeV4[0];
-export type OfferV5 = EmitAbiType[0]["executionData"]["offer"];
+export type OfferV5 = EmitAbiTypeV5[0]["executionData"]["offer"];
+
 export type Renegotiation = RefiAbiType[0];
 export type Auction = PlaceBidAbiType[2];
 

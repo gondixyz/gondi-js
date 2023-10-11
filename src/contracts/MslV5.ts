@@ -1,6 +1,6 @@
 import { Account, Address, Chain, Hash, Transport, WalletClient } from "viem";
 
-import { filterLogs, OfferV5 as BlockchainOfferV5 } from "@/blockchain";
+import { filterLogs, LoanV5, OfferV5 } from "@/blockchain";
 import { getContracts } from "@/deploys";
 import { multiSourceLoanABI as multiSourceLoanABIV5 } from "@/generated/blockchain/v5";
 import * as model from "@/model";
@@ -26,7 +26,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     structToSign,
   }: {
     verifyingContract: Address;
-    structToSign: BlockchainOfferV5;
+    structToSign: OfferV5;
   }) {
     return this.wallet.signTypedData({
       domain: getDomain(this.wallet.chain.id, verifyingContract),
@@ -136,7 +136,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     amount,
     expirationTime,
   }: {
-    offer: BlockchainOfferV5;
+    offer: OfferV5;
     signature: Hash;
     tokenId: bigint;
     amount: bigint;
@@ -216,7 +216,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     };
   }
 
-  async repayLoan({ loan }: { loan: model.Loan }) {
+  async repayLoan({ loan }: { loan: LoanV5 }) {
     // const borrowerLoanSignature = await this.wallet.signTypedData({
     //   domain: getDomain(this.wallet.chain.id, this.address),
     //   primaryType: "Loan",
@@ -272,7 +272,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
   }: {
     offer: model.BlockchainRenegotiation;
     signature: Hash;
-    loan: model.Loan;
+    loan: LoanV5;
   }) {
     const txHash = await this.safeContractWrite.refinanceFull([
       offer,
@@ -309,7 +309,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     loan,
   }: {
     offer: model.BlockchainRenegotiation;
-    loan: model.Loan;
+    loan: LoanV5;
   }) {
     const txHash = await this.safeContractWrite.refinancePartial([offer, loan]);
     return {
@@ -337,7 +337,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     };
   }
 
-  async liquidateLoan({ loan }: { loan: model.Loan }) {
+  async liquidateLoan({ loan }: { loan: LoanV5 }) {
     const txHash = await this.safeContractWrite.liquidateLoan([
       loan.source[0].loanId,
       loan,
