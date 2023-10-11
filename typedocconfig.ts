@@ -19,12 +19,12 @@ module.exports = {
   navigationLinks: {
     "Github": "https://github.com/gondixyz/gondi-js"
   },
+  excludeInternal: true,
 
   // Organization
   groupOrder: ['Classes', 'Namespaces', 'Modules', '*'],
   sort: ['kind'],
   kindSortOrder: ['Class', 'Namespace', 'Module', 'Enum'],
-
 
   plugin: ['typedoc-plugin-missing-exports'],
   internalModule: 'Internal',

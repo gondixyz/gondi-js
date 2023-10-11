@@ -8,8 +8,10 @@
   },
   "devDependencies": {
     "@types/node": "^20.4.6",
+    "dotenv": "^16.3.1",
     "tsx": "^3.12.7",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "viem": "^1.13.1"
   },
   "dependencies": {
     "gondi": "link:.."

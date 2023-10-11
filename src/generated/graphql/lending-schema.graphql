@@ -28,6 +28,7 @@ type Auction implements Node {
   highestBid: Bid
   id: String!
   loan: MultiSourceLoan!
+  originator: String
   settler: String
   startTime: DateTime
   status: String!
@@ -189,7 +190,7 @@ type CollectionOffer implements Node & Offer {
   principalAddress: Address!
   principalAmount: BigInt!
   repayment: BigInt!
-  requiresLiquidation: Boolean!
+  requiresLiquidation: Boolean
   signature: Signature
   signerAddress: Address
   statistics: CollectionOfferStatistics!
@@ -210,8 +211,8 @@ input CollectionOfferInput {
   offerValidators: [OfferValidatorInput!]!
   principalAddress: Address!
   principalAmount: BigInt!
-  requiresLiquidation: Boolean!
-  signerAddress: Address!
+  requiresLiquidation: Boolean
+  signerAddress: Address
 }
 
 type CollectionOfferStatistics {
@@ -253,9 +254,9 @@ input CollectionSignedOfferInput {
   offerValidators: [OfferValidatorInput!]!
   principalAddress: Address!
   principalAmount: BigInt!
-  requiresLiquidation: Boolean!
+  requiresLiquidation: Boolean
   signature: Signature!
-  signerAddress: Address!
+  signerAddress: Address
 }
 
 type CollectionStatistics {
@@ -823,7 +824,7 @@ interface Offer implements Node {
   principalAddress: Address!
   principalAmount: BigInt!
   repayment: BigInt!
-  requiresLiquidation: Boolean!
+  requiresLiquidation: Boolean
   signature: Signature
   signerAddress: Address
   status: String!
@@ -1269,7 +1270,7 @@ type SingleNFTOffer implements Node & Offer {
   principalAddress: Address!
   principalAmount: BigInt!
   repayment: BigInt!
-  requiresLiquidation: Boolean!
+  requiresLiquidation: Boolean
   signature: Signature
   signerAddress: Address
   statistics: OfferStatistics!
@@ -1290,8 +1291,8 @@ input SingleNFTOfferInput {
   offerValidators: [OfferValidatorInput!]!
   principalAddress: Address!
   principalAmount: BigInt!
-  requiresLiquidation: Boolean!
-  signerAddress: Address!
+  requiresLiquidation: Boolean
+  signerAddress: Address
 }
 
 type SingleNFTOrder implements Activity & Node & Order {
@@ -1328,9 +1329,9 @@ input SingleNFTSignedOfferInput {
   offerValidators: [OfferValidatorInput!]!
   principalAddress: Address!
   principalAmount: BigInt!
-  requiresLiquidation: Boolean!
+  requiresLiquidation: Boolean
   signature: Signature!
-  signerAddress: Address!
+  signerAddress: Address
 }
 
 type SingleSourceLoan implements Loan & Node {

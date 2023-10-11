@@ -68,6 +68,7 @@ export type Auction = Node & {
   highestBid?: Maybe<Bid>;
   id: Scalars["String"];
   loan: MultiSourceLoan;
+  originator?: Maybe<Scalars["String"]>;
   settler?: Maybe<Scalars["String"]>;
   startTime?: Maybe<Scalars["DateTime"]>;
   status: Scalars["String"];
@@ -251,7 +252,7 @@ export type CollectionOffer = Node &
     principalAddress: Scalars["Address"];
     principalAmount: Scalars["BigInt"];
     repayment: Scalars["BigInt"];
-    requiresLiquidation: Scalars["Boolean"];
+    requiresLiquidation?: Maybe<Scalars["Boolean"]>;
     signature?: Maybe<Scalars["Signature"]>;
     signerAddress?: Maybe<Scalars["Address"]>;
     statistics: CollectionOfferStatistics;
@@ -272,8 +273,8 @@ export type CollectionOfferInput = {
   offerValidators: Array<OfferValidatorInput>;
   principalAddress: Scalars["Address"];
   principalAmount: Scalars["BigInt"];
-  requiresLiquidation: Scalars["Boolean"];
-  signerAddress: Scalars["Address"];
+  requiresLiquidation?: InputMaybe<Scalars["Boolean"]>;
+  signerAddress?: InputMaybe<Scalars["Address"]>;
 };
 
 export type CollectionOfferStatistics = {
@@ -319,9 +320,9 @@ export type CollectionSignedOfferInput = {
   offerValidators: Array<OfferValidatorInput>;
   principalAddress: Scalars["Address"];
   principalAmount: Scalars["BigInt"];
-  requiresLiquidation: Scalars["Boolean"];
+  requiresLiquidation?: InputMaybe<Scalars["Boolean"]>;
   signature: Scalars["Signature"];
-  signerAddress: Scalars["Address"];
+  signerAddress?: InputMaybe<Scalars["Address"]>;
 };
 
 export type CollectionStatistics = {
@@ -1023,7 +1024,7 @@ export type Offer = {
   principalAddress: Scalars["Address"];
   principalAmount: Scalars["BigInt"];
   repayment: Scalars["BigInt"];
-  requiresLiquidation: Scalars["Boolean"];
+  requiresLiquidation?: Maybe<Scalars["Boolean"]>;
   signature?: Maybe<Scalars["Signature"]>;
   signerAddress?: Maybe<Scalars["Address"]>;
   status: Scalars["String"];
@@ -1555,7 +1556,7 @@ export type SingleNftOffer = Node &
     principalAddress: Scalars["Address"];
     principalAmount: Scalars["BigInt"];
     repayment: Scalars["BigInt"];
-    requiresLiquidation: Scalars["Boolean"];
+    requiresLiquidation?: Maybe<Scalars["Boolean"]>;
     signature?: Maybe<Scalars["Signature"]>;
     signerAddress?: Maybe<Scalars["Address"]>;
     statistics: OfferStatistics;
@@ -1576,8 +1577,8 @@ export type SingleNftOfferInput = {
   offerValidators: Array<OfferValidatorInput>;
   principalAddress: Scalars["Address"];
   principalAmount: Scalars["BigInt"];
-  requiresLiquidation: Scalars["Boolean"];
-  signerAddress: Scalars["Address"];
+  requiresLiquidation?: InputMaybe<Scalars["Boolean"]>;
+  signerAddress?: InputMaybe<Scalars["Address"]>;
 };
 
 export type SingleNftOrder = Activity &
@@ -1617,9 +1618,9 @@ export type SingleNftSignedOfferInput = {
   offerValidators: Array<OfferValidatorInput>;
   principalAddress: Scalars["Address"];
   principalAmount: Scalars["BigInt"];
-  requiresLiquidation: Scalars["Boolean"];
+  requiresLiquidation?: InputMaybe<Scalars["Boolean"]>;
   signature: Scalars["Signature"];
-  signerAddress: Scalars["Address"];
+  signerAddress?: InputMaybe<Scalars["Address"]>;
 };
 
 export type SingleSourceLoan = Loan &
@@ -2075,7 +2076,8 @@ export type ListOffersQuery = {
             lenderAddress?: Address | null;
             borrowerAddress?: Address | null;
             signerAddress?: Address | null;
-            requiresLiquidation: boolean;
+            contractAddress: Address;
+            requiresLiquidation?: boolean | null;
             principalAddress: Address;
             principalAmount: bigint;
             aprBps: bigint;
@@ -2117,7 +2119,8 @@ export type ListOffersQuery = {
             lenderAddress?: Address | null;
             borrowerAddress?: Address | null;
             signerAddress?: Address | null;
-            requiresLiquidation: boolean;
+            contractAddress: Address;
+            requiresLiquidation?: boolean | null;
             principalAddress: Address;
             principalAmount: bigint;
             aprBps: bigint;
@@ -2208,6 +2211,7 @@ export type AuctionKeySpecifier = (
   | "highestBid"
   | "id"
   | "loan"
+  | "originator"
   | "settler"
   | "startTime"
   | "status"
@@ -2219,6 +2223,7 @@ export type AuctionFieldPolicy = {
   highestBid?: FieldPolicy<any> | FieldReadFunction<any>;
   id?: FieldPolicy<any> | FieldReadFunction<any>;
   loan?: FieldPolicy<any> | FieldReadFunction<any>;
+  originator?: FieldPolicy<any> | FieldReadFunction<any>;
   settler?: FieldPolicy<any> | FieldReadFunction<any>;
   startTime?: FieldPolicy<any> | FieldReadFunction<any>;
   status?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -5002,6 +5007,7 @@ export const ListOffersDocument = gql`
           lenderAddress
           borrowerAddress
           signerAddress
+          contractAddress
           requiresLiquidation
           principalAddress
           principalAmount

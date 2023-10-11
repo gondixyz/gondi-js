@@ -11,6 +11,7 @@ import { Api, Props as ApiProps } from "@/api";
 import {
   Contracts,
   filterLogs,
+  LoanV4V5,
   Wallet,
   zeroAddress,
   zeroHash,
@@ -22,6 +23,8 @@ import {
   Ordering,
 } from "@/generated/graphql";
 import * as model from "@/model";
+
+import { getDomain, millisToSeconds, SECONDS_IN_DAY } from "./utils";
 
 type GondiProps = {
   wallet: Wallet;
@@ -45,13 +48,27 @@ export class Gondi {
   }
 
   async makeSingleNftOffer(offer: model.SingleNftOfferInput) {
+    return await this._makeSingleNftOffer(offer);
+  }
+
+  /** @internal */
+  async _makeSingleNftOffer(
+    offer: model.SingleNftOfferInput,
+    mslContractAddress?: Address
+  ) {
+    const contract = mslContractAddress
+      ? this.contracts.Msl(mslContractAddress)
+      : this.contracts.MultiSourceLoanV5;
+    const contractAddress = contract.address;
+
     const offerInput = {
+      ...offer,
       lenderAddress: this.wallet.account?.address,
       signerAddress: this.wallet.account?.address,
       borrowerAddress: offer.borrowerAddress ?? zeroAddress,
-      contractAddress: this.contracts.MultiSourceLoanV4.address, // TODO: change this to be v5 by default
+      requiresLiquidation: !!offer.requiresLiquidation,
+      contractAddress,
       offerValidators: [], // This is ignored by the API but it was required in the mutation
-      ...offer,
     };
 
     const response = await this.api.generateSingleNftOfferHash({ offerInput });
@@ -80,33 +97,9 @@ export class Gondi {
       offerId,
     };
 
-    const signature = await this.wallet.signTypedData({
-      domain: this.getDomain(offerInput.contractAddress),
-      primaryType: "LoanOffer",
-      types: {
-        LoanOffer: [
-          { name: "offerId", type: "uint256" },
-          { name: "lender", type: "address" },
-          { name: "fee", type: "uint256" },
-          { name: "borrower", type: "address" },
-          { name: "capacity", type: "uint256" },
-          { name: "signer", type: "address" },
-          { name: "requiresLiquidation", type: "bool" },
-          { name: "nftCollateralAddress", type: "address" },
-          { name: "nftCollateralTokenId", type: "uint256" },
-          { name: "principalAddress", type: "address" },
-          { name: "principalAmount", type: "uint256" },
-          { name: "aprBps", type: "uint256" },
-          { name: "expirationTime", type: "uint256" },
-          { name: "duration", type: "uint256" },
-          { name: "validators", type: "OfferValidator[]" },
-        ],
-        OfferValidator: [
-          { name: "validator", type: "address" },
-          { name: "arguments", type: "bytes" },
-        ],
-      },
-      message: structToSign,
+    const signature = await contract.signOffer({
+      verifyingContract: offerInput.contractAddress,
+      structToSign,
     });
 
     const signedOffer = {
@@ -124,11 +117,26 @@ export class Gondi {
   }
 
   async makeCollectionOffer(offer: model.CollectionOfferInput) {
+    return await this._makeCollectionOffer(offer);
+  }
+
+  /** @internal */
+  async _makeCollectionOffer(
+    offer: model.CollectionOfferInput,
+    mslContractAddress?: Address
+  ) {
+    const contract = mslContractAddress
+      ? this.contracts.Msl(mslContractAddress)
+      : this.contracts.MultiSourceLoanV5;
+    const contractAddress = contract.address;
+
     const offerInput = {
+      ...offer,
       lenderAddress: this.wallet.account?.address,
       signerAddress: this.wallet.account?.address,
       borrowerAddress: offer.borrowerAddress ?? zeroAddress,
-      contractAddress: this.contracts.MultiSourceLoanV4.address, // TODO: change this to be v5 by default
+      requiresLiquidation: !!offer.requiresLiquidation,
+      contractAddress,
       offerValidators: [
         // This is ignored by the API but it was required in the mutation
         {
@@ -136,7 +144,6 @@ export class Gondi {
           arguments: zeroHex,
         },
       ],
-      ...offer,
     };
     const response = await this.api.generateCollectionOfferHash({ offerInput });
     const collateralAddress =
@@ -163,33 +170,9 @@ export class Gondi {
       offerId,
     };
 
-    const signature = await this.wallet.signTypedData({
-      domain: this.getDomain(offerInput.contractAddress),
-      primaryType: "LoanOffer",
-      types: {
-        LoanOffer: [
-          { name: "offerId", type: "uint256" },
-          { name: "lender", type: "address" },
-          { name: "fee", type: "uint256" },
-          { name: "borrower", type: "address" },
-          { name: "capacity", type: "uint256" },
-          { name: "signer", type: "address" },
-          { name: "requiresLiquidation", type: "bool" },
-          { name: "nftCollateralAddress", type: "address" },
-          { name: "nftCollateralTokenId", type: "uint256" },
-          { name: "principalAddress", type: "address" },
-          { name: "principalAmount", type: "uint256" },
-          { name: "aprBps", type: "uint256" },
-          { name: "expirationTime", type: "uint256" },
-          { name: "duration", type: "uint256" },
-          { name: "validators", type: "OfferValidator[]" },
-        ],
-        OfferValidator: [
-          { name: "validator", type: "address" },
-          { name: "arguments", type: "bytes" },
-        ],
-      },
-      message: structToSign,
+    const signature = await contract.signOffer({
+      verifyingContract: offerInput.contractAddress,
+      structToSign,
     });
 
     const signedOffer = {
@@ -374,22 +357,30 @@ export class Gondi {
   async emitLoan({
     offer,
     tokenId,
+    amount,
+    expirationTime,
   }: {
     offer: model.SingleNftOffer | model.CollectionOffer;
     tokenId: bigint;
+    amount?: bigint;
+    expirationTime?: bigint;
   }) {
     const contractOffer = {
       ...offer,
       lender: offer.lenderAddress,
       borrower: offer.borrowerAddress,
-      signer: offer.signerAddress,
+      signer: offer.signerAddress ?? zeroAddress,
       validators: offer.offerValidators,
+      requiresLiquidation: !!offer.requiresLiquidation,
     };
 
     return this.contracts.Msl(offer.contractAddress).emitLoan({
       offer: contractOffer,
       signature: contractOffer.signature,
       tokenId,
+      amount: amount ?? contractOffer.principalAmount,
+      expirationTime:
+        expirationTime ?? BigInt(millisToSeconds(Date.now()) + SECONDS_IN_DAY),
     });
   }
 
@@ -397,11 +388,14 @@ export class Gondi {
     loan,
     nftReceiver,
   }: {
-    loan: model.Loan;
+    loan: LoanV4V5;
     nftReceiver?: Address;
   }) {
     return this.contracts.Msl(loan.contractAddress).repayLoan({
-      loan,
+      loan: {
+        ...loan,
+        refinanceProceeds: loan.refinanceProceeds ?? [],
+      },
       nftReceiver,
     });
   }
@@ -479,13 +473,13 @@ export class Gondi {
   async collectionId(
     props:
       | {
-          slug: string;
-          contractAddress?: never;
-        }
+        slug: string;
+        contractAddress?: never;
+      }
       | {
-          slug?: never;
-          contractAddress: Address;
-        }
+        slug?: never;
+        contractAddress: Address;
+      }
   ) {
     let result;
     if (props.slug) {
@@ -509,7 +503,7 @@ export class Gondi {
     loan,
   }: {
     offer: model.RenegotiationOffer;
-    loan: model.Loan;
+    loan: LoanV4V5;
   }) {
     const offerInput = {
       ...offer,
@@ -522,6 +516,7 @@ export class Gondi {
 
     return this.contracts.Msl(loan.contractAddress).refinanceFullLoan({
       offer: offerInput,
+      // @ts-ignore TODO: fix this
       loan,
       signature: offer.signature,
     });
@@ -532,7 +527,7 @@ export class Gondi {
     loan,
   }: {
     offer: model.RenegotiationOffer;
-    loan: model.Loan;
+    loan: LoanV4V5;
   }) {
     const offerInput = {
       ...offer,
@@ -545,23 +540,59 @@ export class Gondi {
 
     return this.contracts.Msl(loan.contractAddress).refinancePartialLoan({
       offer: offerInput,
+      // @ts-ignore TODO: fix this
       loan,
     });
   }
 
-  async liquidateLoan(loan: model.Loan) {
+  async liquidateLoan(loan: LoanV4V5) {
     return this.contracts.Msl(loan.contractAddress).liquidateLoan({
+      // @ts-ignore TODO: fix this
       loan,
     });
   }
 
-  async approveNFTForAll(nftAddress: Address) {
+  async placeBid({
+    collectionContractAddress,
+    tokenId,
+    bid,
+    auction,
+  }: {
+    collectionContractAddress: Address;
+    tokenId: bigint;
+    bid: bigint;
+    auction: model.Auction;
+  }) {
+    return this.contracts
+      .All(auction.loanAddress)
+      .placeBid({ collectionContractAddress, tokenId, bid, auction });
+  }
+
+  async settleAuction({
+    collectionContractAddress,
+    tokenId,
+    loan,
+    auction,
+  }: {
+    collectionContractAddress: Address;
+    tokenId: bigint;
+    loan: LoanV4V5;
+    auction: model.Auction;
+  }) {
+    return this.contracts
+      .All(auction.loanAddress) // @ts-ignore TODO: fix this
+      .settleAuction({ collectionContractAddress, tokenId, loan, auction });
+  }
+
+  async approveNFTForAll({
+    nftAddress,
+    to = this.contracts.MultiSourceLoanV5.address,
+  }: {
+    nftAddress: Address;
+    to?: Address;
+  }) {
     const erc721 = this.contracts.ERC721(nftAddress);
-    const MultiSourceLoanAddress = this.contracts.MultiSourceLoanV4.address;
-    const txHash = await erc721.write.setApprovalForAll([
-      MultiSourceLoanAddress,
-      true,
-    ]);
+    const txHash = await erc721.write.setApprovalForAll([to, true]);
 
     return {
       txHash,
@@ -578,10 +609,17 @@ export class Gondi {
     };
   }
 
-  async approveToken(tokenAddress: Address, amount: bigint = model.MAX_NUMBER) {
+  async approveToken({
+    tokenAddress,
+    amount = model.MAX_NUMBER,
+    to = this.contracts.MultiSourceLoanV5.address,
+  }: {
+    tokenAddress: Address;
+    amount?: bigint;
+    to?: Address;
+  }) {
     const erc20 = this.contracts.ERC20(tokenAddress);
-    const MultiSourceLoanAddress = this.contracts.MultiSourceLoanV4.address;
-    const txHash = await erc20.write.approve([MultiSourceLoanAddress, amount]);
+    const txHash = await erc20.write.approve([to, amount]);
 
     return {
       txHash,
@@ -597,13 +635,7 @@ export class Gondi {
     };
   }
 
-  private getDomain(contractAddress?: Address) {
-    return {
-      name: "GONDI_MULTI_SOURCE_LOAN",
-      version: "1",
-      chainId: this.wallet.chain.id,
-      verifyingContract:
-        contractAddress ?? this.contracts.MultiSourceLoanV4.address,
-    };
+  private getDomain(verifyingContract: Address) {
+    return getDomain(this.wallet.chain.id, verifyingContract);
   }
 }

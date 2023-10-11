@@ -1,6 +1,6 @@
 {
   "name": "gondi",
-  "version": "0.2.0",
+  "version": "0.3.0b1",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.mjs",
@@ -10,7 +10,7 @@
     "dist"
   ],
   "scripts": {
-    "docs": "typedoc --options ./typedocconfig.ts --out docs/$npm_package_version && rm -rf docs/lts && cp -r docs/$npm_package_version docs/lts/",
+    "docs": "typedoc --options ./typedocconfig.ts --out docs/$npm_package_version && rm -rf docs/lts && cp -r docs/$npm_package_version/ docs/lts/",
     "build": "node esbuild.js && tsc && tsc-alias",
     "build-unbundle": "tsc --outDir dist && tsc-alias",
     "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx",

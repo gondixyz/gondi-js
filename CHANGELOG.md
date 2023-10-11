@@ -1,3 +1,58 @@
+# Breaking Changes 0.3.0b1
+
+### Important
+
+**Migration to version 0.3.x is discouraged until release is a stable version, and not a beta version as it is right now.**
+
+--- 
+
+This document outlines the breaking changes introduced in our codebase for version 0.3.0b1. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [Approve NFT For All](#approveNFTForAll)
+- [Approve Token](#approveToken)
+
+---
+
+## Approve NFT For All
+
+**Description:**  
+
+`approveNFTForAll` method now expects an object with the following shape:
+
+```ts
+  async approveNFTForAll(args: { nftAddress: Address; to?: Address }) { ... }
+```
+
+`to` is optional and will default to MultiSourceLoan contract.
+
+**Reason:**  
+
+Consistency accross other methods.
+
+---
+
+## Approve Token
+
+**Description:**  
+
+`approveToken` method now expects an object with the following shape:
+
+```ts
+  async approveToken(args: { tokenAddress: Address; amount?: bigint; to?: Address }) { ... }
+```
+
+`amount` is optional and will default to MultiSourceLoan contract.
+
+`to` is optional and will default to internal `MAX_NUMBER`` constant.
+
+**Reason:**  
+
+Consistency accross other methods.
+
+---
+
 # Breaking Changes 0.2.0
 
 This document outlines the breaking changes introduced in our codebase for version 0.2.0. Please review these changes carefully to ensure a smooth migration.
@@ -43,14 +98,25 @@ This document outlines the breaking changes introduced in our codebase for versi
 
 ## Table of Contents
 
-- [Cancel Offer](#cancel-offer)
-- [Cancel Refinance Offer](#cancel-refinance-offer)
-- [Cancel All Offers](#cancel-all-offers)
-- [Cancel All Renegotiations](#cancel-all-renegotiations)
-- [Repay Loan](#repay-loan)
-- [Refinance Full Loan](#refinance-full-loan)
-- [Emit Loan](#emit-loan)
-- [Make Refinance Offer](#make-refinance-offer)
+- [Breaking Changes 0.3.0b1](#breaking-changes-030b1)
+    - [Important](#important)
+  - [Table of Contents](#table-of-contents)
+  - [Approve NFT For All](#approve-nft-for-all)
+  - [Approve Token](#approve-token)
+- [Breaking Changes 0.2.0](#breaking-changes-020)
+  - [Table of Contents](#table-of-contents-1)
+  - [Hide Offer](#hide-offer)
+  - [Hide Renegotiation Offer](#hide-renegotiation-offer)
+- [Breaking Changes 0.1.0](#breaking-changes-010)
+  - [Table of Contents](#table-of-contents-2)
+  - [Cancel Offer](#cancel-offer)
+  - [Cancel Refinance Offer](#cancel-refinance-offer)
+  - [Cancel All Offers](#cancel-all-offers)
+  - [Cancel All Renegotiations](#cancel-all-renegotiations)
+  - [Repay Loan](#repay-loan)
+  - [Refinance Full Loan](#refinance-full-loan)
+  - [Emit Loan](#emit-loan)
+  - [Make Refinance Offer](#make-refinance-offer)
 
 ---
 

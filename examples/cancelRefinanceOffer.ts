@@ -19,7 +19,7 @@ async function main() {
     offer: signedOffer,
     tokenId: testTokenId,
   });
-  let { loan } = await emitLoan.waitTxInBlock();
+  const { loan } = await emitLoan.waitTxInBlock();
   console.log("loan emitted");
 
   await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -40,12 +40,11 @@ async function main() {
       contractAddress: signedOffer.contractAddress,
     });
 
-    (
-      await users[0].cancelRefinanceOffer({
-        id: refinanceOffer.renegotiationId,
-        contractAddress: signedOffer.contractAddress,
-      })
-    ).waitTxInBlock();
+    const { waitTxInBlock } = await users[0].cancelRefinanceOffer({
+      id: refinanceOffer.renegotiationId,
+      contractAddress: signedOffer.contractAddress,
+    });
+    await waitTxInBlock();
     console.log("renegotiation cancelled");
   } finally {
     const repayLoan = await users[1].repayLoan({ loan });
