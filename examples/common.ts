@@ -13,10 +13,10 @@ import { privateKeyToAccount } from "viem/accounts";
 dotenv.config();
 
 const RPC = process.env.RPC_URL;
-const MULTI_SOURCE_LOAN_CONTRACT = process.env.MULTI_SOURCE_LOAN_CONTRACT ?? "";
+const MULTI_SOURCE_LOAN_CONTRACT_V5 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? "";
 
-if (!isAddress(MULTI_SOURCE_LOAN_CONTRACT)) {
-  throw new Error("invalid multi_source_loan_contract address");
+if (!isAddress(MULTI_SOURCE_LOAN_CONTRACT_V5)) {
+  throw new Error("invalid MULTI_SOURCE_LOAN_CONTRACT_V5 address");
 }
 
 if (!RPC) throw new Error("RPC_URL is not set");
@@ -103,17 +103,27 @@ export const testSingleNftOfferInput = {
   nftId: testNftId,
 };
 
-for (const user of users) {
+const approveForUser = async (user: Gondi, to: Address) => {
   const approveToken = await user.approveToken({
     tokenAddress: testCurrency,
-    to: MULTI_SOURCE_LOAN_CONTRACT,
+    to,
   });
   await approveToken.waitTxInBlock();
   const approveNFT = await user.approveNFTForAll({
     nftAddress: testCollection.contractAddress,
-    to: MULTI_SOURCE_LOAN_CONTRACT,
+    to,
   });
   await approveNFT.waitTxInBlock();
+};
+
+const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
+
+for (const user of users) {
+  await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V5)
+
+  if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
+    await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V4)
+  }
 }
 
 export const sleep = (ms: number) =>

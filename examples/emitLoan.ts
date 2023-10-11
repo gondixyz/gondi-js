@@ -1,20 +1,27 @@
+import { Address, isAddress } from "viem";
+
 import { testSingleNftOfferInput, testTokenId, users } from "./common";
 
-async function main() {
-  const offerInput = testSingleNftOfferInput;
-  const signedOffer = await users[0].makeSingleNftOffer(
-    offerInput
+const emitAndRepayLoan = async (contract?: Address) => {
+  const signedOffer = await users[0]._makeSingleNftOffer(
+    testSingleNftOfferInput, contract,
   );
-  console.log("offer placed successfully");
+  const contractVersionString = `msl: ${signedOffer.contractAddress}`;
+  console.log(`offer placed successfully: ${contractVersionString}`);
+  let loan;
+  try {
+    const emitLoan = await users[1].emitLoan({
+      offer: signedOffer,
+      tokenId: testTokenId,
+    });
+    loan = await emitLoan.waitTxInBlock();
+    console.log(`loan emitted: ${contractVersionString}`);
+  } catch (e) {
+    debugger;
+    return;
+  }
 
-  const emitLoan = await users[1].emitLoan({
-    offer: signedOffer,
-    tokenId: testTokenId,
-  });
-  const { loan } = await emitLoan.waitTxInBlock();
-  console.log("loan emitted");
-
-  await new Promise((resolve) => setTimeout(resolve, 5000));
+  await new Promise((resolve) => setTimeout(resolve, 3000));
 
   const repayLoan = await users[1].repayLoan({
     loan: {
@@ -23,7 +30,17 @@ async function main() {
     },
   });
   await repayLoan.waitTxInBlock();
-  console.log("loan repaid");
+  console.log(`loan repaid: ${contractVersionString}`);
+};
+
+async function main() {
+  await emitAndRepayLoan();
+
+  const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
+
+  if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
+    await emitAndRepayLoan(MULTI_SOURCE_LOAN_CONTRACT_V4);
+  }
 }
 
 main();
