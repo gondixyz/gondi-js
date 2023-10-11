@@ -660,7 +660,10 @@ type Mutation {
   ): SingleNFTOffer!
   hideAllOffers(contractAddress: Address!, minOfferId: String!): [Offer!]!
   hideOffer(contractAddress: Address!, offerId: String!): Offer!
-  hideRenegotiation(renegotiationId: String!): Renegotiation!
+  hideRenegotiation(
+    contractAddress: Address = "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
+    renegotiationId: String!
+  ): Renegotiation!
   markNotificationIdsAsRead(ids: [Int!]): Void
   markNotificationsAsRead: Void
   removeListing(nftId: Int!): Listing!
@@ -676,7 +679,10 @@ type Mutation {
   ): SingleNFTOffer!
   setReferral(referrerId: Int!): Void
   showOffer(contractAddress: Address!, offerId: String!): Offer!
-  showRenegotiation(renegotiationId: String!): Renegotiation!
+  showRenegotiation(
+    contractAddress: Address = "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
+    renegotiationId: String!
+  ): Renegotiation!
 }
 
 type NFT implements Node {
