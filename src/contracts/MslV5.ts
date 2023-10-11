@@ -246,9 +246,9 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
       {
         loanId: loan.source[0].loanId,
         loan,
-        borrowerLoanSignature: "0x0", // No signature data is expected here, only for BNPL [Levearage call]
+        borrowerLoanSignature: "0x", // No signature data is expected here, only for BNPL [Levearage call]
         shouldDelegate: false, // No need to delegate
-        callbackData: "0x0", // No callback data is expected here, only for BNPL [Levearage call]
+        callbackData: "0x", // No callback data is expected here, only for BNPL [Levearage call]
       },
     ]);
     return {
