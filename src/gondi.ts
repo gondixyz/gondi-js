@@ -27,7 +27,10 @@ import {
 } from "@/generated/graphql";
 import * as model from "@/model";
 
-import { getCallbackDataForBuyToken } from "./reservoir";
+import {
+  getCallbackDataForBuyToken,
+  getCallbackDataForSellToken,
+} from "./reservoir";
 import { getDomain, millisToSeconds, SECONDS_IN_DAY } from "./utils";
 
 type GondiProps = {
@@ -590,6 +593,7 @@ export class Gondi {
           wallet: this.wallet,
           collectionContractAddress: data.nft.collectionContractAddress,
           tokenId: data.nft.tokenId,
+          price: data.nft.price,
         }),
       }))
     );
@@ -599,8 +603,13 @@ export class Gondi {
     });
   }
 
-  async leverageSell({ loan }: { loan: model.Loan; price: bigint }) {
-    const callbackData = "0x0" as Hash; // TODO: fix this
+  async leverageSell({ loan, price }: { loan: model.Loan; price: bigint }) {
+    const callbackData = await getCallbackDataForSellToken({
+      wallet: this.wallet,
+      collectionContractAddress: loan.nftCollateralAddress,
+      tokenId: loan.nftCollateralTokenId,
+      price,
+    });
     const shouldDelegate = false; // TODO: fix this
 
     return this.contracts.Leverage.sell({
