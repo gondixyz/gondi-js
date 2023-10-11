@@ -106,7 +106,7 @@ export const testSingleNftOfferInput = {
 for (const user of users) {
   const approveToken = await user.approveToken({
     tokenAddress: testCurrency,
-    contract: MULTI_SOURCE_LOAN_CONTRACT,
+    to: MULTI_SOURCE_LOAN_CONTRACT,
   });
   await approveToken.waitTxInBlock();
   const approveNFT = await user.approveNFTForAll({

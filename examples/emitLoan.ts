@@ -7,15 +7,6 @@ async function main() {
   );
   console.log("offer placed successfully");
 
-  for (const user of users) {
-    const approveToken = await user.approveToken(signedOffer.principalAddress);
-    await approveToken.waitTxInBlock();
-    const approveNFT = await user.approveNFTForAll(
-      signedOffer.nftCollateralAddress
-    );
-    await approveNFT.waitTxInBlock();
-  }
-
   const emitLoan = await users[1].emitLoan({
     offer: signedOffer,
     tokenId: testTokenId,

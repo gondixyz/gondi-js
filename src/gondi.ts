@@ -569,14 +569,14 @@ export class Gondi {
   async approveToken({
     tokenAddress,
     amount = model.MAX_NUMBER,
-    contract = this.contracts.MultiSourceLoanV5.address,
+    to = this.contracts.MultiSourceLoanV5.address,
   }: {
     tokenAddress: Address;
-    amount: bigint;
-    contract: Address;
+    amount?: bigint;
+    to?: Address;
   }) {
     const erc20 = this.contracts.ERC20(tokenAddress);
-    const txHash = await erc20.write.approve([contract, amount]);
+    const txHash = await erc20.write.approve([to, amount]);
 
     return {
       txHash,
