@@ -586,13 +586,13 @@ export class Gondi {
 
   async approveNFTForAll({
     nftAddress,
-    contract = this.contracts.MultiSourceLoanV5.address,
+    to = this.contracts.MultiSourceLoanV5.address,
   }: {
     nftAddress: Address;
-    contract: Address;
+    to?: Address;
   }) {
     const erc721 = this.contracts.ERC721(nftAddress);
-    const txHash = await erc721.write.setApprovalForAll([contract, true]);
+    const txHash = await erc721.write.setApprovalForAll([to, true]);
 
     return {
       txHash,

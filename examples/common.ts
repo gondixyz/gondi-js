@@ -111,7 +111,7 @@ for (const user of users) {
   await approveToken.waitTxInBlock();
   const approveNFT = await user.approveNFTForAll({
     nftAddress: testCollection.contractAddress,
-    contract: MULTI_SOURCE_LOAN_CONTRACT,
+    to: MULTI_SOURCE_LOAN_CONTRACT,
   });
   await approveNFT.waitTxInBlock();
 }
