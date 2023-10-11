@@ -52,8 +52,13 @@ export class Gondi {
   }
 
   /** @internal */
-  async _makeSingleNftOffer(offer: model.SingleNftOfferInput, mslContractAddress?: Address) {
-    const contract = mslContractAddress ? this.contracts.Msl(mslContractAddress) : this.contracts.MultiSourceLoanV5;
+  async _makeSingleNftOffer(
+    offer: model.SingleNftOfferInput,
+    mslContractAddress?: Address
+  ) {
+    const contract = mslContractAddress
+      ? this.contracts.Msl(mslContractAddress)
+      : this.contracts.MultiSourceLoanV5;
     const contractAddress = contract.address;
 
     const offerInput = {
@@ -116,8 +121,13 @@ export class Gondi {
   }
 
   /** @internal */
-  async _makeCollectionOffer(offer: model.CollectionOfferInput, mslContractAddress?: Address) {
-    const contract = mslContractAddress ? this.contracts.Msl(mslContractAddress) : this.contracts.MultiSourceLoanV5;
+  async _makeCollectionOffer(
+    offer: model.CollectionOfferInput,
+    mslContractAddress?: Address
+  ) {
+    const contract = mslContractAddress
+      ? this.contracts.Msl(mslContractAddress)
+      : this.contracts.MultiSourceLoanV5;
     const contractAddress = contract.address;
 
     const offerInput = {
@@ -531,13 +541,15 @@ export class Gondi {
       .settleAuction({ collectionContractAddress, tokenId, loan, auction });
   }
 
-  async approveNFTForAll(nftAddress: Address) {
+  async approveNFTForAll({
+    nftAddress,
+    contract = this.contracts.MultiSourceLoanV5.address,
+  }: {
+    nftAddress: Address;
+    contract: Address;
+  }) {
     const erc721 = this.contracts.ERC721(nftAddress);
-    const MultiSourceLoanAddress = this.contracts.MultiSourceLoanV4.address;
-    const txHash = await erc721.write.setApprovalForAll([
-      MultiSourceLoanAddress,
-      true,
-    ]);
+    const txHash = await erc721.write.setApprovalForAll([contract, true]);
 
     return {
       txHash,
@@ -554,10 +566,17 @@ export class Gondi {
     };
   }
 
-  async approveToken(tokenAddress: Address, amount: bigint = model.MAX_NUMBER) {
+  async approveToken({
+    tokenAddress,
+    amount = model.MAX_NUMBER,
+    contract = this.contracts.MultiSourceLoanV5.address,
+  }: {
+    tokenAddress: Address;
+    amount: bigint;
+    contract: Address;
+  }) {
     const erc20 = this.contracts.ERC20(tokenAddress);
-    const MultiSourceLoanAddress = this.contracts.MultiSourceLoanV4.address;
-    const txHash = await erc20.write.approve([MultiSourceLoanAddress, amount]);
+    const txHash = await erc20.write.approve([contract, amount]);
 
     return {
       txHash,

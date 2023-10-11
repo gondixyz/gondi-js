@@ -1,11 +1,23 @@
 import * as dotenv from "dotenv";
 import { Gondi } from "gondi";
-import { Address, createWalletClient, http, isHex, zeroAddress } from "viem";
+import {
+  Address,
+  createWalletClient,
+  http,
+  isAddress,
+  isHex,
+  zeroAddress,
+} from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
 dotenv.config();
 
 const RPC = process.env.RPC_URL;
+const MULTI_SOURCE_LOAN_CONTRACT = process.env.MULTI_SOURCE_LOAN_CONTRACT ?? "";
+
+if (!isAddress(MULTI_SOURCE_LOAN_CONTRACT)) {
+  throw new Error("invalid multi_source_loan_contract address");
+}
 
 if (!RPC) throw new Error("RPC_URL is not set");
 
@@ -92,11 +104,15 @@ export const testSingleNftOfferInput = {
 };
 
 for (const user of users) {
-  const approveToken = await user.approveToken(testCurrency);
+  const approveToken = await user.approveToken({
+    tokenAddress: testCurrency,
+    contract: MULTI_SOURCE_LOAN_CONTRACT,
+  });
   await approveToken.waitTxInBlock();
-  const approveNFT = await user.approveNFTForAll(
-    testCollection.contractAddress
-  );
+  const approveNFT = await user.approveNFTForAll({
+    nftAddress: testCollection.contractAddress,
+    contract: MULTI_SOURCE_LOAN_CONTRACT,
+  });
   await approveNFT.waitTxInBlock();
 }
 

@@ -184,11 +184,11 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     const txHash = await this.safeContractWrite.emitLoan([
       {
         executionData,
-        borrower: offer.borrower,
+        borrower: this.wallet.account.address,
         lenderOfferSignature: signature,
-        borrowerOfferSignature: "0x0", // No signature data is expected here, only for BNPL [Levearage call]
+        borrowerOfferSignature: "0x", // No signature data is expected here, only for BNPL [Levearage call]
         lender: offer.lender,
-        callbackData: "0x0", // No callback data is expected here, only for BNPL [Levearage call]
+        callbackData: "0x", // No callback data is expected here, only for BNPL [Levearage call]
       },
     ]);
     return {
