@@ -8,18 +8,13 @@ const emitAndRepayLoan = async (contract?: Address) => {
   );
   const contractVersionString = `msl: ${signedOffer.contractAddress}`;
   console.log(`offer placed successfully: ${contractVersionString}`);
-  let loan;
-  try {
-    const emitLoan = await users[1].emitLoan({
-      offer: signedOffer,
-      tokenId: testTokenId,
-    });
-    loan = await emitLoan.waitTxInBlock();
-    console.log(`loan emitted: ${contractVersionString}`);
-  } catch (e) {
-    debugger;
-    return;
-  }
+
+  const emitLoan = await users[1].emitLoan({
+    offer: signedOffer,
+    tokenId: testTokenId,
+  });
+  const { loan } = await emitLoan.waitTxInBlock();
+  console.log(`loan emitted: ${contractVersionString}`);
 
   await new Promise((resolve) => setTimeout(resolve, 3000));
 
