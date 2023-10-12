@@ -27,15 +27,13 @@ import {
 } from "@/generated/graphql";
 import * as model from "@/model";
 
-import {
-  getCallbackDataForBuyToken,
-  getCallbackDataForSellToken,
-} from "./reservoir";
+import { Reservoir } from "./reservoir/Reservoir";
 import { getDomain, millisToSeconds, SECONDS_IN_DAY } from "./utils";
 
 type GondiProps = {
   wallet: Wallet;
   apiClient?: ApiProps["apiClient"];
+  reservoirApiKey?: string;
 };
 
 export class Gondi {
@@ -43,8 +41,9 @@ export class Gondi {
   wallet: Wallet;
   bcClient: PublicClient<Transport, Chain>;
   api: Api;
+  reservoir: Reservoir;
 
-  constructor({ wallet, apiClient }: GondiProps) {
+  constructor({ wallet, apiClient, reservoirApiKey }: GondiProps) {
     this.wallet = wallet;
     this.bcClient = createPublicClient({
       transport: ({ chain: _chain }: { chain?: Chain }) =>
@@ -52,6 +51,7 @@ export class Gondi {
     });
     this.contracts = new Contracts(this.bcClient, wallet);
     this.api = new Api({ wallet, apiClient });
+    this.reservoir = new Reservoir({ apiKey: reservoirApiKey });
   }
 
   async makeSingleNftOffer(offer: model.SingleNftOfferInput) {
@@ -589,7 +589,7 @@ export class Gondi {
     const dataForLeverageContract = await Promise.all(
       leverageBuyData.map(async (data) => ({
         ...data,
-        callbackData: await getCallbackDataForBuyToken({
+        callbackData: await this.reservoir.getCallbackDataForBuyToken({
           wallet: this.wallet,
           collectionContractAddress: data.nft.collectionContractAddress,
           tokenId: data.nft.tokenId,
@@ -598,13 +598,15 @@ export class Gondi {
       }))
     );
 
+    return dataForLeverageContract;
+
     return this.contracts.Leverage.buy({
       leverageBuyData: dataForLeverageContract,
     });
   }
 
   async leverageSell({ loan, price }: { loan: LoanV5; price: bigint }) {
-    const callbackData = await getCallbackDataForSellToken({
+    const callbackData = await this.reservoir.getCallbackDataForSellToken({
       wallet: this.wallet,
       collectionContractAddress: loan.nftCollateralAddress,
       tokenId: loan.nftCollateralTokenId,
