@@ -4,7 +4,6 @@ import {
   createPublicClient,
   createTransport,
   Hash,
-  isAddress,
   PublicClient,
   Transport,
 } from "viem";
@@ -14,7 +13,8 @@ import {
   Contracts,
   filterLogs,
   LoanV4V5,
-  OfferV5 as BlockchainOfferV5,
+  LoanV5,
+  OfferV5,
   Wallet,
   zeroAddress,
   zeroHash,
@@ -576,7 +576,7 @@ export class Gondi {
     leverageBuyData,
   }: {
     leverageBuyData: {
-      offer: BlockchainOfferV5 & { signature: Hash };
+      offer: OfferV5 & { signature: Hash };
       expirationTime: bigint;
       amount: bigint;
       nft: {
@@ -603,7 +603,7 @@ export class Gondi {
     });
   }
 
-  async leverageSell({ loan, price }: { loan: model.Loan; price: bigint }) {
+  async leverageSell({ loan, price }: { loan: LoanV5; price: bigint }) {
     const callbackData = await getCallbackDataForSellToken({
       wallet: this.wallet,
       collectionContractAddress: loan.nftCollateralAddress,

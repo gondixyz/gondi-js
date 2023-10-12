@@ -1,9 +1,8 @@
 import { Account, Address, Chain, Hash, Transport, WalletClient } from "viem";
 
-import { filterLogs, OfferV5 as BlockchainOfferV5 } from "@/blockchain";
+import { filterLogs, LoanV5,OfferV5 } from "@/blockchain";
 import { getContracts } from "@/deploys";
 import { leverageABI } from "@/generated/blockchain/v5";
-import * as model from "@/model";
 
 import { Contract } from "./Contract";
 
@@ -24,7 +23,7 @@ export class Leverage extends Contract<typeof leverageABI> {
     leverageBuyData,
   }: {
     leverageBuyData: {
-      offer: BlockchainOfferV5 & { signature: Hash };
+      offer: OfferV5 & { signature: Hash };
       expirationTime: bigint;
       amount: bigint;
       nft: {
@@ -71,7 +70,7 @@ export class Leverage extends Contract<typeof leverageABI> {
     callbackData,
     shouldDelegate,
   }: {
-    loan: model.Loan;
+    loan: LoanV5;
     callbackData: Hash;
     shouldDelegate: boolean;
   }) {
