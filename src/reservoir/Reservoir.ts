@@ -1,7 +1,6 @@
 import {
   createClient,
   getClient,
-  reservoirChains,
   // @ts-ignore
   // eslint-disable-next-line import/no-unresolved
 } from "@reservoir0x/reservoir-sdk";
@@ -18,13 +17,25 @@ import {
 } from "./utils";
 
 export class Reservoir {
-  constructor({ apiKey }: { apiKey?: string }) {
-    if (!apiKey) return;
+  baseApiUrl: string;
+
+  constructor({
+    baseApiUrl = "https://api.reservoir.tools",
+    apiKey,
+    wallet,
+  }: {
+    baseApiUrl?: string;
+    apiKey?: string;
+    wallet: Wallet;
+  }) {
+    this.baseApiUrl = baseApiUrl;
 
     createClient({
       chains: [
         {
-          ...reservoirChains.mainnet,
+          id: wallet.chain.id,
+          name: wallet.chain.name,
+          baseApiUrl,
           active: true,
         },
       ],
@@ -35,7 +46,7 @@ export class Reservoir {
 
   async getOrder({ orderId }: { orderId: Hash }) {
     return fetch(
-      `https://api.reservoir.tools/orders/asks/v5?ids=${orderId}&includeRawData=true`
+      `${this.baseApiUrl}/orders/asks/v5?ids=${orderId}&includeRawData=true`
     )
       .then((res) => res.json() as Promise<{ orders: unknown[] }>)
       .then(({ orders }) => orders[0]);
@@ -85,11 +96,11 @@ export class Reservoir {
       throw new Error(`No available offer for price ${price}`);
     }
 
-    const apiOrder = await this.getOrder({ orderId });
-
     if (signature !== zeroHash) {
+      const apiOrder = await this.getOrder({ orderId });
+
       // Seaport order -- we can save a tx by using matchOrders method from the seaport contract
-      return generateMatchOrdersCallbackData({
+      return await generateMatchOrdersCallbackData({
         wallet,
         rawOrder: (apiOrder as { rawData: SeaportOrder }).rawData,
         signature,

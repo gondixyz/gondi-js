@@ -20,7 +20,7 @@ export const getContracts = (chain: Pick<Chain, "id">): Contracts => {
         "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
       AuctionLoanLiquidatorV5Address:
         "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE",
-      LeverageAddress: "0xTODO", // TODO: deploy
+      LeverageAddress: "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d",
     };
   }
 

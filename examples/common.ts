@@ -13,7 +13,8 @@ import { privateKeyToAccount } from "viem/accounts";
 dotenv.config();
 
 const RPC = process.env.RPC_URL;
-const MULTI_SOURCE_LOAN_CONTRACT_V5 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? "";
+const MULTI_SOURCE_LOAN_CONTRACT_V5 =
+  process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? "";
 
 if (!isAddress(MULTI_SOURCE_LOAN_CONTRACT_V5)) {
   throw new Error("invalid MULTI_SOURCE_LOAN_CONTRACT_V5 address");
@@ -72,7 +73,14 @@ export const wallets = process.env.TEST_WALLETS.split(",").map((privateKey) => {
 
 if (wallets.length < 3) throw new Error("not enough wallets, need 3");
 
-export const users = wallets.map((wallet) => new Gondi({ wallet }));
+export const users = wallets.map(
+  (wallet) =>
+    new Gondi({
+      wallet,
+      reservoirApiKey: process.env.RESERVOIR_API_KEY,
+      reservoirBaseApiUrl: "http://localhost:8080/marketplaces",
+    })
+);
 
 export const testCollectionId = (
   await users[0].collectionId(testCollection)
@@ -120,14 +128,15 @@ const approveForUser = async (user: Gondi, to: Address) => {
   await approveNFT.waitTxInBlock();
 };
 
-const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
+const MULTI_SOURCE_LOAN_CONTRACT_V4 =
+  process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
 
 for (const [i, user] of users.entries()) {
   console.log(`approving tokens for user ${i}`);
   await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V5)
 
   if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
-    await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V4)
+    await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V4);
   }
 }
 

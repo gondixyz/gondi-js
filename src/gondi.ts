@@ -34,6 +34,7 @@ type GondiProps = {
   wallet: Wallet;
   apiClient?: ApiProps["apiClient"];
   reservoirApiKey?: string;
+  reservoirBaseApiUrl?: string;
 };
 
 export class Gondi {
@@ -43,7 +44,12 @@ export class Gondi {
   api: Api;
   reservoir: Reservoir;
 
-  constructor({ wallet, apiClient, reservoirApiKey }: GondiProps) {
+  constructor({
+    wallet,
+    apiClient,
+    reservoirApiKey,
+    reservoirBaseApiUrl,
+  }: GondiProps) {
     this.wallet = wallet;
     this.bcClient = createPublicClient({
       transport: ({ chain: _chain }: { chain?: Chain }) =>
@@ -51,7 +57,11 @@ export class Gondi {
     });
     this.contracts = new Contracts(this.bcClient, wallet);
     this.api = new Api({ wallet, apiClient });
-    this.reservoir = new Reservoir({ apiKey: reservoirApiKey });
+    this.reservoir = new Reservoir({
+      apiKey: reservoirApiKey,
+      baseApiUrl: reservoirBaseApiUrl,
+      wallet,
+    });
   }
 
   async makeSingleNftOffer(offer: model.SingleNftOfferInput) {

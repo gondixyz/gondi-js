@@ -3,6 +3,9 @@
 import { adaptViemWallet } from "@reservoir0x/reservoir-sdk";
 import {
   Address,
+  Chain,
+  createPublicClient,
+  createTransport,
   decodeFunctionData,
   encodeFunctionData,
   Hash,
@@ -36,6 +39,7 @@ export interface SeaportOrder {
   zoneHash: Hash;
   salt: bigint;
   conduitKey: Hash;
+  mockedSignature?: Hash;
 }
 
 export interface SeaportOrderParameter extends SeaportOrder {
@@ -238,7 +242,7 @@ export const generateMatchOrdersCallbackData = async ({
 }) => {
   const order = {
     parameters: buildOrderParameters(rawOrder),
-    signature,
+    signature: rawOrder.mockedSignature ?? signature,
   };
 
   const inverseOrder = await generateSignedOrder(
@@ -253,6 +257,23 @@ export const generateMatchOrdersCallbackData = async ({
   console.log("INVERSE ORDER: ", inverseOrder);
 
   console.log("FULFILLMENTS: ", fulfillments[0], fulfillments[1]);
+
+  try {
+    const client = createPublicClient({
+      transport: ({ chain: _chain }: { chain?: Chain }) =>
+        createTransport(wallet.transport),
+    });
+
+    const pepe = await client.simulateContract({
+      abi: seaportABI,
+      functionName: "matchOrders",
+      args: [[order, inverseOrder], fulfillments],
+      address: SEAPORT_CONTRACT_ADDRESS,
+    });
+    console.log(pepe);
+  } catch (e: any) {
+    console.log('ERROR', e);
+  }
 
   const matchOrdersCallbackData = encodeFunctionData({
     abi: seaportABI,
