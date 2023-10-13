@@ -607,6 +607,7 @@ type MultiSourceLoan implements Loan & Node {
   offer: Offer!
   principalAddress: Address!
   principalAmount: BigInt!
+  refinanceProceeds: [RefinanceProceed!]!
   repaidActivity: LoanRepaid
   sources: [Source!]!
   startTime: DateTime!
@@ -635,6 +636,7 @@ type MultiSourceLoanHistory implements Node {
   offerId: String!
   principalAddress: String!
   principalAmount: BigInt!
+  refinanceProceeds: [RefinanceProceedHistory!]!
   sources: [SourceHistory!]!
   startTime: DateTime!
 }
@@ -706,6 +708,18 @@ type NFT implements Node {
   tokenId: BigInt!
   traits: [Trait!]!
   url: String
+}
+
+type NFTBidSample implements Node {
+  bidderAddress: Address!
+  currency: Currency
+  currencyAddress: Address!
+  expiration: DateTime!
+  fees: BigInt!
+  id: String!
+  marketPlace: String!
+  netAmount: BigInt!
+  status: String!
 }
 
 type NFTConnection {
@@ -994,6 +1008,7 @@ type Query {
     sortBy: [AuctionSortInput!] = null
     statuses: [AuctionStatus!] = null
   ): AuctionConnection!
+  listBestBidsForNft(currencyAddress: String!, nftId: Int!): [NFTBidSample!]!
   listBids(
     after: String
     auctionId: String = null
@@ -1117,6 +1132,27 @@ type Query {
 input RangeInput {
   max: Int!
   min: Int!
+}
+
+type RefinanceProceed implements Node {
+  aprBps: BigInt!
+  id: String!
+  lender: String!
+  loan: MultiSourceLoan!
+  loanId: Int!
+  principalAmount: BigInt!
+  sourceLoanId: Int!
+  startTime: DateTime!
+}
+
+type RefinanceProceedHistory implements Node {
+  aprBps: BigInt!
+  id: String!
+  lender: String!
+  loanId: Int!
+  principalAmount: BigInt!
+  sourceLoanId: Int!
+  startTime: DateTime!
 }
 
 input RefinanceTermsFilter {
