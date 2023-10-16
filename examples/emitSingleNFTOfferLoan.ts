@@ -29,12 +29,17 @@ const emitAndRepayLoan = async (contract?: Address) => {
 };
 
 async function main() {
-  await emitAndRepayLoan();
+  try {
+    await emitAndRepayLoan();
 
-  const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
+    const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
 
-  if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
-    await emitAndRepayLoan(MULTI_SOURCE_LOAN_CONTRACT_V4);
+    if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
+      await emitAndRepayLoan(MULTI_SOURCE_LOAN_CONTRACT_V4);
+    }
+  } catch (e) {
+    console.log("Error:");
+    console.log(e);
   }
 }
 
