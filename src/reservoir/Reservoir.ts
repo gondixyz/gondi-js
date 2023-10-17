@@ -44,9 +44,17 @@ export class Reservoir {
     });
   }
 
-  async getOrder({ orderId }: { orderId: Hash }) {
+  async getAsk({ orderId }: { orderId: Hash }) {
     return fetch(
       `${this.baseApiUrl}/orders/asks/v5?ids=${orderId}&includeRawData=true`
+    )
+      .then((res) => res.json() as Promise<{ orders: unknown[] }>)
+      .then(({ orders }) => orders[0]);
+  }
+
+  async getBid({ orderId }: { orderId: Hash }) {
+    return fetch(
+      `${this.baseApiUrl}/orders/bids/v6?ids=${orderId}&includeRawData=true`
     )
       .then((res) => res.json() as Promise<{ orders: unknown[] }>)
       .then(({ orders }) => orders[0]);
@@ -57,11 +65,13 @@ export class Reservoir {
     collectionContractAddress,
     tokenId,
     price,
+    exactOrderSource,
   }: {
     wallet: Wallet;
     collectionContractAddress: string;
     tokenId: bigint;
     price: bigint;
+    exactOrderSource?: string;
   }) {
     const { adaptedWallet, txData } = adaptWalletToCaptureTxData(wallet);
 
@@ -71,7 +81,7 @@ export class Reservoir {
           {
             token: `${collectionContractAddress}:${tokenId}`,
             quantity: 1,
-            // exactOrderSource: "opensea.io",
+            exactOrderSource,
           },
         ],
         expectedPrice: generateExpectedCurrencyPriceObject(
@@ -97,7 +107,7 @@ export class Reservoir {
     }
 
     if (signature !== zeroHash) {
-      const apiOrder = await this.getOrder({ orderId });
+      const apiOrder = await this.getAsk({ orderId });
 
       // Seaport order -- we can save a tx by using matchOrders method from the seaport contract
       return await generateMatchOrdersCallbackData({
@@ -116,11 +126,13 @@ export class Reservoir {
     collectionContractAddress,
     tokenId,
     price,
+    exactOrderSource,
   }: {
     wallet: Wallet;
     collectionContractAddress: string;
     tokenId: bigint;
     price: bigint;
+    exactOrderSource?: string;
   }) {
     const { adaptedWallet, txData } = adaptWalletToCaptureTxData(wallet);
 
@@ -130,7 +142,7 @@ export class Reservoir {
           {
             token: `${collectionContractAddress}:${tokenId}`,
             quantity: 1,
-            // exactOrderSource: "opensea.io",
+            exactOrderSource,
           },
         ],
         expectedPrice: generateExpectedCurrencyPriceObject(
@@ -155,7 +167,7 @@ export class Reservoir {
       throw new Error(`No available offer for price ${price}`);
     }
 
-    const apiOrder = await this.getOrder({ orderId });
+    const apiOrder = await this.getBid({ orderId });
 
     if (signature !== zeroHash) {
       // Seaport order -- we can save a tx by using matchOrders method from the seaport contract

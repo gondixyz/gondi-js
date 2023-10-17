@@ -3,9 +3,6 @@
 import { adaptViemWallet } from "@reservoir0x/reservoir-sdk";
 import {
   Address,
-  Chain,
-  createPublicClient,
-  createTransport,
   decodeFunctionData,
   encodeFunctionData,
   Hash,
@@ -14,7 +11,6 @@ import {
 
 import { Wallet, zeroHash } from "@/blockchain";
 import { seaportABI } from "@/generated/blockchain/seaport";
-import { millisToSeconds } from "@/utils";
 
 export interface Offer {
   itemType: number;
@@ -39,11 +35,22 @@ export interface SeaportOrder {
   zoneHash: Hash;
   salt: bigint;
   conduitKey: Hash;
+  counter: bigint;
   mockedSignature?: Hash;
 }
 
 export interface SeaportOrderParameter extends SeaportOrder {
   totalOriginalConsiderationItems: bigint;
+}
+
+export interface FulfillmentComponent {
+  orderIndex: bigint;
+  itemIndex: bigint;
+}
+
+export interface Fulfillment {
+  offerComponents: FulfillmentComponent[];
+  considerationComponents: FulfillmentComponent[];
 }
 
 export const ETH_CONTRACT_ADDRESS = zeroAddress;
@@ -112,6 +119,7 @@ export const buildOrderParameters = (
     zoneHash: order.zoneHash,
     salt: order.salt,
     conduitKey: order.conduitKey,
+    counter: order.counter,
     totalOriginalConsiderationItems: BigInt(order.consideration.length),
   };
 };
@@ -129,11 +137,12 @@ export const generateInverseOrder = (
       recipient: wallet.account?.address ?? zeroAddress,
     })),
     orderType: 0,
-    startTime: BigInt(millisToSeconds(Date.now())),
+    startTime: 0n,
     endTime: 9999999999n,
     zoneHash: zeroHash,
     salt: 0n,
     conduitKey: zeroHash,
+    counter: 0n,
     totalOriginalConsiderationItems: BigInt(order.offer.length),
   };
 };
@@ -149,7 +158,7 @@ export const generateSignedOrder = async (
     verifyingContract: SEAPORT_CONTRACT_ADDRESS,
   };
   const types = {
-    OrderParameters: [
+    OrderComponents: [
       { name: "offerer", type: "address" },
       { name: "zone", type: "address" },
       { name: "offer", type: "OfferItem[]" },
@@ -160,7 +169,7 @@ export const generateSignedOrder = async (
       { name: "zoneHash", type: "bytes32" },
       { name: "salt", type: "uint256" },
       { name: "conduitKey", type: "bytes32" },
-      { name: "totalOriginalConsiderationItems", type: "uint256" },
+      { name: "counter", type: "uint256" },
     ],
     OfferItem: [
       { name: "itemType", type: "uint8" },
@@ -182,7 +191,7 @@ export const generateSignedOrder = async (
   const signature = await wallet.signTypedData({
     domain,
     types,
-    primaryType: "OrderParameters",
+    primaryType: "OrderComponents",
     message: order,
   });
 
@@ -203,32 +212,45 @@ export const generateExpectedCurrencyPriceObject = (
 export const generateFulfillmentsForOrderAndInverse = (
   order: SeaportOrderParameter
 ) => {
-  return [
-    {
+  const fulfillments: Fulfillment[] = [];
+
+  // First, we pair each offer with the consideration from the inverse
+  order.offer.forEach((_, index) => {
+    fulfillments.push({
       offerComponents: [
         {
           orderIndex: 0n,
-          itemIndex: 0n,
+          itemIndex: BigInt(index),
         },
       ],
       considerationComponents: [
         {
           orderIndex: 1n,
-          itemIndex: 0n,
+          itemIndex: BigInt(index),
         },
       ],
-    },
-    {
-      offerComponents: order.consideration.map((_, index) => ({
-        orderIndex: 1n,
-        itemIndex: BigInt(index),
-      })),
-      considerationComponents: order.consideration.map((_, index) => ({
-        orderIndex: 0n,
-        itemIndex: BigInt(index),
-      })),
-    },
-  ];
+    });
+  });
+
+  // We then pair each consideration with the offer from the inverse
+  order.consideration.forEach((_, index) => {
+    fulfillments.push({
+      offerComponents: [
+        {
+          orderIndex: 1n,
+          itemIndex: BigInt(index),
+        },
+      ],
+      considerationComponents: [
+        {
+          orderIndex: 0n,
+          itemIndex: BigInt(index),
+        },
+      ],
+    });
+  });
+
+  return fulfillments;
 };
 
 export const generateMatchOrdersCallbackData = async ({
@@ -252,34 +274,17 @@ export const generateMatchOrdersCallbackData = async ({
 
   const fulfillments = generateFulfillmentsForOrderAndInverse(order.parameters);
 
-  console.log("ORDER: ", order);
-
-  console.log("INVERSE ORDER: ", inverseOrder);
-
-  console.log("FULFILLMENTS: ", fulfillments[0], fulfillments[1]);
-
-  try {
-    const client = createPublicClient({
-      transport: ({ chain: _chain }: { chain?: Chain }) =>
-        createTransport(wallet.transport),
-    });
-
-    const pepe = await client.simulateContract({
-      abi: seaportABI,
-      functionName: "matchOrders",
-      args: [[order, inverseOrder], fulfillments],
-      address: SEAPORT_CONTRACT_ADDRESS,
-    });
-    console.log(pepe);
-  } catch (e: any) {
-    console.log('ERROR', e);
-  }
-
   const matchOrdersCallbackData = encodeFunctionData({
     abi: seaportABI,
     functionName: "matchOrders",
     args: [[order, inverseOrder], fulfillments],
   });
+
+  // See how to attach the total consideration amount to the callback data
+  // const total = order.parameters.consideration.reduce(
+  //   (acc, consid) => acc + BigInt(consid.startAmount),
+  //   0n
+  // );
 
   return matchOrdersCallbackData;
 };

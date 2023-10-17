@@ -593,6 +593,7 @@ export class Gondi {
         collectionContractAddress: Address;
         tokenId: bigint;
         price: bigint;
+        orderSource?: string;
       };
     }[];
   }) {
@@ -604,6 +605,7 @@ export class Gondi {
           collectionContractAddress: data.nft.collectionContractAddress,
           tokenId: data.nft.tokenId,
           price: data.nft.price,
+          exactOrderSource: data.nft.orderSource,
         }),
       }))
     );
@@ -615,13 +617,23 @@ export class Gondi {
     });
   }
 
-  async leverageSell({ loan, price }: { loan: LoanV5; price: bigint }) {
+  async leverageSell({
+    loan,
+    price,
+    orderSource,
+  }: {
+    loan: LoanV5;
+    price: bigint;
+    orderSource?: string;
+  }) {
     const callbackData = await this.reservoir.getCallbackDataForSellToken({
       wallet: this.wallet,
       collectionContractAddress: loan.nftCollateralAddress,
       tokenId: loan.nftCollateralTokenId,
       price,
+      exactOrderSource: orderSource,
     });
+
     const shouldDelegate = false; // TODO: fix this
 
     return this.contracts.Leverage.sell({
