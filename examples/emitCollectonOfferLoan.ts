@@ -1,6 +1,6 @@
 import { Address, isAddress } from "viem";
 
-import { testCollectionOfferInput, testTokenId, users } from "./common";
+import { sleep, testCollectionOfferInput, testTokenId, users } from "./common";
 
 const emitAndRepayLoan = async (contract?: Address) => {
   const signedOffer = await users[0]._makeCollectionOffer(
@@ -19,7 +19,7 @@ const emitAndRepayLoan = async (contract?: Address) => {
   const { loan } = await emitLoan.waitTxInBlock();
   console.log(`loan emitted: ${contractVersionString}`);
 
-  await new Promise((resolve) => setTimeout(resolve, 3000));
+  await sleep(3000);
 
   const repayLoan = await users[1].repayLoan({
     loan: {
