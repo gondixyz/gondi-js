@@ -118,7 +118,8 @@ const approveForUser = async (user: Gondi, to: Address) => {
 
 const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
 
-for (const user of users) {
+for (const [i, user] of users.entries()) {
+  console.log(`approving tokens for user ${i}`);
   await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V5)
 
   if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {

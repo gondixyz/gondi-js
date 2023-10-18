@@ -43,7 +43,10 @@ const emitRefinaceFullAndRepayLoan = async (contract?: Address) => {
     });
     const { loan: refinancedLoanResult } = await refinanceFullLoan.waitTxInBlock();
     refinancedLoan = refinancedLoanResult;
-    console.log(`loan refinanced: ${contractVersionString}`);
+    console.log(`loan fully refinanced: ${contractVersionString}`);
+  } catch(e) {
+    console.log('Error while refinancing loan:');
+    console.log(e);
   } finally {
     const repayLoan = await users[1].repayLoan({ loan: refinancedLoan });
     await repayLoan.waitTxInBlock();
