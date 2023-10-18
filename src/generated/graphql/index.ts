@@ -738,6 +738,7 @@ export type MultiSourceLoan = Loan &
     offer: Offer;
     principalAddress: Scalars["Address"];
     principalAmount: Scalars["BigInt"];
+    refinanceProceeds: Array<RefinanceProceed>;
     repaidActivity?: Maybe<LoanRepaid>;
     sources: Array<Source>;
     startTime: Scalars["DateTime"];
@@ -769,6 +770,7 @@ export type MultiSourceLoanHistory = Node & {
   offerId: Scalars["String"];
   principalAddress: Scalars["String"];
   principalAmount: Scalars["BigInt"];
+  refinanceProceeds: Array<RefinanceProceedHistory>;
   sources: Array<SourceHistory>;
   startTime: Scalars["DateTime"];
 };
@@ -889,6 +891,19 @@ export type Nft = Node & {
   tokenId: Scalars["BigInt"];
   traits: Array<Trait>;
   url?: Maybe<Scalars["String"]>;
+};
+
+export type NftBidSample = Node & {
+  __typename?: "NFTBidSample";
+  bidderAddress: Scalars["Address"];
+  currency?: Maybe<Currency>;
+  currencyAddress: Scalars["Address"];
+  expiration: Scalars["DateTime"];
+  fees: Scalars["BigInt"];
+  id: Scalars["String"];
+  marketPlace: Scalars["String"];
+  netAmount: Scalars["BigInt"];
+  status: Scalars["String"];
 };
 
 export type NftConnection = {
@@ -1197,6 +1212,7 @@ export type Query = {
   getUserPointActivities: PointActivityConnection;
   getUserPoints: Scalars["Int"];
   listAuctions: AuctionConnection;
+  listBestBidsForNft: Array<NftBidSample>;
   listBids: BidConnection;
   listCollections: CollectionConnection;
   listCollectionsWithListings: CollectionConnection;
@@ -1252,6 +1268,11 @@ export type QueryListAuctionsArgs = {
   first?: InputMaybe<Scalars["Int"]>;
   sortBy?: InputMaybe<Array<AuctionSortInput>>;
   statuses?: InputMaybe<Array<AuctionStatus>>;
+};
+
+export type QueryListBestBidsForNftArgs = {
+  currencyAddress: Scalars["String"];
+  nftId: Scalars["Int"];
 };
 
 export type QueryListBidsArgs = {
@@ -1388,6 +1409,29 @@ export type QueryListSourcesArgs = {
 export type RangeInput = {
   max: Scalars["Int"];
   min: Scalars["Int"];
+};
+
+export type RefinanceProceed = Node & {
+  __typename?: "RefinanceProceed";
+  aprBps: Scalars["BigInt"];
+  id: Scalars["String"];
+  lender: Scalars["String"];
+  loan: MultiSourceLoan;
+  loanId: Scalars["Int"];
+  principalAmount: Scalars["BigInt"];
+  sourceLoanId: Scalars["Int"];
+  startTime: Scalars["DateTime"];
+};
+
+export type RefinanceProceedHistory = Node & {
+  __typename?: "RefinanceProceedHistory";
+  aprBps: Scalars["BigInt"];
+  id: Scalars["String"];
+  lender: Scalars["String"];
+  loanId: Scalars["Int"];
+  principalAmount: Scalars["BigInt"];
+  sourceLoanId: Scalars["Int"];
+  startTime: Scalars["DateTime"];
 };
 
 export type RefinanceTermsFilter = {
@@ -3055,6 +3099,7 @@ export type MultiSourceLoanKeySpecifier = (
   | "offer"
   | "principalAddress"
   | "principalAmount"
+  | "refinanceProceeds"
   | "repaidActivity"
   | "sources"
   | "startTime"
@@ -3079,6 +3124,7 @@ export type MultiSourceLoanFieldPolicy = {
   offer?: FieldPolicy<any> | FieldReadFunction<any>;
   principalAddress?: FieldPolicy<any> | FieldReadFunction<any>;
   principalAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  refinanceProceeds?: FieldPolicy<any> | FieldReadFunction<any>;
   repaidActivity?: FieldPolicy<any> | FieldReadFunction<any>;
   sources?: FieldPolicy<any> | FieldReadFunction<any>;
   startTime?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -3115,6 +3161,7 @@ export type MultiSourceLoanHistoryKeySpecifier = (
   | "offerId"
   | "principalAddress"
   | "principalAmount"
+  | "refinanceProceeds"
   | "sources"
   | "startTime"
   | MultiSourceLoanHistoryKeySpecifier
@@ -3127,6 +3174,7 @@ export type MultiSourceLoanHistoryFieldPolicy = {
   offerId?: FieldPolicy<any> | FieldReadFunction<any>;
   principalAddress?: FieldPolicy<any> | FieldReadFunction<any>;
   principalAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  refinanceProceeds?: FieldPolicy<any> | FieldReadFunction<any>;
   sources?: FieldPolicy<any> | FieldReadFunction<any>;
   startTime?: FieldPolicy<any> | FieldReadFunction<any>;
 };
@@ -3217,6 +3265,29 @@ export type NFTFieldPolicy = {
   tokenId?: FieldPolicy<any> | FieldReadFunction<any>;
   traits?: FieldPolicy<any> | FieldReadFunction<any>;
   url?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type NFTBidSampleKeySpecifier = (
+  | "bidderAddress"
+  | "currency"
+  | "currencyAddress"
+  | "expiration"
+  | "fees"
+  | "id"
+  | "marketPlace"
+  | "netAmount"
+  | "status"
+  | NFTBidSampleKeySpecifier
+)[];
+export type NFTBidSampleFieldPolicy = {
+  bidderAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  currency?: FieldPolicy<any> | FieldReadFunction<any>;
+  currencyAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  expiration?: FieldPolicy<any> | FieldReadFunction<any>;
+  fees?: FieldPolicy<any> | FieldReadFunction<any>;
+  id?: FieldPolicy<any> | FieldReadFunction<any>;
+  marketPlace?: FieldPolicy<any> | FieldReadFunction<any>;
+  netAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  status?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type NFTConnectionKeySpecifier = (
   | "edges"
@@ -3594,6 +3665,7 @@ export type QueryKeySpecifier = (
   | "getUserPointActivities"
   | "getUserPoints"
   | "listAuctions"
+  | "listBestBidsForNft"
   | "listBids"
   | "listCollections"
   | "listCollectionsWithListings"
@@ -3623,6 +3695,7 @@ export type QueryFieldPolicy = {
   getUserPointActivities?: FieldPolicy<any> | FieldReadFunction<any>;
   getUserPoints?: FieldPolicy<any> | FieldReadFunction<any>;
   listAuctions?: FieldPolicy<any> | FieldReadFunction<any>;
+  listBestBidsForNft?: FieldPolicy<any> | FieldReadFunction<any>;
   listBids?: FieldPolicy<any> | FieldReadFunction<any>;
   listCollections?: FieldPolicy<any> | FieldReadFunction<any>;
   listCollectionsWithListings?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -3638,6 +3711,46 @@ export type QueryFieldPolicy = {
   listRenegotiations?: FieldPolicy<any> | FieldReadFunction<any>;
   listSources?: FieldPolicy<any> | FieldReadFunction<any>;
   me?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type RefinanceProceedKeySpecifier = (
+  | "aprBps"
+  | "id"
+  | "lender"
+  | "loan"
+  | "loanId"
+  | "principalAmount"
+  | "sourceLoanId"
+  | "startTime"
+  | RefinanceProceedKeySpecifier
+)[];
+export type RefinanceProceedFieldPolicy = {
+  aprBps?: FieldPolicy<any> | FieldReadFunction<any>;
+  id?: FieldPolicy<any> | FieldReadFunction<any>;
+  lender?: FieldPolicy<any> | FieldReadFunction<any>;
+  loan?: FieldPolicy<any> | FieldReadFunction<any>;
+  loanId?: FieldPolicy<any> | FieldReadFunction<any>;
+  principalAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  sourceLoanId?: FieldPolicy<any> | FieldReadFunction<any>;
+  startTime?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type RefinanceProceedHistoryKeySpecifier = (
+  | "aprBps"
+  | "id"
+  | "lender"
+  | "loanId"
+  | "principalAmount"
+  | "sourceLoanId"
+  | "startTime"
+  | RefinanceProceedHistoryKeySpecifier
+)[];
+export type RefinanceProceedHistoryFieldPolicy = {
+  aprBps?: FieldPolicy<any> | FieldReadFunction<any>;
+  id?: FieldPolicy<any> | FieldReadFunction<any>;
+  lender?: FieldPolicy<any> | FieldReadFunction<any>;
+  loanId?: FieldPolicy<any> | FieldReadFunction<any>;
+  principalAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  sourceLoanId?: FieldPolicy<any> | FieldReadFunction<any>;
+  startTime?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type RenegotiationKeySpecifier = (
   | "aprBps"
@@ -4454,6 +4567,13 @@ export type StrictTypedTypePolicies = {
     keyFields?: false | NFTKeySpecifier | (() => undefined | NFTKeySpecifier);
     fields?: NFTFieldPolicy;
   };
+  NFTBidSample?: Omit<TypePolicy, "fields" | "keyFields"> & {
+    keyFields?:
+      | false
+      | NFTBidSampleKeySpecifier
+      | (() => undefined | NFTBidSampleKeySpecifier);
+    fields?: NFTBidSampleFieldPolicy;
+  };
   NFTConnection?: Omit<TypePolicy, "fields" | "keyFields"> & {
     keyFields?:
       | false
@@ -4624,6 +4744,20 @@ export type StrictTypedTypePolicies = {
       | QueryKeySpecifier
       | (() => undefined | QueryKeySpecifier);
     fields?: QueryFieldPolicy;
+  };
+  RefinanceProceed?: Omit<TypePolicy, "fields" | "keyFields"> & {
+    keyFields?:
+      | false
+      | RefinanceProceedKeySpecifier
+      | (() => undefined | RefinanceProceedKeySpecifier);
+    fields?: RefinanceProceedFieldPolicy;
+  };
+  RefinanceProceedHistory?: Omit<TypePolicy, "fields" | "keyFields"> & {
+    keyFields?:
+      | false
+      | RefinanceProceedHistoryKeySpecifier
+      | (() => undefined | RefinanceProceedHistoryKeySpecifier);
+    fields?: RefinanceProceedHistoryFieldPolicy;
   };
   Renegotiation?: Omit<TypePolicy, "fields" | "keyFields"> & {
     keyFields?:

@@ -516,8 +516,10 @@ export class Gondi {
 
     return this.contracts.Msl(loan.contractAddress).refinanceFullLoan({
       offer: offerInput,
-      // @ts-ignore TODO: fix this
-      loan,
+      loan: {
+        ...loan,
+        refinanceProceeds: loan.refinanceProceeds ?? [],
+      },
       signature: offer.signature,
     });
   }
@@ -540,8 +542,10 @@ export class Gondi {
 
     return this.contracts.Msl(loan.contractAddress).refinancePartialLoan({
       offer: offerInput,
-      // @ts-ignore TODO: fix this
-      loan,
+      loan: {
+        ...loan,
+        refinanceProceeds: loan.refinanceProceeds ?? [],
+      },
     });
   }
 

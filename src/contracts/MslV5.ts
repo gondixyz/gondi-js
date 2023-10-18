@@ -276,9 +276,10 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
   }) {
     const txHash = await this.safeContractWrite.refinanceFull([
       offer,
-      { ...loan, refinanceProceeds: [] },
+      loan,
       signature,
     ]);
+
     return {
       txHash,
       waitTxInBlock: async () => {
