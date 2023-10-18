@@ -98,25 +98,14 @@ This document outlines the breaking changes introduced in our codebase for versi
 
 ## Table of Contents
 
-- [Breaking Changes 0.3.0b1](#breaking-changes-030b1)
-    - [Important](#important)
-  - [Table of Contents](#table-of-contents)
-  - [Approve NFT For All](#approve-nft-for-all)
-  - [Approve Token](#approve-token)
-- [Breaking Changes 0.2.0](#breaking-changes-020)
-  - [Table of Contents](#table-of-contents-1)
-  - [Hide Offer](#hide-offer)
-  - [Hide Renegotiation Offer](#hide-renegotiation-offer)
-- [Breaking Changes 0.1.0](#breaking-changes-010)
-  - [Table of Contents](#table-of-contents-2)
-  - [Cancel Offer](#cancel-offer)
-  - [Cancel Refinance Offer](#cancel-refinance-offer)
-  - [Cancel All Offers](#cancel-all-offers)
-  - [Cancel All Renegotiations](#cancel-all-renegotiations)
-  - [Repay Loan](#repay-loan)
-  - [Refinance Full Loan](#refinance-full-loan)
-  - [Emit Loan](#emit-loan)
-  - [Make Refinance Offer](#make-refinance-offer)
+- [Cancel Offer](#cancel-offer)
+- [Cancel Refinance Offer](#cancel-refinance-offer)
+- [Cancel All Offers](#cancel-all-offers)
+- [Cancel All Renegotiations](#cancel-all-renegotiations)
+- [Repay Loan](#repay-loan)
+- [Refinance Full Loan](#refinance-full-loan)
+- [Emit Loan](#emit-loan)
+- [Make Refinance Offer](#make-refinance-offer)
 
 ---
 
