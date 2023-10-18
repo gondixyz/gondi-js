@@ -127,5 +127,8 @@ for (const [i, user] of users.entries()) {
   }
 }
 
+// Assuming MSL contract default: 3 days (seconds)
+export const AUCTION_DEFAULT_DURATION = 3n * 24n * 60n * 60n;
+
 export const sleep = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));

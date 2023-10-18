@@ -1,7 +1,8 @@
 import { Gondi } from "gondi";
-import { Address, isAddress } from "viem";
+import { Address, isAddress, zeroAddress } from "viem";
 
 import {
+  AUCTION_DEFAULT_DURATION,
   sleep,
   testCollectionOfferInput,
   testSingleNftOfferInput,
@@ -9,11 +10,15 @@ import {
   users,
 } from "./common";
 
-const emitLoanThenAuctionAndBid = async (owner: Gondi, lender: Gondi, refinancer: Gondi, contract?: Address) => {
+const emitLoanThenAuctionAndBid = async (owner: Gondi, lender: Gondi, refinancer: Gondi, mslContract?: Address, liquidatorContract?: Address) => {
+  if (!isAddress(liquidatorContract ?? '')) {
+    throw new Error(`invalid liquidator contract address: ${liquidatorContract}`);
+  }
+
   const signedOffer = await lender._makeSingleNftOffer({
     ...testSingleNftOfferInput,
-    duration: 3n,
-  }, contract);
+    duration: 15n,
+  }, mslContract);
   const contractVersionString = `msl: ${signedOffer.contractAddress}`;
   console.log(`offer placed successfully: ${contractVersionString}`);
 
@@ -48,11 +53,11 @@ const emitLoanThenAuctionAndBid = async (owner: Gondi, lender: Gondi, refinancer
   const { loan: refinancedLoanResult } = await refinancePartialLoan.waitTxInBlock();
   console.log(`loan partially refinanced: ${contractVersionString}`);
 
-  await sleep(5000);
+  await sleep(Number(signedOffer.duration * 1000n));
 
   // We need to push a new block into the blockchain
   const collectionOfferToCancel = await lender._makeCollectionOffer(
-    testCollectionOfferInput, contract
+    testCollectionOfferInput, mslContract
   );
   await lender.cancelOffer({
     id: collectionOfferToCancel.offerId,
@@ -63,10 +68,37 @@ const emitLoanThenAuctionAndBid = async (owner: Gondi, lender: Gondi, refinancer
   await sleep(3000);
 
   const sendLoanToAuction = await lender.liquidateLoan(refinancedLoanResult);
-  await sendLoanToAuction.waitTxInBlock();
+  const { blockNumber, loanId } = await sendLoanToAuction.waitTxInBlock();
   console.log(`loan sent to auction: ${contractVersionString}`);
 
-  // TODO: Place bid
+  const block = await lender.bcClient.getBlock({ blockNumber, includeTransactions: false });
+  const originator = (await lender.wallet.getAddresses())[0];
+
+  const approveToken = await lender.approveToken({
+    tokenAddress: refinancedLoanResult.principalAddress,
+    to: liquidatorContract,
+  });
+  await approveToken.waitTxInBlock();
+  console.log(`approved liquidator to move erc20: ${contractVersionString}`);
+
+  const placeBid = await lender.placeBid({
+    collectionContractAddress: signedOffer.nftCollateralAddress,
+    tokenId: signedOffer.nftCollateralTokenId,
+    bid: signedOffer.principalAmount,
+    auction: {
+      loanAddress: refinancedLoanResult.contractAddress,
+      loanId: loanId,
+      highestBid: 0n, // Auction has just started
+      highestBidder: zeroAddress, // Auction has just started
+      duration: AUCTION_DEFAULT_DURATION,
+      asset: refinancedLoanResult.principalAddress,
+      startTime: block.timestamp,
+      originator: originator,
+      lastBidTime: block.timestamp, // Auction has just started
+    },
+  });
+  await placeBid.waitTxInBlock();
+  console.log(`bid placed successfully: ${contractVersionString}`);
 }
 
 async function main() {
@@ -75,9 +107,21 @@ async function main() {
     const useV4 = false; // Change to use v4 contracts
 
     if (useV4 && isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
-      await emitLoanThenAuctionAndBid(users[1], users[0], users[2], MULTI_SOURCE_LOAN_CONTRACT_V4);
+      await emitLoanThenAuctionAndBid(
+        users[1],
+        users[0],
+        users[2],
+        MULTI_SOURCE_LOAN_CONTRACT_V4,
+        process.env.AUCTION_LIQUIDATOR_CONTRACT_V4 as Address
+      );
     } else {
-      await emitLoanThenAuctionAndBid(users[1], users[0], users[2]);
+      await emitLoanThenAuctionAndBid(
+        users[1],
+        users[0],
+        users[2],
+        process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 as Address,
+        process.env.AUCTION_LIQUIDATOR_CONTRACT_V5 as Address
+      );
     }
   } catch (e) {
     console.log("Error:");
