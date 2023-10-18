@@ -15,7 +15,7 @@ dotenv.config();
 const RPC = process.env.RPC_URL;
 const MULTI_SOURCE_LOAN_CONTRACT_V5 =
   process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? "";
-
+const SEAPORT_CONTRACT_ADDRESS = "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC";
 if (!isAddress(MULTI_SOURCE_LOAN_CONTRACT_V5)) {
   throw new Error("invalid MULTI_SOURCE_LOAN_CONTRACT_V5 address");
 }
@@ -78,7 +78,8 @@ export const users = wallets.map(
     new Gondi({
       wallet,
       reservoirApiKey: process.env.RESERVOIR_API_KEY,
-      reservoirBaseApiUrl: "http://localhost:8080/marketplaces",
+      reservoirBaseApiUrl: "http://localhost:8080/marketplaces/reservoir",
+      infuraApiKey: process.env.INFURA_API_KEY,
     })
 );
 
@@ -138,6 +139,8 @@ for (const [i, user] of users.entries()) {
   if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
     await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V4);
   }
+
+  await approveForUser(user, SEAPORT_CONTRACT_ADDRESS);
 }
 
 // Assuming MSL contract default: 3 days (seconds)

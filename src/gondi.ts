@@ -35,6 +35,7 @@ type GondiProps = {
   apiClient?: ApiProps["apiClient"];
   reservoirApiKey?: string;
   reservoirBaseApiUrl?: string;
+  infuraApiKey?: string;
 };
 
 export class Gondi {
@@ -49,6 +50,7 @@ export class Gondi {
     apiClient,
     reservoirApiKey,
     reservoirBaseApiUrl,
+    infuraApiKey,
   }: GondiProps) {
     this.wallet = wallet;
     this.bcClient = createPublicClient({
@@ -60,6 +62,7 @@ export class Gondi {
     this.reservoir = new Reservoir({
       apiKey: reservoirApiKey,
       baseApiUrl: reservoirBaseApiUrl,
+      infuraApiKey,
       wallet,
     });
   }
@@ -609,8 +612,6 @@ export class Gondi {
         }),
       }))
     );
-
-    return dataForLeverageContract;
 
     return this.contracts.Leverage.buy({
       leverageBuyData: dataForLeverageContract,

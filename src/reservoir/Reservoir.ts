@@ -4,9 +4,18 @@ import {
   // @ts-ignore
   // eslint-disable-next-line import/no-unresolved
 } from "@reservoir0x/reservoir-sdk";
-import { Hash } from "viem";
+import {
+  Address,
+  createPublicClient,
+  getContract,
+  Hash,
+  http,
+  PublicClient,
+} from "viem";
+import { mainnet } from "viem/chains";
 
 import { Wallet, zeroHash } from "@/blockchain";
+import { erc721ABI } from "@/generated/blockchain/v5";
 
 import {
   adaptWalletToCaptureTxData,
@@ -14,18 +23,22 @@ import {
   generateExpectedCurrencyPriceObject,
   generateMatchOrdersCallbackData,
   SeaportOrder,
+  WETH_CONTRACT_ADDRESS,
 } from "./utils";
 
 export class Reservoir {
   baseApiUrl: string;
+  mainnetClient: PublicClient;
 
   constructor({
     baseApiUrl = "https://api.reservoir.tools",
     apiKey,
+    infuraApiKey,
     wallet,
   }: {
     baseApiUrl?: string;
     apiKey?: string;
+    infuraApiKey?: string;
     wallet: Wallet;
   }) {
     this.baseApiUrl = baseApiUrl;
@@ -41,6 +54,11 @@ export class Reservoir {
       ],
       apiKey,
       source: "gondi.xyz",
+    });
+
+    this.mainnetClient = createPublicClient({
+      chain: mainnet,
+      transport: http(`https://mainnet.infura.io/v3/${infuraApiKey}`),
     });
   }
 
@@ -129,12 +147,23 @@ export class Reservoir {
     exactOrderSource,
   }: {
     wallet: Wallet;
-    collectionContractAddress: string;
+    collectionContractAddress: Address;
     tokenId: bigint;
     price: bigint;
     exactOrderSource?: string;
   }) {
     const { adaptedWallet, txData } = adaptWalletToCaptureTxData(wallet);
+
+    const erc721 = getContract({
+      abi: erc721ABI,
+      address: collectionContractAddress,
+      publicClient: this.mainnetClient,
+    });
+
+    // We override the taker address, since reservoir requires it to be the real owner
+    // This is to make this sdk method testeable without having to mock the whole reservoir sdk
+    // On production, owner will be the taker eitherway
+    const owner = await erc721.read.ownerOf([tokenId]);
 
     try {
       await getClient()?.actions.acceptOffer({
@@ -147,14 +176,14 @@ export class Reservoir {
         ],
         expectedPrice: generateExpectedCurrencyPriceObject(
           price,
-          ETH_CONTRACT_ADDRESS
+          WETH_CONTRACT_ADDRESS
         ),
         wallet: adaptedWallet,
         onProgress: () => null,
         precheck: false,
         options: {
           excludeEOA: true,
-          skipBalanceCheck: true,
+          taker: owner,
         },
       });
     } catch (e) {

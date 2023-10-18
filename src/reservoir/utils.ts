@@ -54,7 +54,8 @@ export interface Fulfillment {
 }
 
 export const ETH_CONTRACT_ADDRESS = zeroAddress;
-
+export const WETH_CONTRACT_ADDRESS =
+  "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 const SEAPORT_CONTRACT_NAME = "Seaport";
 const SEAPORT_VERSION = "1.5";
 const SEAPORT_CONTRACT_ADDRESS =
@@ -137,7 +138,7 @@ export const generateInverseOrder = (
       recipient: wallet.account?.address ?? zeroAddress,
     })),
     orderType: 0,
-    startTime: 0n,
+    startTime: BigInt(Math.floor(Math.random() * 100000)), // to make the order "unique"
     endTime: 9999999999n,
     zoneHash: zeroHash,
     salt: 0n,
@@ -282,7 +283,8 @@ export const generateMatchOrdersCallbackData = async ({
 
   // See how to attach the total consideration amount to the callback data
   // const total = order.parameters.consideration.reduce(
-  //   (acc, consid) => acc + BigInt(consid.startAmount),
+  //   (acc, consid) =>
+  //     acc + (consid.itemType === 0 ? BigInt(consid.startAmount) : 0n),
   //   0n
   // );
 
