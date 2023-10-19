@@ -1,45 +1,62 @@
+import { Gondi } from "gondi";
+import { Address, isAddress } from "viem";
+
 import {
+  sleep,
   testCollectionOfferInput,
   testSingleNftOfferInput,
   testTokenId,
   users,
 } from "./common";
 
-async function main() {
-  const signedOffer = await users[0].makeSingleNftOffer({
+const emitAndLiquidateLoan = async (owner: Gondi, lender: Gondi, contract?: Address) => {
+  const signedOffer = await lender._makeSingleNftOffer({
     ...testSingleNftOfferInput,
     duration: 1n,
-  });
-  console.log("offer placed successfully");
+  }, contract);
+  const contractVersionString = `msl: ${signedOffer.contractAddress}`;
+  console.log(`offer placed successfully: ${contractVersionString}`);
 
-  const emitLoan = await users[1].emitLoan({
+  const emitLoan = await owner.emitLoan({
     offer: signedOffer,
     tokenId: testTokenId,
   });
   const { loan } = await emitLoan.waitTxInBlock();
-  console.log("loan emitted");
+  console.log(`loan emitted: ${contractVersionString}`);
 
-  await new Promise((resolve) => setTimeout(resolve, 5000));
+  await sleep(3000);
 
   // We need to push a new block into the blockchain
-  const collectionOfferToCancel = await users[0].makeCollectionOffer(
-    testCollectionOfferInput
+  const collectionOfferToCancel = await lender._makeCollectionOffer(
+    testCollectionOfferInput, contract
   );
-  await users[0].cancelOffer({
+  await lender.cancelOffer({
     id: collectionOfferToCancel.offerId,
     contractAddress: collectionOfferToCancel.contractAddress,
   });
-  console.log("loan defaulted");
+  console.log(`loan defaulted: ${contractVersionString}`);
 
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  await sleep(3000);
 
-  const liquidatedLoan = await users[0].liquidateLoan({
-    ...loan,
-    contractAddress: signedOffer.contractAddress,
-  });
+  const liquidatedLoan = await lender.liquidateLoan(loan);
 
   await liquidatedLoan.waitTxInBlock();
-  console.log("loan liquidated");
+  console.log(`loan liquidated: ${contractVersionString}`);
+}
+
+async function main() {
+  try {
+    await emitAndLiquidateLoan(users[1], users[0]);
+
+    const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
+
+    if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
+      await emitAndLiquidateLoan(users[0], users[1], MULTI_SOURCE_LOAN_CONTRACT_V4);
+    }
+  } catch (e) {
+    console.log("Error:");
+    console.log(e);
+  }
 }
 
 main();

@@ -551,8 +551,10 @@ export class Gondi {
 
   async liquidateLoan(loan: LoanV4V5) {
     return this.contracts.Msl(loan.contractAddress).liquidateLoan({
-      // @ts-ignore TODO: fix this
-      loan,
+      loan: {
+        ...loan,
+        refinanceProceeds: loan.refinanceProceeds ?? [],
+      }
     });
   }
 
@@ -575,7 +577,7 @@ export class Gondi {
   async settleAuction({
     collectionContractAddress,
     tokenId,
-    loan,
+    loan: loanParam,
     auction,
   }: {
     collectionContractAddress: Address;
@@ -583,8 +585,12 @@ export class Gondi {
     loan: LoanV4V5;
     auction: model.Auction;
   }) {
+    const loan = {
+      ...loanParam,
+      refinanceProceeds: loanParam.refinanceProceeds ?? [],
+    }
     return this.contracts
-      .All(auction.loanAddress) // @ts-ignore TODO: fix this
+      .All(auction.loanAddress)
       .settleAuction({ collectionContractAddress, tokenId, loan, auction });
   }
 

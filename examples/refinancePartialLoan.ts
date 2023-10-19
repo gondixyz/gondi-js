@@ -28,9 +28,7 @@ const emitRefinacePartialAndRepayLoan = async (contract?: Address) => {
       principalAmount: signedOffer.principalAmount / 2n,
       strictImprovement: true,
       requiresLiquidation: signedOffer.requiresLiquidation,
-      targetPrincipal: loan.source.map(
-        (source) => source.principalAmount / 2n
-      ),
+      targetPrincipal: loan.source.map((source) => source.principalAmount / 2n),
     },
     contractAddress: signedOffer.contractAddress,
     skipSignature: true,
