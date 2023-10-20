@@ -117,9 +117,13 @@ type EmitAbiTypeV5 = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof multiSourceLoanABIV5, "emitLoan">["inputs"]
 >;
 
-type RefiAbiType = AbiParametersToPrimitiveTypes<
+type RefiAbiTypeV4 = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof multiSourceLoanABIV4, "refinanceFull">["inputs"]
 >;
+type RefiAbiTypeV5 = AbiParametersToPrimitiveTypes<
+  ExtractAbiFunction<typeof multiSourceLoanABIV5, "refinanceFull">["inputs"]
+>;
+
 type PlaceBidAbiType = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof auctionLoanLiquidatorABIV5, "placeBid">["inputs"]
 >;
@@ -131,7 +135,9 @@ export type LoanV4V5 = Omit<LoanV5, 'refinanceProceeds'> & { refinanceProceeds?:
 export type OfferV4 = EmitAbiTypeV4[0];
 export type OfferV5 = EmitAbiTypeV5[0]["executionData"]["offer"];
 
-export type Renegotiation = RefiAbiType[0];
+export type RenegotiationV4 = RefiAbiTypeV4[0];
+export type RenegotiationV5 = RefiAbiTypeV5[0];
+
 export type Auction = PlaceBidAbiType[2];
 
 export type HexString = `0x${string}`;
