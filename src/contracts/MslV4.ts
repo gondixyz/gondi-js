@@ -1,9 +1,8 @@
 import { Account, Address, Chain, Hash, Transport, WalletClient } from "viem";
 
-import { filterLogs, LoanV4, OfferV4 } from "@/blockchain";
+import { filterLogs, LoanV4, OfferV4, RenegotiationV4 } from "@/blockchain";
 import { getContracts } from "@/deploys";
 import { multiSourceLoanABI as multiSourceLoanABIV4 } from "@/generated/blockchain/v4";
-import * as model from "@/model";
 import { getDomain } from "@/utils";
 
 import { Contract } from "./Contract";
@@ -52,6 +51,35 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
         OfferValidator: [
           { name: "validator", type: "address" },
           { name: "arguments", type: "bytes" },
+        ],
+      },
+      message: structToSign,
+    });
+  }
+
+  async signRenegotiationOffer({
+    verifyingContract,
+    structToSign,
+  }: {
+    verifyingContract: Address;
+    structToSign: RenegotiationV4;
+  }) {
+    return this.wallet.signTypedData({
+      domain: getDomain(this.wallet.chain.id, verifyingContract),
+      primaryType: "RenegotiationOffer",
+      types: {
+        RenegotiationOffer: [
+          { name: "renegotiationId", type: "uint256" },
+          { name: "loanId", type: "uint256" },
+          { name: "lender", type: "address" },
+          { name: "fee", type: "uint256" },
+          { name: "signer", type: "address" },
+          { name: "targetPrincipal", type: "uint256[]" },
+          { name: "principalAmount", type: "uint256" },
+          { name: "aprBps", type: "uint256" },
+          { name: "expirationTime", type: "uint256" },
+          { name: "duration", type: "uint256" },
+          { name: "strictImprovement", type: "bool" },
         ],
       },
       message: structToSign,
@@ -215,7 +243,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
     signature,
     loan,
   }: {
-    offer: model.BlockchainRenegotiation;
+    offer: RenegotiationV4;
     signature: Hash;
     loan: LoanV4;
   }) {
@@ -254,7 +282,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
     offer,
     loan,
   }: {
-    offer: model.BlockchainRenegotiation;
+    offer: RenegotiationV4;
     loan: LoanV4;
   }) {
     const txHash = await this.safeContractWrite.refinancePartial([

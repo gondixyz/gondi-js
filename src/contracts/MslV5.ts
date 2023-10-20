@@ -1,9 +1,8 @@
 import { Account, Address, Chain, Hash, Transport, WalletClient } from "viem";
 
-import { filterLogs, LoanV5, OfferV5 } from "@/blockchain";
+import { filterLogs, LoanV5, OfferV5, RenegotiationV5 } from "@/blockchain";
 import { getContracts } from "@/deploys";
 import { multiSourceLoanABI as multiSourceLoanABIV5 } from "@/generated/blockchain/v5";
-import * as model from "@/model";
 import { getDomain } from "@/utils";
 
 import { Contract } from "./Contract";
@@ -50,6 +49,33 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
         OfferValidator: [
           { name: "validator", type: "address" },
           { name: "arguments", type: "bytes" },
+        ],
+      },
+      message: structToSign,
+    });
+  }
+
+  async signRenegotiationOffer({
+    verifyingContract,
+    structToSign,
+  }: {
+    verifyingContract: Address;
+    structToSign: RenegotiationV5;
+  }) {
+    return this.wallet.signTypedData({
+      domain: getDomain(this.wallet.chain.id, verifyingContract),
+      primaryType: "RenegotiationOffer",
+      types: {
+        RenegotiationOffer: [
+          { name: "renegotiationId", type: "uint256" },
+          { name: "loanId", type: "uint256" },
+          { name: "lender", type: "address" },
+          { name: "fee", type: "uint256" },
+          { name: "targetPrincipal", type: "uint256[]" },
+          { name: "principalAmount", type: "uint256" },
+          { name: "aprBps", type: "uint256" },
+          { name: "expirationTime", type: "uint256" },
+          { name: "duration", type: "uint256" },
         ],
       },
       message: structToSign,
@@ -270,7 +296,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     signature,
     loan,
   }: {
-    offer: model.BlockchainRenegotiation;
+    offer: RenegotiationV5;
     signature: Hash;
     loan: LoanV5;
   }) {
@@ -309,7 +335,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     offer,
     loan,
   }: {
-    offer: model.BlockchainRenegotiation;
+    offer: RenegotiationV5;
     loan: LoanV5;
   }) {
     const txHash = await this.safeContractWrite.refinancePartial([offer, loan]);

@@ -24,7 +24,7 @@ import {
 } from "@/generated/graphql";
 import * as model from "@/model";
 
-import { getDomain, millisToSeconds, SECONDS_IN_DAY } from "./utils";
+import { millisToSeconds, SECONDS_IN_DAY } from "./utils";
 
 type GondiProps = {
   wallet: Wallet;
@@ -274,25 +274,10 @@ export class Gondi {
       };
     }
 
-    const signature = await this.wallet.signTypedData({
-      domain: this.getDomain(contractAddress),
-      primaryType: "RenegotiationOffer",
-      types: {
-        RenegotiationOffer: [
-          { name: "renegotiationId", type: "uint256" },
-          { name: "loanId", type: "uint256" },
-          { name: "lender", type: "address" },
-          { name: "fee", type: "uint256" },
-          { name: "signer", type: "address" },
-          { name: "targetPrincipal", type: "uint256[]" },
-          { name: "principalAmount", type: "uint256" },
-          { name: "aprBps", type: "uint256" },
-          { name: "expirationTime", type: "uint256" },
-          { name: "duration", type: "uint256" },
-          { name: "strictImprovement", type: "bool" },
-        ],
-      },
-      message: structToSign,
+    const contract = this.contracts.Msl(contractAddress);
+    const signature = await contract.signRenegotiationOffer({
+      verifyingContract: contractAddress,
+      structToSign,
     });
 
     const renegotiationOffer = {
@@ -643,9 +628,5 @@ export class Gondi {
         return { ...events[0].args, ...receipt };
       },
     };
-  }
-
-  private getDomain(verifyingContract: Address) {
-    return getDomain(this.wallet.chain.id, verifyingContract);
   }
 }

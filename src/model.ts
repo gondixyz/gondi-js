@@ -104,7 +104,3 @@ export type ListListingsProps = {
   limit?: number;
   cursor?: string;
 };
-
-export type {
-  Renegotiation as BlockchainRenegotiation,
-} from "@/blockchain";
