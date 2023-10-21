@@ -19,7 +19,7 @@ generates:
         context:
           clientName: lending
       scalars:
-        datetime: Date
+        DateTime: Date
         Decimal: decimal
         BigInt: bigint
         Hash: Hash

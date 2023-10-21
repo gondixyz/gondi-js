@@ -29,7 +29,7 @@ export type Scalars = {
   Float: number;
   Address: Address;
   BigInt: bigint;
-  DateTime: any;
+  DateTime: Date;
   Hash: Hash;
   Hex: Hex;
   Signature: Hex;
@@ -2006,7 +2006,7 @@ export type ListListingsQuery = {
         __typename?: "Listing";
         id: string;
         marketplaceName: MarketplaceEnum;
-        createdDate: any;
+        createdDate: Date;
         user: { __typename?: "User"; walletAddress: Address };
         nft: {
           __typename?: "NFT";
@@ -2057,12 +2057,12 @@ export type ListLoansQuery = {
         id: string;
         address: Address;
         loanId: number;
-        timestamp: any;
+        timestamp: Date;
         txHash: Hash;
         indexInBlock: number;
         borrowerAddress: Address;
         principalAddress: Address;
-        startTime: any;
+        startTime: Date;
         duration: bigint;
         status: string;
         principalAmount: bigint;
@@ -2088,7 +2088,7 @@ export type ListLoansQuery = {
         repaidActivity?: {
           __typename?: "LoanRepaid";
           totalInterest: bigint;
-          timestamp: any;
+          timestamp: Date;
         } | null;
         nft: {
           __typename?: "NFT";
@@ -2125,7 +2125,7 @@ export type ListLoansQuery = {
           lenderAddress: string;
           accruedInterest: bigint;
           aprBps: bigint;
-          startTime: any;
+          startTime: Date;
         }>;
       };
     }>;
@@ -2192,7 +2192,7 @@ export type ListOffersQuery = {
             status: string;
             offerHash?: Hash | null;
             signature?: Hex | null;
-            createdDate?: any | null;
+            createdDate?: Date | null;
             repayment: bigint;
             hidden?: boolean | null;
             collection: {
@@ -2235,7 +2235,7 @@ export type ListOffersQuery = {
             status: string;
             offerHash?: Hash | null;
             signature?: Hex | null;
-            createdDate?: any | null;
+            createdDate?: Date | null;
             repayment: bigint;
             hidden?: boolean | null;
             nft: {
