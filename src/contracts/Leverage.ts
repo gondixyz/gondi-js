@@ -3,19 +3,70 @@ import { Account, Address, Chain, Hash, Transport, WalletClient } from "viem";
 import { filterLogs, LoanV5, OfferV5 } from "@/blockchain";
 import { getContracts } from "@/deploys";
 import { leverageABI } from "@/generated/blockchain/v5";
+import { getDomain } from "@/utils";
 
 import { Contract } from "./Contract";
 
 export type Wallet = WalletClient<Transport, Chain, Account>;
 
 export class Leverage extends Contract<typeof leverageABI> {
-  constructor({ walletClient }: { walletClient: Wallet }) {
+  mslAddress: Address;
+
+  constructor({
+    walletClient,
+    mslAddress,
+  }: {
+    walletClient: Wallet;
+    mslAddress: Address;
+  }) {
     const { LeverageAddress } = getContracts(walletClient.chain);
 
     super({
       walletClient,
       address: LeverageAddress,
       abi: leverageABI,
+    });
+
+    this.mslAddress = mslAddress;
+  }
+
+  async signExecutionData(executionData: {
+    offer: OfferV5 & { signature: Hash };
+    tokenId: bigint;
+    amount: bigint;
+    expirationTime: bigint;
+  }) {
+    return this.wallet.signTypedData({
+      domain: getDomain(this.wallet.chain.id, this.mslAddress),
+      primaryType: "ExecutionData",
+      types: {
+        ExecutionData: [
+          { name: "offer", type: "LoanOffer" },
+          { name: "tokenId", type: "uint256" },
+          { name: "amount", type: "uint256" },
+          { name: "expirationTime", type: "uint256" },
+        ],
+        LoanOffer: [
+          { name: "offerId", type: "uint256" },
+          { name: "lender", type: "address" },
+          { name: "fee", type: "uint256" },
+          { name: "borrower", type: "address" },
+          { name: "capacity", type: "uint256" },
+          { name: "nftCollateralAddress", type: "address" },
+          { name: "nftCollateralTokenId", type: "uint256" },
+          { name: "principalAddress", type: "address" },
+          { name: "principalAmount", type: "uint256" },
+          { name: "aprBps", type: "uint256" },
+          { name: "expirationTime", type: "uint256" },
+          { name: "duration", type: "uint256" },
+          { name: "validators", type: "OfferValidator[]" },
+        ],
+        OfferValidator: [
+          { name: "validator", type: "address" },
+          { name: "arguments", type: "bytes" },
+        ],
+      } as const,
+      message: executionData,
     });
   }
 
@@ -33,25 +84,31 @@ export class Leverage extends Contract<typeof leverageABI> {
         price: bigint;
       };
       callbackData: Hash;
-      borrowerSignature: Hash;
     }[];
     ethToSend: bigint;
   }) {
     const txHash = await this.safeContractWrite.buy(
       [
-        leverageBuyData.map((data) => ({
-          executionData: {
-            offer: data.offer,
-            tokenId: data.nft.tokenId,
-            amount: data.amount,
-            expirationTime: data.expirationTime,
-          },
-          lender: data.offer.lender,
-          borrower: this.wallet.account.address,
-          lenderOfferSignature: data.offer.signature,
-          borrowerOfferSignature: data.borrowerSignature,
-          callbackData: data.callbackData,
-        })),
+        await Promise.all(
+          leverageBuyData.map(async (data) => ({
+            executionData: {
+              offer: data.offer,
+              tokenId: data.nft.tokenId,
+              amount: data.amount,
+              expirationTime: data.expirationTime,
+            },
+            lender: data.offer.lender,
+            borrower: this.wallet.account.address,
+            lenderOfferSignature: data.offer.signature,
+            borrowerOfferSignature: await this.signExecutionData({
+              offer: data.offer,
+              tokenId: data.nft.tokenId,
+              amount: data.amount,
+              expirationTime: data.expirationTime,
+            }),
+            callbackData: data.callbackData,
+          }))
+        ),
       ],
       {
         value: ethToSend,

@@ -26,9 +26,9 @@ import {
   Ordering,
 } from "@/generated/graphql";
 import * as model from "@/model";
+import { millisToSeconds, SECONDS_IN_DAY } from "@/utils";
 
 import { Reservoir } from "./reservoir/Reservoir";
-import { getDomain, millisToSeconds, SECONDS_IN_DAY } from "./utils";
 
 type GondiProps = {
   wallet: Wallet;
@@ -621,52 +621,14 @@ export class Gondi {
     // We calculate the amount of eth to send to the contract
     // This is the sum of the eth to send for each nft minus the amount of weth that is being borrowed
     const ethToSend = executionData.reduce(
-      (acc, [, ethToSendForNft], index) =>
-        acc + ethToSendForNft - leverageBuyData[index].amount,
+      (acc, { value }, index) => acc + value - leverageBuyData[index].amount,
       0n
     );
 
     const dataForLeverageContract = await Promise.all(
       leverageBuyData.map(async (data, index) => ({
         ...data,
-        callbackData: executionData[index][0],
-        borrowerSignature: await this.wallet.signTypedData({
-          domain: this.getDomain(this.contracts.MultiSourceLoanV5.address),
-          primaryType: "ExecutionData",
-          types: {
-            ExecutionData: [
-              { name: "offer", type: "LoanOffer" },
-              { name: "tokenId", type: "uint256" },
-              { name: "amount", type: "uint256" },
-              { name: "expirationTime", type: "uint256" },
-            ],
-            LoanOffer: [
-              { name: "offerId", type: "uint256" },
-              { name: "lender", type: "address" },
-              { name: "fee", type: "uint256" },
-              { name: "borrower", type: "address" },
-              { name: "capacity", type: "uint256" },
-              { name: "nftCollateralAddress", type: "address" },
-              { name: "nftCollateralTokenId", type: "uint256" },
-              { name: "principalAddress", type: "address" },
-              { name: "principalAmount", type: "uint256" },
-              { name: "aprBps", type: "uint256" },
-              { name: "expirationTime", type: "uint256" },
-              { name: "duration", type: "uint256" },
-              { name: "validators", type: "OfferValidator[]" },
-            ],
-            OfferValidator: [
-              { name: "validator", type: "address" },
-              { name: "arguments", type: "bytes" },
-            ],
-          } as const,
-          message: {
-            offer: data.offer,
-            tokenId: data.nft.tokenId,
-            amount: data.amount,
-            expirationTime: data.expirationTime,
-          },
-        }),
+        callbackData: executionData[index].callbackData,
       }))
     );
 
@@ -696,7 +658,7 @@ export class Gondi {
 
     return this.contracts.Leverage.sell({
       loan,
-      callbackData: executionData[0],
+      callbackData: executionData.callbackData,
       shouldDelegate,
     });
   }

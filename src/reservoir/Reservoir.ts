@@ -119,7 +119,7 @@ export class Reservoir {
       // We ignore the error thrown by the handleSendTransactionStep inside the adapted wallet
     }
 
-    const { orderId, to, callbackData, value, signature } = txData.current;
+    const { orderId, to, callbackData, value, signature } = txData;
 
     if (orderId === zeroHash) {
       throw new Error(`No available offer for price ${price}`);
@@ -136,10 +136,10 @@ export class Reservoir {
       });
     }
 
-    return [
-      getExecutionData({ module: to, data: callbackData, value }),
+    return {
+      callbackData: getExecutionData({ module: to, data: callbackData, value }),
       value,
-    ] as const;
+    };
   }
 
   async getCallbackDataForSellToken({
@@ -191,7 +191,7 @@ export class Reservoir {
       // We ignore the error thrown by the handleSendTransactionStep inside the adapted wallet
     }
 
-    const { orderId, to, callbackData, value, signature } = txData.current;
+    const { orderId, to, callbackData, value, signature } = txData;
 
     if (orderId === zeroHash) {
       throw new Error(`No available offer for price ${price}`);
@@ -208,9 +208,9 @@ export class Reservoir {
       });
     }
 
-    return [
-      getExecutionData({ module: to, data: callbackData, value }),
+    return {
+      callbackData: getExecutionData({ module: to, data: callbackData, value }),
       value,
-    ] as const;
+    };
   }
 }

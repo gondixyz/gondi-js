@@ -56,7 +56,10 @@ export class Contracts {
     this.MultiSourceLoanV5 = new MslV5({ walletClient });
     this.AuctionLoanLiquidatorV4 = new AllV4({ walletClient });
     this.AuctionLoanLiquidatorV5 = new AllV5({ walletClient });
-    this.Leverage = new Leverage({ walletClient });
+    this.Leverage = new Leverage({
+      walletClient,
+      mslAddress: this.MultiSourceLoanV5.address,
+    });
   }
 
   Msl(contractAddress: Address) {

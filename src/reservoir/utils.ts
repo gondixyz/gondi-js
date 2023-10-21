@@ -86,14 +86,13 @@ export const getExecutionData = ({
 }) => encodeAbiParameters(EXECUTION_INFO_ABI, [{ module, data, value }]);
 
 export const adaptWalletToCaptureTxData = (wallet: Wallet) => {
+  // Here we will store the tx data we want to capture
   const txData = {
-    current: {
-      orderId: zeroHash,
-      callbackData: zeroHash,
-      to: zeroAddress as Address,
-      value: 0n,
-      signature: zeroHash,
-    },
+    orderId: zeroHash,
+    callbackData: zeroHash,
+    to: zeroAddress as Address,
+    value: 0n,
+    signature: zeroHash,
   };
 
   const viemWallet = adaptViemWallet(wallet);
@@ -108,29 +107,33 @@ export const adaptWalletToCaptureTxData = (wallet: Wallet) => {
         orderIds: Hash[];
       }
     ) => {
-      txData.current.orderId = stepItem.orderIds[0];
-      txData.current.to = stepItem.data.to;
-      txData.current.callbackData = stepItem.data.data;
-      txData.current.value = stepItem.data.value;
+      txData.orderId = stepItem.orderIds[0];
+      txData.to = stepItem.data.to;
+      txData.callbackData = stepItem.data.data;
+      txData.value = stepItem.data.value;
       try {
         // We try to decode the function data to know if it's a seaport contract call
+        // If it is, we can save a tx by using matchOrders method from the seaport contract
+        // If it's not, we use the same tx data
         const functionData = decodeFunctionData({
           abi: seaportABI,
           data: stepItem.data.data,
         });
 
+        // seaport contract calls have a signature in the argument
         if (
           functionData.args &&
           functionData.args[0] &&
           typeof functionData.args[0] === "object" &&
           "signature" in functionData.args[0]
         ) {
-          txData.current.signature = functionData.args[0].signature;
+          txData.signature = functionData.args[0].signature;
         }
       } catch {
         // We ignore the error if the tx is not a seaport tx
       }
 
+      // We throw the error to stop the tx, we will do it inside the Leverage contract
       throw new Error("We don't want the tx to continue");
     },
   };
@@ -318,12 +321,12 @@ export const generateMatchOrdersExecutionData = async ({
     0n
   );
 
-  return [
-    getExecutionData({
+  return {
+    callbackData: getExecutionData({
       module: SEAPORT_CONTRACT_ADDRESS,
       data: matchOrdersCallbackData,
       value: total,
     }),
-    total,
-  ] as const;
+    value: total,
+  };
 };
