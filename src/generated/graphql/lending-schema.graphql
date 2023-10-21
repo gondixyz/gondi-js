@@ -28,7 +28,6 @@ type Auction implements Node {
   highestBid: Bid
   id: String!
   loan: MultiSourceLoan!
-  originator: String
   settler: String
   startTime: DateTime
   status: String!
@@ -190,7 +189,7 @@ type CollectionOffer implements Node & Offer {
   principalAddress: Address!
   principalAmount: BigInt!
   repayment: BigInt!
-  requiresLiquidation: Boolean
+  requiresLiquidation: Boolean!
   signature: Signature
   signerAddress: Address
   statistics: CollectionOfferStatistics!
@@ -211,8 +210,8 @@ input CollectionOfferInput {
   offerValidators: [OfferValidatorInput!]!
   principalAddress: Address!
   principalAmount: BigInt!
-  requiresLiquidation: Boolean
-  signerAddress: Address
+  requiresLiquidation: Boolean!
+  signerAddress: Address!
 }
 
 type CollectionOfferStatistics {
@@ -254,9 +253,9 @@ input CollectionSignedOfferInput {
   offerValidators: [OfferValidatorInput!]!
   principalAddress: Address!
   principalAmount: BigInt!
-  requiresLiquidation: Boolean
+  requiresLiquidation: Boolean!
   signature: Signature!
-  signerAddress: Address
+  signerAddress: Address!
 }
 
 type CollectionStatistics {
@@ -607,7 +606,6 @@ type MultiSourceLoan implements Loan & Node {
   offer: Offer!
   principalAddress: Address!
   principalAmount: BigInt!
-  refinanceProceeds: [RefinanceProceed!]!
   repaidActivity: LoanRepaid
   sources: [Source!]!
   startTime: DateTime!
@@ -636,7 +634,6 @@ type MultiSourceLoanHistory implements Node {
   offerId: String!
   principalAddress: String!
   principalAmount: BigInt!
-  refinanceProceeds: [RefinanceProceedHistory!]!
   sources: [SourceHistory!]!
   startTime: DateTime!
 }
@@ -663,7 +660,7 @@ type Mutation {
   hideAllOffers(contractAddress: Address!, minOfferId: String!): [Offer!]!
   hideOffer(contractAddress: Address!, offerId: String!): Offer!
   hideRenegotiation(
-    contractAddress: Address = "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
+    contractAddress: Address = "0xCa5a494Ca20483e21ec1E41FE1D9461Da77595Bd"
     renegotiationId: String!
   ): Renegotiation!
   markNotificationIdsAsRead(ids: [Int!]): Void
@@ -682,7 +679,7 @@ type Mutation {
   setReferral(referrerId: Int!): Void
   showOffer(contractAddress: Address!, offerId: String!): Offer!
   showRenegotiation(
-    contractAddress: Address = "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
+    contractAddress: Address = "0xCa5a494Ca20483e21ec1E41FE1D9461Da77595Bd"
     renegotiationId: String!
   ): Renegotiation!
 }
@@ -708,18 +705,6 @@ type NFT implements Node {
   tokenId: BigInt!
   traits: [Trait!]!
   url: String
-}
-
-type NFTBidSample implements Node {
-  bidderAddress: Address!
-  currency: Currency
-  currencyAddress: Address!
-  expiration: DateTime!
-  fees: BigInt!
-  id: String!
-  marketPlace: String!
-  netAmount: BigInt!
-  status: String!
 }
 
 type NFTConnection {
@@ -838,7 +823,7 @@ interface Offer implements Node {
   principalAddress: Address!
   principalAmount: BigInt!
   repayment: BigInt!
-  requiresLiquidation: Boolean
+  requiresLiquidation: Boolean!
   signature: Signature
   signerAddress: Address
   status: String!
@@ -1008,7 +993,6 @@ type Query {
     sortBy: [AuctionSortInput!] = null
     statuses: [AuctionStatus!] = null
   ): AuctionConnection!
-  listBestBidsForNft(currencyAddress: String!, nftId: Int!): [NFTBidSample!]!
   listBids(
     after: String
     auctionId: String = null
@@ -1132,27 +1116,6 @@ type Query {
 input RangeInput {
   max: Int!
   min: Int!
-}
-
-type RefinanceProceed implements Node {
-  aprBps: BigInt!
-  id: String!
-  lender: String!
-  loan: MultiSourceLoan!
-  loanId: Int!
-  principalAmount: BigInt!
-  sourceLoanId: Int!
-  startTime: DateTime!
-}
-
-type RefinanceProceedHistory implements Node {
-  aprBps: BigInt!
-  id: String!
-  lender: String!
-  loanId: Int!
-  principalAmount: BigInt!
-  sourceLoanId: Int!
-  startTime: DateTime!
 }
 
 input RefinanceTermsFilter {
@@ -1306,7 +1269,7 @@ type SingleNFTOffer implements Node & Offer {
   principalAddress: Address!
   principalAmount: BigInt!
   repayment: BigInt!
-  requiresLiquidation: Boolean
+  requiresLiquidation: Boolean!
   signature: Signature
   signerAddress: Address
   statistics: OfferStatistics!
@@ -1327,8 +1290,8 @@ input SingleNFTOfferInput {
   offerValidators: [OfferValidatorInput!]!
   principalAddress: Address!
   principalAmount: BigInt!
-  requiresLiquidation: Boolean
-  signerAddress: Address
+  requiresLiquidation: Boolean!
+  signerAddress: Address!
 }
 
 type SingleNFTOrder implements Activity & Node & Order {
@@ -1365,9 +1328,9 @@ input SingleNFTSignedOfferInput {
   offerValidators: [OfferValidatorInput!]!
   principalAddress: Address!
   principalAmount: BigInt!
-  requiresLiquidation: Boolean
+  requiresLiquidation: Boolean!
   signature: Signature!
-  signerAddress: Address
+  signerAddress: Address!
 }
 
 type SingleSourceLoan implements Loan & Node {

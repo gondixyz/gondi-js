@@ -1,0 +1,96 @@
+query listLoans(
+  $borrowerAddress: String = ""
+  $collections: [Int!] = []
+  $nfts: [Int!]
+  $statuses: [LoanStatusType!] = []
+  $sortBy: [LoanSortInput!] = []
+  $terms: TermsFilter
+  $orderByStatuses: Boolean
+  $loansCurrencyAddress: Address
+  $first: Int = 24
+  $after: String
+) {
+  loans: listLoans(
+    borrowerAddress: $borrowerAddress
+    collections: $collections
+    nfts: $nfts
+    statuses: $statuses
+    sortBy: $sortBy
+    terms: $terms
+    orderByStatuses: $orderByStatuses
+    currencyAddress: $loansCurrencyAddress
+    first: $first
+    after: $after
+  ) {
+    totalCount
+    pageInfo {
+      endCursor
+      hasNextPage
+    }
+    edges {
+      node {
+        id
+        address
+        loanId
+        timestamp
+        txHash
+        indexInBlock
+        borrowerAddress
+        principalAddress
+        startTime
+        duration
+        status
+        offer {
+          offerId
+          signerAddress
+        }
+        currency {
+          symbol
+          decimals
+          address
+        }
+        repaidActivity {
+          totalInterest
+          timestamp
+        }
+
+        principalAmount
+        blendedAprBps
+        totalOriginationFee
+
+        nft {
+          id
+          name
+          tokenId
+          nftId
+          owner
+          image {
+            data
+            cacheUrl
+            contentTypeMime
+            accessTypeName
+          }
+          collection {
+            id
+            slug
+            name
+            nftsCount
+            contractData {
+              contractAddress
+            }
+          }
+        }
+        sources {
+          id
+          loanId
+          originationFee
+          principalAmount
+          lenderAddress
+          accruedInterest
+          aprBps
+          startTime
+        }
+      }
+    }
+  }
+}

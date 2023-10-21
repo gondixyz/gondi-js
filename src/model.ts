@@ -1,12 +1,11 @@
 import { Address, Hash } from "viem";
 
-import {
-  Auction as BlockchainAuction,
-  Signature,
-} from "@/blockchain";
+import { Auction as BlockchainAuction, Signature } from "@/blockchain";
 import {
   CollectionOfferInput as ApiCollectionOfferInput,
   CollectionSignedOfferInput,
+  LoanSortInput,
+  LoanStatusType,
   MarketplaceEnum,
   OffersSortInput,
   OfferStatus,
@@ -14,6 +13,7 @@ import {
   SignedRenegotiationOfferInput,
   SingleNftOfferInput as ApiSingleNftOfferInput,
   SingleNftSignedOfferInput,
+  TermsFilter,
   UserFilter,
 } from "@/generated/graphql";
 
@@ -96,6 +96,19 @@ export type ListOffersProps = {
     status?: OfferStatus[];
   };
 };
+
+export interface ListLoansProps {
+  limit?: number;
+  cursor?: string;
+  borrowerAddress?: Address;
+  collections?: number[];
+  nfts?: number[];
+  statuses?: LoanStatusType[];
+  sortBy?: LoanSortInput;
+  terms?: TermsFilter;
+  orderByStatuses?: boolean;
+  loansCurrencyAddress?: Address;
+}
 
 export type ListListingsProps = {
   collections?: number[];

@@ -418,6 +418,13 @@ export class Gondi {
     });
   }
 
+  async loans({ limit = 20, ...rest }: model.ListLoansProps) {
+    return await this.api.listLoans({
+      first: limit,
+      ...rest,
+    });
+  }
+
   async list({ nft }: { nft: number }) {
     return await this.api.listNft({ nftId: nft });
   }
