@@ -4,6 +4,7 @@ import { adaptViemWallet } from "@reservoir0x/reservoir-sdk";
 import {
   Address,
   decodeFunctionData,
+  encodeAbiParameters,
   encodeFunctionData,
   Hash,
   zeroAddress,
@@ -61,11 +62,36 @@ const SEAPORT_VERSION = "1.5";
 const SEAPORT_CONTRACT_ADDRESS =
   "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC" as const;
 
+// We don't have this abi in the generated files
+export const EXECUTION_INFO_ABI = [
+  {
+    name: "ExecutionInfo",
+    type: "tuple",
+    components: [
+      { name: "module", type: "address" },
+      { name: "data", type: "bytes" },
+      { name: "value", type: "uint256" },
+    ],
+  },
+] as const;
+
+export const getExecutionData = ({
+  module,
+  data,
+  value,
+}: {
+  module: Address;
+  data: Hash;
+  value: bigint;
+}) => encodeAbiParameters(EXECUTION_INFO_ABI, [{ module, data, value }]);
+
 export const adaptWalletToCaptureTxData = (wallet: Wallet) => {
   const txData = {
     current: {
       orderId: zeroHash,
       callbackData: zeroHash,
+      to: zeroAddress as Address,
+      value: 0n,
       signature: zeroHash,
     },
   };
@@ -77,10 +103,15 @@ export const adaptWalletToCaptureTxData = (wallet: Wallet) => {
     transport: undefined,
     handleSendTransactionStep: async (
       _chainId: number,
-      stepItem: { data: { data: Hash }; orderIds: Hash[] }
+      stepItem: {
+        data: { data: Hash; to: Address; value: bigint };
+        orderIds: Hash[];
+      }
     ) => {
       txData.current.orderId = stepItem.orderIds[0];
+      txData.current.to = stepItem.data.to;
       txData.current.callbackData = stepItem.data.data;
+      txData.current.value = stepItem.data.value;
       try {
         // We try to decode the function data to know if it's a seaport contract call
         const functionData = decodeFunctionData({
@@ -254,7 +285,7 @@ export const generateFulfillmentsForOrderAndInverse = (
   return fulfillments;
 };
 
-export const generateMatchOrdersCallbackData = async ({
+export const generateMatchOrdersExecutionData = async ({
   wallet,
   rawOrder,
   signature,
@@ -281,12 +312,18 @@ export const generateMatchOrdersCallbackData = async ({
     args: [[order, inverseOrder], fulfillments],
   });
 
-  // See how to attach the total consideration amount to the callback data
-  // const total = order.parameters.consideration.reduce(
-  //   (acc, consid) =>
-  //     acc + (consid.itemType === 0 ? BigInt(consid.startAmount) : 0n),
-  //   0n
-  // );
+  const total = order.parameters.consideration.reduce(
+    (acc, consid) =>
+      acc + (consid.itemType === 0 ? BigInt(consid.startAmount) : 0n),
+    0n
+  );
 
-  return matchOrdersCallbackData;
+  return [
+    getExecutionData({
+      module: SEAPORT_CONTRACT_ADDRESS,
+      data: matchOrdersCallbackData,
+      value: total,
+    }),
+    total,
+  ] as const;
 };

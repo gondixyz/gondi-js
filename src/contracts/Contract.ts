@@ -21,7 +21,8 @@ export class Contract<TAbi extends Abi> {
 
   safeContractWrite: {
     [TFunctionName in ExtractAbiFunctionNames<TAbi>]: (
-      args: SimulateContractParameters<TAbi, TFunctionName>["args"]
+      args: SimulateContractParameters<TAbi, TFunctionName>["args"],
+      options?: { value?: bigint }
     ) => Promise<Hash>;
   };
 
@@ -54,7 +55,8 @@ export class Contract<TAbi extends Abi> {
         functionName: TFunctionName
       ) {
         return async (
-          args: SimulateContractParameters<TAbi, TFunctionName>["args"]
+          args: SimulateContractParameters<TAbi, TFunctionName>["args"],
+          options: { value?: bigint } = {}
         ) => {
           // The typecast here is necessary,
           // we still enjoy the type checking on the arguments themselves so it's not the end of the world
@@ -64,6 +66,7 @@ export class Contract<TAbi extends Abi> {
             functionName,
             args,
             account: walletClient.account,
+            ...options,
           } as SimulateContractParameters);
 
           return walletClient.writeContract(request);

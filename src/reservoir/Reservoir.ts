@@ -21,7 +21,8 @@ import {
   adaptWalletToCaptureTxData,
   ETH_CONTRACT_ADDRESS,
   generateExpectedCurrencyPriceObject,
-  generateMatchOrdersCallbackData,
+  generateMatchOrdersExecutionData,
+  getExecutionData,
   SeaportOrder,
   WETH_CONTRACT_ADDRESS,
 } from "./utils";
@@ -29,6 +30,7 @@ import {
 export class Reservoir {
   baseApiUrl: string;
   mainnetClient: PublicClient;
+  wallet: Wallet;
 
   constructor({
     baseApiUrl = "https://api.reservoir.tools",
@@ -42,6 +44,7 @@ export class Reservoir {
     wallet: Wallet;
   }) {
     this.baseApiUrl = baseApiUrl;
+    this.wallet = wallet;
 
     createClient({
       chains: [
@@ -78,20 +81,18 @@ export class Reservoir {
       .then(({ orders }) => orders[0]);
   }
 
-  async getCallbackDataForBuyToken({
-    wallet,
+  async getExecutionDataForBuyToken({
     collectionContractAddress,
     tokenId,
     price,
     exactOrderSource,
   }: {
-    wallet: Wallet;
     collectionContractAddress: string;
     tokenId: bigint;
     price: bigint;
     exactOrderSource?: string;
   }) {
-    const { adaptedWallet, txData } = adaptWalletToCaptureTxData(wallet);
+    const { adaptedWallet, txData } = adaptWalletToCaptureTxData(this.wallet);
 
     try {
       await getClient()?.actions.buyToken({
@@ -118,7 +119,7 @@ export class Reservoir {
       // We ignore the error thrown by the handleSendTransactionStep inside the adapted wallet
     }
 
-    const { orderId, callbackData, signature } = txData.current;
+    const { orderId, to, callbackData, value, signature } = txData.current;
 
     if (orderId === zeroHash) {
       throw new Error(`No available offer for price ${price}`);
@@ -128,31 +129,31 @@ export class Reservoir {
       const apiOrder = await this.getAsk({ orderId });
 
       // Seaport order -- we can save a tx by using matchOrders method from the seaport contract
-      return await generateMatchOrdersCallbackData({
-        wallet,
+      return generateMatchOrdersExecutionData({
+        wallet: this.wallet,
         rawOrder: (apiOrder as { rawData: SeaportOrder }).rawData,
         signature,
       });
     }
 
-    // TODO: deal with cryptopunks
-    return callbackData;
+    return [
+      getExecutionData({ module: to, data: callbackData, value }),
+      value,
+    ] as const;
   }
 
   async getCallbackDataForSellToken({
-    wallet,
     collectionContractAddress,
     tokenId,
     price,
     exactOrderSource,
   }: {
-    wallet: Wallet;
     collectionContractAddress: Address;
     tokenId: bigint;
     price: bigint;
     exactOrderSource?: string;
   }) {
-    const { adaptedWallet, txData } = adaptWalletToCaptureTxData(wallet);
+    const { adaptedWallet, txData } = adaptWalletToCaptureTxData(this.wallet);
 
     const erc721 = getContract({
       abi: erc721ABI,
@@ -190,7 +191,7 @@ export class Reservoir {
       // We ignore the error thrown by the handleSendTransactionStep inside the adapted wallet
     }
 
-    const { orderId, callbackData, signature } = txData.current;
+    const { orderId, to, callbackData, value, signature } = txData.current;
 
     if (orderId === zeroHash) {
       throw new Error(`No available offer for price ${price}`);
@@ -200,14 +201,16 @@ export class Reservoir {
 
     if (signature !== zeroHash) {
       // Seaport order -- we can save a tx by using matchOrders method from the seaport contract
-      return generateMatchOrdersCallbackData({
-        wallet,
+      return generateMatchOrdersExecutionData({
+        wallet: this.wallet,
         rawOrder: (apiOrder as { rawData: SeaportOrder }).rawData,
         signature,
       });
     }
 
-    // TODO: deal with cryptopunks
-    return callbackData;
+    return [
+      getExecutionData({ module: to, data: callbackData, value }),
+      value,
+    ] as const;
   }
 }

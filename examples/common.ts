@@ -16,6 +16,11 @@ const RPC = process.env.RPC_URL;
 const MULTI_SOURCE_LOAN_CONTRACT_V5 =
   process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? "";
 const SEAPORT_CONTRACT_ADDRESS = "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC";
+const LEVERAGE_CONTRACT = process.env.LEVERAGE_ADDRESS ?? "";
+
+export const MAX_NUMBER =
+  115792089237316195423570985008687907853269984665640564039457584007913129639935n;
+
 if (!isAddress(MULTI_SOURCE_LOAN_CONTRACT_V5)) {
   throw new Error("invalid MULTI_SOURCE_LOAN_CONTRACT_V5 address");
 }
@@ -116,17 +121,38 @@ export const testSingleNftOfferInput = {
   nftId: testNftId,
 };
 
-const approveForUser = async (user: Gondi, to: Address) => {
-  const approveToken = await user.approveToken({
+const approveTokenOnlyIfNecessary = async (user: Gondi, to: Address) => {
+  const isEnoughApproved = await user.isApprovedToken({
     tokenAddress: testCurrency,
+    amount: MAX_NUMBER / 2n,
     to,
   });
-  await approveToken.waitTxInBlock();
-  const approveNFT = await user.approveNFTForAll({
+  if (!isEnoughApproved) {
+    const approveToken = await user.approveToken({
+      tokenAddress: testCurrency,
+      to,
+    });
+    await approveToken.waitTxInBlock();
+  }
+};
+
+const approveNFTForAllOnlyIfNecessary = async (user: Gondi, to: Address) => {
+  const isApprovedAlready = await user.isApprovedNFTForAll({
     nftAddress: testCollection.contractAddress,
     to,
   });
-  await approveNFT.waitTxInBlock();
+  if (!isApprovedAlready) {
+    const approveNFT = await user.approveNFTForAll({
+      nftAddress: testCollection.contractAddress,
+      to,
+    });
+    await approveNFT.waitTxInBlock();
+  }
+};
+
+const approveForUser = async (user: Gondi, to: Address) => {
+  await approveTokenOnlyIfNecessary(user, to);
+  await approveNFTForAllOnlyIfNecessary(user, to);
 };
 
 const MULTI_SOURCE_LOAN_CONTRACT_V4 =
@@ -134,10 +160,14 @@ const MULTI_SOURCE_LOAN_CONTRACT_V4 =
 
 for (const [i, user] of users.entries()) {
   console.log(`approving tokens for user ${i}`);
-  await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V5)
+  await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V5);
 
   if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
     await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V4);
+  }
+
+  if (isAddress(LEVERAGE_CONTRACT)) {
+    await approveForUser(user, LEVERAGE_CONTRACT);
   }
 
   await approveForUser(user, SEAPORT_CONTRACT_ADDRESS);

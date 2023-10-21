@@ -1,24 +1,37 @@
-import { users } from "./common";
+import { testCollection } from "./common";
+import { testCollectionOfferInput, users } from "./common";
 
 async function main() {
-  const test = await users[0].leverageBuy({
+  const signedOffer = await users[1].makeCollectionOffer(
+    testCollectionOfferInput
+  );
+  const contractVersionString = `msl: ${signedOffer.contractAddress}`;
+  console.log(`offer placed successfully: ${contractVersionString}`);
+
+  const { waitTxInBlock } = await users[0].leverageBuy({
     leverageBuyData: [
       {
-        offer: {},
-        expirationTime: 5n,
-        amount: 1n,
+        offer: {
+          ...signedOffer,
+          lender: signedOffer.lenderAddress,
+          borrower: signedOffer.borrowerAddress,
+          validators: signedOffer.offerValidators,
+        },
+        expirationTime: signedOffer.expirationTime,
+        amount: signedOffer.principalAmount,
         nft: {
-          collectionContractAddress:
-            "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d",
-          tokenId: 8831n,
+          collectionContractAddress: testCollection.contractAddress,
+          tokenId: 2069n, // change this for listed nft in opensea
           price: 78000000000000000000n,
-          orderSource: 'opensea.io',
+          orderSource: "opensea.io",
         },
       },
     ],
   });
 
-  // console.log(test);
+  await waitTxInBlock();
+
+  console.log("BNPL executed");
 }
 
 main();

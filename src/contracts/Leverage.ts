@@ -1,6 +1,6 @@
 import { Account, Address, Chain, Hash, Transport, WalletClient } from "viem";
 
-import { filterLogs, LoanV5,OfferV5 } from "@/blockchain";
+import { filterLogs, LoanV5, OfferV5 } from "@/blockchain";
 import { getContracts } from "@/deploys";
 import { leverageABI } from "@/generated/blockchain/v5";
 
@@ -21,6 +21,7 @@ export class Leverage extends Contract<typeof leverageABI> {
 
   async buy({
     leverageBuyData,
+    ethToSend,
   }: {
     leverageBuyData: {
       offer: OfferV5 & { signature: Hash };
@@ -32,23 +33,30 @@ export class Leverage extends Contract<typeof leverageABI> {
         price: bigint;
       };
       callbackData: Hash;
+      borrowerSignature: Hash;
     }[];
+    ethToSend: bigint;
   }) {
-    const txHash = await this.safeContractWrite.buy([
-      leverageBuyData.map((data) => ({
-        executionData: {
-          offer: data.offer,
-          tokenId: data.nft.tokenId,
-          amount: data.amount,
-          expirationTime: data.expirationTime,
-        },
-        lender: data.offer.lender,
-        borrower: this.wallet.account.address,
-        lenderOfferSignature: data.offer.signature,
-        borrowerOfferSignature: "0x0", // TODO: fix this
-        callbackData: data.callbackData,
-      })),
-    ]);
+    const txHash = await this.safeContractWrite.buy(
+      [
+        leverageBuyData.map((data) => ({
+          executionData: {
+            offer: data.offer,
+            tokenId: data.nft.tokenId,
+            amount: data.amount,
+            expirationTime: data.expirationTime,
+          },
+          lender: data.offer.lender,
+          borrower: this.wallet.account.address,
+          lenderOfferSignature: data.offer.signature,
+          borrowerOfferSignature: data.borrowerSignature,
+          callbackData: data.callbackData,
+        })),
+      ],
+      {
+        value: ethToSend,
+      }
+    );
 
     return {
       txHash,

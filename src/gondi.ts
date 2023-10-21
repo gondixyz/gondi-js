@@ -553,7 +553,14 @@ export class Gondi {
 
   async liquidateLoan(loan: LoanV4V5) {
     return this.contracts.Msl(loan.contractAddress).liquidateLoan({
+<<<<<<< HEAD
       loan,
+=======
+      loan: {
+        ...loan,
+        refinanceProceeds: loan.refinanceProceeds ?? [],
+      },
+>>>>>>> b1cd2ae (feat: leverage buy fully working)
     });
   }
 
@@ -600,21 +607,72 @@ export class Gondi {
       };
     }[];
   }) {
-    const dataForLeverageContract = await Promise.all(
-      leverageBuyData.map(async (data) => ({
-        ...data,
-        callbackData: await this.reservoir.getCallbackDataForBuyToken({
-          wallet: this.wallet,
+    const executionData = await Promise.all(
+      leverageBuyData.map(async (data) =>
+        this.reservoir.getExecutionDataForBuyToken({
           collectionContractAddress: data.nft.collectionContractAddress,
           tokenId: data.nft.tokenId,
           price: data.nft.price,
           exactOrderSource: data.nft.orderSource,
+        })
+      )
+    );
+
+    // We calculate the amount of eth to send to the contract
+    // This is the sum of the eth to send for each nft minus the amount of weth that is being borrowed
+    const ethToSend = executionData.reduce(
+      (acc, [, ethToSendForNft], index) =>
+        acc + ethToSendForNft - leverageBuyData[index].amount,
+      0n
+    );
+
+    const dataForLeverageContract = await Promise.all(
+      leverageBuyData.map(async (data, index) => ({
+        ...data,
+        callbackData: executionData[index][0],
+        borrowerSignature: await this.wallet.signTypedData({
+          domain: this.getDomain(this.contracts.MultiSourceLoanV5.address),
+          primaryType: "ExecutionData",
+          types: {
+            ExecutionData: [
+              { name: "offer", type: "LoanOffer" },
+              { name: "tokenId", type: "uint256" },
+              { name: "amount", type: "uint256" },
+              { name: "expirationTime", type: "uint256" },
+            ],
+            LoanOffer: [
+              { name: "offerId", type: "uint256" },
+              { name: "lender", type: "address" },
+              { name: "fee", type: "uint256" },
+              { name: "borrower", type: "address" },
+              { name: "capacity", type: "uint256" },
+              { name: "nftCollateralAddress", type: "address" },
+              { name: "nftCollateralTokenId", type: "uint256" },
+              { name: "principalAddress", type: "address" },
+              { name: "principalAmount", type: "uint256" },
+              { name: "aprBps", type: "uint256" },
+              { name: "expirationTime", type: "uint256" },
+              { name: "duration", type: "uint256" },
+              { name: "validators", type: "OfferValidator[]" },
+            ],
+            OfferValidator: [
+              { name: "validator", type: "address" },
+              { name: "arguments", type: "bytes" },
+            ],
+          } as const,
+          message: {
+            offer: data.offer,
+            tokenId: data.nft.tokenId,
+            amount: data.amount,
+            expirationTime: data.expirationTime,
+          },
         }),
       }))
     );
 
     return this.contracts.Leverage.buy({
       leverageBuyData: dataForLeverageContract,
+      ethToSend,
     });
   }
 
@@ -627,8 +685,7 @@ export class Gondi {
     price: bigint;
     orderSource?: string;
   }) {
-    const callbackData = await this.reservoir.getCallbackDataForSellToken({
-      wallet: this.wallet,
+    const executionData = await this.reservoir.getCallbackDataForSellToken({
       collectionContractAddress: loan.nftCollateralAddress,
       tokenId: loan.nftCollateralTokenId,
       price,
@@ -639,9 +696,31 @@ export class Gondi {
 
     return this.contracts.Leverage.sell({
       loan,
-      callbackData,
+      callbackData: executionData[0],
       shouldDelegate,
     });
+  }
+
+  async getOwner({
+    nftAddress,
+    tokenId,
+  }: {
+    nftAddress: Address;
+    tokenId: bigint;
+  }) {
+    const erc721 = this.contracts.ERC721(nftAddress);
+    return erc721.read.ownerOf([tokenId]);
+  }
+
+  async isApprovedNFTForAll({
+    nftAddress,
+    to = this.contracts.MultiSourceLoanV5.address,
+  }: {
+    nftAddress: Address;
+    to?: Address;
+  }) {
+    const erc721 = this.contracts.ERC721(nftAddress);
+    return erc721.read.isApprovedForAll([this.wallet.account?.address, to]);
   }
 
   async approveNFTForAll({
@@ -652,6 +731,7 @@ export class Gondi {
     to?: Address;
   }) {
     const erc721 = this.contracts.ERC721(nftAddress);
+
     const txHash = await erc721.write.setApprovalForAll([to, true]);
 
     return {
@@ -667,6 +747,21 @@ export class Gondi {
         return { ...events[0].args, ...receipt };
       },
     };
+  }
+
+  async isApprovedToken({
+    tokenAddress,
+    amount = model.MAX_NUMBER,
+    to = this.contracts.MultiSourceLoanV5.address,
+  }: {
+    tokenAddress: Address;
+    amount?: bigint;
+    to?: Address;
+  }) {
+    const erc20 = this.contracts.ERC20(tokenAddress);
+    return (
+      (await erc20.read.allowance([this.wallet.account?.address, to])) >= amount
+    );
   }
 
   async approveToken({
