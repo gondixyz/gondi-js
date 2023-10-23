@@ -92,12 +92,8 @@ export class AllV4 extends Contract<typeof auctionLoanLiquidatorABIV4> {
   }
 
   async settleAuction({
-    collectionContractAddress,
-    tokenId,
     loan,
   }: {
-    collectionContractAddress: Address;
-    tokenId: bigint;
     loan: LoanV4;
   }) {
     const loanStruct = {
@@ -113,8 +109,8 @@ export class AllV4 extends Contract<typeof auctionLoanLiquidatorABIV4> {
     };
 
     const txHash = await this.safeContractWrite.settleAuction([
-      collectionContractAddress,
-      tokenId,
+      loan.nftCollateralAddress,
+      loan.nftCollateralTokenId,
       encodeAbiParameters(AllV4.LOAN_SETTLEMENT_ENCODE_TYPES, [loanStruct]),
     ]);
 

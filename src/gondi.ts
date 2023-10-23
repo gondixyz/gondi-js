@@ -377,10 +377,7 @@ export class Gondi {
     nftReceiver?: Address;
   }) {
     return this.contracts.Msl(loan.contractAddress).repayLoan({
-      loan: {
-        ...loan,
-        refinanceProceeds: loan.refinanceProceeds ?? [],
-      },
+      loan,
       nftReceiver,
     });
   }
@@ -501,10 +498,7 @@ export class Gondi {
 
     return this.contracts.Msl(loan.contractAddress).refinanceFullLoan({
       offer: offerInput,
-      loan: {
-        ...loan,
-        refinanceProceeds: loan.refinanceProceeds ?? [],
-      },
+      loan,
       signature: offer.signature,
     });
   }
@@ -527,19 +521,13 @@ export class Gondi {
 
     return this.contracts.Msl(loan.contractAddress).refinancePartialLoan({
       offer: offerInput,
-      loan: {
-        ...loan,
-        refinanceProceeds: loan.refinanceProceeds ?? [],
-      },
+      loan,
     });
   }
 
   async liquidateLoan(loan: LoanV4V5) {
     return this.contracts.Msl(loan.contractAddress).liquidateLoan({
-      loan: {
-        ...loan,
-        refinanceProceeds: loan.refinanceProceeds ?? [],
-      }
+      loan,
     });
   }
 
@@ -560,23 +548,15 @@ export class Gondi {
   }
 
   async settleAuction({
-    collectionContractAddress,
-    tokenId,
-    loan: loanParam,
+    loan,
     auction,
   }: {
-    collectionContractAddress: Address;
-    tokenId: bigint;
     loan: LoanV4V5;
     auction: model.Auction;
   }) {
-    const loan = {
-      ...loanParam,
-      refinanceProceeds: loanParam.refinanceProceeds ?? [],
-    }
     return this.contracts
       .All(auction.loanAddress)
-      .settleAuction({ collectionContractAddress, tokenId, loan, auction });
+      .settleAuction({ loan, auction });
   }
 
   async approveNFTForAll({
