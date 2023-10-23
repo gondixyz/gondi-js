@@ -1,3 +1,35 @@
+# Breaking Changes 0.3.0b4
+
+### Important
+
+**Migration to version 0.3.x is discouraged until release is a stable version, and not a beta version as it is right now.**
+
+---
+
+This document outlines the breaking changes introduced in our codebase for version 0.3.0b4. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [Settle Auction](#settleAuction)
+
+---
+
+## Settle Auction
+
+**Description:**
+
+`settleAuction` method now no loger expects `collectionContractAddress` and `tokenId` arguments:
+
+```ts
+  async settleAuction(args: { loan: LoanV4V5; auction: model.Auction }) { ... }
+```
+
+**Reason:**
+
+Both arguments could be inferred from loan.
+
+---
+
 # Breaking Changes 0.3.0b1
 
 ### Important
