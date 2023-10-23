@@ -43,10 +43,7 @@ const emitCancelRefiOfferAndRepayLoan = async (contract?: Address) => {
   console.log(`renegotiation offer cancelled: ${contractVersionString}`);
 
   const repayLoan = await users[1].repayLoan({
-    loan: {
-      ...loan,
-      refinanceProceeds: [],
-    },
+    loan,
   });
   await repayLoan.waitTxInBlock();
   console.log(`loan repaid: ${contractVersionString}`);

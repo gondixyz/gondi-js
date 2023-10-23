@@ -14,7 +14,10 @@ async function main() {
   ];
   console.log("offers placed successfully");
   for (const offer of offers) {
-    await users[0].hideOffer(offer);
+    await users[0].hideOffer({
+      id: offer.offerId,
+      contractAddress: offer.contractAddress,
+    });
   }
   await sleep(10000);
   const { offers: listedOffers } = await users[1].offers({
