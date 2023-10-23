@@ -560,14 +560,7 @@ export class Gondi {
 
   async liquidateLoan(loan: LoanV4V5) {
     return this.contracts.Msl(loan.contractAddress).liquidateLoan({
-<<<<<<< HEAD
       loan,
-=======
-      loan: {
-        ...loan,
-        refinanceProceeds: loan.refinanceProceeds ?? [],
-      },
->>>>>>> b1cd2ae (feat: leverage buy fully working)
     });
   }
 
@@ -661,7 +654,7 @@ export class Gondi {
       exactOrderSource: orderSource,
     });
 
-    const shouldDelegate = false; // TODO: fix this
+    const shouldDelegate = executionData.isSeaportCall;
 
     return this.contracts.Leverage.sell({
       loan,

@@ -23,7 +23,7 @@ import {
   generateExpectedCurrencyPriceObject,
   generateMatchOrdersExecutionData,
   getExecutionData,
-  SeaportOrder,
+  SeaportAskOrBid,
   WETH_CONTRACT_ADDRESS,
 } from "./utils";
 
@@ -70,7 +70,7 @@ export class Reservoir {
       `${this.baseApiUrl}/orders/asks/v5?ids=${orderId}&includeRawData=true`
     )
       .then((res) => res.json() as Promise<{ orders: unknown[] }>)
-      .then(({ orders }) => orders[0]);
+      .then(({ orders }) => orders[0] as SeaportAskOrBid);
   }
 
   async getBid({ orderId }: { orderId: Hash }) {
@@ -78,7 +78,7 @@ export class Reservoir {
       `${this.baseApiUrl}/orders/bids/v6?ids=${orderId}&includeRawData=true`
     )
       .then((res) => res.json() as Promise<{ orders: unknown[] }>)
-      .then(({ orders }) => orders[0]);
+      .then(({ orders }) => orders[0] as SeaportAskOrBid);
   }
 
   async getExecutionDataForBuyToken({
@@ -125,13 +125,13 @@ export class Reservoir {
       throw new Error(`No available offer for price ${price}`);
     }
 
-    if (signature !== zeroHash) {
-      const apiOrder = await this.getAsk({ orderId });
+    const apiOrder = await this.getAsk({ orderId });
 
+    if (signature !== zeroHash) {
       // Seaport order -- we can save a tx by using matchOrders method from the seaport contract
       return generateMatchOrdersExecutionData({
         wallet: this.wallet,
-        rawOrder: (apiOrder as { rawData: SeaportOrder }).rawData,
+        askOrBid: apiOrder,
         signature,
       });
     }
@@ -139,6 +139,7 @@ export class Reservoir {
     return {
       callbackData: getExecutionData({ module: to, data: callbackData, value }),
       value,
+      isSeaportCall: false,
     };
   }
 
@@ -191,7 +192,7 @@ export class Reservoir {
       // We ignore the error thrown by the handleSendTransactionStep inside the adapted wallet
     }
 
-    const { orderId, to, callbackData, value, signature } = txData;
+    const { orderId, to, callbackData, signature } = txData;
 
     if (orderId === zeroHash) {
       throw new Error(`No available offer for price ${price}`);
@@ -203,14 +204,20 @@ export class Reservoir {
       // Seaport order -- we can save a tx by using matchOrders method from the seaport contract
       return generateMatchOrdersExecutionData({
         wallet: this.wallet,
-        rawOrder: (apiOrder as { rawData: SeaportOrder }).rawData,
+        askOrBid: apiOrder,
         signature,
+        side: "bid",
       });
     }
 
     return {
-      callbackData: getExecutionData({ module: to, data: callbackData, value }),
-      value,
+      callbackData: getExecutionData({
+        module: to,
+        data: callbackData,
+        value: BigInt(apiOrder.price.netAmount.raw),
+      }),
+      value: BigInt(apiOrder.price.netAmount.raw),
+      isSeaportCall: false,
     };
   }
 }

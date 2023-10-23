@@ -25,6 +25,15 @@ export interface Consideration extends Offer {
   recipient: Address;
 }
 
+export interface SeaportAskOrBid {
+  rawData: SeaportOrder;
+  price: {
+    netAmount: {
+      raw: string;
+    };
+  };
+}
+
 export interface SeaportOrder {
   offerer: Address;
   zone: Hash;
@@ -105,7 +114,7 @@ export const adaptWalletToCaptureTxData = (wallet: Wallet) => {
       stepItem: {
         data: { data: Hash; to: Address; value: bigint };
         orderIds: Hash[];
-      }
+      },
     ) => {
       txData.orderId = stepItem.orderIds[0];
       txData.to = stepItem.data.to;
@@ -290,16 +299,18 @@ export const generateFulfillmentsForOrderAndInverse = (
 
 export const generateMatchOrdersExecutionData = async ({
   wallet,
-  rawOrder,
+  askOrBid,
   signature,
+  side = "ask",
 }: {
   wallet: Wallet;
-  rawOrder: SeaportOrder;
+  askOrBid: SeaportAskOrBid;
   signature: Hash;
+  side?: "ask" | "bid";
 }) => {
   const order = {
-    parameters: buildOrderParameters(rawOrder),
-    signature: rawOrder.mockedSignature ?? signature,
+    parameters: buildOrderParameters(askOrBid.rawData),
+    signature: askOrBid.rawData.mockedSignature ?? signature,
   };
 
   const inverseOrder = await generateSignedOrder(
@@ -315,11 +326,16 @@ export const generateMatchOrdersExecutionData = async ({
     args: [[order, inverseOrder], fulfillments],
   });
 
-  const total = order.parameters.consideration.reduce(
-    (acc, consid) =>
-      acc + (consid.itemType === 0 ? BigInt(consid.startAmount) : 0n),
-    0n
-  );
+  // When we are buying the nft, we need to send the total amount of the consideration in ETH
+  // When we are selling the nft, we need to **receive** the netAmount of WETH
+  const total =
+    side === "ask"
+      ? order.parameters.consideration.reduce(
+          (acc, consid) =>
+            acc + (consid.itemType === 0 ? BigInt(consid.startAmount) : 0n),
+          0n
+        )
+      : BigInt(askOrBid.price.netAmount.raw);
 
   return {
     callbackData: getExecutionData({
@@ -328,5 +344,6 @@ export const generateMatchOrdersExecutionData = async ({
       value: total,
     }),
     value: total,
+    isSeaportCall: true,
   };
 };

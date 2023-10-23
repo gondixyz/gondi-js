@@ -35,6 +35,7 @@ export class Leverage extends Contract<typeof leverageABI> {
     tokenId: bigint;
     amount: bigint;
     expirationTime: bigint;
+    callbackData: Hash;
   }) {
     return this.wallet.signTypedData({
       domain: getDomain(this.wallet.chain.id, this.mslAddress),
@@ -45,6 +46,7 @@ export class Leverage extends Contract<typeof leverageABI> {
           { name: "tokenId", type: "uint256" },
           { name: "amount", type: "uint256" },
           { name: "expirationTime", type: "uint256" },
+          { name: "callbackData", type: "bytes" },
         ],
         LoanOffer: [
           { name: "offerId", type: "uint256" },
@@ -67,6 +69,40 @@ export class Leverage extends Contract<typeof leverageABI> {
         ],
       } as const,
       message: executionData,
+    });
+  }
+
+  async signLoan(loan: LoanV5) {
+    return this.wallet.signTypedData({
+      domain: getDomain(this.wallet.chain.id, this.mslAddress),
+      primaryType: "Loan",
+      types: {
+        Loan: [
+          { name: "borrower", type: "address" },
+          { name: "nftCollateralTokenId", type: "uint256" },
+          { name: "nftCollateralAddress", type: "address" },
+          { name: "principalAddress", type: "address" },
+          { name: "principalAmount", type: "uint256" },
+          { name: "startTime", type: "uint256" },
+          { name: "duration", type: "uint256" },
+          { name: "source", type: "Source[]" },
+        ],
+        Source: [
+          { name: "loanId", type: "uint256" },
+          { name: "lender", type: "address" },
+          { name: "principalAmount", type: "uint256" },
+          { name: "accruedInterest", type: "uint256" },
+          { name: "startTime", type: "uint256" },
+          { name: "aprBps", type: "uint256" },
+        ],
+        RefinanceProceeds: [
+          { name: "principalAmount", type: "uint256" },
+          { name: "startTime", type: "uint256" },
+          { name: "aprBps", type: "uint256" },
+          { name: "lender", type: "address" },
+        ],
+      } as const,
+      message: loan,
     });
   }
 
@@ -96,6 +132,7 @@ export class Leverage extends Contract<typeof leverageABI> {
               tokenId: data.nft.tokenId,
               amount: data.amount,
               expirationTime: data.expirationTime,
+              callbackData: data.callbackData,
             },
             lender: data.offer.lender,
             borrower: this.wallet.account.address,
@@ -105,8 +142,8 @@ export class Leverage extends Contract<typeof leverageABI> {
               tokenId: data.nft.tokenId,
               amount: data.amount,
               expirationTime: data.expirationTime,
+              callbackData: data.callbackData,
             }),
-            callbackData: data.callbackData,
           }))
         ),
       ],
@@ -142,11 +179,13 @@ export class Leverage extends Contract<typeof leverageABI> {
     const txHash = await this.safeContractWrite.sell([
       [
         {
-          loanId: loan.source[0].loanId,
+          data: {
+            loanId: loan.source[0].loanId,
+            callbackData,
+            shouldDelegate,
+          },
           loan,
-          callbackData,
-          shouldDelegate,
-          borrowerLoanSignature: "0x0", // TODO: fix this
+          borrowerSignature: await this.signLoan(loan),
         },
       ],
     ]);
