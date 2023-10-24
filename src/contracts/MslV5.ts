@@ -1,13 +1,11 @@
-import { Account, Address, Chain, Hash, Transport, WalletClient } from "viem";
+import { Address, Hash } from "viem";
 
-import { filterLogs, LoanV5, OfferV5, RenegotiationV5 } from "@/blockchain";
+import { filterLogs, LoanV5, OfferV5, RenegotiationV5, Wallet } from "@/blockchain";
 import { getContracts } from "@/deploys";
 import { multiSourceLoanABI as multiSourceLoanABIV5 } from "@/generated/blockchain/v5";
 import { getDomain } from "@/utils";
 
 import { Contract } from "./Contract";
-
-export type Wallet = WalletClient<Transport, Chain, Account>;
 
 export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
   constructor({ walletClient }: { walletClient: Wallet }) {

@@ -34,6 +34,7 @@ import { AllV5 } from "./contracts/AllV5";
 import { MslV4 } from "./contracts/MslV4";
 import { MslV5 } from "./contracts/MslV5";
 import { areSameAddress } from "./utils";
+
 export type Wallet = WalletClient<Transport, Chain, Account>;
 
 export class Contracts {
