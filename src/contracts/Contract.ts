@@ -1,9 +1,7 @@
 import { ExtractAbiFunctionNames } from "abitype";
 import {
   Abi,
-  Account,
   Address,
-  Chain,
   createPublicClient,
   createTransport,
   getContract,
@@ -11,12 +9,9 @@ import {
   Hash,
   PublicClient,
   SimulateContractParameters,
-  Transport,
-  WalletClient,
 } from "viem";
 
-type Wallet = WalletClient<Transport, Chain, Account>;
-
+import { Wallet } from "@/blockchain";
 export class Contract<TAbi extends Abi> {
   abi: TAbi;
   address: Address;

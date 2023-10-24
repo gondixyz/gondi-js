@@ -1,13 +1,11 @@
-import { Account, Address, Chain, Hash, Transport, WalletClient } from "viem";
+import { Address, Hash } from "viem";
 
-import { filterLogs, LoanV5, OfferV5, RenegotiationV5 } from "@/blockchain";
+import { filterLogs, LoanV5, OfferV5, RenegotiationV5, Wallet } from "@/blockchain";
 import { getContracts } from "@/deploys";
 import { multiSourceLoanABI as multiSourceLoanABIV5 } from "@/generated/blockchain/v5";
-import { getDomain } from "@/utils";
+import { bpsToPercentage, getDomain, millisToSeconds } from "@/utils";
 
 import { Contract } from "./Contract";
-
-export type Wallet = WalletClient<Transport, Chain, Account>;
 
 export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
   constructor({ walletClient }: { walletClient: Wallet }) {
@@ -173,48 +171,15 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
       tokenId,
       amount,
       expirationTime,
+      callbackData: "0x" as Hash, // No callback data is expected here, only for BNPL [Levearage call]
     };
-    // const borrowerOfferSignature = await this.wallet.signTypedData({
-    //   domain: getDomain(this.wallet.chain.id, this.address),
-    //   primaryType: "ExecutionData",
-    //   types: {
-    //     ExecutionData: [
-    //       { name: "offer", type: "LoanOffer" },
-    //       { name: "tokenId", type: "uint256" },
-    //       { name: "amount", type: "uint256" },
-    //       { name: "expirationTime", type: "uint256" },
-    //     ],
-    //     LoanOffer: [
-    //       { name: "offerId", type: "uint256" },
-    //       { name: "lender", type: "address" },
-    //       { name: "fee", type: "uint256" },
-    //       { name: "borrower", type: "address" },
-    //       { name: "capacity", type: "uint256" },
-    //       { name: "nftCollateralAddress", type: "address" },
-    //       { name: "nftCollateralTokenId", type: "uint256" },
-    //       { name: "principalAddress", type: "address" },
-    //       { name: "principalAmount", type: "uint256" },
-    //       { name: "aprBps", type: "uint256" },
-    //       { name: "expirationTime", type: "uint256" },
-    //       { name: "duration", type: "uint256" },
-    //       { name: "validators", type: "OfferValidator[]" },
-    //     ],
-    //     OfferValidator: [
-    //       { name: "validator", type: "address" },
-    //       { name: "arguments", type: "bytes" },
-    //     ],
-    //   },
-    //   message: executionData,
-    // });
-
     const txHash = await this.safeContractWrite.emitLoan([
       {
         executionData,
+        lender: offer.lender,
         borrower: this.wallet.account.address,
         lenderOfferSignature: signature,
         borrowerOfferSignature: "0x", // No signature data is expected here, only for BNPL [Levearage call]
-        lender: offer.lender,
-        callbackData: "0x", // No callback data is expected here, only for BNPL [Levearage call]
       },
     ]);
     return {
@@ -243,38 +208,16 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
   }
 
   async repayLoan({ loan }: { loan: LoanV5 }) {
-    // const borrowerLoanSignature = await this.wallet.signTypedData({
-    //   domain: getDomain(this.wallet.chain.id, this.address),
-    //   primaryType: "Loan",
-    //   types: {
-    //     Loan: [
-    //       { name: 'borrower', type: 'address' },
-    //       { name: 'nftCollateralTokenId', type: 'uint256' },
-    //       { name: 'nftCollateralAddress', type: 'address' },
-    //       { name: 'principalAddress', type: 'address' },
-    //       { name: 'principalAmount', type: 'uint256' },
-    //       { name: 'startTime', type: 'uint256' },
-    //       { name: 'duration', type: 'uint256' },
-    //       { name: "source", type: "Source[]" },
-    //     ],
-    //     Source: [
-    //       { name: 'loanId', type: 'uint256' },
-    //       { name: 'lender', type: 'address' },
-    //       { name: 'principalAmount', type: 'uint256' },
-    //       { name: 'accruedInterest', type: 'uint256' },
-    //       { name: 'startTime', type: 'uint256' },
-    //       { name: 'aprBps', type: 'uint256' },
-    //     ],
-    //   },
-    //   message: loan,
-    // });
+    const signableRepaymentData = {
+      loanId: loan.source[0].loanId,
+      callbackData: "0x" as Hash, // No callback data is expected here, only for BNPL [Levearage call]
+      shouldDelegate: false, // No need to delegate
+    };
     const txHash = await this.safeContractWrite.repayLoan([
       {
-        loanId: loan.source[0].loanId,
+        data: signableRepaymentData,
         loan,
-        borrowerLoanSignature: "0x", // No signature data is expected here, only for BNPL [Levearage call]
-        shouldDelegate: false, // No need to delegate
-        callbackData: "0x", // No callback data is expected here, only for BNPL [Levearage call]
+        borrowerSignature: "0x", // No signature data is expected here, only for BNPL [Levearage call]
       },
     ]);
     return {
@@ -289,6 +232,26 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
         return { ...events[0].args, ...receipt };
       },
     };
+  }
+
+  async getRemainingLockupSeconds({ loan }: { loan: LoanV5 }) {
+    const newestSource = loan.source[0];
+    const loanEndDate = loan.startTime + loan.duration;
+    const newestSourceDuration = loanEndDate - newestSource.startTime;
+
+    const lockPeriodBps = await this.contract.read.getMinLockPeriod();
+    const lockPercentage = bpsToPercentage(lockPeriodBps);
+
+    const lockupTimeSeconds = Math.ceil(
+      Number(newestSourceDuration) * lockPercentage
+    );
+
+    const ellapsedSeconds = Math.ceil(
+      millisToSeconds(Date.now()) - Number(newestSource.startTime)
+    );
+
+    if (ellapsedSeconds >= lockupTimeSeconds) return 0;
+    return lockupTimeSeconds - ellapsedSeconds;
   }
 
   async refinanceFullLoan({

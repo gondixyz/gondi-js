@@ -1,10 +1,16 @@
 import { Address, isAddress } from "viem";
 
-import { sleep, testSingleNftOfferInput, testTokenId, users } from "./common";
+import { generateBlock, sleep, testSingleNftOfferInput, testTokenId, users } from "./common";
+
+const SLEEP_BUFFER = 3000;
 
 const emitRefinaceFullAndRepayLoan = async (contract?: Address) => {
+  const offer = {
+    ...testSingleNftOfferInput,
+    duration: 30n
+  };
   const signedOffer = await users[0]._makeSingleNftOffer(
-    testSingleNftOfferInput, contract,
+    offer, contract,
   );
   const contractVersionString = `msl: ${signedOffer.contractAddress}`;
   console.log(`offer placed successfully: ${contractVersionString}`);
@@ -16,7 +22,8 @@ const emitRefinaceFullAndRepayLoan = async (contract?: Address) => {
   const { loan } = await emitLoan.waitTxInBlock();
   console.log(`loan emitted: ${contractVersionString}`);
 
-  await sleep(3000);
+  const remainingLockup = await users[0].getRemainingLockupSeconds({ loan });
+  await sleep(remainingLockup * 1_000 + SLEEP_BUFFER);
 
   const renegotiationOffer = await users[0].makeRefinanceOffer({
     renegotiation: {
@@ -37,6 +44,7 @@ const emitRefinaceFullAndRepayLoan = async (contract?: Address) => {
 
   let refinancedLoan = loan;
   try {
+    await generateBlock(); // We need to push a new block into the blockchain [anvil issue]
     const refinanceFullLoan = await users[0].refinanceFullLoan({
       offer: renegotiationOffer,
       loan,

@@ -2,7 +2,6 @@ import {
   Account,
   Address,
   Chain,
-  encodeAbiParameters,
   Transport,
   WalletClient,
 } from "viem";
@@ -17,42 +16,6 @@ import { Contract } from "./Contract";
 export type Wallet = WalletClient<Transport, Chain, Account>;
 
 export class AllV5 extends Contract<typeof auctionLoanLiquidatorABIV5> {
-  static LOAN_SETTLEMENT_ENCODE_TYPES = [
-    {
-      name: "",
-      type: "tuple",
-      components: [
-        { name: "borrower", type: "address" },
-        { name: "nftCollateralTokenId", type: "uint256" },
-        { name: "nftCollateralAddress", type: "address" },
-        { name: "principalAddress", type: "address" },
-        { name: "principalAmount", type: "uint256" },
-        { name: "startTime", type: "uint256" },
-        { name: "duration", type: "uint256" },
-        {
-          name: "source",
-          type: "tuple[]",
-          components: [
-            { name: "loanId", internalType: "uint256", type: "uint256" },
-            { name: "lender", internalType: "address", type: "address" },
-            {
-              name: "principalAmount",
-              internalType: "uint256",
-              type: "uint256",
-            },
-            {
-              name: "accruedInterest",
-              internalType: "uint256",
-              type: "uint256",
-            },
-            { name: "startTime", internalType: "uint256", type: "uint256" },
-            { name: "aprBps", internalType: "uint256", type: "uint256" },
-          ],
-        },
-        // TODO: we probably need refinance proceeds here
-      ],
-    },
-  ];
 
   constructor({ walletClient }: { walletClient: Wallet }) {
     const { AuctionLoanLiquidatorV5Address } = getContracts(walletClient.chain);
@@ -97,33 +60,15 @@ export class AllV5 extends Contract<typeof auctionLoanLiquidatorABIV5> {
   }
 
   async settleAuction({
-    collectionContractAddress,
-    tokenId,
-    loan,
     auction,
+    loan,
   }: {
-    collectionContractAddress: Address;
-    tokenId: bigint;
-    loan: LoanV5;
     auction: model.Auction;
+    loan: LoanV5;
   }) {
-    const loanStruct = {
-      ...loan,
-      source: loan.source.map((source) => [
-        source.loanId,
-        source.lender,
-        source.principalAmount,
-        source.accruedInterest,
-        source.startTime,
-        source.aprBps,
-      ]),
-    };
-
     const txHash = await this.safeContractWrite.settleAuction([
-      collectionContractAddress,
-      tokenId,
       auction,
-      encodeAbiParameters(AllV5.LOAN_SETTLEMENT_ENCODE_TYPES, [loanStruct]),
+      loan,
     ]);
 
     return {
