@@ -509,7 +509,7 @@ export class Gondi {
 
   async getRemainingLockupSeconds({ loan }: { loan: LoanV4V5 }) {
     return this.contracts.Msl(loan.contractAddress).getRemainingLockupSeconds({
-      loan
+      loan,
     });
   }
 
@@ -625,12 +625,10 @@ export class Gondi {
       0n
     );
 
-    const dataForLeverageContract = await Promise.all(
-      leverageBuyData.map(async (data, index) => ({
-        ...data,
-        callbackData: executionData[index].callbackData,
-      }))
-    );
+    const dataForLeverageContract = leverageBuyData.map((data, index) => ({
+      ...data,
+      callbackData: executionData[index].callbackData,
+    }));
 
     return this.contracts.Leverage.buy({
       leverageBuyData: dataForLeverageContract,
