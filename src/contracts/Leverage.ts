@@ -1,8 +1,16 @@
-import { Account, Address, Chain, Hash, Transport, WalletClient } from "viem";
+import {
+  Account,
+  Address,
+  Chain,
+  encodeFunctionData,
+  Hash,
+  Transport,
+  WalletClient,
+} from "viem";
 
 import { filterLogs, LoanV5, OfferV5 } from "@/blockchain";
 import { getContracts } from "@/deploys";
-import { leverageABI } from "@/generated/blockchain/v5";
+import { leverageABI, multiSourceLoanABI } from "@/generated/blockchain/v5";
 import { getDomain } from "@/utils";
 
 import { Contract } from "./Contract";
@@ -111,25 +119,33 @@ export class Leverage extends Contract<typeof leverageABI> {
     const txHash = await this.safeContractWrite.buy(
       [
         await Promise.all(
-          leverageBuyData.map(async (data) => ({
-            executionData: {
-              offer: data.offer,
-              tokenId: data.nft.tokenId,
-              amount: data.amount,
-              expirationTime: data.expirationTime,
-              callbackData: data.callbackData,
-            },
-            lender: data.offer.lender,
-            borrower: this.wallet.account.address,
-            lenderOfferSignature: data.offer.signature,
-            borrowerOfferSignature: await this.signExecutionData({
-              offer: data.offer,
-              tokenId: data.nft.tokenId,
-              amount: data.amount,
-              expirationTime: data.expirationTime,
-              callbackData: data.callbackData,
-            }),
-          }))
+          leverageBuyData.map(async (data) =>
+            encodeFunctionData({
+              abi: multiSourceLoanABI,
+              functionName: "emitLoan",
+              args: [
+                {
+                  executionData: {
+                    offer: data.offer,
+                    tokenId: data.nft.tokenId,
+                    amount: data.amount,
+                    expirationTime: data.expirationTime,
+                    callbackData: data.callbackData,
+                  },
+                  lender: data.offer.lender,
+                  borrower: this.wallet.account.address,
+                  lenderOfferSignature: data.offer.signature,
+                  borrowerOfferSignature: await this.signExecutionData({
+                    offer: data.offer,
+                    tokenId: data.nft.tokenId,
+                    amount: data.amount,
+                    expirationTime: data.expirationTime,
+                    callbackData: data.callbackData,
+                  }),
+                },
+              ],
+            })
+          )
         ),
       ],
       {
@@ -161,20 +177,25 @@ export class Leverage extends Contract<typeof leverageABI> {
     callbackData: Hash;
     shouldDelegate: boolean;
   }) {
-
     const repaymentData = {
       loanId: loan.source[0].loanId,
       callbackData,
       shouldDelegate,
-    }
+    };
 
     const txHash = await this.safeContractWrite.sell([
       [
-        {
-          data: repaymentData,
-          loan,
-          borrowerSignature: await this.signRepaymentData(repaymentData),
-        },
+        encodeFunctionData({
+          abi: multiSourceLoanABI,
+          functionName: "repayLoan",
+          args: [
+            {
+              data: repaymentData,
+              loan,
+              borrowerSignature: await this.signRepaymentData(repaymentData),
+            },
+          ],
+        }),
       ],
     ]);
 
