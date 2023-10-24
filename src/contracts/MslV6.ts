@@ -1,9 +1,12 @@
-import { Address, encodeFunctionData, Hash } from 'viem';
+import { Address, encodeFunctionData, getContract, Hash } from 'viem';
 
 import { filterLogs, LoanV6, OfferV6, RenegotiationV6, zeroHash } from '@/blockchain';
 import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
-import { multiSourceLoanAbi as multiSourceLoanAbiV6 } from '@/generated/blockchain/v6';
+import {
+  auctionLoanLiquidatorAbi as auctionLoanLiquidatorABIV6,
+  multiSourceLoanAbi as multiSourceLoanAbiV6,
+} from '@/generated/blockchain/v6';
 import { EmitLoanArgs } from '@/gondi';
 import { bpsToPercentage, millisToSeconds, SECONDS_IN_DAY } from '@/utils/number';
 import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
@@ -187,6 +190,98 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
         const events = filterLogs(receipt, filter);
         if (events.length === 0) throw new Error('Loan not emitted');
         const args = events[0].args;
+        const tx = await this.bcClient.getTransaction({ hash: txHash });
+        console.log('tx', tx.hash);
+        console.log(`SAMPLE
+          MutableAttributeDict(
+            {
+                "args": AttributeDict(
+                    {
+                        "fee": ${args.fee},
+                        "offerId": [${args.offerId.join(',')}],
+                        "loanId": ${args.loanId},
+                        "loan": AttributeDict(
+                            {
+                                "borrower": "${args.loan.borrower}",
+                                "duration": ${args.loan.duration},
+                                "nftCollateralAddress": "${args.loan.nftCollateralAddress}",
+                                "nftCollateralTokenId": ${args.loan.nftCollateralTokenId},
+                                "principalAddress": Currencies.WETH.value.address,
+                                "principalAmount": ${args.loan.principalAmount},
+                                "protocolFee": ${args.loan.protocolFee},
+                                "startTime": ${args.loan.startTime},
+                                "tranche": [${args.loan.tranche
+                                  .map(
+                                    (tranche) => `
+                                    AttributeDict(
+                                        {
+                                            "accruedInterest": ${tranche.accruedInterest},
+                                            "aprBps": ${tranche.aprBps},
+                                            "floor": ${tranche.floor},
+                                            "lender": "${tranche.lender}",
+                                            "loanId": ${tranche.loanId},
+                                            "principalAmount": ${tranche.principalAmount},
+                                            "startTime": ${tranche.startTime},
+                                        }
+                                    )`,
+                                  )
+                                  .join(',')}
+                                ],
+                            }
+                        ),
+                    }
+                ),
+                "event": "LoanEmitted",
+                "logIndex": 2,
+                "transactionIndex": ${receipt.transactionIndex},
+                "transactionHash": HexBytes(
+                    "${receipt.transactionHash}"
+                ),
+                "address": MULTI_SOURCE_LOAN_CONTRACT_V6,
+                "blockHash": HexBytes(
+                    "${receipt.blockHash}"
+                ),
+                "blockNumber": ${receipt.blockNumber},
+                "topics": [
+                    ${events[0].topics?.map((topic) => `HexBytes("${topic}")`).join(',')},
+                ],
+            }
+        )
+        `);
+        console.log(`SAMPLE_TX
+          MutableAttributeDict(
+            {
+                "hash": HexBytes(
+                    "${receipt.transactionHash}"
+                ),
+                "nonce": ${tx.nonce},
+                "blockHash": HexBytes(
+                    "${receipt.blockHash}"
+                ),
+                "blockNumber": ${receipt.blockNumber},
+                "transactionIndex": ${receipt.transactionIndex},
+                "from": "${tx.from}",
+                "to": MULTI_SOURCE_LOAN_CONTRACT_V6,
+                "value": ${tx.value},
+                "gasPrice": ${tx.gasPrice},
+                "gas": ${tx.gas},
+                "input": "ASD",
+                "v": ${tx.v},
+                "r": HexBytes(
+                    "${tx.r}"
+                ),
+                "s": HexBytes(
+                    "${tx.s}"
+                ),
+                "type": 2,
+                "accessList": [],
+                "maxPriorityFeePerGas": ${tx.maxPriorityFeePerGas},
+                "maxFeePerGas": ${tx.maxFeePerGas},
+                "chainId": ${tx.chainId},
+            }
+        )
+        `);
+        console.log(tx.input);
         return {
           loan: {
             id: `${this.contract.address.toLowerCase()}.${args.loanId}`,
@@ -290,6 +385,34 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
         const filter = await this.contract.createEventFilter.LoanRepaid();
         const events = filterLogs(receipt, filter);
         if (events.length === 0) throw new Error('Loan not repaid');
+        const args = events[0].args;
+        console.log(`SAMPLE
+          MutableAttributeDict(
+            {
+                "args": MutableAttributeDict(
+                    {
+                        "loanId": ${args.loanId},
+                        "totalRepayment": ${args.totalRepayment},
+                        "fee": ${args.fee},
+                    }
+                ),
+                "event": "LoanRepaid",
+                "logIndex": 2,
+                "transactionIndex": ${receipt.transactionIndex},
+                "transactionHash": HexBytes(
+                    "${receipt.transactionHash}"
+                ),
+                "address": MULTI_SOURCE_LOAN_CONTRACT_V6,
+                "blockHash": HexBytes(
+                    "${receipt.blockHash}"
+                ),
+                "blockNumber": ${receipt.blockNumber},
+                "topics": [
+                    ${events[0].topics?.map((topic) => `HexBytes("${topic}")`).join(',')},
+                ],
+            }
+        )
+        `);
         return { ...events[0].args, ...receipt };
       },
     };
@@ -332,6 +455,99 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
         const events = filterLogs(receipt, filter);
         if (events.length === 0) throw new Error('Loan not refinanced');
         const args = events[0].args;
+        const tx = await this.bcClient.getTransaction({ hash: txHash });
+        console.log('tx', tx.hash);
+        console.log(`SAMPLE
+          MutableAttributeDict(
+            {
+                "args": AttributeDict(
+                    {
+                        "oldLoanId": ${args.oldLoanId},
+                        "newLoanId": ${args.newLoanId},
+                        "renegotiationId": ${args.renegotiationId},
+                        "fee": ${args.fee},
+                        "loan": AttributeDict(
+                            {
+                                "borrower": "${args.loan.borrower}",
+                                "duration": ${args.loan.duration},
+                                "nftCollateralAddress": "${args.loan.nftCollateralAddress}",
+                                "nftCollateralTokenId": ${args.loan.nftCollateralTokenId},
+                                "principalAddress": Currencies.WETH.value.address,
+                                "principalAmount": ${args.loan.principalAmount},
+                                "startTime": ${args.loan.startTime},
+                                "protocolFee": ${args.loan.protocolFee},
+                                "tranche": [${args.loan.tranche
+                                  .map(
+                                    (tranche) => `
+                                    AttributeDict(
+                                        {
+                                            "accruedInterest": ${tranche.accruedInterest},
+                                            "aprBps": ${tranche.aprBps},
+                                            "floor": ${tranche.floor},
+                                            "lender": "${tranche.lender}",
+                                            "loanId": ${tranche.loanId},
+                                            "principalAmount": ${tranche.principalAmount},
+                                            "startTime": ${tranche.startTime},
+                                        }
+                                    )`,
+                                  )
+                                  .join(',')}
+                                ],
+                            }
+                        ),
+                    }
+                ),
+                "event": "LoanRefinanced",
+                "logIndex": 2,
+                "transactionIndex": ${receipt.transactionIndex},
+                "transactionHash": HexBytes(
+                    "${receipt.transactionHash}"
+                ),
+                "address": MULTI_SOURCE_LOAN_CONTRACT_V6,
+                "blockHash": HexBytes(
+                    "${receipt.blockHash}"
+                ),
+                "blockNumber": ${receipt.blockNumber},
+                "topics": [
+                    ${events[0].topics?.map((topic) => `HexBytes("${topic}")`).join(',')},
+                ],
+            }
+        )
+        `);
+        console.log(`SAMPLE_TX
+          MutableAttributeDict(
+            {
+                "hash": HexBytes(
+                    "${receipt.transactionHash}"
+                ),
+                "nonce": ${tx.nonce},
+                "blockHash": HexBytes(
+                    "${receipt.blockHash}"
+                ),
+                "blockNumber": ${receipt.blockNumber},
+                "transactionIndex": ${receipt.transactionIndex},
+                "from": "${tx.from}",
+                "to": MULTI_SOURCE_LOAN_CONTRACT_V6,
+                "value": ${tx.value},
+                "gasPrice": ${tx.gasPrice},
+                "gas": ${tx.gas},
+                "input": "ASD",
+                "v": ${tx.v},
+                "r": HexBytes(
+                    "${tx.r}"
+                ),
+                "s": HexBytes(
+                    "${tx.s}"
+                ),
+                "type": 2,
+                "accessList": [],
+                "maxPriorityFeePerGas": ${tx.maxPriorityFeePerGas},
+                "maxFeePerGas": ${tx.maxFeePerGas},
+                "chainId": ${tx.chainId},
+            }
+        )
+        `);
+        console.log(tx.input);
         return {
           loan: {
             id: `${this.contract.address.toLowerCase()}.${args.newLoanId}`,
@@ -360,6 +576,96 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
         const events = filterLogs(receipt, filter);
         if (events.length === 0) throw new Error('Loan not refinanced');
         const args = events[0].args;
+        const tx = await this.bcClient.getTransaction({ hash: txHash });
+        console.log('tx', tx.hash);
+        console.log(`SAMPLE
+          MutableAttributeDict(
+            {
+                "args": AttributeDict(
+                    {
+                        "oldLoanId": ${args.oldLoanId},
+                        "newLoanId": ${args.newLoanId},
+                        "renegotiationId": ${args.renegotiationId},
+                        "fee": ${args.fee},
+                        "loan": AttributeDict(
+                            {
+                                "borrower": "${args.loan.borrower}",
+                                "duration": ${args.loan.duration},
+                                "nftCollateralAddress": "${args.loan.nftCollateralAddress}",
+                                "nftCollateralTokenId": ${args.loan.nftCollateralTokenId},
+                                "principalAddress": Currencies.WETH.value.address,
+                                "principalAmount": ${args.loan.principalAmount},
+                                "startTime": ${args.loan.startTime},
+                                "protocolFee": ${args.loan.protocolFee},
+                                "tranche": [${args.loan.tranche
+                                  .map(
+                                    (tranche) => `
+                                    AttributeDict(
+                                        {
+                                            "accruedInterest": ${tranche.accruedInterest},
+                                            "aprBps": ${tranche.aprBps},
+                                            "floor": ${tranche.floor},
+                                            "lender": "${tranche.lender}",
+                                            "loanId": ${tranche.loanId},
+                                            "principalAmount": ${tranche.principalAmount},
+                                            "startTime": ${tranche.startTime},
+                                        }
+                                    )`,
+                                  )
+                                  .join(',')}
+                                ],
+                            }
+                        ),
+                    }
+                ),
+                "event": "LoanRefinanced",
+                "logIndex": 2,
+                "transactionIndex": ${receipt.transactionIndex},
+                "transactionHash": HexBytes(
+                    "${receipt.transactionHash}"
+                ),
+                "address": MULTI_SOURCE_LOAN_CONTRACT_V6,
+                "blockHash": HexBytes(
+                    "${receipt.blockHash}"
+                ),
+                "blockNumber": ${receipt.blockNumber},
+            }
+        )
+        `);
+        console.log(`SAMPLE_TX
+          MutableAttributeDict(
+            {
+                "hash": HexBytes(
+                    "${receipt.transactionHash}"
+                ),
+                "nonce": ${tx.nonce},
+                "blockHash": HexBytes(
+                    "${receipt.blockHash}"
+                ),
+                "blockNumber": ${receipt.blockNumber},
+                "transactionIndex": ${receipt.transactionIndex},
+                "from": "${tx.from}",
+                "to": MULTI_SOURCE_LOAN_CONTRACT_V6,
+                "value": ${tx.value},
+                "gasPrice": ${tx.gasPrice},
+                "gas": ${tx.gas},
+                "input": "ASD",
+                "v": ${tx.v},
+                "r": HexBytes(
+                    "${tx.r}"
+                ),
+                "s": HexBytes(
+                    "${tx.s}"
+                ),
+                "type": 2,
+                "accessList": [],
+                "maxPriorityFeePerGas": ${tx.maxPriorityFeePerGas},
+                "maxFeePerGas": ${tx.maxFeePerGas},
+                "chainId": ${tx.chainId},
+            }
+        )
+        `);
+        console.log(tx.input);
         return {
           loan: {
             id: `${this.contract.address.toLowerCase()}.${args.newLoanId}`,
@@ -492,10 +798,94 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
         const sentToLiquidatorEvents = filterLogs(receipt, filterSentToLiquidator);
         if (foreclosedEvents.length === 0 && sentToLiquidatorEvents.length === 0)
           throw new Error('Loan not liquidated');
-        return {
-          ...(foreclosedEvents?.[0]?.args ?? sentToLiquidatorEvents?.[0]?.args),
-          ...receipt,
-        };
+
+        // Get liquidation started logs, emitted by the auction loan liquidator contract
+        const {
+          AuctionLoanLiquidator: { v6: allV6 },
+        } = getContracts(this.wallet.chain);
+        const allContract = getContract({
+          address: allV6,
+          abi: auctionLoanLiquidatorABIV6,
+          walletClient: this.wallet,
+          publicClient: this.bcClient,
+        });
+        const filterLiquidationStarted =
+          await allContract.createEventFilter.LoanLiquidationStarted();
+        const liquidationStartedEvents = filterLogs(receipt, filterLiquidationStarted);
+        if (liquidationStartedEvents.length) {
+          console.log(`SAMPLE
+            MutableAttributeDict(
+              {
+                  "args": MutableAttributeDict(
+                      {
+                          "collection": "${liquidationStartedEvents[0].args.collection}",
+                          "tokenId": ${liquidationStartedEvents[0].args.tokenId},
+                          "auction": MutableAttributeDict(
+                              {
+                                  "loanAddress": MULTI_SOURCE_LOAN_CONTRACT_V6,
+                                  "loanId": ${liquidationStartedEvents[0].args.auction.loanId},
+                                  "triggerFee": ${liquidationStartedEvents[0].args.auction.triggerFee},
+                                  "highestBid": ${liquidationStartedEvents[0].args.auction.highestBid},
+                                  "highestBidder": NULL_ADDRESS,
+                                  "duration": ${liquidationStartedEvents[0].args.auction.duration},
+                                  "asset": "${liquidationStartedEvents[0].args.auction.asset}",
+                                  "startTime": ${liquidationStartedEvents[0].args.auction.startTime},
+                                  "originator": "${liquidationStartedEvents[0].args.auction.originator}",
+                                  "lastBidTime": ${liquidationStartedEvents[0].args.auction.lastBidTime}}
+                              }
+                          ),
+                      }
+                  ),
+                  "event": "${liquidationStartedEvents[0].eventName}",
+                  "logIndex": 1,
+                  "transactionIndex": ${receipt.transactionIndex},
+                  "transactionHash": HexBytes(
+                      "${receipt.transactionHash}"
+                  ),
+                  "address": AUCTION_LOAN_LIQUIDATOR_CONTRACT_V6,
+                  "blockHash": HexBytes(
+                      "${receipt.blockHash}"
+                  ),
+                  "blockNumber": ${receipt.blockNumber},
+                  "topics": [
+                      ${liquidationStartedEvents[0].topics?.map((topic) => `HexBytes("${topic}")`).join(',')},
+                  ],
+              }
+          )
+          `);
+        } else if (sentToLiquidatorEvents.length !== 0) {
+          throw new Error('Loan not liquidated');
+        }
+
+        // Print corresponding msl logs
+        const events =
+          sentToLiquidatorEvents.length === 0 ? foreclosedEvents : sentToLiquidatorEvents;
+        console.log(`SAMPLE
+          MutableAttributeDict(
+            {
+                "args": AttributeDict({
+                  "loanId": ${events[0].args.loanId},
+                  // liquidator only for "LoanSentToLiquidator" event
+                  "liquidator": AUCTION_LOAN_LIQUIDATOR_CONTRACT_V6,
+                })
+                "event": "${events[0].eventName}",
+                "logIndex": 1,
+                "transactionIndex": ${receipt.transactionIndex},
+                "transactionHash": HexBytes(
+                    "${receipt.transactionHash}"
+                ),
+                "address": MULTI_SOURCE_LOAN_CONTRACT_V6,
+                "blockHash": HexBytes(
+                    "${receipt.blockHash}"
+                ),
+                "blockNumber": ${receipt.blockNumber},
+                "topics": [
+                    ${events[0].topics?.map((topic) => `HexBytes("${topic}")`).join(',')},
+                ],
+            }
+        )
+        `);
+        return { ...events?.[0]?.args, ...receipt };
       },
     };
   }

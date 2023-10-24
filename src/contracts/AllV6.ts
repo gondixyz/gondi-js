@@ -48,6 +48,37 @@ export class AllV6 extends BaseContract<typeof auctionLoanLiquidatorABIV6> {
         const filter = await this.contract.createEventFilter.BidPlaced();
         const events = filterLogs(receipt, filter);
         if (events.length === 0) throw new Error('Bid not placed');
+        const args = events[0].args;
+        console.log(`SAMPLE
+          MutableAttributeDict(
+            {
+                "args": MutableAttributeDict(
+                    {
+                      "collection": "${args.collection}",
+                      "tokenId": ${args.tokenId},
+                      "newBidder": "${args.newBidder}",
+                      "bid": ${args.bid},
+                      "loanAddress": MULTI_SOURCE_LOAN_CONTRACT_V6,
+                      "loanId": ${args.loanId},
+                    }
+                ),
+                "event": "BidPlaced",
+                "logIndex": 1,
+                "transactionIndex": ${receipt.transactionIndex},
+                "transactionHash": HexBytes(
+                    "${receipt.transactionHash}"
+                ),
+                "address": AUCTION_LOAN_LIQUIDATOR_CONTRACT_V6,
+                "blockHash": HexBytes(
+                    "${receipt.blockHash}"
+                ),
+                "blockNumber": ${receipt.blockNumber},
+                "topics": [
+                    ${events[0].topics?.map((topic) => `HexBytes("${topic}")`).join(',')},
+                ],
+            }
+        )
+        `);
         return { ...events[0].args, ...receipt };
       },
     };
