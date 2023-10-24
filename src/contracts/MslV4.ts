@@ -236,6 +236,10 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
     };
   }
 
+  getRemainingLockupSeconds() {
+    return 0;
+  }
+
   async refinanceFullLoan({
     offer,
     signature,

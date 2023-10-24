@@ -82,13 +82,17 @@ export const testNftId = await users[0].nftId({
   tokenId: testTokenId,
 });
 
+const tomorrow = new Date();
+tomorrow.setDate(tomorrow.getDate() + 1);
+const expirationTimeSeconds = Math.ceil(tomorrow.getTime() / 1_000);
+
 const offerInput = {
   principalAddress: testCurrency,
   principalAmount: 1_000_000_000_000_000_000n,
   capacity: 1_000_000_000_000_000_000n,
   fee: 0n,
   aprBps: 100n,
-  expirationTime: 1714841411n,
+  expirationTime: BigInt(expirationTimeSeconds),
   duration: 1294967295n,
   borrowerAddress: zeroAddress,
 };

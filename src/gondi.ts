@@ -480,6 +480,12 @@ export class Gondi {
     }
   }
 
+  async getRemainingLockupSeconds({ loan }: { loan: LoanV4V5 }) {
+    return this.contracts.Msl(loan.contractAddress).getRemainingLockupSeconds({
+      loan
+    });
+  }
+
   async refinanceFullLoan({
     offer,
     loan,

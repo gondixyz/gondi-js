@@ -3,7 +3,7 @@ import { Address, Hash } from "viem";
 import { filterLogs, LoanV5, OfferV5, RenegotiationV5, Wallet } from "@/blockchain";
 import { getContracts } from "@/deploys";
 import { multiSourceLoanABI as multiSourceLoanABIV5 } from "@/generated/blockchain/v5";
-import { getDomain } from "@/utils";
+import { bpsToPercentage, getDomain, millisToSeconds } from "@/utils";
 
 import { Contract } from "./Contract";
 
@@ -232,6 +232,26 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
         return { ...events[0].args, ...receipt };
       },
     };
+  }
+
+  async getRemainingLockupSeconds({ loan }: { loan: LoanV5 }) {
+    const newestSource = loan.source[0];
+    const loanEndDate = loan.startTime + loan.duration;
+    const newestSourceDuration = loanEndDate - newestSource.startTime;
+
+    const lockPeriodBps = await this.contract.read.getMinLockPeriod();
+    const lockPercentage = bpsToPercentage(lockPeriodBps);
+
+    const lockupTimeSeconds = Math.ceil(
+      Number(newestSourceDuration) * lockPercentage
+    );
+
+    const ellapsedSeconds = Math.ceil(
+      millisToSeconds(Date.now()) - Number(newestSource.startTime)
+    );
+
+    if (ellapsedSeconds >= lockupTimeSeconds) return 0;
+    return lockupTimeSeconds - ellapsedSeconds;
   }
 
   async refinanceFullLoan({
