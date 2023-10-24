@@ -21,7 +21,7 @@ async function main() {
         amount: signedOffer.principalAmount,
         nft: {
           collectionContractAddress: testCollection.contractAddress,
-          tokenId: 322n, // change this for listed nft in opensea
+          tokenId: 4548n, // change this for listed nft in opensea
           price: 78000000000000000000n,
           orderSource: "opensea.io",
         },

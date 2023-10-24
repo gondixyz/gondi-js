@@ -72,37 +72,22 @@ export class Leverage extends Contract<typeof leverageABI> {
     });
   }
 
-  async signLoan(loan: LoanV5) {
+  async signRepaymentData(data: {
+    loanId: bigint;
+    callbackData: Hash;
+    shouldDelegate: boolean;
+  }) {
     return this.wallet.signTypedData({
       domain: getDomain(this.wallet.chain.id, this.mslAddress),
-      primaryType: "Loan",
+      primaryType: "SignableRepaymentData",
       types: {
-        Loan: [
-          { name: "borrower", type: "address" },
-          { name: "nftCollateralTokenId", type: "uint256" },
-          { name: "nftCollateralAddress", type: "address" },
-          { name: "principalAddress", type: "address" },
-          { name: "principalAmount", type: "uint256" },
-          { name: "startTime", type: "uint256" },
-          { name: "duration", type: "uint256" },
-          { name: "source", type: "Source[]" },
-        ],
-        Source: [
+        SignableRepaymentData: [
           { name: "loanId", type: "uint256" },
-          { name: "lender", type: "address" },
-          { name: "principalAmount", type: "uint256" },
-          { name: "accruedInterest", type: "uint256" },
-          { name: "startTime", type: "uint256" },
-          { name: "aprBps", type: "uint256" },
-        ],
-        RefinanceProceeds: [
-          { name: "principalAmount", type: "uint256" },
-          { name: "startTime", type: "uint256" },
-          { name: "aprBps", type: "uint256" },
-          { name: "lender", type: "address" },
+          { name: "callbackData", type: "bytes" },
+          { name: "shouldDelegate", type: "bool" },
         ],
       } as const,
-      message: loan,
+      message: data,
     });
   }
 
@@ -176,16 +161,19 @@ export class Leverage extends Contract<typeof leverageABI> {
     callbackData: Hash;
     shouldDelegate: boolean;
   }) {
+
+    const repaymentData = {
+      loanId: loan.source[0].loanId,
+      callbackData,
+      shouldDelegate,
+    }
+
     const txHash = await this.safeContractWrite.sell([
       [
         {
-          data: {
-            loanId: loan.source[0].loanId,
-            callbackData,
-            shouldDelegate,
-          },
+          data: repaymentData,
           loan,
-          borrowerSignature: await this.signLoan(loan),
+          borrowerSignature: await this.signRepaymentData(repaymentData),
         },
       ],
     ]);
