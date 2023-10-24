@@ -192,6 +192,97 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
         const events = filterLogs(receipt, filter);
         if (events.length === 0) throw new Error('Loan not emitted');
         const args = events[0].args;
+
+        const tx = await this.bcClient.getTransaction({ hash: txHash });
+        console.log('tx', tx.hash);
+        console.log(`SAMPLE
+          MutableAttributeDict(
+            {
+                "args": AttributeDict(
+                    {
+                        "fee": ${args.fee},
+                        "offerId": ${args.offerId},
+                        "loanId": ${args.loanId},
+                        "loan": MutableAttributeDict(
+                            {
+                                "borrower": "${args.loan.borrower}",
+                                "duration": ${args.loan.duration},
+                                "nftCollateralAddress": "${args.loan.nftCollateralAddress}",
+                                "nftCollateralTokenId": ${args.loan.nftCollateralTokenId},
+                                "principalAddress": Currencies.WETH.value.address,
+                                "principalAmount": ${args.loan.principalAmount},
+                                "startTime": ${args.loan.startTime},
+                                "source": [${args.loan.source
+                                  .map(
+                                    (source) => `
+                                    AttributeDict(
+                                        {
+                                            "accruedInterest": ${source.accruedInterest},
+                                            "aprBps": ${source.aprBps},
+                                            "lender": "${source.lender}",
+                                            "loanId": ${source.loanId},
+                                            "principalAmount": ${source.principalAmount},
+                                            "startTime": ${source.startTime},
+                                        }
+                                    )`,
+                                  )
+                                  .join(',')}
+                                ],
+                            }
+                        ),
+                    }
+                ),
+                "event": "${events[0].eventName}",
+                "logIndex": 2,
+                "transactionIndex": ${receipt.transactionIndex},
+                "transactionHash": HexBytes(
+                    "${receipt.transactionHash}"
+                ),
+                "address": MULTI_SOURCE_LOAN_CONTRACT_V4,
+                "blockHash": HexBytes(
+                    "${receipt.blockHash}"
+                ),
+                "blockNumber": ${receipt.blockNumber},
+                "topics": [
+                    ${events[0].topics?.map((topic) => `HexBytes("${topic}")`).join(',')},
+                ],
+            }
+        )
+        `);
+        console.log(`SAMPLE_TX
+          MutableAttributeDict(
+            {
+                "hash": HexBytes(
+                    "${receipt.transactionHash}"
+                ),
+                "nonce": ${tx.nonce},
+                "blockHash": HexBytes(
+                    "${receipt.blockHash}"
+                ),
+                "blockNumber": ${receipt.blockNumber},
+                "transactionIndex": ${receipt.transactionIndex},
+                "from": "${tx.from}",
+                "to": MULTI_SOURCE_LOAN_CONTRACT_V4,
+                "value": ${tx.value},
+                "gasPrice": ${tx.gasPrice},
+                "gas": ${tx.gas},
+                "input": "ASD",
+                "v": ${tx.v},
+                "r": HexBytes(
+                    "${tx.r}"
+                ),
+                "s": HexBytes(
+                    "${tx.s}"
+                ),
+                "type": 2,
+                "accessList": [],
+                "maxPriorityFeePerGas": ${tx.maxPriorityFeePerGas},
+                "maxFeePerGas": ${tx.maxFeePerGas},
+                "chainId": ${tx.chainId},
+            }
+        )
+        `);
+        console.log(tx.input);
         return {
           loan: {
             id: `${this.contract.address.toLowerCase()}.${args.loanId}`,
@@ -291,6 +382,99 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
         const events = filterLogs(receipt, filter);
         if (events.length !== refinancings.length) throw new Error('Loan not refinanced');
 
+        const tx = await this.bcClient.getTransaction({ hash: txHash });
+        console.log('tx', tx.hash);
+        for (const event of events) {
+          console.log(`SAMPLE
+            MutableAttributeDict(
+              {
+                  "args": AttributeDict(
+                      {
+                          "fee": ${event.args.fee},
+                          "oldLoanId": ${event.args.oldLoanId},
+                          "newLoanId": ${event.args.newLoanId},
+                          "renegotiationId": ${event.args.renegotiationId},
+                          "loan": MutableAttributeDict(
+                              {
+                                  "borrower": "${event.args.loan.borrower}",
+                                  "duration": ${event.args.loan.duration},
+                                  "nftCollateralAddress": "${event.args.loan.nftCollateralAddress}",
+                                  "nftCollateralTokenId": ${event.args.loan.nftCollateralTokenId},
+                                  "principalAddress": Currencies.WETH.value.address,
+                                  "principalAmount": ${event.args.loan.principalAmount},
+                                  "startTime": ${event.args.loan.startTime},
+                                  "source": [${event.args.loan.source
+                                    .map(
+                                      (source) => `
+                                      AttributeDict(
+                                          {
+                                              "accruedInterest": ${source.accruedInterest},
+                                              "aprBps": ${source.aprBps},
+                                              "lender": "${source.lender}",
+                                              "loanId": ${source.loanId},
+                                              "principalAmount": ${source.principalAmount},
+                                              "startTime": ${source.startTime},
+                                          }
+                                      )`,
+                                    )
+                                    .join(',')}
+                                  ],
+                              }
+                          ),
+                      }
+                  ),
+                  "event": "${event.eventName}",
+                  "logIndex": 2,
+                  "transactionIndex": ${receipt.transactionIndex},
+                  "transactionHash": HexBytes(
+                      "${receipt.transactionHash}"
+                  ),
+                  "address": MULTI_SOURCE_LOAN_CONTRACT_V4,
+                  "blockHash": HexBytes(
+                      "${receipt.blockHash}"
+                  ),
+                  "blockNumber": ${receipt.blockNumber},
+                  "topics": [
+                      ${event.topics?.map((topic) => `HexBytes("${topic}")`).join(',')},
+                  ],
+              }
+          )
+          `);
+        }
+        console.log(`SAMPLE_TX
+          MutableAttributeDict(
+            {
+                "hash": HexBytes(
+                    "${receipt.transactionHash}"
+                ),
+                "nonce": ${tx.nonce},
+                "blockHash": HexBytes(
+                    "${receipt.blockHash}"
+                ),
+                "blockNumber": ${receipt.blockNumber},
+                "transactionIndex": ${receipt.transactionIndex},
+                "from": "${tx.from}",
+                "to": MULTI_SOURCE_LOAN_CONTRACT_V4,
+                "value": ${tx.value},
+                "gasPrice": ${tx.gasPrice},
+                "gas": ${tx.gas},
+                "input": "ASD",
+                "v": ${tx.v},
+                "r": HexBytes(
+                    "${tx.r}"
+                ),
+                "s": HexBytes(
+                    "${tx.s}"
+                ),
+                "type": 2,
+                "accessList": [],
+                "maxPriorityFeePerGas": ${tx.maxPriorityFeePerGas},
+                "maxFeePerGas": ${tx.maxFeePerGas},
+                "chainId": ${tx.chainId},
+            }
+        )
+        `);
+        console.log(tx.input);
         const results = events.map(({ args }) => args);
         return { results, ...receipt };
       },

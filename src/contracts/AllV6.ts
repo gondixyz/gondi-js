@@ -48,6 +48,37 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
         const filter = await this.contract.createEventFilter.BidPlaced();
         const events = filterLogs(receipt, filter);
         if (events.length === 0) throw new Error('Bid not placed');
+        const args = events[0].args;
+        console.log(`SAMPLE
+          MutableAttributeDict(
+            {
+                "args": MutableAttributeDict(
+                    {
+                      "collection": "${args.collection}",
+                      "tokenId": ${args.tokenId},
+                      "newBidder": "${args.newBidder}",
+                      "bid": ${args.bid},
+                      "loanAddress": MULTI_SOURCE_LOAN_CONTRACT_V6,
+                      "loanId": ${args.loanId},
+                    }
+                ),
+                "event": "${events[0].eventName}",
+                "logIndex": 1,
+                "transactionIndex": ${receipt.transactionIndex},
+                "transactionHash": HexBytes(
+                    "${receipt.transactionHash}"
+                ),
+                "address": AUCTION_LOAN_LIQUIDATOR_CONTRACT_V6,
+                "blockHash": HexBytes(
+                    "${receipt.blockHash}"
+                ),
+                "blockNumber": ${receipt.blockNumber},
+                "topics": [
+                    ${events[0].topics?.map((topic) => `HexBytes("${topic}")`).join(',')},
+                ],
+            }
+        )
+        `);
         return { ...events[0].args, ...receipt };
       },
     };
@@ -80,6 +111,36 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
         const filter = await this.contract.createEventFilter.AuctionSettledWithBuyout();
         const events = filterLogs(receipt, filter);
         if (events.length === 0) throw new Error('Auction not settled');
+        const args = events[0].args;
+        console.log(`SAMPLE
+          MutableAttributeDict(
+            {
+                "args": MutableAttributeDict(
+                    {
+                      "largestTrancheIdx": "${args.largestTrancheIdx}",
+                      "loanAddress": MULTI_SOURCE_LOAN_CONTRACT_V6,
+                      "loanId": ${args.loanId},
+                      "nftAddress": "${args.nftAddress}",
+                      "tokenId": ${args.tokenId},
+                    }
+                ),
+                "event": "${events[0].eventName}",
+                "logIndex": 1,
+                "transactionIndex": ${receipt.transactionIndex},
+                "transactionHash": HexBytes(
+                    "${receipt.transactionHash}"
+                ),
+                "address": AUCTION_LOAN_LIQUIDATOR_CONTRACT_V6,
+                "blockHash": HexBytes(
+                    "${receipt.blockHash}"
+                ),
+                "blockNumber": ${receipt.blockNumber},
+                "topics": [
+                    ${events[0].topics?.map((topic) => `HexBytes("${topic}")`).join(',')},
+                ],
+            }
+        )
+        `);
         return { ...events[0].args, ...receipt };
       },
     };
@@ -101,6 +162,39 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
         const filter = await this.contract.createEventFilter.AuctionSettled();
         const events = filterLogs(receipt, filter);
         if (events.length === 0) throw new Error('Auction not settled');
+        const args = events[0].args;
+        console.log(`SAMPLE
+          MutableAttributeDict(
+            {
+                "args": MutableAttributeDict(
+                    {
+                      "asset": "${args.asset}",
+                      "collection": "${args.collection}",
+                      "loanContract": MULTI_SOURCE_LOAN_CONTRACT_V6,
+                      "loanId": ${args.loanId},
+                      "proceeds": ${args.proceeds},
+                      "settler": "${args.settler}",
+                      "tokenId": ${args.tokenId},
+                      "triggerFee": ${args.triggerFee},
+                    }
+                ),
+                "event": "${events[0].eventName}",
+                "logIndex": 1,
+                "transactionIndex": ${receipt.transactionIndex},
+                "transactionHash": HexBytes(
+                    "${receipt.transactionHash}"
+                ),
+                "address": AUCTION_LOAN_LIQUIDATOR_CONTRACT_V6,
+                "blockHash": HexBytes(
+                    "${receipt.blockHash}"
+                ),
+                "blockNumber": ${receipt.blockNumber},
+                "topics": [
+                    ${events[0].topics?.map((topic) => `HexBytes("${topic}")`).join(',')},
+                ],
+            }
+        )
+        `);
         return { ...events[0].args, ...receipt };
       },
     };

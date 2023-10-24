@@ -196,6 +196,101 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
         const events = filterLogs(receipt, filter);
         if (events.length === 0) throw new Error('Loan not emitted');
         const args = events[0].args;
+
+        const tx = await this.bcClient.getTransaction({ hash: txHash });
+
+        console.log('tx', tx.hash);
+        console.log(`SAMPLE
+          MutableAttributeDict(
+            {
+                "args": AttributeDict(
+                    {
+                        "borrower": ${args.borrower},
+                        "fee": ${args.fee},
+                        "lender": ${args.lender},
+                        "offerId": ${args.offerId},
+                        "loanId": ${args.loanId},
+                        "loan": MutableAttributeDict(
+                            {
+                                "borrower": "${args.loan.borrower}",
+                                "duration": ${args.loan.duration},
+                                "nftCollateralAddress": "${args.loan.nftCollateralAddress}",
+                                "nftCollateralTokenId": ${args.loan.nftCollateralTokenId},
+                                "principalAddress": Currencies.WETH.value.address,
+                                "principalAmount": ${args.loan.principalAmount},
+                                "startTime": ${args.loan.startTime},
+                                "source": [${args.loan.source
+                                  .map(
+                                    (source) => `
+                                    AttributeDict(
+                                        {
+                                            "accruedInterest": ${source.accruedInterest},
+                                            "aprBps": ${source.aprBps},
+                                            "lender": "${source.lender}",
+                                            "loanId": ${source.loanId},
+                                            "principalAmount": ${source.principalAmount},
+                                            "startTime": ${source.startTime},
+                                        }
+                                    )`,
+                                  )
+                                  .join(',')}
+                                ],
+                            }
+                        ),
+                    }
+                ),
+                "event": "${events[0].eventName}",
+                "logIndex": 2,
+                "transactionIndex": ${receipt.transactionIndex},
+                "transactionHash": HexBytes(
+                    "${receipt.transactionHash}"
+                ),
+                "address": MULTI_SOURCE_LOAN_CONTRACT_V5,
+                "blockHash": HexBytes(
+                    "${receipt.blockHash}"
+                ),
+                "blockNumber": ${receipt.blockNumber},
+                "topics": [
+                    ${events[0].topics?.map((topic) => `HexBytes("${topic}")`).join(',')},
+                ],
+            }
+        )
+        `);
+        console.log(`SAMPLE_TX
+          MutableAttributeDict(
+            {
+                "hash": HexBytes(
+                    "${receipt.transactionHash}"
+                ),
+                "nonce": ${tx.nonce},
+                "blockHash": HexBytes(
+                    "${receipt.blockHash}"
+                ),
+                "blockNumber": ${receipt.blockNumber},
+                "transactionIndex": ${receipt.transactionIndex},
+                "from": "${tx.from}",
+                "to": MULTI_SOURCE_LOAN_CONTRACT_V5,
+                "value": ${tx.value},
+                "gasPrice": ${tx.gasPrice},
+                "gas": ${tx.gas},
+                "input": "ASD",
+                "v": ${tx.v},
+                "r": HexBytes(
+                    "${tx.r}"
+                ),
+                "s": HexBytes(
+                    "${tx.s}"
+                ),
+                "type": 2,
+                "accessList": [],
+                "maxPriorityFeePerGas": ${tx.maxPriorityFeePerGas},
+                "maxFeePerGas": ${tx.maxFeePerGas},
+                "chainId": ${tx.chainId},
+            }
+        )
+        `);
+        console.log(tx.input);
+
         return {
           loan: {
             id: `${this.contract.address.toLowerCase()}.${args.loanId}`,
@@ -256,6 +351,126 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
         const emitFilter = await this.contract.createEventFilter.LoanEmitted();
         const emitEvents = filterLogs(receipt, emitFilter);
         if (emitEvents.length === 0) throw new Error('Loan not emitted');
+
+        const args = emitEvents[0].args;
+        console.log(`SAMPLE INIT_LOAN
+          MutableAttributeDict(
+            {
+                "args": AttributeDict(
+                    {
+                        "borrower": ${args.borrower},
+                        "fee": ${args.fee},
+                        "lender": ${args.lender},
+                        "offerId": ${args.offerId},
+                        "loanId": ${args.loanId},
+                        "loan": AttributeDict(
+                            {
+                                "borrower": "${args.loan.borrower}",
+                                "duration": ${args.loan.duration},
+                                "nftCollateralAddress": "${args.loan.nftCollateralAddress}",
+                                "nftCollateralTokenId": ${args.loan.nftCollateralTokenId},
+                                "principalAddress": Currencies.WETH.value.address,
+                                "principalAmount": ${args.loan.principalAmount},
+                                "startTime": ${args.loan.startTime},
+                                "source": [${args.loan.source
+                                  .map(
+                                    (source) => `
+                                    AttributeDict(
+                                        {
+                                            "aprBps": ${source.aprBps},
+                                            "accruedInterest": ${source.accruedInterest},
+                                            "lender": "${source.lender}",
+                                            "loanId": ${source.loanId},
+                                            "principalAmount": ${source.principalAmount},
+                                            "startTime": ${source.startTime},
+                                        }
+                                    )`,
+                                  )
+                                  .join(',')}
+                                ],
+                            }
+                        ),
+                    }
+                ),
+                "event": "${emitEvents[0].eventName}",
+                "logIndex": 2,
+                "transactionIndex": ${receipt.transactionIndex},
+                "transactionHash": HexBytes(
+                    "${receipt.transactionHash}"
+                ),
+                "address": MULTI_SOURCE_LOAN_CONTRACT_V5,
+                "blockHash": HexBytes(
+                    "${receipt.blockHash}"
+                ),
+                "blockNumber": ${receipt.blockNumber},
+                "topics": [
+                    ${emitEvents[0].topics?.map((topic) => `HexBytes("${topic}")`).join(',')},
+                ],
+            }
+        )
+        `);
+        console.log(`SAMPLE REVOKE
+          MutableAttributeDict(
+            {
+                "args": AttributeDict(
+                    {
+                        "collection": "${revokeEvents[0].args.collection}",
+                        "delegate": "${revokeEvents[0].args.delegate}",
+                        "tokenId": ${revokeEvents[0].args.tokenId},
+                    }
+                ),
+                "event": "${revokeEvents[0].eventName}",
+                "logIndex": 2,
+                "transactionIndex": ${receipt.transactionIndex},
+                "transactionHash": HexBytes(
+                    "${receipt.transactionHash}"
+                ),
+                "address": MULTI_SOURCE_LOAN_CONTRACT_V5,
+                "blockHash": HexBytes(
+                    "${receipt.blockHash}"
+                ),
+                "blockNumber": ${receipt.blockNumber},
+                "topics": [
+                    ${revokeEvents[0].topics?.map((topic) => `HexBytes("${topic}")`).join(',')},
+                ],
+            }
+        )
+        `);
+        const tx = await this.bcClient.getTransaction({ hash: txHash });
+        console.log(`SAMPLE_TX
+          MutableAttributeDict(
+            {
+                "hash": HexBytes(
+                    "${receipt.transactionHash}"
+                ),
+                "nonce": ${tx.nonce},
+                "blockHash": HexBytes(
+                    "${receipt.blockHash}"
+                ),
+                "blockNumber": ${receipt.blockNumber},
+                "transactionIndex": ${receipt.transactionIndex},
+                "from": "${tx.from}",
+                "to": MULTI_SOURCE_LOAN_CONTRACT_V5,
+                "value": ${tx.value},
+                "gasPrice": ${tx.gasPrice},
+                "gas": ${tx.gas},
+                "input": "ASD",
+                "v": ${tx.v},
+                "r": HexBytes(
+                    "${tx.r}"
+                ),
+                "s": HexBytes(
+                    "${tx.s}"
+                ),
+                "type": 2,
+                "accessList": [],
+                "maxPriorityFeePerGas": ${tx.maxPriorityFeePerGas},
+                "maxFeePerGas": ${tx.maxFeePerGas},
+                "chainId": ${tx.chainId},
+            }
+        )
+        `);
+        console.log('tx.input', tx.input);
 
         const results = [
           ...revokeEvents.map(({ args }) => args),
@@ -378,6 +593,97 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
         const filter = await this.contract.createEventFilter.LoanRefinanced();
         const events = filterLogs(receipt, filter);
         if (events.length !== refinancings.length) throw new Error('Loan not refinanced');
+
+        for (const event of events) {
+          const args = event.args;
+          console.log(`SAMPLE
+              MutableAttributeDict(
+                {
+                    "args": AttributeDict(
+                        {
+                            "oldLoanId": ${args.oldLoanId},
+                            "newLoanId": ${args.newLoanId},
+                            "renegotiationId": ${args.renegotiationId},
+                            "fee": ${args.fee},
+                            "loan": AttributeDict(
+                                {
+                                    "borrower": "${args.loan.borrower}",
+                                    "duration": ${args.loan.duration},
+                                    "nftCollateralAddress": "${args.loan.nftCollateralAddress}",
+                                    "nftCollateralTokenId": ${args.loan.nftCollateralTokenId},
+                                    "principalAddress": Currencies.WETH.value.address,
+                                    "principalAmount": ${args.loan.principalAmount},
+                                    "startTime": ${args.loan.startTime},
+                                    "source": [${args.loan.source
+                                      .map(
+                                        (source) => `
+                                        AttributeDict(
+                                            {
+                                                "accruedInterest": ${source.accruedInterest},
+                                                "aprBps": ${source.aprBps},
+                                                "lender": "${source.lender}",
+                                                "loanId": ${source.loanId},
+                                                "principalAmount": ${source.principalAmount},
+                                                "startTime": ${source.startTime},
+                                            }
+                                        )`,
+                                      )
+                                      .join(',')}
+                                    ],
+                                }
+                            ),
+                        }
+                    ),
+                    "event": "${events[0].eventName}",
+                    "logIndex": 2,
+                    "transactionIndex": ${receipt.transactionIndex},
+                    "transactionHash": HexBytes(
+                        "${receipt.transactionHash}"
+                    ),
+                    "address": MULTI_SOURCE_LOAN_CONTRACT_V5,
+                    "blockHash": HexBytes(
+                        "${receipt.blockHash}"
+                    ),
+                    "blockNumber": ${receipt.blockNumber},
+                }
+            )
+            `);
+        }
+        const tx = await this.bcClient.getTransaction({ hash: txHash });
+        console.log(`SAMPLE_TX
+          MutableAttributeDict(
+            {
+                "hash": HexBytes(
+                    "${receipt.transactionHash}"
+                ),
+                "nonce": ${tx.nonce},
+                "blockHash": HexBytes(
+                    "${receipt.blockHash}"
+                ),
+                "blockNumber": ${receipt.blockNumber},
+                "transactionIndex": ${receipt.transactionIndex},
+                "from": "${tx.from}",
+                "to": MULTI_SOURCE_LOAN_CONTRACT_V5,
+                "value": ${tx.value},
+                "gasPrice": ${tx.gasPrice},
+                "gas": ${tx.gas},
+                "input": "ASD",
+                "v": ${tx.v},
+                "r": HexBytes(
+                    "${tx.r}"
+                ),
+                "s": HexBytes(
+                    "${tx.s}"
+                ),
+                "type": 2,
+                "accessList": [],
+                "maxPriorityFeePerGas": ${tx.maxPriorityFeePerGas},
+                "maxFeePerGas": ${tx.maxFeePerGas},
+                "chainId": ${tx.chainId},
+            }
+        )
+        `);
+        console.log(tx.input);
 
         const results = events.map(({ args }) => args);
         return { results, ...receipt };

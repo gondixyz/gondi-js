@@ -101,6 +101,7 @@ export const testCollectionOfferInput = {
 export const testSingleNftOfferInput = {
   ...offerInput,
   nftId: testNftId,
+  principalAmount: offerInput.principalAmount / 2n,
 };
 
 export const approveToken = async (
