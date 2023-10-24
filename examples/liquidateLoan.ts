@@ -2,8 +2,8 @@ import { Gondi } from "gondi";
 import { Address, isAddress } from "viem";
 
 import {
+  generateBlock,
   sleep,
-  testCollectionOfferInput,
   testSingleNftOfferInput,
   testTokenId,
   users,
@@ -26,14 +26,7 @@ const emitAndLiquidateLoan = async (owner: Gondi, lender: Gondi, contract?: Addr
 
   await sleep(3000);
 
-  // We need to push a new block into the blockchain
-  const collectionOfferToCancel = await lender._makeCollectionOffer(
-    testCollectionOfferInput, contract
-  );
-  await lender.cancelOffer({
-    id: collectionOfferToCancel.offerId,
-    contractAddress: collectionOfferToCancel.contractAddress,
-  });
+  await generateBlock(); // We need to push a new block into the blockchain [anvil issue]
   console.log(`loan defaulted: ${contractVersionString}`);
 
   await sleep(3000);

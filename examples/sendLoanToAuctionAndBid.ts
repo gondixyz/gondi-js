@@ -3,8 +3,8 @@ import { Address, isAddress, zeroAddress } from "viem";
 
 import {
   AUCTION_DEFAULT_DURATION,
+  generateBlock,
   sleep,
-  testCollectionOfferInput,
   testSingleNftOfferInput,
   testTokenId,
   users,
@@ -46,6 +46,10 @@ const emitLoanThenAuctionAndBid = async (owner: Gondi, lender: Gondi, refinancer
   });
   console.log(`refinance offer placed successfully: ${contractVersionString}`);
 
+  const remainingLockup = await users[0].getRemainingLockupSeconds({ loan });
+  await sleep(remainingLockup * 1_000);
+  await generateBlock(); // We need to push a new block into the blockchain [anvil issue]
+
   const refinancePartialLoan = await refinancer.refinancePartialLoan({
     offer: renegotiationOffer,
     loan,
@@ -55,14 +59,7 @@ const emitLoanThenAuctionAndBid = async (owner: Gondi, lender: Gondi, refinancer
 
   await sleep(Number(signedOffer.duration * 1000n));
 
-  // We need to push a new block into the blockchain
-  const collectionOfferToCancel = await lender._makeCollectionOffer(
-    testCollectionOfferInput, mslContract
-  );
-  await lender.cancelOffer({
-    id: collectionOfferToCancel.offerId,
-    contractAddress: collectionOfferToCancel.contractAddress,
-  });
+  await generateBlock(); // We need to push a new block into the blockchain [anvil issue]
   console.log(`loan defaulted: ${contractVersionString}`);
 
   await sleep(3000);

@@ -1,7 +1,7 @@
 import { Gondi } from "gondi";
 import { Address, isAddress } from "viem";
 
-import { sleep, testSingleNftOfferInput, testTokenId, users } from "./common";
+import { generateBlock, sleep, testSingleNftOfferInput, testTokenId, users } from "./common";
 
 const SLEEP_BUFFER = 3000;
 
@@ -45,6 +45,7 @@ const emitRenegotiateAndRepayLoan = async (lender: Gondi, borrower: Gondi, contr
 
   let renegotiatedLoan = loan;
   try {
+    await generateBlock(); // We need to push a new block into the blockchain [anvil issue]
     const renegotiation = await borrower.refinanceFullLoan({
       offer: renegotiationOffer,
       loan,

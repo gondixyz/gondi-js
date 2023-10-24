@@ -136,3 +136,12 @@ export const AUCTION_DEFAULT_DURATION = 3n * 24n * 60n * 60n;
 
 export const sleep = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
+
+export const generateBlock = async () => {
+  const collectionOfferToCancel = await users[0].makeCollectionOffer(testCollectionOfferInput);
+  await users[0].cancelOffer({
+    id: collectionOfferToCancel.offerId,
+    contractAddress: collectionOfferToCancel.contractAddress,
+  });
+  await sleep(1000);
+}
