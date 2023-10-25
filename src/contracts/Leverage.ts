@@ -108,9 +108,7 @@ export class Leverage extends Contract<typeof leverageABI> {
       expirationTime: bigint;
       amount: bigint;
       nft: {
-        collectionContractAddress: Address;
         tokenId: bigint;
-        price: bigint;
       };
       callbackData: Hash;
     }[];

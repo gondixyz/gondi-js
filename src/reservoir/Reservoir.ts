@@ -148,11 +148,13 @@ export class Reservoir {
     tokenId,
     price,
     exactOrderSource,
+    leverageAddress,
   }: {
     collectionContractAddress: Address;
     tokenId: bigint;
     price: bigint;
-    exactOrderSource?: string;
+    exactOrderSource: string;
+    leverageAddress: Address;
   }) {
     const { adaptedWallet, txData } = adaptWalletToCaptureTxData(this.wallet);
 
@@ -162,9 +164,6 @@ export class Reservoir {
       publicClient: this.mainnetClient,
     });
 
-    // We override the taker address, since reservoir requires it to be the real owner
-    // This is to make this sdk method testeable without having to mock the whole reservoir sdk
-    // On production, owner will be the taker eitherway
     const owner = await erc721.read.ownerOf([tokenId]);
 
     try {
@@ -185,7 +184,11 @@ export class Reservoir {
         precheck: false,
         options: {
           excludeEOA: true,
-          taker: owner,
+          // For opensea orders ONLY, the taker needs to be the real owner of the NFT
+          // Since we will be generating matchOrders callbackData for the seaport contract, there is no problem in setting the taker
+          // to the real owner, just to get the order id from this
+          // For other order sources, the taker needs to be the leverage contract, since it's the contract that will execute the tx
+          taker: exactOrderSource === 'opensea.io' ? owner : leverageAddress,
         },
       });
     } catch (e) {

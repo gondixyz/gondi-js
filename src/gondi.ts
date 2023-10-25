@@ -607,21 +607,29 @@ export class Gondi {
       };
     }[];
   }) {
-    const executionData = await Promise.all(
-      leverageBuyData.map(async (data) =>
-        this.reservoir.getExecutionDataForBuyToken({
+    const executionData: Awaited<
+      ReturnType<typeof this.reservoir.getCallbackDataForSellToken>
+    >[] = [];
+
+    for (const data of leverageBuyData) {
+      const executionDataForNft =
+        await this.reservoir.getExecutionDataForBuyToken({
           collectionContractAddress: data.nft.collectionContractAddress,
           tokenId: data.nft.tokenId,
           price: data.nft.price,
           exactOrderSource: data.nft.orderSource,
-        })
-      )
-    );
+        });
+      executionData.push(executionDataForNft);
+    }
 
     // We calculate the amount of eth to send to the contract
     // This is the sum of the eth to send for each nft minus the amount of weth that is being borrowed
     const ethToSend = executionData.reduce(
-      (acc, { value }, index) => acc + value - leverageBuyData[index].amount,
+      (acc, { value }, index) =>
+        acc +
+        value -
+        leverageBuyData[index].amount +
+        leverageBuyData[index].offer.fee,
       0n
     );
 
@@ -632,7 +640,7 @@ export class Gondi {
 
     return this.contracts.Leverage.buy({
       leverageBuyData: dataForLeverageContract,
-      ethToSend,
+      ethToSend: ethToSend < 0n ? 0n : ethToSend,
     });
   }
 
@@ -643,13 +651,14 @@ export class Gondi {
   }: {
     loan: LoanV5;
     price: bigint;
-    orderSource?: string;
+    orderSource: string;
   }) {
     const executionData = await this.reservoir.getCallbackDataForSellToken({
       collectionContractAddress: loan.nftCollateralAddress,
       tokenId: loan.nftCollateralTokenId,
       price,
       exactOrderSource: orderSource,
+      leverageAddress: this.contracts.Leverage.address,
     });
 
     const shouldDelegate = executionData.isSeaportCall;

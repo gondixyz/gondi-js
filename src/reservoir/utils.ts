@@ -46,7 +46,6 @@ export interface SeaportOrder {
   salt: bigint;
   conduitKey: Hash;
   counter: bigint;
-  mockedSignature?: Hash;
 }
 
 export interface SeaportOrderParameter extends SeaportOrder {
@@ -310,7 +309,7 @@ export const generateMatchOrdersExecutionData = async ({
 }) => {
   const order = {
     parameters: buildOrderParameters(askOrBid.rawData),
-    signature: askOrBid.rawData.mockedSignature ?? signature,
+    signature,
   };
 
   const inverseOrder = await generateSignedOrder(
@@ -332,7 +331,7 @@ export const generateMatchOrdersExecutionData = async ({
     side === "ask"
       ? order.parameters.consideration.reduce(
           (acc, consid) =>
-            acc + (consid.itemType === 0 ? BigInt(consid.startAmount) : 0n),
+            acc + (consid.itemType === 0 ? BigInt(consid.endAmount) : 0n),
           0n
         )
       : BigInt(askOrBid.price.netAmount.raw);
