@@ -82,9 +82,7 @@ export const users = wallets.map(
   (wallet) =>
     new Gondi({
       wallet,
-      reservoirApiKey: process.env.RESERVOIR_API_KEY,
       reservoirBaseApiUrl: "http://localhost:8080/marketplaces/reservoir",
-      infuraApiKey: process.env.INFURA_API_KEY,
     })
 );
 
@@ -121,7 +119,7 @@ export const testSingleNftOfferInput = {
   nftId: testNftId,
 };
 
-const approveTokenOnlyIfNecessary = async (user: Gondi, to: Address) => {
+const approveToken = async (user: Gondi, to: Address) => {
   const isEnoughApproved = await user.isApprovedToken({
     tokenAddress: testCurrency,
     amount: MAX_NUMBER / 2n,
@@ -136,7 +134,7 @@ const approveTokenOnlyIfNecessary = async (user: Gondi, to: Address) => {
   }
 };
 
-const approveNFTForAllOnlyIfNecessary = async (user: Gondi, to: Address) => {
+const approveNFT = async (user: Gondi, to: Address) => {
   const isApprovedAlready = await user.isApprovedNFTForAll({
     nftAddress: testCollection.contractAddress,
     to,
@@ -151,8 +149,8 @@ const approveNFTForAllOnlyIfNecessary = async (user: Gondi, to: Address) => {
 };
 
 const approveForUser = async (user: Gondi, to: Address) => {
-  await approveTokenOnlyIfNecessary(user, to);
-  await approveNFTForAllOnlyIfNecessary(user, to);
+  await approveToken(user, to);
+  await approveNFT(user, to);
 };
 
 const MULTI_SOURCE_LOAN_CONTRACT_V4 =
@@ -180,10 +178,12 @@ export const sleep = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
 export const generateBlock = async () => {
-  const collectionOfferToCancel = await users[0].makeCollectionOffer(testCollectionOfferInput);
+  const collectionOfferToCancel = await users[0].makeCollectionOffer(
+    testCollectionOfferInput
+  );
   await users[0].cancelOffer({
     id: collectionOfferToCancel.offerId,
     contractAddress: collectionOfferToCancel.contractAddress,
   });
   await sleep(1000);
-}
+};

@@ -68,6 +68,7 @@ export type Auction = Node & {
   highestBid?: Maybe<Bid>;
   id: Scalars["String"];
   loan: MultiSourceLoan;
+  originator?: Maybe<Scalars["String"]>;
   settler?: Maybe<Scalars["String"]>;
   startTime?: Maybe<Scalars["DateTime"]>;
   status: Scalars["String"];
@@ -251,7 +252,7 @@ export type CollectionOffer = Node &
     principalAddress: Scalars["Address"];
     principalAmount: Scalars["BigInt"];
     repayment: Scalars["BigInt"];
-    requiresLiquidation: Scalars["Boolean"];
+    requiresLiquidation?: Maybe<Scalars["Boolean"]>;
     signature?: Maybe<Scalars["Signature"]>;
     signerAddress?: Maybe<Scalars["Address"]>;
     statistics: CollectionOfferStatistics;
@@ -272,8 +273,8 @@ export type CollectionOfferInput = {
   offerValidators: Array<OfferValidatorInput>;
   principalAddress: Scalars["Address"];
   principalAmount: Scalars["BigInt"];
-  requiresLiquidation: Scalars["Boolean"];
-  signerAddress: Scalars["Address"];
+  requiresLiquidation?: InputMaybe<Scalars["Boolean"]>;
+  signerAddress?: InputMaybe<Scalars["Address"]>;
 };
 
 export type CollectionOfferStatistics = {
@@ -319,9 +320,9 @@ export type CollectionSignedOfferInput = {
   offerValidators: Array<OfferValidatorInput>;
   principalAddress: Scalars["Address"];
   principalAmount: Scalars["BigInt"];
-  requiresLiquidation: Scalars["Boolean"];
+  requiresLiquidation?: InputMaybe<Scalars["Boolean"]>;
   signature: Scalars["Signature"];
-  signerAddress: Scalars["Address"];
+  signerAddress?: InputMaybe<Scalars["Address"]>;
 };
 
 export type CollectionStatistics = {
@@ -890,6 +891,19 @@ export type Nft = Node & {
   url?: Maybe<Scalars["String"]>;
 };
 
+export type NftBidSample = Node & {
+  __typename?: "NFTBidSample";
+  bidderAddress: Scalars["Address"];
+  currency?: Maybe<Currency>;
+  currencyAddress: Scalars["Address"];
+  expiration: Scalars["DateTime"];
+  fees: Scalars["BigInt"];
+  id: Scalars["String"];
+  marketPlace: Scalars["String"];
+  netAmount: Scalars["BigInt"];
+  status: Scalars["String"];
+};
+
 export type NftConnection = {
   __typename?: "NFTConnection";
   edges: Array<NftEdge>;
@@ -1023,7 +1037,7 @@ export type Offer = {
   principalAddress: Scalars["Address"];
   principalAmount: Scalars["BigInt"];
   repayment: Scalars["BigInt"];
-  requiresLiquidation: Scalars["Boolean"];
+  requiresLiquidation?: Maybe<Scalars["Boolean"]>;
   signature?: Maybe<Scalars["Signature"]>;
   signerAddress?: Maybe<Scalars["Address"]>;
   status: Scalars["String"];
@@ -1196,6 +1210,7 @@ export type Query = {
   getUserPointActivities: PointActivityConnection;
   getUserPoints: Scalars["Int"];
   listAuctions: AuctionConnection;
+  listBestBidsForNft: Array<NftBidSample>;
   listBids: BidConnection;
   listCollections: CollectionConnection;
   listCollectionsWithListings: CollectionConnection;
@@ -1251,6 +1266,11 @@ export type QueryListAuctionsArgs = {
   first?: InputMaybe<Scalars["Int"]>;
   sortBy?: InputMaybe<Array<AuctionSortInput>>;
   statuses?: InputMaybe<Array<AuctionStatus>>;
+};
+
+export type QueryListBestBidsForNftArgs = {
+  currencyAddress: Scalars["String"];
+  nftId: Scalars["Int"];
 };
 
 export type QueryListBidsArgs = {
@@ -1327,6 +1347,7 @@ export type QueryListNftsFromCollectionArgs = {
   after?: InputMaybe<Scalars["String"]>;
   collectionId: Scalars["Int"];
   first?: InputMaybe<Scalars["Int"]>;
+  isListed?: InputMaybe<Scalars["Boolean"]>;
   searchTerm?: InputMaybe<Scalars["String"]>;
 };
 
@@ -1350,6 +1371,7 @@ export type QueryListOffersArgs = {
   after?: InputMaybe<Scalars["String"]>;
   borrowerAddress?: InputMaybe<Scalars["String"]>;
   collections?: InputMaybe<Array<Scalars["Int"]>>;
+  contractAddress?: InputMaybe<Scalars["Address"]>;
   currencyAddress?: InputMaybe<Scalars["Address"]>;
   first?: InputMaybe<Scalars["Int"]>;
   hidden?: InputMaybe<Scalars["Boolean"]>;
@@ -1445,7 +1467,7 @@ export type RenegotiationOfferInput = {
   loanId: Scalars["String"];
   principalAmount: Scalars["BigInt"];
   requiresLiquidation?: InputMaybe<Scalars["Boolean"]>;
-  signerAddress: Scalars["Address"];
+  signerAddress?: InputMaybe<Scalars["Address"]>;
   strictImprovement?: InputMaybe<Scalars["Boolean"]>;
   targetPrincipal: Array<Scalars["BigInt"]>;
 };
@@ -1529,7 +1551,7 @@ export type SignedRenegotiationOfferInput = {
   renegotiationId: Scalars["BigInt"];
   requiresLiquidation?: InputMaybe<Scalars["Boolean"]>;
   signature: Scalars["Signature"];
-  signerAddress: Scalars["Address"];
+  signerAddress?: InputMaybe<Scalars["Address"]>;
   strictImprovement?: InputMaybe<Scalars["Boolean"]>;
   targetPrincipal: Array<Scalars["BigInt"]>;
 };
@@ -1555,7 +1577,7 @@ export type SingleNftOffer = Node &
     principalAddress: Scalars["Address"];
     principalAmount: Scalars["BigInt"];
     repayment: Scalars["BigInt"];
-    requiresLiquidation: Scalars["Boolean"];
+    requiresLiquidation?: Maybe<Scalars["Boolean"]>;
     signature?: Maybe<Scalars["Signature"]>;
     signerAddress?: Maybe<Scalars["Address"]>;
     statistics: OfferStatistics;
@@ -1576,8 +1598,8 @@ export type SingleNftOfferInput = {
   offerValidators: Array<OfferValidatorInput>;
   principalAddress: Scalars["Address"];
   principalAmount: Scalars["BigInt"];
-  requiresLiquidation: Scalars["Boolean"];
-  signerAddress: Scalars["Address"];
+  requiresLiquidation?: InputMaybe<Scalars["Boolean"]>;
+  signerAddress?: InputMaybe<Scalars["Address"]>;
 };
 
 export type SingleNftOrder = Activity &
@@ -1617,9 +1639,9 @@ export type SingleNftSignedOfferInput = {
   offerValidators: Array<OfferValidatorInput>;
   principalAddress: Scalars["Address"];
   principalAmount: Scalars["BigInt"];
-  requiresLiquidation: Scalars["Boolean"];
+  requiresLiquidation?: InputMaybe<Scalars["Boolean"]>;
   signature: Scalars["Signature"];
-  signerAddress: Scalars["Address"];
+  signerAddress?: InputMaybe<Scalars["Address"]>;
 };
 
 export type SingleSourceLoan = Loan &
@@ -2181,7 +2203,7 @@ export type ListOffersQuery = {
             borrowerAddress?: Address | null;
             signerAddress?: Address | null;
             contractAddress: Address;
-            requiresLiquidation: boolean;
+            requiresLiquidation?: boolean | null;
             principalAddress: Address;
             principalAmount: bigint;
             aprBps: bigint;
@@ -2224,7 +2246,7 @@ export type ListOffersQuery = {
             borrowerAddress?: Address | null;
             signerAddress?: Address | null;
             contractAddress: Address;
-            requiresLiquidation: boolean;
+            requiresLiquidation?: boolean | null;
             principalAddress: Address;
             principalAmount: bigint;
             aprBps: bigint;
@@ -2315,6 +2337,7 @@ export type AuctionKeySpecifier = (
   | "highestBid"
   | "id"
   | "loan"
+  | "originator"
   | "settler"
   | "startTime"
   | "status"
@@ -2326,6 +2349,7 @@ export type AuctionFieldPolicy = {
   highestBid?: FieldPolicy<any> | FieldReadFunction<any>;
   id?: FieldPolicy<any> | FieldReadFunction<any>;
   loan?: FieldPolicy<any> | FieldReadFunction<any>;
+  originator?: FieldPolicy<any> | FieldReadFunction<any>;
   settler?: FieldPolicy<any> | FieldReadFunction<any>;
   startTime?: FieldPolicy<any> | FieldReadFunction<any>;
   status?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -3320,6 +3344,29 @@ export type NFTFieldPolicy = {
   traits?: FieldPolicy<any> | FieldReadFunction<any>;
   url?: FieldPolicy<any> | FieldReadFunction<any>;
 };
+export type NFTBidSampleKeySpecifier = (
+  | "bidderAddress"
+  | "currency"
+  | "currencyAddress"
+  | "expiration"
+  | "fees"
+  | "id"
+  | "marketPlace"
+  | "netAmount"
+  | "status"
+  | NFTBidSampleKeySpecifier
+)[];
+export type NFTBidSampleFieldPolicy = {
+  bidderAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  currency?: FieldPolicy<any> | FieldReadFunction<any>;
+  currencyAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  expiration?: FieldPolicy<any> | FieldReadFunction<any>;
+  fees?: FieldPolicy<any> | FieldReadFunction<any>;
+  id?: FieldPolicy<any> | FieldReadFunction<any>;
+  marketPlace?: FieldPolicy<any> | FieldReadFunction<any>;
+  netAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  status?: FieldPolicy<any> | FieldReadFunction<any>;
+};
 export type NFTConnectionKeySpecifier = (
   | "edges"
   | "pageInfo"
@@ -3696,6 +3743,7 @@ export type QueryKeySpecifier = (
   | "getUserPointActivities"
   | "getUserPoints"
   | "listAuctions"
+  | "listBestBidsForNft"
   | "listBids"
   | "listCollections"
   | "listCollectionsWithListings"
@@ -3725,6 +3773,7 @@ export type QueryFieldPolicy = {
   getUserPointActivities?: FieldPolicy<any> | FieldReadFunction<any>;
   getUserPoints?: FieldPolicy<any> | FieldReadFunction<any>;
   listAuctions?: FieldPolicy<any> | FieldReadFunction<any>;
+  listBestBidsForNft?: FieldPolicy<any> | FieldReadFunction<any>;
   listBids?: FieldPolicy<any> | FieldReadFunction<any>;
   listCollections?: FieldPolicy<any> | FieldReadFunction<any>;
   listCollectionsWithListings?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -4555,6 +4604,13 @@ export type StrictTypedTypePolicies = {
   NFT?: Omit<TypePolicy, "fields" | "keyFields"> & {
     keyFields?: false | NFTKeySpecifier | (() => undefined | NFTKeySpecifier);
     fields?: NFTFieldPolicy;
+  };
+  NFTBidSample?: Omit<TypePolicy, "fields" | "keyFields"> & {
+    keyFields?:
+      | false
+      | NFTBidSampleKeySpecifier
+      | (() => undefined | NFTBidSampleKeySpecifier);
+    fields?: NFTBidSampleFieldPolicy;
   };
   NFTConnection?: Omit<TypePolicy, "fields" | "keyFields"> & {
     keyFields?:

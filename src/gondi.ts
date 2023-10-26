@@ -29,19 +29,12 @@ import * as model from "@/model";
 import { millisToSeconds, SECONDS_IN_DAY } from "@/utils";
 
 import { Reservoir } from "./reservoir/Reservoir";
-import {
-  generateSignedOrder,
-  SeaportOrder,
-  SeaportOrderParameter,
-  WETH_CONTRACT_ADDRESS,
-} from "./reservoir/utils";
+import { SeaportOrder } from "./reservoir/utils";
 
 type GondiProps = {
   wallet: Wallet;
   apiClient?: ApiProps["apiClient"];
-  reservoirApiKey?: string;
   reservoirBaseApiUrl?: string;
-  infuraApiKey?: string;
 };
 
 export class Gondi {
@@ -51,13 +44,7 @@ export class Gondi {
   api: Api;
   reservoir: Reservoir;
 
-  constructor({
-    wallet,
-    apiClient,
-    reservoirApiKey,
-    reservoirBaseApiUrl,
-    infuraApiKey,
-  }: GondiProps) {
+  constructor({ wallet, apiClient, reservoirBaseApiUrl }: GondiProps) {
     this.wallet = wallet;
     this.bcClient = createPublicClient({
       transport: ({ chain: _chain }: { chain?: Chain }) =>
@@ -66,10 +53,9 @@ export class Gondi {
     this.contracts = new Contracts(this.bcClient, wallet);
     this.api = new Api({ wallet, apiClient });
     this.reservoir = new Reservoir({
-      apiKey: reservoirApiKey,
       baseApiUrl: reservoirBaseApiUrl,
-      infuraApiKey,
       wallet,
+      Seaport: this.contracts.Seaport,
     });
   }
 
@@ -225,42 +211,13 @@ export class Gondi {
     price: bigint;
     expirationTime: bigint;
   }) {
-    const orderParameters: SeaportOrderParameter = {
-      offerer: this.wallet.account.address,
-      zone: zeroAddress,
-      offer: [
-        {
-          itemType: 1,
-          token: WETH_CONTRACT_ADDRESS,
-          identifierOrCriteria: 0n,
-          startAmount: price,
-          endAmount: price,
-        },
-      ],
-      consideration: [
-        {
-          itemType: 2,
-          token: collectionContractAddress,
-          identifierOrCriteria: tokenId,
-          startAmount: 1n,
-          endAmount: 1n,
-          recipient: this.wallet.account.address,
-        },
-      ],
-      orderType: 0,
-      startTime: BigInt(Math.floor(millisToSeconds(Date.now()))),
-      endTime: expirationTime,
-      zoneHash: zeroHash,
-      salt: 0n,
-      conduitKey: zeroHash,
-      counter: 0n,
-      totalOriginalConsiderationItems: 1n,
-    };
-
-    const signature = await generateSignedOrder(this.wallet, orderParameters);
-    console.log(signature);
-
-    // TODO: call the api with { signature, parameters: orderParameters }
+    this.contracts.Seaport.generateOrderFromSaleOffer({
+      collectionContractAddress,
+      tokenId,
+      price,
+      expirationTime,
+    });
+    // TODO: Call the api to create the order
   }
 
   async cancelSaleOffer({ saleOffer }: { saleOffer: SeaportOrder }) {
@@ -779,11 +736,11 @@ export class Gondi {
 
   async isApprovedToken({
     tokenAddress,
-    amount = model.MAX_NUMBER,
+    amount,
     to = this.contracts.MultiSourceLoanV5.address,
   }: {
     tokenAddress: Address;
-    amount?: bigint;
+    amount: bigint;
     to?: Address;
   }) {
     const erc20 = this.contracts.ERC20(tokenAddress);
