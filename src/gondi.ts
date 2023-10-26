@@ -47,8 +47,8 @@ export class Gondi {
   constructor({ wallet, apiClient, reservoirBaseApiUrl }: GondiProps) {
     this.wallet = wallet;
     this.bcClient = createPublicClient({
-      transport: ({ chain: _chain }: { chain?: Chain }) =>
-        createTransport(wallet.transport),
+      chain: wallet.chain,
+      transport: () => createTransport(wallet.transport),
     });
     this.contracts = new Contracts(this.bcClient, wallet);
     this.api = new Api({ wallet, apiClient });
@@ -295,7 +295,7 @@ export class Gondi {
       ...renegotiationInput,
       fee: renegotiationInput.feeAmount,
       lender: lenderAddress ?? renegotiationInput.lenderAddress,
-      signer: signerAddress ?? renegotiationInput.signerAddress,
+      signer: signerAddress ?? renegotiationInput.signerAddress ?? zeroAddress,
       strictImprovement: false,
       loanId,
       renegotiationId,
@@ -541,7 +541,7 @@ export class Gondi {
       loanId: loan.source[0].loanId,
       strictImprovement: offer.strictImprovement ?? false,
       lender: offer.lenderAddress,
-      signer: offer.signerAddress,
+      signer: offer.signerAddress ?? zeroAddress,
       fee: offer.feeAmount,
     };
 
@@ -564,7 +564,7 @@ export class Gondi {
       loanId: loan.source[0].loanId,
       strictImprovement: offer.strictImprovement ?? false,
       lender: offer.lenderAddress,
-      signer: offer.signerAddress,
+      signer: offer.signerAddress ?? zeroAddress,
       fee: offer.feeAmount,
     };
 
