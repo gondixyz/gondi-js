@@ -33,6 +33,7 @@ import { AllV4 } from "./contracts/AllV4";
 import { AllV5 } from "./contracts/AllV5";
 import { MslV4 } from "./contracts/MslV4";
 import { MslV5 } from "./contracts/MslV5";
+import { RangeValidator } from "./contracts/RangeValidator";
 import { areSameAddress } from "./utils";
 
 export type Wallet = WalletClient<Transport, Chain, Account>;
@@ -45,6 +46,7 @@ export class Contracts {
   MultiSourceLoanV5: MslV5;
   AuctionLoanLiquidatorV4: AllV4;
   AuctionLoanLiquidatorV5: AllV5;
+  RangeValidator: RangeValidator;
 
   constructor(publicClient: PublicClient, walletClient: Wallet) {
     this.walletClient = walletClient;
@@ -54,6 +56,7 @@ export class Contracts {
     this.MultiSourceLoanV5 = new MslV5({ walletClient });
     this.AuctionLoanLiquidatorV4 = new AllV4({ walletClient });
     this.AuctionLoanLiquidatorV5 = new AllV5({ walletClient });
+    this.RangeValidator = new RangeValidator({ walletClient });
   }
 
   Msl(contractAddress: Address) {

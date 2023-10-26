@@ -74,9 +74,10 @@ if (wallets.length < 3) throw new Error("not enough wallets, need 3");
 
 export const users = wallets.map((wallet) => new Gondi({ wallet }));
 
-export const testCollectionId = (
-  await users[0].collectionId(testCollection)
-)[0];
+// export const testCollectionId = (
+//   await users[0].collectionId(testCollection)
+// )[0];
+export const testCollectionId = 2735;
 export const testNftId = await users[0].nftId({
   ...testCollection,
   tokenId: testTokenId,
@@ -123,14 +124,14 @@ const approveForUser = async (user: Gondi, to: Address) => {
 
 const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
 
-for (const [i, user] of users.entries()) {
-  console.log(`approving tokens for user ${i}`);
-  await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V5)
+// for (const [i, user] of users.entries()) {
+//   console.log(`approving tokens for user ${i}`);
+//   await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V5)
 
-  if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
-    await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V4)
-  }
-}
+//   if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
+//     await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V4)
+//   }
+// }
 
 // Assuming MSL contract default: 3 days (seconds)
 export const AUCTION_DEFAULT_DURATION = 3n * 24n * 60n * 60n;
@@ -146,3 +147,6 @@ export const generateBlock = async () => {
   });
   await sleep(1000);
 }
+
+await users[0].validateOffer()
+console.log("OK")

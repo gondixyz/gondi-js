@@ -47,6 +47,10 @@ export class Gondi {
     this.api = new Api({ wallet, apiClient });
   }
 
+  async validateOffer() {
+    return this.contracts.RangeValidator.validateOffer();
+  }
+
   async makeSingleNftOffer(offer: model.SingleNftOfferInput) {
     return await this._makeSingleNftOffer(offer);
   }
