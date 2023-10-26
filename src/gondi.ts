@@ -29,6 +29,11 @@ import * as model from "@/model";
 import { millisToSeconds, SECONDS_IN_DAY } from "@/utils";
 
 import { Reservoir } from "./reservoir/Reservoir";
+import {
+  generateSignedOrder,
+  SeaportOrderParameter,
+  WETH_CONTRACT_ADDRESS,
+} from "./reservoir/utils";
 
 type GondiProps = {
   wallet: Wallet;
@@ -206,6 +211,55 @@ export class Gondi {
       signature,
     };
     return await this.api.saveCollectionOffer(signedOffer);
+  }
+
+  async makeSaleOffer({
+    collectionContractAddress,
+    tokenId,
+    price,
+    expirationTime,
+  }: {
+    collectionContractAddress: Address;
+    tokenId: bigint;
+    price: bigint;
+    expirationTime: bigint;
+  }) {
+    const orderParameters: SeaportOrderParameter = {
+      offerer: this.wallet.account.address,
+      zone: zeroAddress,
+      offer: [
+        {
+          itemType: 1,
+          token: WETH_CONTRACT_ADDRESS,
+          identifierOrCriteria: 0n,
+          startAmount: price,
+          endAmount: price,
+        },
+      ],
+      consideration: [
+        {
+          itemType: 2,
+          token: collectionContractAddress,
+          identifierOrCriteria: tokenId,
+          startAmount: 1n,
+          endAmount: 1n,
+          recipient: this.wallet.account.address,
+        },
+      ],
+      orderType: 0,
+      startTime: BigInt(Math.floor(millisToSeconds(Date.now()))),
+      endTime: expirationTime,
+      zoneHash: zeroHash,
+      salt: 0n,
+      conduitKey: zeroHash,
+      counter: 0n,
+      totalOriginalConsiderationItems: 1n,
+    };
+
+    const signature = await generateSignedOrder(this.wallet, orderParameters);
+    console.log(signature);
+
+    // TODO: call the api with { signature, parameters: orderParameters }
   }
 
   async cancelOffer({

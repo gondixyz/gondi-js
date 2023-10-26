@@ -36,7 +36,7 @@ export interface SeaportAskOrBid {
 
 export interface SeaportOrder {
   offerer: Address;
-  zone: Hash;
+  zone: Address;
   offer: Offer[];
   consideration: Consideration[];
   orderType: number;
