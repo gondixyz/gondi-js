@@ -9,6 +9,7 @@ interface Contracts {
   AuctionLoanLiquidatorV4Address: Address;
   AuctionLoanLiquidatorV5Address: Address;
   LeverageAddress: Address;
+  SeaportAddress: Address;
 }
 
 export const getContracts = (chain: Pick<Chain, "id">): Contracts => {
@@ -21,6 +22,7 @@ export const getContracts = (chain: Pick<Chain, "id">): Contracts => {
       AuctionLoanLiquidatorV5Address:
         "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE",
       LeverageAddress: "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d",
+      SeaportAddress: "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC",
     };
   }
 
@@ -32,6 +34,7 @@ export const getContracts = (chain: Pick<Chain, "id">): Contracts => {
         "0x29C73faa2f9180ea5a7B0bEC243ebc63a5B4f280",
       AuctionLoanLiquidatorV5Address: "0xTODO", // TODO: deploy
       LeverageAddress: "0xTODO", // TODO: deploy
+      SeaportAddress: "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC",
     };
   }
 
@@ -42,5 +45,6 @@ export const getContracts = (chain: Pick<Chain, "id">): Contracts => {
       "0x237e4421C742d843Fdd96D22294D338507e17091",
     AuctionLoanLiquidatorV5Address: "0xTODO", // TODO: deploy
     LeverageAddress: "0xTODO", // TODO: deploy
+    SeaportAddress: "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC",
   };
 };

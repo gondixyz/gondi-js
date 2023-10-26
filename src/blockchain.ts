@@ -34,6 +34,7 @@ import { AllV5 } from "./contracts/AllV5";
 import { Leverage } from "./contracts/Leverage";
 import { MslV4 } from "./contracts/MslV4";
 import { MslV5 } from "./contracts/MslV5";
+import { Seaport } from "./contracts/Seaport";
 import { areSameAddress } from "./utils";
 
 export type Wallet = WalletClient<Transport, Chain, Account>;
@@ -47,6 +48,7 @@ export class Contracts {
   AuctionLoanLiquidatorV4: AllV4;
   AuctionLoanLiquidatorV5: AllV5;
   Leverage: Leverage;
+  Seaport: Seaport;
 
   constructor(publicClient: PublicClient, walletClient: Wallet) {
     this.walletClient = walletClient;
@@ -60,6 +62,7 @@ export class Contracts {
       walletClient,
       mslAddress: this.MultiSourceLoanV5.address,
     });
+    this.Seaport = new Seaport({ walletClient });
   }
 
   Msl(contractAddress: Address) {

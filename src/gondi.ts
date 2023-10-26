@@ -31,6 +31,7 @@ import { millisToSeconds, SECONDS_IN_DAY } from "@/utils";
 import { Reservoir } from "./reservoir/Reservoir";
 import {
   generateSignedOrder,
+  SeaportOrder,
   SeaportOrderParameter,
   WETH_CONTRACT_ADDRESS,
 } from "./reservoir/utils";
@@ -260,6 +261,10 @@ export class Gondi {
     console.log(signature);
 
     // TODO: call the api with { signature, parameters: orderParameters }
+  }
+
+  async cancelSaleOffer({ saleOffer }: { saleOffer: SeaportOrder }) {
+    return this.contracts.Seaport.cancel({ orderComponents: saleOffer });
   }
 
   async cancelOffer({
