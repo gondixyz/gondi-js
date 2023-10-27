@@ -31,8 +31,10 @@ import { erc20ABI, erc721ABI } from "@/generated/blockchain/v5";
 
 import { AllV4 } from "./contracts/AllV4";
 import { AllV5 } from "./contracts/AllV5";
+import { Leverage } from "./contracts/Leverage";
 import { MslV4 } from "./contracts/MslV4";
 import { MslV5 } from "./contracts/MslV5";
+import { Seaport } from "./contracts/Seaport";
 import { areSameAddress } from "./utils";
 
 export type Wallet = WalletClient<Transport, Chain, Account>;
@@ -45,6 +47,8 @@ export class Contracts {
   MultiSourceLoanV5: MslV5;
   AuctionLoanLiquidatorV4: AllV4;
   AuctionLoanLiquidatorV5: AllV5;
+  Leverage: Leverage;
+  Seaport: Seaport;
 
   constructor(publicClient: PublicClient, walletClient: Wallet) {
     this.walletClient = walletClient;
@@ -54,6 +58,11 @@ export class Contracts {
     this.MultiSourceLoanV5 = new MslV5({ walletClient });
     this.AuctionLoanLiquidatorV4 = new AllV4({ walletClient });
     this.AuctionLoanLiquidatorV5 = new AllV5({ walletClient });
+    this.Leverage = new Leverage({
+      walletClient,
+      mslAddress: this.MultiSourceLoanV5.address,
+    });
+    this.Seaport = new Seaport({ walletClient });
   }
 
   Msl(contractAddress: Address) {

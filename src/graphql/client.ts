@@ -29,6 +29,7 @@ const typesMap = {
     },
     parseValue: (raw: unknown) => {
       if (typeof raw === "string") return new Date(raw);
+      if (raw instanceof Date) return raw;
       return null;
     },
   },
@@ -39,6 +40,17 @@ const typesMap = {
     },
     parseValue: (raw: unknown) => {
       if (typeof raw === "string") return BigInt(raw);
+      return null;
+    },
+  },
+  DateTime: {
+    serialize: (parsed: unknown) => {
+      if (parsed instanceof Date) return parsed.toISOString();
+      return null;
+    },
+    parseValue: (raw: unknown) => {
+      if (typeof raw === 'string') return new Date(raw);
+      if (raw instanceof Date) return raw;
       return null;
     },
   },

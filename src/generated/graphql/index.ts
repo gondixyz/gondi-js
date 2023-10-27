@@ -29,7 +29,7 @@ export type Scalars = {
   Float: number;
   Address: Address;
   BigInt: bigint;
-  DateTime: any;
+  DateTime: Date;
   Hash: Hash;
   Hex: Hex;
   Signature: Hex;
@@ -738,7 +738,6 @@ export type MultiSourceLoan = Loan &
     offer: Offer;
     principalAddress: Scalars["Address"];
     principalAmount: Scalars["BigInt"];
-    refinanceProceeds: Array<RefinanceProceed>;
     repaidActivity?: Maybe<LoanRepaid>;
     sources: Array<Source>;
     startTime: Scalars["DateTime"];
@@ -770,7 +769,6 @@ export type MultiSourceLoanHistory = Node & {
   offerId: Scalars["String"];
   principalAddress: Scalars["String"];
   principalAmount: Scalars["BigInt"];
-  refinanceProceeds: Array<RefinanceProceedHistory>;
   sources: Array<SourceHistory>;
   startTime: Scalars["DateTime"];
 };
@@ -1349,6 +1347,7 @@ export type QueryListNftsFromCollectionArgs = {
   after?: InputMaybe<Scalars["String"]>;
   collectionId: Scalars["Int"];
   first?: InputMaybe<Scalars["Int"]>;
+  isListed?: InputMaybe<Scalars["Boolean"]>;
   searchTerm?: InputMaybe<Scalars["String"]>;
 };
 
@@ -1372,6 +1371,7 @@ export type QueryListOffersArgs = {
   after?: InputMaybe<Scalars["String"]>;
   borrowerAddress?: InputMaybe<Scalars["String"]>;
   collections?: InputMaybe<Array<Scalars["Int"]>>;
+  contractAddress?: InputMaybe<Scalars["Address"]>;
   currencyAddress?: InputMaybe<Scalars["Address"]>;
   first?: InputMaybe<Scalars["Int"]>;
   hidden?: InputMaybe<Scalars["Boolean"]>;
@@ -1409,29 +1409,6 @@ export type QueryListSourcesArgs = {
 export type RangeInput = {
   max: Scalars["Int"];
   min: Scalars["Int"];
-};
-
-export type RefinanceProceed = Node & {
-  __typename?: "RefinanceProceed";
-  aprBps: Scalars["BigInt"];
-  id: Scalars["String"];
-  lender: Scalars["String"];
-  loan: MultiSourceLoan;
-  loanId: Scalars["Int"];
-  principalAmount: Scalars["BigInt"];
-  sourceLoanId: Scalars["Int"];
-  startTime: Scalars["DateTime"];
-};
-
-export type RefinanceProceedHistory = Node & {
-  __typename?: "RefinanceProceedHistory";
-  aprBps: Scalars["BigInt"];
-  id: Scalars["String"];
-  lender: Scalars["String"];
-  loanId: Scalars["Int"];
-  principalAmount: Scalars["BigInt"];
-  sourceLoanId: Scalars["Int"];
-  startTime: Scalars["DateTime"];
 };
 
 export type RefinanceTermsFilter = {
@@ -1490,7 +1467,7 @@ export type RenegotiationOfferInput = {
   loanId: Scalars["String"];
   principalAmount: Scalars["BigInt"];
   requiresLiquidation?: InputMaybe<Scalars["Boolean"]>;
-  signerAddress: Scalars["Address"];
+  signerAddress?: InputMaybe<Scalars["Address"]>;
   strictImprovement?: InputMaybe<Scalars["Boolean"]>;
   targetPrincipal: Array<Scalars["BigInt"]>;
 };
@@ -1574,7 +1551,7 @@ export type SignedRenegotiationOfferInput = {
   renegotiationId: Scalars["BigInt"];
   requiresLiquidation?: InputMaybe<Scalars["Boolean"]>;
   signature: Scalars["Signature"];
-  signerAddress: Scalars["Address"];
+  signerAddress?: InputMaybe<Scalars["Address"]>;
   strictImprovement?: InputMaybe<Scalars["Boolean"]>;
   targetPrincipal: Array<Scalars["BigInt"]>;
 };
@@ -2051,7 +2028,7 @@ export type ListListingsQuery = {
         __typename?: "Listing";
         id: string;
         marketplaceName: MarketplaceEnum;
-        createdDate: any;
+        createdDate: Date;
         user: { __typename?: "User"; walletAddress: Address };
         nft: {
           __typename?: "NFT";
@@ -2067,6 +2044,111 @@ export type ListListingsQuery = {
             } | null;
           } | null;
         };
+      };
+    }>;
+  };
+};
+
+export type ListLoansQueryVariables = Exact<{
+  borrowerAddress?: InputMaybe<Scalars["String"]>;
+  collections?: InputMaybe<Array<Scalars["Int"]> | Scalars["Int"]>;
+  nfts?: InputMaybe<Array<Scalars["Int"]> | Scalars["Int"]>;
+  statuses?: InputMaybe<Array<LoanStatusType> | LoanStatusType>;
+  sortBy?: InputMaybe<Array<LoanSortInput> | LoanSortInput>;
+  terms?: InputMaybe<TermsFilter>;
+  orderByStatuses?: InputMaybe<Scalars["Boolean"]>;
+  loansCurrencyAddress?: InputMaybe<Scalars["Address"]>;
+  first?: InputMaybe<Scalars["Int"]>;
+  after?: InputMaybe<Scalars["String"]>;
+}>;
+
+export type ListLoansQuery = {
+  __typename?: "Query";
+  loans: {
+    __typename?: "MultiSourceLoanConnection";
+    totalCount?: number | null;
+    pageInfo: {
+      __typename?: "PageInfo";
+      endCursor?: string | null;
+      hasNextPage: boolean;
+    };
+    edges: Array<{
+      __typename?: "MultiSourceLoanEdge";
+      node: {
+        __typename?: "MultiSourceLoan";
+        id: string;
+        address: Address;
+        loanId: number;
+        timestamp: Date;
+        txHash: Hash;
+        indexInBlock: number;
+        borrowerAddress: Address;
+        principalAddress: Address;
+        startTime: Date;
+        duration: bigint;
+        status: string;
+        principalAmount: bigint;
+        blendedAprBps: number;
+        totalOriginationFee: bigint;
+        offer:
+          | {
+              __typename?: "CollectionOffer";
+              offerId: bigint;
+              signerAddress?: Address | null;
+            }
+          | {
+              __typename?: "SingleNFTOffer";
+              offerId: bigint;
+              signerAddress?: Address | null;
+            };
+        currency?: {
+          __typename?: "Currency";
+          symbol: string;
+          decimals: number;
+          address: Address;
+        } | null;
+        repaidActivity?: {
+          __typename?: "LoanRepaid";
+          totalInterest: bigint;
+          timestamp: Date;
+        } | null;
+        nft: {
+          __typename?: "NFT";
+          id: string;
+          name?: string | null;
+          tokenId: bigint;
+          nftId: string;
+          owner?: Address | null;
+          image?: {
+            __typename?: "Asset";
+            data: string;
+            cacheUrl?: string | null;
+            contentTypeMime: string;
+            accessTypeName: string;
+          } | null;
+          collection?: {
+            __typename?: "Collection";
+            id: string;
+            slug?: string | null;
+            name?: string | null;
+            nftsCount?: number | null;
+            contractData?: {
+              __typename?: "ContractData";
+              contractAddress: Address;
+            } | null;
+          } | null;
+        };
+        sources: Array<{
+          __typename?: "Source";
+          id: string;
+          loanId: string;
+          originationFee: bigint;
+          principalAmount: bigint;
+          lenderAddress: string;
+          accruedInterest: bigint;
+          aprBps: bigint;
+          startTime: Date;
+        }>;
       };
     }>;
   };
@@ -2132,7 +2214,7 @@ export type ListOffersQuery = {
             status: string;
             offerHash?: Hash | null;
             signature?: Hex | null;
-            createdDate?: any | null;
+            createdDate?: Date | null;
             repayment: bigint;
             hidden?: boolean | null;
             collection: {
@@ -2175,7 +2257,7 @@ export type ListOffersQuery = {
             status: string;
             offerHash?: Hash | null;
             signature?: Hex | null;
-            createdDate?: any | null;
+            createdDate?: Date | null;
             repayment: bigint;
             hidden?: boolean | null;
             nft: {
@@ -3099,7 +3181,6 @@ export type MultiSourceLoanKeySpecifier = (
   | "offer"
   | "principalAddress"
   | "principalAmount"
-  | "refinanceProceeds"
   | "repaidActivity"
   | "sources"
   | "startTime"
@@ -3124,7 +3205,6 @@ export type MultiSourceLoanFieldPolicy = {
   offer?: FieldPolicy<any> | FieldReadFunction<any>;
   principalAddress?: FieldPolicy<any> | FieldReadFunction<any>;
   principalAmount?: FieldPolicy<any> | FieldReadFunction<any>;
-  refinanceProceeds?: FieldPolicy<any> | FieldReadFunction<any>;
   repaidActivity?: FieldPolicy<any> | FieldReadFunction<any>;
   sources?: FieldPolicy<any> | FieldReadFunction<any>;
   startTime?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -3161,7 +3241,6 @@ export type MultiSourceLoanHistoryKeySpecifier = (
   | "offerId"
   | "principalAddress"
   | "principalAmount"
-  | "refinanceProceeds"
   | "sources"
   | "startTime"
   | MultiSourceLoanHistoryKeySpecifier
@@ -3174,7 +3253,6 @@ export type MultiSourceLoanHistoryFieldPolicy = {
   offerId?: FieldPolicy<any> | FieldReadFunction<any>;
   principalAddress?: FieldPolicy<any> | FieldReadFunction<any>;
   principalAmount?: FieldPolicy<any> | FieldReadFunction<any>;
-  refinanceProceeds?: FieldPolicy<any> | FieldReadFunction<any>;
   sources?: FieldPolicy<any> | FieldReadFunction<any>;
   startTime?: FieldPolicy<any> | FieldReadFunction<any>;
 };
@@ -3711,46 +3789,6 @@ export type QueryFieldPolicy = {
   listRenegotiations?: FieldPolicy<any> | FieldReadFunction<any>;
   listSources?: FieldPolicy<any> | FieldReadFunction<any>;
   me?: FieldPolicy<any> | FieldReadFunction<any>;
-};
-export type RefinanceProceedKeySpecifier = (
-  | "aprBps"
-  | "id"
-  | "lender"
-  | "loan"
-  | "loanId"
-  | "principalAmount"
-  | "sourceLoanId"
-  | "startTime"
-  | RefinanceProceedKeySpecifier
-)[];
-export type RefinanceProceedFieldPolicy = {
-  aprBps?: FieldPolicy<any> | FieldReadFunction<any>;
-  id?: FieldPolicy<any> | FieldReadFunction<any>;
-  lender?: FieldPolicy<any> | FieldReadFunction<any>;
-  loan?: FieldPolicy<any> | FieldReadFunction<any>;
-  loanId?: FieldPolicy<any> | FieldReadFunction<any>;
-  principalAmount?: FieldPolicy<any> | FieldReadFunction<any>;
-  sourceLoanId?: FieldPolicy<any> | FieldReadFunction<any>;
-  startTime?: FieldPolicy<any> | FieldReadFunction<any>;
-};
-export type RefinanceProceedHistoryKeySpecifier = (
-  | "aprBps"
-  | "id"
-  | "lender"
-  | "loanId"
-  | "principalAmount"
-  | "sourceLoanId"
-  | "startTime"
-  | RefinanceProceedHistoryKeySpecifier
-)[];
-export type RefinanceProceedHistoryFieldPolicy = {
-  aprBps?: FieldPolicy<any> | FieldReadFunction<any>;
-  id?: FieldPolicy<any> | FieldReadFunction<any>;
-  lender?: FieldPolicy<any> | FieldReadFunction<any>;
-  loanId?: FieldPolicy<any> | FieldReadFunction<any>;
-  principalAmount?: FieldPolicy<any> | FieldReadFunction<any>;
-  sourceLoanId?: FieldPolicy<any> | FieldReadFunction<any>;
-  startTime?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type RenegotiationKeySpecifier = (
   | "aprBps"
@@ -4745,20 +4783,6 @@ export type StrictTypedTypePolicies = {
       | (() => undefined | QueryKeySpecifier);
     fields?: QueryFieldPolicy;
   };
-  RefinanceProceed?: Omit<TypePolicy, "fields" | "keyFields"> & {
-    keyFields?:
-      | false
-      | RefinanceProceedKeySpecifier
-      | (() => undefined | RefinanceProceedKeySpecifier);
-    fields?: RefinanceProceedFieldPolicy;
-  };
-  RefinanceProceedHistory?: Omit<TypePolicy, "fields" | "keyFields"> & {
-    keyFields?:
-      | false
-      | RefinanceProceedHistoryKeySpecifier
-      | (() => undefined | RefinanceProceedHistoryKeySpecifier);
-    fields?: RefinanceProceedHistoryFieldPolicy;
-  };
   Renegotiation?: Omit<TypePolicy, "fields" | "keyFields"> & {
     keyFields?:
       | false
@@ -5086,6 +5110,102 @@ export const ListListingsDocument = gql`
     }
   }
 `;
+export const ListLoansDocument = gql`
+  query listLoans(
+    $borrowerAddress: String = ""
+    $collections: [Int!] = []
+    $nfts: [Int!]
+    $statuses: [LoanStatusType!] = []
+    $sortBy: [LoanSortInput!] = []
+    $terms: TermsFilter
+    $orderByStatuses: Boolean
+    $loansCurrencyAddress: Address
+    $first: Int = 24
+    $after: String
+  ) {
+    loans: listLoans(
+      borrowerAddress: $borrowerAddress
+      collections: $collections
+      nfts: $nfts
+      statuses: $statuses
+      sortBy: $sortBy
+      terms: $terms
+      orderByStatuses: $orderByStatuses
+      currencyAddress: $loansCurrencyAddress
+      first: $first
+      after: $after
+    ) {
+      totalCount
+      pageInfo {
+        endCursor
+        hasNextPage
+      }
+      edges {
+        node {
+          id
+          address
+          loanId
+          timestamp
+          txHash
+          indexInBlock
+          borrowerAddress
+          principalAddress
+          startTime
+          duration
+          status
+          offer {
+            offerId
+            signerAddress
+          }
+          currency {
+            symbol
+            decimals
+            address
+          }
+          repaidActivity {
+            totalInterest
+            timestamp
+          }
+          principalAmount
+          blendedAprBps
+          totalOriginationFee
+          nft {
+            id
+            name
+            tokenId
+            nftId
+            owner
+            image {
+              data
+              cacheUrl
+              contentTypeMime
+              accessTypeName
+            }
+            collection {
+              id
+              slug
+              name
+              nftsCount
+              contractData {
+                contractAddress
+              }
+            }
+          }
+          sources {
+            id
+            loanId
+            originationFee
+            principalAmount
+            lenderAddress
+            accruedInterest
+            aprBps
+            startTime
+          }
+        }
+      }
+    }
+  }
+`;
 export const NftIdByContractAddressAndTokenIdDocument = gql`
   query nftIdByContractAddressAndTokenId(
     $contractAddress: Address!
@@ -5378,6 +5498,16 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
         variables,
         options
       ) as Promise<ListListingsQuery>;
+    },
+    listLoans(
+      variables?: ListLoansQueryVariables,
+      options?: C
+    ): Promise<ListLoansQuery> {
+      return requester<ListLoansQuery, ListLoansQueryVariables>(
+        ListLoansDocument,
+        variables,
+        options
+      ) as Promise<ListLoansQuery>;
     },
     nftIdByContractAddressAndTokenId(
       variables: NftIdByContractAddressAndTokenIdQueryVariables,

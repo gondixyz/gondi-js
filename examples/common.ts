@@ -13,7 +13,13 @@ import { privateKeyToAccount } from "viem/accounts";
 dotenv.config();
 
 const RPC = process.env.RPC_URL;
-const MULTI_SOURCE_LOAN_CONTRACT_V5 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? "";
+const MULTI_SOURCE_LOAN_CONTRACT_V5 =
+  process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? "";
+const SEAPORT_CONTRACT_ADDRESS = "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC";
+const LEVERAGE_CONTRACT = process.env.LEVERAGE_ADDRESS ?? "";
+
+export const MAX_NUMBER =
+  115792089237316195423570985008687907853269984665640564039457584007913129639935n;
 
 if (!isAddress(MULTI_SOURCE_LOAN_CONTRACT_V5)) {
   throw new Error("invalid MULTI_SOURCE_LOAN_CONTRACT_V5 address");
@@ -72,7 +78,13 @@ export const wallets = process.env.TEST_WALLETS.split(",").map((privateKey) => {
 
 if (wallets.length < 3) throw new Error("not enough wallets, need 3");
 
-export const users = wallets.map((wallet) => new Gondi({ wallet }));
+export const users = wallets.map(
+  (wallet) =>
+    new Gondi({
+      wallet,
+      reservoirBaseApiUrl: "http://localhost:8080/marketplaces/reservoir",
+    })
+);
 
 export const testCollectionId = (
   await users[0].collectionId(testCollection)
@@ -107,28 +119,56 @@ export const testSingleNftOfferInput = {
   nftId: testNftId,
 };
 
-const approveForUser = async (user: Gondi, to: Address) => {
-  const approveToken = await user.approveToken({
+const approveToken = async (user: Gondi, to: Address) => {
+  const isEnoughApproved = await user.isApprovedToken({
     tokenAddress: testCurrency,
+    amount: MAX_NUMBER / 2n,
     to,
   });
-  await approveToken.waitTxInBlock();
-  const approveNFT = await user.approveNFTForAll({
+  if (!isEnoughApproved) {
+    const approveToken = await user.approveToken({
+      tokenAddress: testCurrency,
+      to,
+    });
+    await approveToken.waitTxInBlock();
+  }
+};
+
+const approveNFT = async (user: Gondi, to: Address) => {
+  const isApprovedAlready = await user.isApprovedNFTForAll({
     nftAddress: testCollection.contractAddress,
     to,
   });
-  await approveNFT.waitTxInBlock();
+  if (!isApprovedAlready) {
+    const approveNFT = await user.approveNFTForAll({
+      nftAddress: testCollection.contractAddress,
+      to,
+    });
+    await approveNFT.waitTxInBlock();
+  }
 };
 
-const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
+const approveForUser = async (user: Gondi, to: Address) => {
+  await approveToken(user, to);
+  await approveNFT(user, to);
+};
+
+const MULTI_SOURCE_LOAN_CONTRACT_V4 =
+  process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
 
 for (const [i, user] of users.entries()) {
   console.log(`approving tokens for user ${i}`);
-  await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V5)
+  await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V5);
 
   if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
-    await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V4)
+    await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V4);
   }
+
+  if (isAddress(LEVERAGE_CONTRACT)) {
+    await approveForUser(user, LEVERAGE_CONTRACT);
+  }
+
+  await approveForUser(user, SEAPORT_CONTRACT_ADDRESS);
 }
 
 // Assuming MSL contract default: 3 days (seconds)
@@ -138,10 +178,12 @@ export const sleep = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
 export const generateBlock = async () => {
-  const collectionOfferToCancel = await users[0].makeCollectionOffer(testCollectionOfferInput);
+  const collectionOfferToCancel = await users[0].makeCollectionOffer(
+    testCollectionOfferInput
+  );
   await users[0].cancelOffer({
     id: collectionOfferToCancel.offerId,
     contractAddress: collectionOfferToCancel.contractAddress,
   });
   await sleep(1000);
-}
+};

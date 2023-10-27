@@ -607,7 +607,6 @@ type MultiSourceLoan implements Loan & Node {
   offer: Offer!
   principalAddress: Address!
   principalAmount: BigInt!
-  refinanceProceeds: [RefinanceProceed!]!
   repaidActivity: LoanRepaid
   sources: [Source!]!
   startTime: DateTime!
@@ -636,7 +635,6 @@ type MultiSourceLoanHistory implements Node {
   offerId: String!
   principalAddress: String!
   principalAmount: BigInt!
-  refinanceProceeds: [RefinanceProceedHistory!]!
   sources: [SourceHistory!]!
   startTime: DateTime!
 }
@@ -1075,6 +1073,7 @@ type Query {
     after: String
     collectionId: Int!
     first: Int = 10
+    isListed: Boolean = null
     searchTerm: String = null
   ): NFTConnection!
   listNftsFromUser(
@@ -1095,6 +1094,7 @@ type Query {
     after: String
     borrowerAddress: String = null
     collections: [Int!] = null
+    contractAddress: Address = null
     currencyAddress: Address = null
     first: Int = 10
     hidden: Boolean = null
@@ -1132,27 +1132,6 @@ type Query {
 input RangeInput {
   max: Int!
   min: Int!
-}
-
-type RefinanceProceed implements Node {
-  aprBps: BigInt!
-  id: String!
-  lender: String!
-  loan: MultiSourceLoan!
-  loanId: Int!
-  principalAmount: BigInt!
-  sourceLoanId: Int!
-  startTime: DateTime!
-}
-
-type RefinanceProceedHistory implements Node {
-  aprBps: BigInt!
-  id: String!
-  lender: String!
-  loanId: Int!
-  principalAmount: BigInt!
-  sourceLoanId: Int!
-  startTime: DateTime!
 }
 
 input RefinanceTermsFilter {
@@ -1208,7 +1187,7 @@ input RenegotiationOfferInput {
   loanId: String!
   principalAmount: BigInt!
   requiresLiquidation: Boolean
-  signerAddress: Address!
+  signerAddress: Address
   strictImprovement: Boolean
   targetPrincipal: [BigInt!]!
 }
@@ -1282,7 +1261,7 @@ input SignedRenegotiationOfferInput {
   renegotiationId: BigInt!
   requiresLiquidation: Boolean
   signature: Signature!
-  signerAddress: Address!
+  signerAddress: Address
   strictImprovement: Boolean
   targetPrincipal: [BigInt!]!
 }

@@ -3,6 +3,7 @@ import { ApolloClient, NormalizedCacheObject } from "@apollo/client";
 import { Wallet, zeroAddress } from "@/blockchain";
 import {
   CollectionSignedOfferInput,
+  ListLoansQueryVariables,
   ListOffersQueryVariables,
   SingleNftSignedOfferInput,
 } from "@/generated/graphql";
@@ -123,6 +124,25 @@ export class Api {
     return {
       cursor: pageInfo.endCursor,
       offers,
+    };
+  }
+
+  async listLoans(props: ListLoansQueryVariables) {
+    const {
+      loans: { edges, pageInfo },
+    } = await this.api.listLoans({
+      ...props,
+    });
+    const loans = edges.map((edge) => {
+      const { __typename, ...node } = edge.node;
+      return {
+        type: __typename,
+        ...node,
+      };
+    });
+    return {
+      cursor: pageInfo.endCursor,
+      loans,
     };
   }
 }
