@@ -627,6 +627,7 @@ export class Gondi {
       ReturnType<typeof this.reservoir.getCallbackDataForSellToken>
     >[] = [];
 
+    // TODO: replace this with map instead of for loop
     for (const data of leverageBuyData) {
       const executionDataForNft =
         await this.reservoir.getExecutionDataForBuyToken({

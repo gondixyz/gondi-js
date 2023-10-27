@@ -1,3 +1,4 @@
+// TODO: remove this. See https://github.com/reservoirprotocol/reservoir-kit/pull/418
 // @ts-ignore
 // eslint-disable-next-line import/no-unresolved
 import { adaptViemWallet } from "@reservoir0x/reservoir-sdk";

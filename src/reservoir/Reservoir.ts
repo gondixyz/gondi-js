@@ -1,6 +1,7 @@
 import {
   createClient,
   paths,
+  // TODO: remove this. See https://github.com/reservoirprotocol/reservoir-kit/pull/418
   // @ts-ignore
   // eslint-disable-next-line import/no-unresolved
 } from "@reservoir0x/reservoir-sdk";
@@ -30,6 +31,7 @@ export class Reservoir {
   mainnetClient: PublicClient;
   wallet: Wallet;
   Seaport: Seaport;
+  // // TODO: remove this. See https://github.com/reservoirprotocol/reservoir-kit/pull/418
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   client: any;
 
