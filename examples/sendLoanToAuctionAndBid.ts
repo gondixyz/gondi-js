@@ -85,6 +85,7 @@ const emitLoanThenAuctionAndBid = async (owner: Gondi, lender: Gondi, refinancer
     auction: {
       loanAddress: refinancedLoanResult.contractAddress,
       loanId: loanId,
+      triggerFee: 100n, // Assuming trigger fee, but should be taken from event or API
       highestBid: 0n, // Auction has just started
       highestBidder: zeroAddress, // Auction has just started
       duration: AUCTION_DEFAULT_DURATION,
