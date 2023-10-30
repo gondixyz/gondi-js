@@ -23,6 +23,7 @@ const emitRefinacePartialAndRepayLoan = async (contract?: Address) => {
   console.log(`loan emitted: ${contractVersionString}`);
 
   const remainingLockup = await users[0].getRemainingLockupSeconds({ loan });
+  console.log(`remaining lockup: ${remainingLockup}`);
   await sleep(remainingLockup * 1_000 + SLEEP_BUFFER);
 
   const renegotiationOffer = await users[2].makeRefinanceOffer({
