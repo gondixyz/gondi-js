@@ -287,6 +287,15 @@ type CollectionStatistics {
   totalVolume4m: Float
 }
 
+input ConsiderationInput {
+  endAmount: Int!
+  identifierOrCriteria: Int!
+  itemType: Int!
+  recipient: Address!
+  startAmount: Int!
+  token: Address!
+}
+
 type ContractData implements Node {
   blockchain: String!
   contractAddress: Address!
@@ -607,6 +616,7 @@ type MultiSourceLoan implements Loan & Node {
   offer: Offer!
   principalAddress: Address!
   principalAmount: BigInt!
+  refinanceProceeds: [RefinanceProceed!]!
   repaidActivity: LoanRepaid
   sources: [Source!]!
   startTime: DateTime!
@@ -635,6 +645,7 @@ type MultiSourceLoanHistory implements Node {
   offerId: String!
   principalAddress: String!
   principalAmount: BigInt!
+  refinanceProceeds: [RefinanceProceedHistory!]!
   sources: [SourceHistory!]!
   startTime: DateTime!
 }
@@ -664,6 +675,7 @@ type Mutation {
     contractAddress: Address = "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
     renegotiationId: String!
   ): Renegotiation!
+  hideSaleOffer(saleOfferId: String!): NFTBidSample!
   markNotificationIdsAsRead(ids: [Int!]): Void
   markNotificationsAsRead: Void
   removeListing(nftId: Int!): Listing!
@@ -674,6 +686,7 @@ type Mutation {
   saveSignedCollectionOffer(
     signedOfferInput: CollectionSignedOfferInput!
   ): CollectionOffer!
+  saveSignedSaleOffer(signedOfferInput: SignedOrderInput!): NFTBidSample!
   saveSignedSingleNftOffer(
     signedOfferInput: SingleNFTSignedOfferInput!
   ): SingleNFTOffer!
@@ -683,6 +696,7 @@ type Mutation {
     contractAddress: Address = "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
     renegotiationId: String!
   ): Renegotiation!
+  showSaleOffer(saleOfferId: String!): NFTBidSample!
 }
 
 type NFT implements Node {
@@ -717,7 +731,19 @@ type NFTBidSample implements Node {
   id: String!
   marketPlace: String!
   netAmount: BigInt!
+  signature: Signature!
   status: String!
+}
+
+type NFTBidSampleConnection {
+  edges: [NFTBidSampleEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type NFTBidSampleEdge {
+  cursor: String!
+  node: NFTBidSample!
 }
 
 type NFTConnection {
@@ -1094,7 +1120,6 @@ type Query {
     after: String
     borrowerAddress: String = null
     collections: [Int!] = null
-    contractAddress: Address = null
     currencyAddress: Address = null
     first: Int = 10
     hidden: Boolean = null
@@ -1126,12 +1151,34 @@ type Query {
     statuses: [LoanStatusType!] = null
     terms: TermsFilter = null
   ): SourcesAndLostSourcesConnection!
+  listUserSaleOffers(after: String, first: Int = 10): NFTBidSampleConnection!
   me: User
 }
 
 input RangeInput {
   max: Int!
   min: Int!
+}
+
+type RefinanceProceed implements Node {
+  aprBps: BigInt!
+  id: String!
+  lender: String!
+  loan: MultiSourceLoan!
+  loanId: Int!
+  principalAmount: BigInt!
+  sourceLoanId: Int!
+  startTime: DateTime!
+}
+
+type RefinanceProceedHistory implements Node {
+  aprBps: BigInt!
+  id: String!
+  lender: String!
+  loanId: Int!
+  principalAmount: BigInt!
+  sourceLoanId: Int!
+  startTime: DateTime!
 }
 
 input RefinanceTermsFilter {
@@ -1206,6 +1253,14 @@ type Sale implements Activity & Node {
   txHash: Hash
 }
 
+input SaleOfferInput {
+  endAmount: Int!
+  identifierOrCriteria: Int!
+  itemType: Int!
+  startAmount: Int!
+  token: Address!
+}
+
 type Set implements Node {
   collection: Collection
   collections(after: String, first: Int! = 10): CollectionConnection!
@@ -1248,6 +1303,21 @@ type SetNftNotification implements Node & Notification {
 }
 
 scalar Signature
+
+input SignedOrderInput {
+  conduitKey: Hash!
+  consideration: [ConsiderationInput!]!
+  counter: Int!
+  endTime: Int!
+  offer: [SaleOfferInput!]!
+  offerer: Address!
+  orderType: Int!
+  salt: Int!
+  signature: Hash!
+  startTime: Int!
+  zone: Hash!
+  zoneHash: Hash!
+}
 
 input SignedRenegotiationOfferInput {
   aprBps: BigInt!

@@ -211,13 +211,34 @@ export class Gondi {
     price: bigint;
     expirationTime: bigint;
   }) {
-    this.contracts.Seaport.generateOrderFromSaleOffer({
+    const order = await this.contracts.Seaport.generateOrderFromSaleOffer({
       collectionContractAddress,
       tokenId,
       price,
       expirationTime,
     });
-    // TODO: Call the api to create the order
+    return this.api.saveSignedSaleOffer({
+      signedOfferInput: {
+        ...order.parameters,
+        signature: order.signature,
+        consideration: order.parameters.consideration.map((consid) => ({
+          ...consid,
+          startAmount: Number(consid.startAmount),
+          endAmount: Number(consid.endAmount),
+          identifierOrCriteria: Number(consid.identifierOrCriteria),
+        })),
+        counter: Number(order.parameters.counter),
+        endTime: Number(order.parameters.endTime),
+        startTime: Number(order.parameters.startTime),
+        offer: order.parameters.offer.map((offer) => ({
+          ...offer,
+          startAmount: Number(offer.startAmount),
+          endAmount: Number(offer.endAmount),
+          identifierOrCriteria: Number(offer.identifierOrCriteria),
+        })),
+        salt: Number(order.parameters.salt),
+      },
+    });
   }
 
   async cancelSaleOffer({ saleOffer }: { saleOffer: SeaportOrder }) {

@@ -33,6 +33,7 @@ export class Api {
   hideRenegotiationOffer;
   unhideOffer;
   unhideRenegotiationOffer;
+  saveSignedSaleOffer;
 
   constructor({ apiClient, wallet }: Props) {
     const gqlClient = apiClient ?? apolloClient(wallet);
@@ -55,6 +56,7 @@ export class Api {
     this.hideRenegotiationOffer = this.api.hideRenegotiationOffer;
     this.unhideOffer = this.api.unhideOffer;
     this.unhideRenegotiationOffer = this.api.unhideRenegotiationOffer;
+    this.saveSignedSaleOffer = this.api.saveSignedSaleOffer;
   }
 
   async saveSingleNftOffer(offerInput: SingleNftSignedOfferInput) {
