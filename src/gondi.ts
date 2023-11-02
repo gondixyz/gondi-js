@@ -608,6 +608,17 @@ export class Gondi {
       .settleAuction({ loan, auction });
   }
 
+  async buy(
+    tokensToBuy: {
+      collectionContractAddress: Address;
+      tokenId: bigint;
+      price: bigint;
+      orderSource: string;
+    }[]
+  ) {
+    return this.reservoir.buyTokens(tokensToBuy);
+  }
+
   async leverageBuy({
     leverageBuyData,
   }: {
