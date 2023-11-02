@@ -18,19 +18,29 @@ import {
 import { mainnet } from "viem/chains";
 
 import { Wallet } from "@/blockchain";
+import { CryptoPunks } from "@/contracts/CryptoPunks";
 import { Seaport } from "@/contracts/Seaport";
 import { getApiKeys, getCurrencies } from "@/deploys";
-import { InterruptedSendTransactionStepError } from "@/errors";
+import {
+  InterruptedCryptoPunksSendTransactionStepError,
+  InterruptedGenericSendTransactionStepError,
+  InterruptedSeaportSendTransactionStepError,
+} from "@/errors";
 import { seaportABI } from "@/generated/blockchain/seaport";
 import { erc721ABI } from "@/generated/blockchain/v5";
 
-import { adaptWalletToCaptureTxData, SeaportAskOrBid } from "./utils";
+import {
+  adaptWalletToCaptureTxData,
+  isOpensea,
+  SeaportAskOrBid,
+} from "./utils";
 
 export class Reservoir {
   baseApiUrl: string;
   mainnetClient: PublicClient;
   wallet: Wallet;
   Seaport: Seaport;
+  CryptoPunks: CryptoPunks;
   // // TODO: remove this. See https://github.com/reservoirprotocol/reservoir-kit/pull/418
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   client: any;
@@ -52,14 +62,17 @@ export class Reservoir {
     baseApiUrl = "https://api.reservoir.tools",
     wallet,
     Seaport,
+    CryptoPunks,
   }: {
     baseApiUrl?: string;
     wallet: Wallet;
     Seaport: Seaport;
+    CryptoPunks: CryptoPunks;
   }) {
     this.baseApiUrl = baseApiUrl;
     this.wallet = wallet;
     this.Seaport = Seaport;
+    this.CryptoPunks = CryptoPunks;
 
     const { reservoirApiKey, infuraApiKey } = getApiKeys();
 
@@ -197,9 +210,12 @@ export class Reservoir {
     collectionContractAddress: string;
     tokenId: bigint;
     price: bigint;
-    exactOrderSource?: string;
+    exactOrderSource: string;
   }) {
-    const adaptedWallet = adaptWalletToCaptureTxData(this.wallet);
+    const adaptedWallet = adaptWalletToCaptureTxData(
+      this.wallet,
+      exactOrderSource
+    );
     const { ETH_ADDRESS } = getCurrencies();
 
     try {
@@ -227,29 +243,44 @@ export class Reservoir {
         "This should never happen since we will throw inside the wallet tx"
       );
     } catch (err) {
-      if (err instanceof InterruptedSendTransactionStepError) {
-        const { orderId, to, callbackData, value, signature, isSeaportCall } =
-          err;
+      if (err instanceof InterruptedSeaportSendTransactionStepError) {
+        // We can save a tx by using match orders execution data
+        const { orderId, signature } = err;
 
         const apiOrder = await this.getAsk({ orderId });
 
-        if (!isSeaportCall) {
-          return {
-            callbackData: this.encodeExecutionData({
-              module: to,
-              data: callbackData,
-              value,
-            }),
-            value,
-            isSeaportCall,
-          };
-        }
-
-        // We can save a tx by using match orders execution data
         return this.generateMatchOrdersExecutionData({
           askOrBid: apiOrder,
           signature,
         });
+      } else if (
+        err instanceof InterruptedCryptoPunksSendTransactionStepError
+      ) {
+        // We need to build the calldata since reservoir doesn't directly generate it
+        const { value } = err;
+        const callData = await this.CryptoPunks.encodeBuyPunk(tokenId);
+
+        return {
+          callbackData: this.encodeExecutionData({
+            module: this.CryptoPunks.address,
+            data: callData,
+            value,
+          }),
+          value,
+          isSeaportCall: false,
+        };
+      } else if (err instanceof InterruptedGenericSendTransactionStepError) {
+        // We use the same callbackData that we get from reservoir
+        const { to, callbackData, value } = err;
+        return {
+          callbackData: this.encodeExecutionData({
+            module: to,
+            data: callbackData,
+            value,
+          }),
+          value,
+          isSeaportCall: false,
+        };
       } else {
         throw new Error(`No available offer for price ${price}`);
       }
@@ -269,7 +300,10 @@ export class Reservoir {
     exactOrderSource: string;
     leverageAddress: Address;
   }) {
-    const adaptedWallet = adaptWalletToCaptureTxData(this.wallet);
+    const adaptedWallet = adaptWalletToCaptureTxData(
+      this.wallet,
+      exactOrderSource
+    );
     const { WETH_ADDRESS } = getCurrencies();
 
     const erc721 = getContract({
@@ -302,36 +336,37 @@ export class Reservoir {
           // Since we will be generating matchOrders callbackData for the seaport contract, there is no problem in setting the taker
           // to the real owner, just to get the order id from this
           // For other order sources, the taker needs to be the leverage contract, since it's the contract that will execute the tx
-          taker: exactOrderSource === "opensea.io" ? owner : leverageAddress,
+          taker: isOpensea(exactOrderSource) ? owner : leverageAddress,
         },
       });
       throw new Error(
         "This should never happen since we will throw inside the wallet tx"
       );
     } catch (err) {
-      if (err instanceof InterruptedSendTransactionStepError) {
-        const { orderId, to, callbackData, signature, isSeaportCall } = err;
+      if (err instanceof InterruptedSeaportSendTransactionStepError) {
+        // We can save a tx by using match orders execution data
+        const { orderId, signature } = err;
 
         const apiOrder = await this.getBid({ orderId });
 
-        if (!isSeaportCall) {
-          return {
-            callbackData: this.encodeExecutionData({
-              module: to,
-              data: callbackData,
-              value: BigInt(apiOrder.price.netAmount.raw),
-            }),
-            value: BigInt(apiOrder.price.netAmount.raw),
-            isSeaportCall: false,
-          };
-        }
-
-        // We can save a tx by using match orders execution data
         return this.generateMatchOrdersExecutionData({
           askOrBid: apiOrder,
           signature,
           side: "bid",
         });
+      } else if (err instanceof InterruptedGenericSendTransactionStepError) {
+        // We use the same callbackData that we get from reservoir
+        const { orderId, to, callbackData } = err;
+        const apiOrder = await this.getBid({ orderId });
+        return {
+          callbackData: this.encodeExecutionData({
+            module: to,
+            data: callbackData,
+            value: BigInt(apiOrder.price.netAmount.raw),
+          }),
+          value: BigInt(apiOrder.price.netAmount.raw),
+          isSeaportCall: false,
+        };
       } else {
         throw new Error(`No available offer for price ${price}`);
       }
