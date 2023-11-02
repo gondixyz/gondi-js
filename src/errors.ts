@@ -1,7 +1,7 @@
 import { Address, Hash } from "viem";
 
 export class InterruptedSendTransactionStepError {
-  orderId: Hash;
+  orderId: string;
   to: Address;
   callbackData: Hash;
   value: bigint;
@@ -16,7 +16,7 @@ export class InterruptedSendTransactionStepError {
     signature,
     isSeaportCall,
   }: {
-    orderId: Hash;
+    orderId: string;
     to: Address;
     callbackData: Hash;
     value: bigint;

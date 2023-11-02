@@ -1,9 +1,7 @@
 import {
   createClient,
   paths,
-  // TODO: remove this. See https://github.com/reservoirprotocol/reservoir-kit/pull/418
-  // @ts-ignore
-  // eslint-disable-next-line import/no-unresolved
+  ReservoirClient,
 } from "@reservoir0x/reservoir-sdk";
 import {
   Address,
@@ -31,9 +29,7 @@ export class Reservoir {
   mainnetClient: PublicClient;
   wallet: Wallet;
   Seaport: Seaport;
-  // // TODO: remove this. See https://github.com/reservoirprotocol/reservoir-kit/pull/418
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  client: any;
+  client: ReservoirClient;
 
   // We don't have this abi in the generated files
   EXECUTION_INFO_ABI = [
@@ -82,26 +78,40 @@ export class Reservoir {
     });
   }
 
-  async getAsk({ orderId }: { orderId: Hash }) {
+  async getAsk({ orderId }: { orderId: string }) {
     return fetch(
       `${this.baseApiUrl}/orders/asks/v5?ids=${orderId}&includeRawData=true`
     )
-      .then((res) => res.json() as Promise<{ orders: unknown[] }>)
       .then(
-        ({ orders }) =>
-          orders[0] as paths["/asks/v5"]["get"]["responses"]["200"]["schema"]
-      );
+        (res) =>
+          res.json() as Promise<{
+            orders: paths["/orders/asks/v5"]["get"]["responses"]["200"]["schema"]["orders"];
+          }>
+      )
+      .then(({ orders }) => {
+        if (!orders) {
+          throw new Error(`Order ${orderId} is not available anymore`);
+        }
+        return orders[0];
+      });
   }
 
-  async getBid({ orderId }: { orderId: Hash }) {
+  async getBid({ orderId }: { orderId: string }) {
     return fetch(
       `${this.baseApiUrl}/orders/bids/v6?ids=${orderId}&includeRawData=true`
     )
-      .then((res) => res.json() as Promise<{ orders: unknown[] }>)
       .then(
-        ({ orders }) =>
-          orders[0] as paths["/bids/v6"]["get"]["responses"]["200"]["schema"]
-      );
+        (res) =>
+          res.json() as Promise<{
+            orders: paths["/orders/bids/v6"]["get"]["responses"]["200"]["schema"]["orders"];
+          }>
+      )
+      .then(({ orders }) => {
+        if (!orders) {
+          throw new Error(`Order ${orderId} is not available anymore`);
+        }
+        return orders[0];
+      });
   }
 
   generateExpectedCurrencyPriceObject(price: bigint, currencyAddress: Address) {
@@ -277,7 +287,7 @@ export class Reservoir {
 
         // We can save a tx by using match orders execution data
         return this.generateMatchOrdersExecutionData({
-          askOrBid: apiOrder,
+          askOrBid: apiOrder as unknown as SeaportAskOrBid,
           signature,
         });
       } else {
@@ -349,16 +359,16 @@ export class Reservoir {
             callbackData: this.encodeExecutionData({
               module: to,
               data: callbackData,
-              value: BigInt(apiOrder.price.netAmount.raw),
+              value: BigInt(apiOrder.price?.netAmount?.raw ?? 0n),
             }),
-            value: BigInt(apiOrder.price.netAmount.raw),
+            value: BigInt(apiOrder.price?.netAmount?.raw ?? 0n),
             isSeaportCall: false,
           };
         }
 
         // We can save a tx by using match orders execution data
         return this.generateMatchOrdersExecutionData({
-          askOrBid: apiOrder,
+          askOrBid: apiOrder as unknown as SeaportAskOrBid,
           signature,
           side: "bid",
         });
