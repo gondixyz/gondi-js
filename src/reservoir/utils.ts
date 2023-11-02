@@ -1,8 +1,5 @@
-// TODO: remove this. See https://github.com/reservoirprotocol/reservoir-kit/pull/418
-// @ts-ignore
-// eslint-disable-next-line import/no-unresolved
 import { adaptViemWallet } from "@reservoir0x/reservoir-sdk";
-import { Address, decodeFunctionData, Hash, Hex, zeroAddress } from "viem";
+import { Address, decodeFunctionData, Hash, zeroAddress } from "viem";
 
 import { Wallet } from "@/blockchain";
 import {
@@ -77,11 +74,11 @@ export const adaptWalletToCaptureTxData = (
     handleSendTransactionStep: async (
       _chainId: number,
       stepItem: {
-        data: { data: Hash; to: Address; value: Hex };
-        orderIds: Hash[];
-      },
+        data: { data: Hash; to: Address; value: string };
+        orderIds?: string[];
+      }
     ) => {
-      const orderId = stepItem.orderIds[0];
+      const orderId = stepItem.orderIds?.[0] ?? "";
       const to = stepItem.data.to;
       const callbackData = stepItem.data.data;
       const value = BigInt(stepItem.data.value ?? 0);
