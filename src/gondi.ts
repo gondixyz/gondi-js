@@ -56,6 +56,7 @@ export class Gondi {
       baseApiUrl: reservoirBaseApiUrl,
       wallet,
       Seaport: this.contracts.Seaport,
+      CryptoPunks: this.contracts.CryptoPunks,
     });
   }
 
@@ -630,7 +631,7 @@ export class Gondi {
         collectionContractAddress: Address;
         tokenId: bigint;
         price: bigint;
-        orderSource?: string;
+        orderSource: string;
       };
     }[];
   }) {
