@@ -211,6 +211,36 @@ export class Reservoir {
     };
   }
 
+  async buyTokens(
+    tokensToBuy: {
+      collectionContractAddress: Address;
+      tokenId: bigint;
+      price: bigint;
+      orderSource: string;
+    }[]
+  ) {
+    const { ETH_ADDRESS } = getCurrencies();
+    const totalPrice = tokensToBuy.reduce((acc, cur) => acc + cur.price, 0n);
+    return this.client?.actions.buyToken({
+      items: tokensToBuy.map((token) => ({
+        token: `${token.collectionContractAddress}:${token.tokenId}`,
+        quantity: 1,
+        exactOrderSource: token.orderSource,
+      })),
+      expectedPrice: this.generateExpectedCurrencyPriceObject(
+        totalPrice,
+        ETH_ADDRESS
+      ),
+      wallet: this.wallet,
+      onProgress: () => null,
+      precheck: false,
+      options: {
+        excludeEOA: true,
+        skipBalanceCheck: true,
+      },
+    });
+  }
+
   async getExecutionDataForBuyToken({
     collectionContractAddress,
     tokenId,
