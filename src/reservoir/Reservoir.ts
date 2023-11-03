@@ -103,7 +103,7 @@ export class Reservoir {
       )
       .then(({ orders }) => {
         if (!orders) {
-          throw new Error("");
+          throw new Error(`Order ${orderId} is not available anymore`);
         }
         return orders[0];
       });
@@ -121,7 +121,7 @@ export class Reservoir {
       )
       .then(({ orders }) => {
         if (!orders) {
-          throw new Error("");
+          throw new Error(`Order ${orderId} is not available anymore`);
         }
         return orders[0];
       });
