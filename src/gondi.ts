@@ -624,21 +624,16 @@ export class Gondi {
       };
     }[];
   }) {
-    const executionData: Awaited<
-      ReturnType<typeof this.reservoir.getCallbackDataForSellToken>
-    >[] = [];
-
-    // TODO: replace this with map instead of for loop
-    for (const data of leverageBuyData) {
-      const executionDataForNft =
-        await this.reservoir.getExecutionDataForBuyToken({
+    const executionData = await Promise.all(
+      leverageBuyData.map((data) =>
+        this.reservoir.getExecutionDataForBuyToken({
           collectionContractAddress: data.nft.collectionContractAddress,
           tokenId: data.nft.tokenId,
           price: data.nft.price,
           exactOrderSource: data.nft.orderSource,
-        });
-      executionData.push(executionDataForNft);
-    }
+        })
+      )
+    );
 
     // We calculate the amount of eth to send to the contract
     // This is the sum of the eth to send for each nft minus the amount of weth that is being borrowed
