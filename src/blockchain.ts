@@ -31,6 +31,7 @@ import { erc20ABI, erc721ABI } from "@/generated/blockchain/v5";
 
 import { AllV4 } from "./contracts/AllV4";
 import { AllV5 } from "./contracts/AllV5";
+import { CryptoPunks } from "./contracts/CryptoPunks";
 import { Leverage } from "./contracts/Leverage";
 import { MslV4 } from "./contracts/MslV4";
 import { MslV5 } from "./contracts/MslV5";
@@ -49,6 +50,7 @@ export class Contracts {
   AuctionLoanLiquidatorV5: AllV5;
   Leverage: Leverage;
   Seaport: Seaport;
+  CryptoPunks: CryptoPunks;
 
   constructor(publicClient: PublicClient, walletClient: Wallet) {
     this.walletClient = walletClient;
@@ -63,6 +65,7 @@ export class Contracts {
       mslAddress: this.MultiSourceLoanV5.address,
     });
     this.Seaport = new Seaport({ walletClient });
+    this.CryptoPunks = new CryptoPunks({ walletClient });
   }
 
   Msl(contractAddress: Address) {

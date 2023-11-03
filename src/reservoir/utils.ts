@@ -1,11 +1,12 @@
-// TODO: remove this. See https://github.com/reservoirprotocol/reservoir-kit/pull/418
-// @ts-ignore
-// eslint-disable-next-line import/no-unresolved
 import { adaptViemWallet } from "@reservoir0x/reservoir-sdk";
 import { Address, decodeFunctionData, Hash, zeroAddress } from "viem";
 
 import { Wallet } from "@/blockchain";
-import { InterruptedSendTransactionStepError } from "@/errors";
+import {
+  InterruptedCryptoPunksSendTransactionStepError,
+  InterruptedGenericSendTransactionStepError,
+  InterruptedSeaportSendTransactionStepError,
+} from "@/errors";
 import { seaportABI } from "@/generated/blockchain/seaport";
 
 export interface Offer {
@@ -57,7 +58,14 @@ export interface Fulfillment {
   considerationComponents: FulfillmentComponent[];
 }
 
-export const adaptWalletToCaptureTxData = (wallet: Wallet) => {
+export const isOpensea = (orderSource: string) => orderSource === "opensea.io";
+export const isCryptopunks = (orderSource: string) =>
+  orderSource === "cryptopunks.app";
+
+export const adaptWalletToCaptureTxData = (
+  wallet: Wallet,
+  exactOrderSource: string
+) => {
   const viemWallet = adaptViemWallet(wallet);
 
   const adaptedWallet = {
@@ -66,48 +74,47 @@ export const adaptWalletToCaptureTxData = (wallet: Wallet) => {
     handleSendTransactionStep: async (
       _chainId: number,
       stepItem: {
-        data: { data: Hash; to: Address; value: bigint };
-        orderIds: Hash[];
+        data: { data: Hash; to: Address; value: string };
+        orderIds?: string[];
       }
     ) => {
-      const orderId = stepItem.orderIds[0];
+      const orderId = stepItem.orderIds?.[0] ?? "";
       const to = stepItem.data.to;
       const callbackData = stepItem.data.data;
-      const value = stepItem.data.value;
-      let signature: Address = zeroAddress;
-      let isSeaportCall = true;
-      try {
-        // We try to decode the function data to know if it's a seaport contract call
-        // If it is, we can save a tx by using matchOrders method from the seaport contract
-        // If it's not, we use the same tx data
+      const value = BigInt(stepItem.data.value ?? 0);
+
+      if (isOpensea(exactOrderSource)) {
         const functionData = decodeFunctionData({
           abi: seaportABI,
           data: stepItem.data.data,
         });
 
-        // seaport contract calls have a signature in the argument
-        if (
-          functionData.args &&
-          functionData.args[0] &&
-          typeof functionData.args[0] === "object" &&
-          "signature" in functionData.args[0]
-        ) {
-          signature = functionData.args[0].signature;
-        }
-      } catch {
-        // We ignore the error if the tx is not a seaport tx
-        isSeaportCall = false;
-      }
+        const signature =
+          (functionData?.args?.[0] as { signature?: Hash })?.signature ??
+          zeroAddress;
 
-      // We throw the error to stop the tx, we will do it inside the Leverage contract
-      throw new InterruptedSendTransactionStepError({
-        orderId,
-        to,
-        callbackData,
-        value,
-        signature,
-        isSeaportCall,
-      });
+        throw new InterruptedSeaportSendTransactionStepError({
+          orderId,
+          to,
+          callbackData,
+          value,
+          signature,
+        });
+      } else if (isCryptopunks(exactOrderSource)) {
+        throw new InterruptedCryptoPunksSendTransactionStepError({
+          orderId,
+          to,
+          callbackData,
+          value,
+        });
+      } else {
+        throw new InterruptedGenericSendTransactionStepError({
+          orderId,
+          to,
+          callbackData,
+          value,
+        });
+      }
     },
   };
   return adaptedWallet;

@@ -10,6 +10,7 @@ interface Contracts {
   AuctionLoanLiquidatorV5Address: Address;
   LeverageAddress: Address;
   SeaportAddress: Address;
+  CryptoPunksAddress: Address;
 }
 
 interface ApiKeys {
@@ -32,8 +33,9 @@ export const getContracts = (chain: Pick<Chain, "id">): Contracts => {
         "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
       AuctionLoanLiquidatorV5Address:
         "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE",
-      LeverageAddress: "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d",
+      LeverageAddress: "0xBe6Eb4ACB499f992ba2DaC7CAD59d56DA9e0D823",
       SeaportAddress: "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC",
+      CryptoPunksAddress: "0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb",
     };
   }
 
@@ -46,6 +48,7 @@ export const getContracts = (chain: Pick<Chain, "id">): Contracts => {
       AuctionLoanLiquidatorV5Address: "0xTODO", // TODO: deploy
       LeverageAddress: "0xTODO", // TODO: deploy
       SeaportAddress: "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC",
+      CryptoPunksAddress: "0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb",
     };
   }
 
@@ -57,6 +60,7 @@ export const getContracts = (chain: Pick<Chain, "id">): Contracts => {
     AuctionLoanLiquidatorV5Address: "0xTODO", // TODO: deploy
     LeverageAddress: "0xTODO", // TODO: deploy
     SeaportAddress: "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC",
+    CryptoPunksAddress: "0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb",
   };
 };
 

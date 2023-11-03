@@ -1,12 +1,30 @@
 import { Address, Hash } from "viem";
 
 export class InterruptedSendTransactionStepError {
-  orderId: Hash;
+  orderId: string;
   to: Address;
   callbackData: Hash;
   value: bigint;
+
+  constructor({
+    orderId,
+    to,
+    callbackData,
+    value,
+  }: {
+    orderId: string;
+    to: Address;
+    callbackData: Hash;
+    value: bigint;
+  }) {
+    this.orderId = orderId;
+    this.to = to;
+    this.callbackData = callbackData;
+    this.value = value;
+  }
+}
+export class InterruptedSeaportSendTransactionStepError extends InterruptedSendTransactionStepError {
   signature: Hash;
-  isSeaportCall: boolean;
 
   constructor({
     orderId,
@@ -14,20 +32,18 @@ export class InterruptedSendTransactionStepError {
     callbackData,
     value,
     signature,
-    isSeaportCall,
   }: {
-    orderId: Hash;
+    orderId: string;
     to: Address;
     callbackData: Hash;
     value: bigint;
     signature: Hash;
-    isSeaportCall: boolean;
   }) {
-    this.orderId = orderId;
-    this.to = to;
-    this.callbackData = callbackData;
-    this.value = value;
+    super({ orderId, to, callbackData, value });
     this.signature = signature;
-    this.isSeaportCall = isSeaportCall;
   }
 }
+
+export class InterruptedCryptoPunksSendTransactionStepError extends InterruptedSendTransactionStepError {}
+
+export class InterruptedGenericSendTransactionStepError extends InterruptedSendTransactionStepError {}
