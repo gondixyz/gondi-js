@@ -168,8 +168,10 @@ export class Seaport extends Contract<typeof seaportABI> {
       consideration: [
         {
           itemType: 2,
-          token: collectionContractAddress,
-          identifierOrCriteria: tokenId,
+          token:
+            nativeBid.nft.collection?.contractData?.contractAddress ??
+            zeroAddress,
+          identifierOrCriteria: nativeBid.nft.tokenId,
           startAmount: 1n,
           endAmount: 1n,
           recipient: nativeBid.bidderAddress,
