@@ -68,10 +68,11 @@ export type Auction = Node & {
   highestBid?: Maybe<Bid>;
   id: Scalars["String"];
   loan: MultiSourceLoan;
-  originator?: Maybe<Scalars["String"]>;
-  settler?: Maybe<Scalars["String"]>;
+  originator?: Maybe<Scalars["Address"]>;
+  settler?: Maybe<Scalars["Address"]>;
   startTime?: Maybe<Scalars["DateTime"]>;
   status: Scalars["String"];
+  triggerFee?: Maybe<Scalars["BigInt"]>;
 };
 
 export type AuctionBidConfirmationNotification = Node &
@@ -334,6 +335,7 @@ export type CollectionStatistics = {
   lastSale?: Maybe<Sale>;
   nftsCount?: Maybe<Scalars["Float"]>;
   numberOfOffers: Scalars["Float"];
+  numberOfPricedNfts: Scalars["Int"];
   percentageInOutstandingLoans: Scalars["Float"];
   repaymentRate: Scalars["Float"];
   totalLoanVolume: Scalars["BigInt"];
@@ -388,6 +390,15 @@ export type CollectionStatisticsTotalLoanVolume3mArgs = {
 
 export type CollectionStatisticsTotalLoanVolume4mArgs = {
   currencyAddress: Scalars["Address"];
+};
+
+export type ConsiderationInput = {
+  endAmount: Scalars["BigInt"];
+  identifierOrCriteria: Scalars["BigInt"];
+  itemType: Scalars["Int"];
+  recipient: Scalars["Address"];
+  startAmount: Scalars["BigInt"];
+  token: Scalars["Address"];
 };
 
 export type ContractData = Node & {
@@ -783,16 +794,19 @@ export type Mutation = {
   hideAllOffers: Array<Offer>;
   hideOffer: Offer;
   hideRenegotiation: Renegotiation;
+  hideSaleOffer: NftBidSample;
   markNotificationIdsAsRead?: Maybe<Scalars["Void"]>;
   markNotificationsAsRead?: Maybe<Scalars["Void"]>;
   removeListing: Listing;
   removeListingsOfNftsFromUser?: Maybe<Scalars["Void"]>;
   saveRenegotiationSignedOffer: Renegotiation;
   saveSignedCollectionOffer: CollectionOffer;
+  saveSignedSaleOffer: NftBidSample;
   saveSignedSingleNftOffer: SingleNftOffer;
   setReferral?: Maybe<Scalars["Void"]>;
   showOffer: Offer;
   showRenegotiation: Renegotiation;
+  showSaleOffer: NftBidSample;
 };
 
 export type MutationAddListingsOfNftsFromUserArgs = {
@@ -833,6 +847,10 @@ export type MutationHideRenegotiationArgs = {
   renegotiationId: Scalars["String"];
 };
 
+export type MutationHideSaleOfferArgs = {
+  saleOfferId: Scalars["String"];
+};
+
 export type MutationMarkNotificationIdsAsReadArgs = {
   ids?: InputMaybe<Array<Scalars["Int"]>>;
 };
@@ -847,6 +865,10 @@ export type MutationSaveRenegotiationSignedOfferArgs = {
 
 export type MutationSaveSignedCollectionOfferArgs = {
   signedOfferInput: CollectionSignedOfferInput;
+};
+
+export type MutationSaveSignedSaleOfferArgs = {
+  signedOfferInput: SignedOrderInput;
 };
 
 export type MutationSaveSignedSingleNftOfferArgs = {
@@ -865,6 +887,10 @@ export type MutationShowOfferArgs = {
 export type MutationShowRenegotiationArgs = {
   contractAddress?: InputMaybe<Scalars["Address"]>;
   renegotiationId: Scalars["String"];
+};
+
+export type MutationShowSaleOfferArgs = {
+  saleOfferId: Scalars["String"];
 };
 
 export type Nft = Node & {
@@ -898,10 +924,27 @@ export type NftBidSample = Node & {
   currencyAddress: Scalars["Address"];
   expiration: Scalars["DateTime"];
   fees: Scalars["BigInt"];
+  hidden: Scalars["Boolean"];
   id: Scalars["String"];
   marketPlace: Scalars["String"];
   netAmount: Scalars["BigInt"];
+  nft: Nft;
+  signature: Scalars["Signature"];
+  startTime: Scalars["DateTime"];
   status: Scalars["String"];
+};
+
+export type NftBidSampleConnection = {
+  __typename?: "NFTBidSampleConnection";
+  edges: Array<NftBidSampleEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]>;
+};
+
+export type NftBidSampleEdge = {
+  __typename?: "NFTBidSampleEdge";
+  cursor: Scalars["String"];
+  node: NftBidSample;
 };
 
 export type NftConnection = {
@@ -1219,12 +1262,13 @@ export type Query = {
   listLoanActivities: LoanActivityConnection;
   listLoans: MultiSourceLoanConnection;
   listNftOffersAndRenegotiations: OffersAndRenegotiationsConnection;
-  listNftsFromCollection: NftConnection;
+  listNftsFromCollections: NftConnection;
   listNftsFromUser: NftConnection;
   listNotifications: NotificationConnection;
   listOffers: OfferConnection;
   listRenegotiations: RenegotiationConnection;
   listSources: SourcesAndLostSourcesConnection;
+  listUserSaleOffers: NftBidSampleConnection;
   me?: Maybe<User>;
 };
 
@@ -1323,6 +1367,7 @@ export type QueryListLoansArgs = {
   after?: InputMaybe<Scalars["String"]>;
   borrowerAddress?: InputMaybe<Scalars["String"]>;
   collections?: InputMaybe<Array<Scalars["Int"]>>;
+  contractAddresses?: InputMaybe<Array<Scalars["Address"]>>;
   currencyAddress?: InputMaybe<Scalars["Address"]>;
   first?: Scalars["Int"];
   nfts?: InputMaybe<Array<Scalars["Int"]>>;
@@ -1343,12 +1388,14 @@ export type QueryListNftOffersAndRenegotiationsArgs = {
   terms?: InputMaybe<TermsFilter>;
 };
 
-export type QueryListNftsFromCollectionArgs = {
+export type QueryListNftsFromCollectionsArgs = {
   after?: InputMaybe<Scalars["String"]>;
-  collectionId: Scalars["Int"];
+  collections: Array<Scalars["Int"]>;
   first?: InputMaybe<Scalars["Int"]>;
-  isListed?: InputMaybe<Scalars["Boolean"]>;
+  onlyListed?: InputMaybe<Scalars["Boolean"]>;
   searchTerm?: InputMaybe<Scalars["String"]>;
+  traitRanges?: InputMaybe<Array<TraitRangeOptionsInput>>;
+  traits?: InputMaybe<Array<TraitKeyValueOptionsInput>>;
 };
 
 export type QueryListNftsFromUserArgs = {
@@ -1404,6 +1451,11 @@ export type QueryListSourcesArgs = {
   sortBy?: InputMaybe<Array<SourceSortInput>>;
   statuses?: InputMaybe<Array<LoanStatusType>>;
   terms?: InputMaybe<TermsFilter>;
+};
+
+export type QueryListUserSaleOffersArgs = {
+  after?: InputMaybe<Scalars["String"]>;
+  first?: InputMaybe<Scalars["Int"]>;
 };
 
 export type RangeInput = {
@@ -1489,6 +1541,14 @@ export type Sale = Activity &
     txHash?: Maybe<Scalars["Hash"]>;
   };
 
+export type SaleOfferInput = {
+  endAmount: Scalars["BigInt"];
+  identifierOrCriteria: Scalars["BigInt"];
+  itemType: Scalars["Int"];
+  startAmount: Scalars["BigInt"];
+  token: Scalars["Address"];
+};
+
 export type Set = Node & {
   __typename?: "Set";
   collection?: Maybe<Collection>;
@@ -1538,6 +1598,21 @@ export type SetNftNotification = Node &
     set: Set;
     user: User;
   };
+
+export type SignedOrderInput = {
+  conduitKey: Scalars["Hash"];
+  consideration: Array<ConsiderationInput>;
+  counter: Scalars["BigInt"];
+  endTime: Scalars["BigInt"];
+  offer: Array<SaleOfferInput>;
+  offerer: Scalars["Address"];
+  orderType: Scalars["Int"];
+  salt: Scalars["BigInt"];
+  signature: Scalars["Signature"];
+  startTime: Scalars["BigInt"];
+  zone: Scalars["Address"];
+  zoneHash: Scalars["Hash"];
+};
 
 export type SignedRenegotiationOfferInput = {
   aprBps: Scalars["BigInt"];
@@ -1749,6 +1824,16 @@ export type Trait = {
   value: Scalars["String"];
 };
 
+export type TraitKeyValueOptionsInput = {
+  key: Scalars["String"];
+  values: Array<Scalars["String"]>;
+};
+
+export type TraitRangeOptionsInput = {
+  key: Scalars["String"];
+  range: RangeInput;
+};
+
 export type UnderfundedOfferNotification = Node &
   Notification & {
     __typename?: "UnderfundedOfferNotification";
@@ -1787,6 +1872,34 @@ export type User = Node & {
 export type UserFilter = {
   onlyOrExclude: Scalars["Boolean"];
   userId: Scalars["Int"];
+};
+
+export type SaleOfferInfoFragment = {
+  __typename?: "NFTBidSample";
+  id: string;
+  netAmount: bigint;
+  status: string;
+  marketPlace: string;
+  fees: bigint;
+  bidderAddress: Address;
+  expiration: Date;
+  startTime: Date;
+  hidden: boolean;
+  signature: Hex;
+  currencyAddress: Address;
+  nft: {
+    __typename?: "NFT";
+    id: string;
+    tokenId: bigint;
+    collection?: {
+      __typename?: "Collection";
+      id: string;
+      contractData?: {
+        __typename?: "ContractData";
+        contractAddress: Address;
+      } | null;
+    } | null;
+  };
 };
 
 export type ListNftMutationVariables = Exact<{
@@ -1989,6 +2102,69 @@ export type UnhideRenegotiationOfferMutationVariables = Exact<{
 export type UnhideRenegotiationOfferMutation = {
   __typename?: "Mutation";
   showRenegotiation: { __typename?: "Renegotiation"; id: string };
+};
+
+export type HideSaleOfferMutationVariables = Exact<{
+  id: Scalars["String"];
+}>;
+
+export type HideSaleOfferMutation = {
+  __typename?: "Mutation";
+  hideSaleOffer: { __typename?: "NFTBidSample"; id: string };
+};
+
+export type ListBestBidsForNftQueryVariables = Exact<{
+  nftId: Scalars["Int"];
+  currencyAddress: Scalars["String"];
+}>;
+
+export type ListBestBidsForNftQuery = {
+  __typename?: "Query";
+  bids: Array<{
+    __typename?: "NFTBidSample";
+    id: string;
+    netAmount: bigint;
+    status: string;
+    marketPlace: string;
+    fees: bigint;
+    bidderAddress: Address;
+    expiration: Date;
+    startTime: Date;
+    hidden: boolean;
+    signature: Hex;
+    currencyAddress: Address;
+    nft: {
+      __typename?: "NFT";
+      id: string;
+      tokenId: bigint;
+      collection?: {
+        __typename?: "Collection";
+        id: string;
+        contractData?: {
+          __typename?: "ContractData";
+          contractAddress: Address;
+        } | null;
+      } | null;
+    };
+  }>;
+};
+
+export type SaveSignedSaleOfferMutationVariables = Exact<{
+  offer: SignedOrderInput;
+}>;
+
+export type SaveSignedSaleOfferMutation = {
+  __typename?: "Mutation";
+  offer: { __typename?: "NFTBidSample"; id: string; status: string };
+};
+
+export type UnhideSaleOfferMutationVariables = Exact<{
+  id: Scalars["String"];
+}>;
+
+export type UnhideSaleOfferMutation = {
+  __typename?: "Mutation";
+  showSaleOffer: { __typename?: "NFTBidSample"; id: string };
 };
 
 export type CollectionsIdByContractAddressQueryVariables = Exact<{
@@ -2341,6 +2517,7 @@ export type AuctionKeySpecifier = (
   | "settler"
   | "startTime"
   | "status"
+  | "triggerFee"
   | AuctionKeySpecifier
 )[];
 export type AuctionFieldPolicy = {
@@ -2353,6 +2530,7 @@ export type AuctionFieldPolicy = {
   settler?: FieldPolicy<any> | FieldReadFunction<any>;
   startTime?: FieldPolicy<any> | FieldReadFunction<any>;
   status?: FieldPolicy<any> | FieldReadFunction<any>;
+  triggerFee?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type AuctionBidConfirmationNotificationKeySpecifier = (
   | "auction"
@@ -2660,6 +2838,7 @@ export type CollectionStatisticsKeySpecifier = (
   | "lastSale"
   | "nftsCount"
   | "numberOfOffers"
+  | "numberOfPricedNfts"
   | "percentageInOutstandingLoans"
   | "repaymentRate"
   | "totalLoanVolume"
@@ -2688,6 +2867,7 @@ export type CollectionStatisticsFieldPolicy = {
   lastSale?: FieldPolicy<any> | FieldReadFunction<any>;
   nftsCount?: FieldPolicy<any> | FieldReadFunction<any>;
   numberOfOffers?: FieldPolicy<any> | FieldReadFunction<any>;
+  numberOfPricedNfts?: FieldPolicy<any> | FieldReadFunction<any>;
   percentageInOutstandingLoans?: FieldPolicy<any> | FieldReadFunction<any>;
   repaymentRate?: FieldPolicy<any> | FieldReadFunction<any>;
   totalLoanVolume?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -3265,16 +3445,19 @@ export type MutationKeySpecifier = (
   | "hideAllOffers"
   | "hideOffer"
   | "hideRenegotiation"
+  | "hideSaleOffer"
   | "markNotificationIdsAsRead"
   | "markNotificationsAsRead"
   | "removeListing"
   | "removeListingsOfNftsFromUser"
   | "saveRenegotiationSignedOffer"
   | "saveSignedCollectionOffer"
+  | "saveSignedSaleOffer"
   | "saveSignedSingleNftOffer"
   | "setReferral"
   | "showOffer"
   | "showRenegotiation"
+  | "showSaleOffer"
   | MutationKeySpecifier
 )[];
 export type MutationFieldPolicy = {
@@ -3288,16 +3471,19 @@ export type MutationFieldPolicy = {
   hideAllOffers?: FieldPolicy<any> | FieldReadFunction<any>;
   hideOffer?: FieldPolicy<any> | FieldReadFunction<any>;
   hideRenegotiation?: FieldPolicy<any> | FieldReadFunction<any>;
+  hideSaleOffer?: FieldPolicy<any> | FieldReadFunction<any>;
   markNotificationIdsAsRead?: FieldPolicy<any> | FieldReadFunction<any>;
   markNotificationsAsRead?: FieldPolicy<any> | FieldReadFunction<any>;
   removeListing?: FieldPolicy<any> | FieldReadFunction<any>;
   removeListingsOfNftsFromUser?: FieldPolicy<any> | FieldReadFunction<any>;
   saveRenegotiationSignedOffer?: FieldPolicy<any> | FieldReadFunction<any>;
   saveSignedCollectionOffer?: FieldPolicy<any> | FieldReadFunction<any>;
+  saveSignedSaleOffer?: FieldPolicy<any> | FieldReadFunction<any>;
   saveSignedSingleNftOffer?: FieldPolicy<any> | FieldReadFunction<any>;
   setReferral?: FieldPolicy<any> | FieldReadFunction<any>;
   showOffer?: FieldPolicy<any> | FieldReadFunction<any>;
   showRenegotiation?: FieldPolicy<any> | FieldReadFunction<any>;
+  showSaleOffer?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type NFTKeySpecifier = (
   | "activeLoan"
@@ -3350,9 +3536,13 @@ export type NFTBidSampleKeySpecifier = (
   | "currencyAddress"
   | "expiration"
   | "fees"
+  | "hidden"
   | "id"
   | "marketPlace"
   | "netAmount"
+  | "nft"
+  | "signature"
+  | "startTime"
   | "status"
   | NFTBidSampleKeySpecifier
 )[];
@@ -3362,10 +3552,34 @@ export type NFTBidSampleFieldPolicy = {
   currencyAddress?: FieldPolicy<any> | FieldReadFunction<any>;
   expiration?: FieldPolicy<any> | FieldReadFunction<any>;
   fees?: FieldPolicy<any> | FieldReadFunction<any>;
+  hidden?: FieldPolicy<any> | FieldReadFunction<any>;
   id?: FieldPolicy<any> | FieldReadFunction<any>;
   marketPlace?: FieldPolicy<any> | FieldReadFunction<any>;
   netAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  nft?: FieldPolicy<any> | FieldReadFunction<any>;
+  signature?: FieldPolicy<any> | FieldReadFunction<any>;
+  startTime?: FieldPolicy<any> | FieldReadFunction<any>;
   status?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type NFTBidSampleConnectionKeySpecifier = (
+  | "edges"
+  | "pageInfo"
+  | "totalCount"
+  | NFTBidSampleConnectionKeySpecifier
+)[];
+export type NFTBidSampleConnectionFieldPolicy = {
+  edges?: FieldPolicy<any> | FieldReadFunction<any>;
+  pageInfo?: FieldPolicy<any> | FieldReadFunction<any>;
+  totalCount?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type NFTBidSampleEdgeKeySpecifier = (
+  | "cursor"
+  | "node"
+  | NFTBidSampleEdgeKeySpecifier
+)[];
+export type NFTBidSampleEdgeFieldPolicy = {
+  cursor?: FieldPolicy<any> | FieldReadFunction<any>;
+  node?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type NFTConnectionKeySpecifier = (
   | "edges"
@@ -3752,12 +3966,13 @@ export type QueryKeySpecifier = (
   | "listLoanActivities"
   | "listLoans"
   | "listNftOffersAndRenegotiations"
-  | "listNftsFromCollection"
+  | "listNftsFromCollections"
   | "listNftsFromUser"
   | "listNotifications"
   | "listOffers"
   | "listRenegotiations"
   | "listSources"
+  | "listUserSaleOffers"
   | "me"
   | QueryKeySpecifier
 )[];
@@ -3782,12 +3997,13 @@ export type QueryFieldPolicy = {
   listLoanActivities?: FieldPolicy<any> | FieldReadFunction<any>;
   listLoans?: FieldPolicy<any> | FieldReadFunction<any>;
   listNftOffersAndRenegotiations?: FieldPolicy<any> | FieldReadFunction<any>;
-  listNftsFromCollection?: FieldPolicy<any> | FieldReadFunction<any>;
+  listNftsFromCollections?: FieldPolicy<any> | FieldReadFunction<any>;
   listNftsFromUser?: FieldPolicy<any> | FieldReadFunction<any>;
   listNotifications?: FieldPolicy<any> | FieldReadFunction<any>;
   listOffers?: FieldPolicy<any> | FieldReadFunction<any>;
   listRenegotiations?: FieldPolicy<any> | FieldReadFunction<any>;
   listSources?: FieldPolicy<any> | FieldReadFunction<any>;
+  listUserSaleOffers?: FieldPolicy<any> | FieldReadFunction<any>;
   me?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type RenegotiationKeySpecifier = (
@@ -4612,6 +4828,20 @@ export type StrictTypedTypePolicies = {
       | (() => undefined | NFTBidSampleKeySpecifier);
     fields?: NFTBidSampleFieldPolicy;
   };
+  NFTBidSampleConnection?: Omit<TypePolicy, "fields" | "keyFields"> & {
+    keyFields?:
+      | false
+      | NFTBidSampleConnectionKeySpecifier
+      | (() => undefined | NFTBidSampleConnectionKeySpecifier);
+    fields?: NFTBidSampleConnectionFieldPolicy;
+  };
+  NFTBidSampleEdge?: Omit<TypePolicy, "fields" | "keyFields"> & {
+    keyFields?:
+      | false
+      | NFTBidSampleEdgeKeySpecifier
+      | (() => undefined | NFTBidSampleEdgeKeySpecifier);
+    fields?: NFTBidSampleEdgeFieldPolicy;
+  };
   NFTConnection?: Omit<TypePolicy, "fields" | "keyFields"> & {
     keyFields?:
       | false
@@ -4906,7 +5136,31 @@ export type StrictTypedTypePolicies = {
   };
 };
 export type TypedTypePolicies = StrictTypedTypePolicies & TypePolicies;
-
+export const SaleOfferInfoFragmentDoc = gql`
+  fragment SaleOfferInfo on NFTBidSample {
+    id
+    netAmount
+    status
+    marketPlace
+    fees
+    bidderAddress
+    expiration
+    startTime
+    hidden
+    signature
+    currencyAddress
+    nft {
+      id
+      tokenId
+      collection {
+        id
+        contractData {
+          contractAddress
+        }
+      }
+    }
+  }
+`;
 export const ListNftDocument = gql`
   mutation listNft($nftId: Int!) {
     addOrUpdateListing(nftId: $nftId) {
@@ -5048,6 +5302,36 @@ export const SaveRenegotiationOfferDocument = gql`
 export const UnhideRenegotiationOfferDocument = gql`
   mutation unhideRenegotiationOffer($id: String!, $contractAddress: Address!) {
     showRenegotiation(renegotiationId: $id, contractAddress: $contractAddress) {
+      id
+    }
+  }
+`;
+export const HideSaleOfferDocument = gql`
+  mutation hideSaleOffer($id: String!) {
+    hideSaleOffer(saleOfferId: $id) {
+      id
+    }
+  }
+`;
+export const ListBestBidsForNftDocument = gql`
+  query listBestBidsForNft($nftId: Int!, $currencyAddress: String!) {
+    bids: listBestBidsForNft(nftId: $nftId, currencyAddress: $currencyAddress) {
+      ...SaleOfferInfo
+    }
+  }
+  ${SaleOfferInfoFragmentDoc}
+`;
+export const SaveSignedSaleOfferDocument = gql`
+  mutation saveSignedSaleOffer($offer: SignedOrderInput!) {
+    offer: saveSignedSaleOffer(signedOfferInput: $offer) {
+      id
+      status
+    }
+  }
+`;
+export const UnhideSaleOfferDocument = gql`
+  mutation unhideSaleOffer($id: String!) {
+    showSaleOffer(saleOfferId: $id) {
       id
     }
   }
@@ -5462,6 +5746,55 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
         variables,
         options
       ) as Promise<UnhideRenegotiationOfferMutation>;
+    },
+    hideSaleOffer(
+      variables: HideSaleOfferMutationVariables,
+      options?: C
+    ): Promise<HideSaleOfferMutation> {
+      return requester<HideSaleOfferMutation, HideSaleOfferMutationVariables>(
+        HideSaleOfferDocument,
+        variables,
+        options
+      ) as Promise<HideSaleOfferMutation>;
+    },
+    listBestBidsForNft(
+      variables: ListBestBidsForNftQueryVariables,
+      options?: C
+    ): Promise<ListBestBidsForNftQuery> {
+      return requester<
+        ListBestBidsForNftQuery,
+        ListBestBidsForNftQueryVariables
+      >(
+        ListBestBidsForNftDocument,
+        variables,
+        options
+      ) as Promise<ListBestBidsForNftQuery>;
+    },
+    saveSignedSaleOffer(
+      variables: SaveSignedSaleOfferMutationVariables,
+      options?: C
+    ): Promise<SaveSignedSaleOfferMutation> {
+      return requester<
+        SaveSignedSaleOfferMutation,
+        SaveSignedSaleOfferMutationVariables
+      >(
+        SaveSignedSaleOfferDocument,
+        variables,
+        options
+      ) as Promise<SaveSignedSaleOfferMutation>;
+    },
+    unhideSaleOffer(
+      variables: UnhideSaleOfferMutationVariables,
+      options?: C
+    ): Promise<UnhideSaleOfferMutation> {
+      return requester<
+        UnhideSaleOfferMutation,
+        UnhideSaleOfferMutationVariables
+      >(
+        UnhideSaleOfferDocument,
+        variables,
+        options
+      ) as Promise<UnhideSaleOfferMutation>;
     },
     collectionsIdByContractAddress(
       variables: CollectionsIdByContractAddressQueryVariables,

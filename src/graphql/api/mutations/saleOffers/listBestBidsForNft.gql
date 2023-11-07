@@ -1,0 +1,5 @@
+query listBestBidsForNft($nftId: Int!, $currencyAddress: String!) {
+  bids: listBestBidsForNft(nftId: $nftId, currencyAddress: $currencyAddress) {
+    ...SaleOfferInfo
+  }
+}

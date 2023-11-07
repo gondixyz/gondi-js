@@ -61,6 +61,7 @@ export interface Fulfillment {
 export const isOpensea = (orderSource: string) => orderSource === "opensea.io";
 export const isCryptopunks = (orderSource: string) =>
   orderSource === "cryptopunks.app";
+export const isNative = (orderSource: string) => orderSource === "gondi.xyz";
 
 export const adaptWalletToCaptureTxData = (
   wallet: Wallet,

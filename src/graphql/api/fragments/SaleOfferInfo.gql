@@ -1,0 +1,23 @@
+fragment SaleOfferInfo on NFTBidSample {
+  id
+  netAmount
+  status
+  marketPlace
+  fees
+  bidderAddress
+  expiration
+  startTime
+  hidden
+  signature
+  currencyAddress
+  nft {
+    id
+    tokenId
+    collection {
+      id
+      contractData {
+        contractAddress
+      }
+    }
+  }
+}

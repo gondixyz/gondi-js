@@ -10,7 +10,12 @@ import {
 import { filterLogs, zeroHash } from "@/blockchain";
 import { getContracts, getCurrencies } from "@/deploys";
 import { seaportABI } from "@/generated/blockchain/seaport";
-import { Fulfillment, SeaportOrder, SeaportOrderParameter } from "@/reservoir/utils";
+import { SaleOfferInfoFragment } from "@/generated/graphql";
+import {
+  Fulfillment,
+  SeaportOrder,
+  SeaportOrderParameter,
+} from "@/reservoir/utils";
 import { millisToSeconds } from "@/utils";
 
 import { Contract } from "./Contract";
@@ -26,6 +31,10 @@ export class Seaport extends Contract<typeof seaportABI> {
       address: SeaportAddress,
       abi: seaportABI,
     });
+  }
+
+  async getOrderHash(order: SeaportOrder) {
+    return this.contract.read.getOrderHash([order]);
   }
 
   async signOrder(order: SeaportOrderParameter) {
@@ -98,6 +107,13 @@ export class Seaport extends Contract<typeof seaportABI> {
           startAmount: price,
           endAmount: price,
         },
+        {
+          itemType: 1,
+          token: WETH_ADDRESS,
+          identifierOrCriteria: 0n,
+          startAmount: 0n,
+          endAmount: 0n,
+        },
       ],
       consideration: [
         {
@@ -125,6 +141,51 @@ export class Seaport extends Contract<typeof seaportABI> {
       parameters: orderParameters,
       signature,
     };
+  }
+
+  recoverOrderFromNativeBid(nativeBid: SaleOfferInfoFragment) {
+    const { WETH_ADDRESS } = getCurrencies();
+
+    const orderParameters: SeaportOrderParameter = {
+      offerer: nativeBid.bidderAddress,
+      zone: zeroAddress,
+      offer: [
+        {
+          itemType: 1,
+          token: WETH_ADDRESS,
+          identifierOrCriteria: 0n,
+          startAmount: nativeBid.netAmount,
+          endAmount: nativeBid.netAmount,
+        },
+        {
+          itemType: 1,
+          token: WETH_ADDRESS,
+          identifierOrCriteria: 0n,
+          startAmount: 0n,
+          endAmount: 0n,
+        },
+      ],
+      consideration: [
+        {
+          itemType: 2,
+          token: collectionContractAddress,
+          identifierOrCriteria: tokenId,
+          startAmount: 1n,
+          endAmount: 1n,
+          recipient: nativeBid.bidderAddress,
+        },
+      ],
+      orderType: 0,
+      startTime: BigInt(nativeBid.startTime.getTime()),
+      endTime: BigInt(nativeBid.expiration.getTime()),
+      zoneHash: zeroHash,
+      salt: 0n,
+      conduitKey: zeroHash,
+      counter: 0n,
+      totalOriginalConsiderationItems: 1n,
+    };
+
+    return orderParameters;
   }
 
   generateInverseOrder(order: SeaportOrder): SeaportOrderParameter {
