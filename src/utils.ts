@@ -26,3 +26,5 @@ export const millisToSeconds = (millis: number | bigint) => Math.ceil(toInteger(
 export const SECONDS_IN_DAY = 60 * 60 * 24;
 
 export const bpsToPercentage = (bps: bigint | number) => toInteger(bps) / 10000;
+
+export const NATIVE_MARKETPLACE = 'MarketPlace.Native';

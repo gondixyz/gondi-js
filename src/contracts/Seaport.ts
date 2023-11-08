@@ -107,13 +107,6 @@ export class Seaport extends Contract<typeof seaportABI> {
           startAmount: price,
           endAmount: price,
         },
-        {
-          itemType: 1,
-          token: WETH_ADDRESS,
-          identifierOrCriteria: 0n,
-          startAmount: 0n,
-          endAmount: 0n,
-        },
       ],
       consideration: [
         {
@@ -178,8 +171,12 @@ export class Seaport extends Contract<typeof seaportABI> {
         },
       ],
       orderType: 0,
-      startTime: BigInt(nativeBid.startTime.getTime()),
-      endTime: BigInt(nativeBid.expiration.getTime()),
+      startTime: BigInt(
+        Math.floor(millisToSeconds(nativeBid.startTime.getTime()))
+      ),
+      endTime: BigInt(
+        Math.floor(millisToSeconds(nativeBid.expiration.getTime()))
+      ),
       zoneHash: zeroHash,
       salt: 0n,
       conduitKey: zeroHash,

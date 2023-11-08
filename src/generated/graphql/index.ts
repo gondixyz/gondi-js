@@ -5316,10 +5316,29 @@ export const HideSaleOfferDocument = gql`
 export const ListBestBidsForNftDocument = gql`
   query listBestBidsForNft($nftId: Int!, $currencyAddress: String!) {
     bids: listBestBidsForNft(nftId: $nftId, currencyAddress: $currencyAddress) {
-      ...SaleOfferInfo
+      id
+      netAmount
+      status
+      marketPlace
+      fees
+      bidderAddress
+      expiration
+      startTime
+      hidden
+      signature
+      currencyAddress
+      nft {
+        id
+        tokenId
+        collection {
+          id
+          contractData {
+            contractAddress
+          }
+        }
+      }
     }
   }
-  ${SaleOfferInfoFragmentDoc}
 `;
 export const SaveSignedSaleOfferDocument = gql`
   mutation saveSignedSaleOffer($offer: SignedOrderInput!) {

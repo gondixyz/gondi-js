@@ -27,7 +27,7 @@ import {
   Ordering,
 } from "@/generated/graphql";
 import * as model from "@/model";
-import { millisToSeconds, SECONDS_IN_DAY } from "@/utils";
+import { millisToSeconds, NATIVE_MARKETPLACE, SECONDS_IN_DAY } from "@/utils";
 
 import { getCurrencies } from "./deploys";
 import { Reservoir } from "./reservoir/Reservoir";
@@ -217,7 +217,7 @@ export class Gondi {
     const {
       parameters: {
         totalOriginalConsiderationItems: _totalOriginalConsiderationItems,
-        ...restOfParameters
+        ...saleOffer
       },
       signature,
     } = await this.contracts.Seaport.generateOrderFromSaleOffer({
@@ -227,7 +227,7 @@ export class Gondi {
       expirationTime,
     });
     return this.api.saveSignedSaleOffer({
-      offer: { ...restOfParameters, signature },
+      offer: { ...saleOffer, signature },
     });
   }
 
@@ -557,12 +557,12 @@ export class Gondi {
   }) {
     const { WETH_ADDRESS } = getCurrencies();
     const nftId = await this.nftId({ contractAddress, tokenId });
-    const bestBids = await this.api.listBestBidsForNft({
+    const { bids } = await this.api.listBestBidsForNft({
       nftId,
       currencyAddress: WETH_ADDRESS,
     });
-    const nativeBid = bestBids.bids.find(
-      (bid) => bid.marketPlace === "Marketplace.Native"
+    const nativeBid = bids.find(
+      (bid) => bid.marketPlace === NATIVE_MARKETPLACE
     );
 
     return nativeBid ?? null;
@@ -750,10 +750,6 @@ export class Gondi {
         exactOrderSource: orderSource,
         leverageAddress: this.contracts.Leverage.address,
       });
-    }
-
-    if (!executionData) {
-      throw new Error("Could not generate execution data for leverage sell");
     }
 
     const shouldDelegate = executionData.isSeaportCall;
