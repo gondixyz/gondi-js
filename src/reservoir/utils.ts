@@ -89,9 +89,13 @@ export const adaptWalletToCaptureTxData = (
           data: stepItem.data.data,
         });
 
-        const signature =
-          (functionData?.args?.[0] as { signature?: Hash })?.signature ??
-          zeroAddress;
+        const firstArg = functionData?.args?.[0];
+
+        const signature = Array.isArray(firstArg)
+          ? (firstArg[0] as { signature: Hash }).signature
+          : typeof firstArg === "object"
+          ? (firstArg as { signature: Hash }).signature
+          : zeroAddress;
 
         throw new InterruptedSeaportSendTransactionStepError({
           orderId,
