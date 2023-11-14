@@ -1,4 +1,4 @@
-import { Address, Chain, zeroAddress } from "viem";
+import { Address, Chain, Hash, zeroAddress } from "viem";
 import { goerli } from "viem/chains";
 
 const ANVIL_CHAIN_ID = 31337;
@@ -23,6 +23,8 @@ interface Currencies {
   ETH_ADDRESS: Address;
   USDC_ADDRESS: Address;
 }
+
+export const MSL_V5_TX_HASH = '0xb6dfcbc1661d0c0bced9591d06e964f97d41a35984704ffe61f8e062e43919c8' as Hash;
 
 export const getContracts = (chain: Pick<Chain, "id">): Contracts => {
   if (chain?.id === ANVIL_CHAIN_ID) {
@@ -54,11 +56,11 @@ export const getContracts = (chain: Pick<Chain, "id">): Contracts => {
 
   return {
     MultiSourceLoanV4Address: "0xCa5a494Ca20483e21ec1E41FE1D9461Da77595Bd",
-    MultiSourceLoanV5Address: "0xTODO", // TODO: deploy
+    MultiSourceLoanV5Address: "0x478f6F994C6fb3cf3e444a489b3AD9edB8cCaE16",
     AuctionLoanLiquidatorV4Address:
       "0x237e4421C742d843Fdd96D22294D338507e17091",
-    AuctionLoanLiquidatorV5Address: "0xTODO", // TODO: deploy
-    LeverageAddress: "0xTODO", // TODO: deploy
+    AuctionLoanLiquidatorV5Address: "0x97d34635b605c2f1630d6b4c6c5d222b8a2ca47d",
+    LeverageAddress: "0x87Ce6e8124fFd68fa721FcC7f35fdA14A11E233e",
     SeaportAddress: "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC",
     CryptoPunksAddress: "0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb",
   };
