@@ -1,5 +1,5 @@
 import { adaptViemWallet } from "@reservoir0x/reservoir-sdk";
-import { Address, decodeFunctionData, Hash, zeroAddress } from "viem";
+import { Address, decodeFunctionData, Hash, zeroAddress, zeroHash } from "viem";
 
 import { Wallet } from "@/blockchain";
 import {
@@ -76,8 +76,13 @@ export const adaptWalletToCaptureTxData = (
       stepItem: {
         data: { data: Hash; to: Address; value: string };
         orderIds?: string[];
-      }
+      },
+      step: { id: string }
     ) => {
+      if (step.id !== "sale") {
+        console.log(step);
+        return zeroHash;
+      }
       const orderId = stepItem.orderIds?.[0] ?? "";
       const to = stepItem.data.to;
       const callbackData = stepItem.data.data;
