@@ -300,9 +300,11 @@ export type CollectionOrder = Activity &
     maker: Scalars["Address"];
     marketPlace: Scalars["String"];
     netAmount: Scalars["BigInt"];
+    nonce: Scalars["BigInt"];
     orderType: Scalars["String"];
     price: Scalars["BigInt"];
     signature: Scalars["Hash"];
+    startTime: Scalars["DateTime"];
     status: Scalars["String"];
     timestamp: Scalars["DateTime"];
     txHash?: Maybe<Scalars["Hash"]>;
@@ -1156,9 +1158,11 @@ export type Order = {
   maker: Scalars["Address"];
   marketPlace: Scalars["String"];
   netAmount: Scalars["BigInt"];
+  nonce: Scalars["BigInt"];
   orderType: Scalars["String"];
   price: Scalars["BigInt"];
   signature: Scalars["Hash"];
+  startTime: Scalars["DateTime"];
   status: Scalars["String"];
   timestamp: Scalars["DateTime"];
   txHash?: Maybe<Scalars["Hash"]>;
@@ -1667,9 +1671,11 @@ export type SingleNftOrder = Activity &
     marketPlace: Scalars["String"];
     netAmount: Scalars["BigInt"];
     nft: Nft;
+    nonce: Scalars["BigInt"];
     orderType: Scalars["String"];
     price: Scalars["BigInt"];
     signature: Scalars["Hash"];
+    startTime: Scalars["DateTime"];
     status: Scalars["String"];
     timestamp: Scalars["DateTime"];
     txHash?: Maybe<Scalars["Hash"]>;
@@ -1873,9 +1879,11 @@ export type SaleOfferInfoFragment = {
   maker: Address;
   expiration?: Date | null;
   createdDate: Date;
+  startTime: Date;
   hidden: boolean;
   signature: Hash;
   currencyAddress: Address;
+  nonce: bigint;
   nft: {
     __typename?: "NFT";
     id: string;
@@ -2122,6 +2130,8 @@ export type ListBestBidsForNftQuery = {
     hidden: boolean;
     signature: Hash;
     currencyAddress: Address;
+    startTime: Date;
+    nonce: bigint;
     nft: {
       __typename?: "NFT";
       id: string;
@@ -2795,9 +2805,11 @@ export type CollectionOrderKeySpecifier = (
   | "maker"
   | "marketPlace"
   | "netAmount"
+  | "nonce"
   | "orderType"
   | "price"
   | "signature"
+  | "startTime"
   | "status"
   | "timestamp"
   | "txHash"
@@ -2816,9 +2828,11 @@ export type CollectionOrderFieldPolicy = {
   maker?: FieldPolicy<any> | FieldReadFunction<any>;
   marketPlace?: FieldPolicy<any> | FieldReadFunction<any>;
   netAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  nonce?: FieldPolicy<any> | FieldReadFunction<any>;
   orderType?: FieldPolicy<any> | FieldReadFunction<any>;
   price?: FieldPolicy<any> | FieldReadFunction<any>;
   signature?: FieldPolicy<any> | FieldReadFunction<any>;
+  startTime?: FieldPolicy<any> | FieldReadFunction<any>;
   status?: FieldPolicy<any> | FieldReadFunction<any>;
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   txHash?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -3791,9 +3805,11 @@ export type OrderKeySpecifier = (
   | "maker"
   | "marketPlace"
   | "netAmount"
+  | "nonce"
   | "orderType"
   | "price"
   | "signature"
+  | "startTime"
   | "status"
   | "timestamp"
   | "txHash"
@@ -3811,9 +3827,11 @@ export type OrderFieldPolicy = {
   maker?: FieldPolicy<any> | FieldReadFunction<any>;
   marketPlace?: FieldPolicy<any> | FieldReadFunction<any>;
   netAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  nonce?: FieldPolicy<any> | FieldReadFunction<any>;
   orderType?: FieldPolicy<any> | FieldReadFunction<any>;
   price?: FieldPolicy<any> | FieldReadFunction<any>;
   signature?: FieldPolicy<any> | FieldReadFunction<any>;
+  startTime?: FieldPolicy<any> | FieldReadFunction<any>;
   status?: FieldPolicy<any> | FieldReadFunction<any>;
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   txHash?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -4190,9 +4208,11 @@ export type SingleNFTOrderKeySpecifier = (
   | "marketPlace"
   | "netAmount"
   | "nft"
+  | "nonce"
   | "orderType"
   | "price"
   | "signature"
+  | "startTime"
   | "status"
   | "timestamp"
   | "txHash"
@@ -4211,9 +4231,11 @@ export type SingleNFTOrderFieldPolicy = {
   marketPlace?: FieldPolicy<any> | FieldReadFunction<any>;
   netAmount?: FieldPolicy<any> | FieldReadFunction<any>;
   nft?: FieldPolicy<any> | FieldReadFunction<any>;
+  nonce?: FieldPolicy<any> | FieldReadFunction<any>;
   orderType?: FieldPolicy<any> | FieldReadFunction<any>;
   price?: FieldPolicy<any> | FieldReadFunction<any>;
   signature?: FieldPolicy<any> | FieldReadFunction<any>;
+  startTime?: FieldPolicy<any> | FieldReadFunction<any>;
   status?: FieldPolicy<any> | FieldReadFunction<any>;
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   txHash?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -5109,9 +5131,11 @@ export const SaleOfferInfoFragmentDoc = gql`
     maker
     expiration
     createdDate
+    startTime
     hidden
     signature
     currencyAddress
+    nonce
     nft {
       id
       tokenId
@@ -5290,6 +5314,8 @@ export const ListBestBidsForNftDocument = gql`
       hidden
       signature
       currencyAddress
+      startTime
+      nonce
       nft {
         id
         tokenId

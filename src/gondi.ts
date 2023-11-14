@@ -731,8 +731,9 @@ export class Gondi {
 
       executionData = await this.reservoir.generateMatchOrdersExecutionData({
         askOrBid: {
-          rawData:
-            this.contracts.Seaport.recoverOrderFromNativeBid(bestNativeBid),
+          rawData: await this.contracts.Seaport.recoverOrderFromNativeBid(
+            bestNativeBid
+          ),
           price: {
             netAmount: {
               raw: String(price),

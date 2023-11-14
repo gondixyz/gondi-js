@@ -234,9 +234,11 @@ type CollectionOrder implements Activity & Node & Order {
   maker: Address!
   marketPlace: String!
   netAmount: BigInt!
+  nonce: BigInt!
   orderType: String!
   price: BigInt!
   signature: Hash!
+  startTime: DateTime!
   status: String!
   timestamp: DateTime!
   txHash: Hash
@@ -936,9 +938,11 @@ interface Order implements Activity & Node {
   maker: Address!
   marketPlace: String!
   netAmount: BigInt!
+  nonce: BigInt!
   orderType: String!
   price: BigInt!
   signature: Hash!
+  startTime: DateTime!
   status: String!
   timestamp: DateTime!
   txHash: Hash
@@ -1356,9 +1360,11 @@ type SingleNFTOrder implements Activity & Node & Order {
   marketPlace: String!
   netAmount: BigInt!
   nft: NFT!
+  nonce: BigInt!
   orderType: String!
   price: BigInt!
   signature: Hash!
+  startTime: DateTime!
   status: String!
   timestamp: DateTime!
   txHash: Hash

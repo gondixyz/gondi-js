@@ -7,9 +7,11 @@ fragment SaleOfferInfo on SingleNFTOrder {
   maker
   expiration
   createdDate
+  startTime
   hidden
   signature
   currencyAddress
+  nonce
   nft {
     id
     tokenId

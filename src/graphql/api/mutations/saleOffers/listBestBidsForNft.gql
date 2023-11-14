@@ -11,6 +11,8 @@ query listBestBidsForNft($nftId: Int!, $currencyAddress: String!) {
     hidden
     signature
     currencyAddress
+    startTime
+    nonce
     nft {
       id
       tokenId

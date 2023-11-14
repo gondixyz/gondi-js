@@ -37,6 +37,10 @@ export class Seaport extends Contract<typeof seaportABI> {
     return this.contract.read.getOrderHash([order]);
   }
 
+  async getCounter() {
+    return await (this.contract.read.getCounter([this.wallet.account.address])) + 1n;
+  }
+
   async signOrder(order: SeaportOrderParameter) {
     const domain = {
       name: "Seaport",
@@ -124,7 +128,7 @@ export class Seaport extends Contract<typeof seaportABI> {
       zoneHash: zeroHash,
       salt: 0n,
       conduitKey: zeroHash,
-      counter: 0n,
+      counter: await this.getCounter(),
       totalOriginalConsiderationItems: 1n,
     };
 
@@ -136,7 +140,7 @@ export class Seaport extends Contract<typeof seaportABI> {
     };
   }
 
-  recoverOrderFromNativeBid(nativeBid: SaleOfferInfoFragment) {
+  async recoverOrderFromNativeBid(nativeBid: SaleOfferInfoFragment) {
     const { WETH_ADDRESS } = getCurrencies();
 
     const orderParameters: SeaportOrderParameter = {
@@ -149,13 +153,6 @@ export class Seaport extends Contract<typeof seaportABI> {
           identifierOrCriteria: 0n,
           startAmount: nativeBid.netAmount,
           endAmount: nativeBid.netAmount,
-        },
-        {
-          itemType: 1,
-          token: WETH_ADDRESS,
-          identifierOrCriteria: 0n,
-          startAmount: 0n,
-          endAmount: 0n,
         },
       ],
       consideration: [
@@ -172,22 +169,26 @@ export class Seaport extends Contract<typeof seaportABI> {
       ],
       orderType: 0,
       startTime: BigInt(
-        Math.floor(millisToSeconds(nativeBid.createdDate.getTime()))
+        Math.floor(millisToSeconds(nativeBid.startTime.getTime()))
       ),
       endTime: BigInt(
-        Math.floor(millisToSeconds(nativeBid.expiration?.getTime() ?? Date.now()))
+        Math.floor(
+          millisToSeconds(nativeBid.expiration?.getTime() ?? Date.now())
+        )
       ),
       zoneHash: zeroHash,
       salt: 0n,
       conduitKey: zeroHash,
-      counter: 0n,
+      counter: await this.getCounter(),
       totalOriginalConsiderationItems: 1n,
     };
 
     return orderParameters;
   }
 
-  generateInverseOrder(order: SeaportOrder): SeaportOrderParameter {
+  async generateInverseOrder(
+    order: SeaportOrder
+  ): Promise<SeaportOrderParameter> {
     return {
       offerer: this.wallet.account?.address ?? zeroAddress,
       zone: zeroAddress,
@@ -202,7 +203,7 @@ export class Seaport extends Contract<typeof seaportABI> {
       zoneHash: zeroHash,
       salt: 0n,
       conduitKey: zeroHash,
-      counter: 0n,
+      counter: await this.getCounter(),
       totalOriginalConsiderationItems: BigInt(order.offer.length),
     };
   }
