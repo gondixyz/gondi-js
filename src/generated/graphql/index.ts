@@ -292,15 +292,17 @@ export type CollectionOrder = Activity &
     createdDate: Scalars["DateTime"];
     currency: Currency;
     currencyAddress: Scalars["Address"];
-    executionData: Scalars["String"];
     expiration?: Maybe<Scalars["DateTime"]>;
+    fees: Scalars["BigInt"];
+    hidden: Scalars["Boolean"];
     id: Scalars["String"];
     isAsk: Scalars["Boolean"];
-    maker: Scalars["String"];
+    maker: Scalars["Address"];
     marketPlace: Scalars["String"];
-    marketPlaceId: Scalars["String"];
+    netAmount: Scalars["BigInt"];
     orderType: Scalars["String"];
-    price: Scalars["Float"];
+    price: Scalars["BigInt"];
+    signature: Scalars["Hash"];
     status: Scalars["String"];
     timestamp: Scalars["DateTime"];
     txHash?: Maybe<Scalars["Hash"]>;
@@ -794,19 +796,19 @@ export type Mutation = {
   hideAllOffers: Array<Offer>;
   hideOffer: Offer;
   hideRenegotiation: Renegotiation;
-  hideSaleOffer: NftBidSample;
+  hideSaleOffer: SingleNftOrder;
   markNotificationIdsAsRead?: Maybe<Scalars["Void"]>;
   markNotificationsAsRead?: Maybe<Scalars["Void"]>;
   removeListing: Listing;
   removeListingsOfNftsFromUser?: Maybe<Scalars["Void"]>;
   saveRenegotiationSignedOffer: Renegotiation;
   saveSignedCollectionOffer: CollectionOffer;
-  saveSignedSaleOffer: NftBidSample;
+  saveSignedSaleOffer: SingleNftOrder;
   saveSignedSingleNftOffer: SingleNftOffer;
   setReferral?: Maybe<Scalars["Void"]>;
   showOffer: Offer;
   showRenegotiation: Renegotiation;
-  showSaleOffer: NftBidSample;
+  showSaleOffer: SingleNftOrder;
 };
 
 export type MutationAddListingsOfNftsFromUserArgs = {
@@ -848,7 +850,7 @@ export type MutationHideRenegotiationArgs = {
 };
 
 export type MutationHideSaleOfferArgs = {
-  saleOfferId: Scalars["String"];
+  saleOfferId: Scalars["Int"];
 };
 
 export type MutationMarkNotificationIdsAsReadArgs = {
@@ -890,7 +892,7 @@ export type MutationShowRenegotiationArgs = {
 };
 
 export type MutationShowSaleOfferArgs = {
-  saleOfferId: Scalars["String"];
+  saleOfferId: Scalars["Int"];
 };
 
 export type Nft = Node & {
@@ -915,36 +917,6 @@ export type Nft = Node & {
   tokenId: Scalars["BigInt"];
   traits: Array<Trait>;
   url?: Maybe<Scalars["String"]>;
-};
-
-export type NftBidSample = Node & {
-  __typename?: "NFTBidSample";
-  bidderAddress: Scalars["Address"];
-  currency?: Maybe<Currency>;
-  currencyAddress: Scalars["Address"];
-  expiration: Scalars["DateTime"];
-  fees: Scalars["BigInt"];
-  hidden: Scalars["Boolean"];
-  id: Scalars["String"];
-  marketPlace: Scalars["String"];
-  netAmount: Scalars["BigInt"];
-  nft: Nft;
-  signature: Scalars["Signature"];
-  startTime: Scalars["DateTime"];
-  status: Scalars["String"];
-};
-
-export type NftBidSampleConnection = {
-  __typename?: "NFTBidSampleConnection";
-  edges: Array<NftBidSampleEdge>;
-  pageInfo: PageInfo;
-  totalCount?: Maybe<Scalars["Int"]>;
-};
-
-export type NftBidSampleEdge = {
-  __typename?: "NFTBidSampleEdge";
-  cursor: Scalars["String"];
-  node: NftBidSample;
 };
 
 export type NftConnection = {
@@ -1176,15 +1148,17 @@ export type Order = {
   createdDate: Scalars["DateTime"];
   currency: Currency;
   currencyAddress: Scalars["Address"];
-  executionData: Scalars["String"];
   expiration?: Maybe<Scalars["DateTime"]>;
+  fees: Scalars["BigInt"];
+  hidden: Scalars["Boolean"];
   id: Scalars["String"];
   isAsk: Scalars["Boolean"];
-  maker: Scalars["String"];
+  maker: Scalars["Address"];
   marketPlace: Scalars["String"];
-  marketPlaceId: Scalars["String"];
+  netAmount: Scalars["BigInt"];
   orderType: Scalars["String"];
-  price: Scalars["Float"];
+  price: Scalars["BigInt"];
+  signature: Scalars["Hash"];
   status: Scalars["String"];
   timestamp: Scalars["DateTime"];
   txHash?: Maybe<Scalars["Hash"]>;
@@ -1253,7 +1227,7 @@ export type Query = {
   getUserPointActivities: PointActivityConnection;
   getUserPoints: Scalars["Int"];
   listAuctions: AuctionConnection;
-  listBestBidsForNft: Array<NftBidSample>;
+  listBestBidsForNft: Array<SingleNftOrder>;
   listBids: BidConnection;
   listCollections: CollectionConnection;
   listCollectionsWithListings: CollectionConnection;
@@ -1268,7 +1242,7 @@ export type Query = {
   listOffers: OfferConnection;
   listRenegotiations: RenegotiationConnection;
   listSources: SourcesAndLostSourcesConnection;
-  listUserSaleOffers: NftBidSampleConnection;
+  listUserSaleOffers: SingleNftOrderConnection;
   me?: Maybe<User>;
 };
 
@@ -1684,20 +1658,35 @@ export type SingleNftOrder = Activity &
     createdDate: Scalars["DateTime"];
     currency: Currency;
     currencyAddress: Scalars["Address"];
-    executionData: Scalars["String"];
     expiration?: Maybe<Scalars["DateTime"]>;
+    fees: Scalars["BigInt"];
+    hidden: Scalars["Boolean"];
     id: Scalars["String"];
     isAsk: Scalars["Boolean"];
-    maker: Scalars["String"];
+    maker: Scalars["Address"];
     marketPlace: Scalars["String"];
-    marketPlaceId: Scalars["String"];
+    netAmount: Scalars["BigInt"];
     nft: Nft;
     orderType: Scalars["String"];
-    price: Scalars["Float"];
+    price: Scalars["BigInt"];
+    signature: Scalars["Hash"];
     status: Scalars["String"];
     timestamp: Scalars["DateTime"];
     txHash?: Maybe<Scalars["Hash"]>;
   };
+
+export type SingleNftOrderConnection = {
+  __typename?: "SingleNFTOrderConnection";
+  edges: Array<SingleNftOrderEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]>;
+};
+
+export type SingleNftOrderEdge = {
+  __typename?: "SingleNFTOrderEdge";
+  cursor: Scalars["String"];
+  node: SingleNftOrder;
+};
 
 export type SingleNftSignedOfferInput = {
   aprBps: Scalars["BigInt"];
@@ -1875,17 +1864,17 @@ export type UserFilter = {
 };
 
 export type SaleOfferInfoFragment = {
-  __typename?: "NFTBidSample";
+  __typename?: "SingleNFTOrder";
   id: string;
   netAmount: bigint;
   status: string;
   marketPlace: string;
   fees: bigint;
-  bidderAddress: Address;
-  expiration: Date;
-  startTime: Date;
+  maker: Address;
+  expiration?: Date | null;
+  createdDate: Date;
   hidden: boolean;
-  signature: Hex;
+  signature: Hash;
   currencyAddress: Address;
   nft: {
     __typename?: "NFT";
@@ -2105,12 +2094,12 @@ export type UnhideRenegotiationOfferMutation = {
 };
 
 export type HideSaleOfferMutationVariables = Exact<{
-  id: Scalars["String"];
+  id: Scalars["Int"];
 }>;
 
 export type HideSaleOfferMutation = {
   __typename?: "Mutation";
-  hideSaleOffer: { __typename?: "NFTBidSample"; id: string };
+  hideSaleOffer: { __typename?: "SingleNFTOrder"; id: string };
 };
 
 export type ListBestBidsForNftQueryVariables = Exact<{
@@ -2121,17 +2110,17 @@ export type ListBestBidsForNftQueryVariables = Exact<{
 export type ListBestBidsForNftQuery = {
   __typename?: "Query";
   bids: Array<{
-    __typename?: "NFTBidSample";
+    __typename?: "SingleNFTOrder";
     id: string;
     netAmount: bigint;
     status: string;
     marketPlace: string;
     fees: bigint;
-    bidderAddress: Address;
-    expiration: Date;
-    startTime: Date;
+    maker: Address;
+    expiration?: Date | null;
+    createdDate: Date;
     hidden: boolean;
-    signature: Hex;
+    signature: Hash;
     currencyAddress: Address;
     nft: {
       __typename?: "NFT";
@@ -2155,16 +2144,16 @@ export type SaveSignedSaleOfferMutationVariables = Exact<{
 
 export type SaveSignedSaleOfferMutation = {
   __typename?: "Mutation";
-  offer: { __typename?: "NFTBidSample"; id: string; status: string };
+  offer: { __typename?: "SingleNFTOrder"; id: string; status: string };
 };
 
 export type UnhideSaleOfferMutationVariables = Exact<{
-  id: Scalars["String"];
+  id: Scalars["Int"];
 }>;
 
 export type UnhideSaleOfferMutation = {
   __typename?: "Mutation";
-  showSaleOffer: { __typename?: "NFTBidSample"; id: string };
+  showSaleOffer: { __typename?: "SingleNFTOrder"; id: string };
 };
 
 export type CollectionsIdByContractAddressQueryVariables = Exact<{
@@ -2798,15 +2787,17 @@ export type CollectionOrderKeySpecifier = (
   | "createdDate"
   | "currency"
   | "currencyAddress"
-  | "executionData"
   | "expiration"
+  | "fees"
+  | "hidden"
   | "id"
   | "isAsk"
   | "maker"
   | "marketPlace"
-  | "marketPlaceId"
+  | "netAmount"
   | "orderType"
   | "price"
+  | "signature"
   | "status"
   | "timestamp"
   | "txHash"
@@ -2817,15 +2808,17 @@ export type CollectionOrderFieldPolicy = {
   createdDate?: FieldPolicy<any> | FieldReadFunction<any>;
   currency?: FieldPolicy<any> | FieldReadFunction<any>;
   currencyAddress?: FieldPolicy<any> | FieldReadFunction<any>;
-  executionData?: FieldPolicy<any> | FieldReadFunction<any>;
   expiration?: FieldPolicy<any> | FieldReadFunction<any>;
+  fees?: FieldPolicy<any> | FieldReadFunction<any>;
+  hidden?: FieldPolicy<any> | FieldReadFunction<any>;
   id?: FieldPolicy<any> | FieldReadFunction<any>;
   isAsk?: FieldPolicy<any> | FieldReadFunction<any>;
   maker?: FieldPolicy<any> | FieldReadFunction<any>;
   marketPlace?: FieldPolicy<any> | FieldReadFunction<any>;
-  marketPlaceId?: FieldPolicy<any> | FieldReadFunction<any>;
+  netAmount?: FieldPolicy<any> | FieldReadFunction<any>;
   orderType?: FieldPolicy<any> | FieldReadFunction<any>;
   price?: FieldPolicy<any> | FieldReadFunction<any>;
+  signature?: FieldPolicy<any> | FieldReadFunction<any>;
   status?: FieldPolicy<any> | FieldReadFunction<any>;
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   txHash?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -3530,57 +3523,6 @@ export type NFTFieldPolicy = {
   traits?: FieldPolicy<any> | FieldReadFunction<any>;
   url?: FieldPolicy<any> | FieldReadFunction<any>;
 };
-export type NFTBidSampleKeySpecifier = (
-  | "bidderAddress"
-  | "currency"
-  | "currencyAddress"
-  | "expiration"
-  | "fees"
-  | "hidden"
-  | "id"
-  | "marketPlace"
-  | "netAmount"
-  | "nft"
-  | "signature"
-  | "startTime"
-  | "status"
-  | NFTBidSampleKeySpecifier
-)[];
-export type NFTBidSampleFieldPolicy = {
-  bidderAddress?: FieldPolicy<any> | FieldReadFunction<any>;
-  currency?: FieldPolicy<any> | FieldReadFunction<any>;
-  currencyAddress?: FieldPolicy<any> | FieldReadFunction<any>;
-  expiration?: FieldPolicy<any> | FieldReadFunction<any>;
-  fees?: FieldPolicy<any> | FieldReadFunction<any>;
-  hidden?: FieldPolicy<any> | FieldReadFunction<any>;
-  id?: FieldPolicy<any> | FieldReadFunction<any>;
-  marketPlace?: FieldPolicy<any> | FieldReadFunction<any>;
-  netAmount?: FieldPolicy<any> | FieldReadFunction<any>;
-  nft?: FieldPolicy<any> | FieldReadFunction<any>;
-  signature?: FieldPolicy<any> | FieldReadFunction<any>;
-  startTime?: FieldPolicy<any> | FieldReadFunction<any>;
-  status?: FieldPolicy<any> | FieldReadFunction<any>;
-};
-export type NFTBidSampleConnectionKeySpecifier = (
-  | "edges"
-  | "pageInfo"
-  | "totalCount"
-  | NFTBidSampleConnectionKeySpecifier
-)[];
-export type NFTBidSampleConnectionFieldPolicy = {
-  edges?: FieldPolicy<any> | FieldReadFunction<any>;
-  pageInfo?: FieldPolicy<any> | FieldReadFunction<any>;
-  totalCount?: FieldPolicy<any> | FieldReadFunction<any>;
-};
-export type NFTBidSampleEdgeKeySpecifier = (
-  | "cursor"
-  | "node"
-  | NFTBidSampleEdgeKeySpecifier
-)[];
-export type NFTBidSampleEdgeFieldPolicy = {
-  cursor?: FieldPolicy<any> | FieldReadFunction<any>;
-  node?: FieldPolicy<any> | FieldReadFunction<any>;
-};
 export type NFTConnectionKeySpecifier = (
   | "edges"
   | "pageInfo"
@@ -3841,15 +3783,17 @@ export type OrderKeySpecifier = (
   | "createdDate"
   | "currency"
   | "currencyAddress"
-  | "executionData"
   | "expiration"
+  | "fees"
+  | "hidden"
   | "id"
   | "isAsk"
   | "maker"
   | "marketPlace"
-  | "marketPlaceId"
+  | "netAmount"
   | "orderType"
   | "price"
+  | "signature"
   | "status"
   | "timestamp"
   | "txHash"
@@ -3859,15 +3803,17 @@ export type OrderFieldPolicy = {
   createdDate?: FieldPolicy<any> | FieldReadFunction<any>;
   currency?: FieldPolicy<any> | FieldReadFunction<any>;
   currencyAddress?: FieldPolicy<any> | FieldReadFunction<any>;
-  executionData?: FieldPolicy<any> | FieldReadFunction<any>;
   expiration?: FieldPolicy<any> | FieldReadFunction<any>;
+  fees?: FieldPolicy<any> | FieldReadFunction<any>;
+  hidden?: FieldPolicy<any> | FieldReadFunction<any>;
   id?: FieldPolicy<any> | FieldReadFunction<any>;
   isAsk?: FieldPolicy<any> | FieldReadFunction<any>;
   maker?: FieldPolicy<any> | FieldReadFunction<any>;
   marketPlace?: FieldPolicy<any> | FieldReadFunction<any>;
-  marketPlaceId?: FieldPolicy<any> | FieldReadFunction<any>;
+  netAmount?: FieldPolicy<any> | FieldReadFunction<any>;
   orderType?: FieldPolicy<any> | FieldReadFunction<any>;
   price?: FieldPolicy<any> | FieldReadFunction<any>;
+  signature?: FieldPolicy<any> | FieldReadFunction<any>;
   status?: FieldPolicy<any> | FieldReadFunction<any>;
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   txHash?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -4235,16 +4181,18 @@ export type SingleNFTOrderKeySpecifier = (
   | "createdDate"
   | "currency"
   | "currencyAddress"
-  | "executionData"
   | "expiration"
+  | "fees"
+  | "hidden"
   | "id"
   | "isAsk"
   | "maker"
   | "marketPlace"
-  | "marketPlaceId"
+  | "netAmount"
   | "nft"
   | "orderType"
   | "price"
+  | "signature"
   | "status"
   | "timestamp"
   | "txHash"
@@ -4254,19 +4202,41 @@ export type SingleNFTOrderFieldPolicy = {
   createdDate?: FieldPolicy<any> | FieldReadFunction<any>;
   currency?: FieldPolicy<any> | FieldReadFunction<any>;
   currencyAddress?: FieldPolicy<any> | FieldReadFunction<any>;
-  executionData?: FieldPolicy<any> | FieldReadFunction<any>;
   expiration?: FieldPolicy<any> | FieldReadFunction<any>;
+  fees?: FieldPolicy<any> | FieldReadFunction<any>;
+  hidden?: FieldPolicy<any> | FieldReadFunction<any>;
   id?: FieldPolicy<any> | FieldReadFunction<any>;
   isAsk?: FieldPolicy<any> | FieldReadFunction<any>;
   maker?: FieldPolicy<any> | FieldReadFunction<any>;
   marketPlace?: FieldPolicy<any> | FieldReadFunction<any>;
-  marketPlaceId?: FieldPolicy<any> | FieldReadFunction<any>;
+  netAmount?: FieldPolicy<any> | FieldReadFunction<any>;
   nft?: FieldPolicy<any> | FieldReadFunction<any>;
   orderType?: FieldPolicy<any> | FieldReadFunction<any>;
   price?: FieldPolicy<any> | FieldReadFunction<any>;
+  signature?: FieldPolicy<any> | FieldReadFunction<any>;
   status?: FieldPolicy<any> | FieldReadFunction<any>;
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   txHash?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type SingleNFTOrderConnectionKeySpecifier = (
+  | "edges"
+  | "pageInfo"
+  | "totalCount"
+  | SingleNFTOrderConnectionKeySpecifier
+)[];
+export type SingleNFTOrderConnectionFieldPolicy = {
+  edges?: FieldPolicy<any> | FieldReadFunction<any>;
+  pageInfo?: FieldPolicy<any> | FieldReadFunction<any>;
+  totalCount?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type SingleNFTOrderEdgeKeySpecifier = (
+  | "cursor"
+  | "node"
+  | SingleNFTOrderEdgeKeySpecifier
+)[];
+export type SingleNFTOrderEdgeFieldPolicy = {
+  cursor?: FieldPolicy<any> | FieldReadFunction<any>;
+  node?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type SingleSourceLoanKeySpecifier = (
   | "accruedInterest"
@@ -4821,27 +4791,6 @@ export type StrictTypedTypePolicies = {
     keyFields?: false | NFTKeySpecifier | (() => undefined | NFTKeySpecifier);
     fields?: NFTFieldPolicy;
   };
-  NFTBidSample?: Omit<TypePolicy, "fields" | "keyFields"> & {
-    keyFields?:
-      | false
-      | NFTBidSampleKeySpecifier
-      | (() => undefined | NFTBidSampleKeySpecifier);
-    fields?: NFTBidSampleFieldPolicy;
-  };
-  NFTBidSampleConnection?: Omit<TypePolicy, "fields" | "keyFields"> & {
-    keyFields?:
-      | false
-      | NFTBidSampleConnectionKeySpecifier
-      | (() => undefined | NFTBidSampleConnectionKeySpecifier);
-    fields?: NFTBidSampleConnectionFieldPolicy;
-  };
-  NFTBidSampleEdge?: Omit<TypePolicy, "fields" | "keyFields"> & {
-    keyFields?:
-      | false
-      | NFTBidSampleEdgeKeySpecifier
-      | (() => undefined | NFTBidSampleEdgeKeySpecifier);
-    fields?: NFTBidSampleEdgeFieldPolicy;
-  };
   NFTConnection?: Omit<TypePolicy, "fields" | "keyFields"> & {
     keyFields?:
       | false
@@ -5077,6 +5026,20 @@ export type StrictTypedTypePolicies = {
       | (() => undefined | SingleNFTOrderKeySpecifier);
     fields?: SingleNFTOrderFieldPolicy;
   };
+  SingleNFTOrderConnection?: Omit<TypePolicy, "fields" | "keyFields"> & {
+    keyFields?:
+      | false
+      | SingleNFTOrderConnectionKeySpecifier
+      | (() => undefined | SingleNFTOrderConnectionKeySpecifier);
+    fields?: SingleNFTOrderConnectionFieldPolicy;
+  };
+  SingleNFTOrderEdge?: Omit<TypePolicy, "fields" | "keyFields"> & {
+    keyFields?:
+      | false
+      | SingleNFTOrderEdgeKeySpecifier
+      | (() => undefined | SingleNFTOrderEdgeKeySpecifier);
+    fields?: SingleNFTOrderEdgeFieldPolicy;
+  };
   SingleSourceLoan?: Omit<TypePolicy, "fields" | "keyFields"> & {
     keyFields?:
       | false
@@ -5137,15 +5100,15 @@ export type StrictTypedTypePolicies = {
 };
 export type TypedTypePolicies = StrictTypedTypePolicies & TypePolicies;
 export const SaleOfferInfoFragmentDoc = gql`
-  fragment SaleOfferInfo on NFTBidSample {
+  fragment SaleOfferInfo on SingleNFTOrder {
     id
     netAmount
     status
     marketPlace
     fees
-    bidderAddress
+    maker
     expiration
-    startTime
+    createdDate
     hidden
     signature
     currencyAddress
@@ -5307,7 +5270,7 @@ export const UnhideRenegotiationOfferDocument = gql`
   }
 `;
 export const HideSaleOfferDocument = gql`
-  mutation hideSaleOffer($id: String!) {
+  mutation hideSaleOffer($id: Int!) {
     hideSaleOffer(saleOfferId: $id) {
       id
     }
@@ -5321,9 +5284,9 @@ export const ListBestBidsForNftDocument = gql`
       status
       marketPlace
       fees
-      bidderAddress
+      maker
       expiration
-      startTime
+      createdDate
       hidden
       signature
       currencyAddress
@@ -5349,7 +5312,7 @@ export const SaveSignedSaleOfferDocument = gql`
   }
 `;
 export const UnhideSaleOfferDocument = gql`
-  mutation unhideSaleOffer($id: String!) {
+  mutation unhideSaleOffer($id: Int!) {
     showSaleOffer(saleOfferId: $id) {
       id
     }

@@ -140,7 +140,7 @@ export class Seaport extends Contract<typeof seaportABI> {
     const { WETH_ADDRESS } = getCurrencies();
 
     const orderParameters: SeaportOrderParameter = {
-      offerer: nativeBid.bidderAddress,
+      offerer: nativeBid.maker,
       zone: zeroAddress,
       offer: [
         {
@@ -167,15 +167,15 @@ export class Seaport extends Contract<typeof seaportABI> {
           identifierOrCriteria: nativeBid.nft.tokenId,
           startAmount: 1n,
           endAmount: 1n,
-          recipient: nativeBid.bidderAddress,
+          recipient: nativeBid.maker,
         },
       ],
       orderType: 0,
       startTime: BigInt(
-        Math.floor(millisToSeconds(nativeBid.startTime.getTime()))
+        Math.floor(millisToSeconds(nativeBid.createdDate.getTime()))
       ),
       endTime: BigInt(
-        Math.floor(millisToSeconds(nativeBid.expiration.getTime()))
+        Math.floor(millisToSeconds(nativeBid.expiration?.getTime() ?? Date.now()))
       ),
       zoneHash: zeroHash,
       salt: 0n,

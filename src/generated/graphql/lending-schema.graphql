@@ -226,15 +226,17 @@ type CollectionOrder implements Activity & Node & Order {
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
-  executionData: String!
   expiration: DateTime
+  fees: BigInt!
+  hidden: Boolean!
   id: String!
   isAsk: Boolean!
-  maker: String!
+  maker: Address!
   marketPlace: String!
-  marketPlaceId: String!
+  netAmount: BigInt!
   orderType: String!
-  price: Float!
+  price: BigInt!
+  signature: Hash!
   status: String!
   timestamp: DateTime!
   txHash: Hash
@@ -675,7 +677,7 @@ type Mutation {
     contractAddress: Address = "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
     renegotiationId: String!
   ): Renegotiation!
-  hideSaleOffer(saleOfferId: String!): NFTBidSample!
+  hideSaleOffer(saleOfferId: Int!): SingleNFTOrder!
   markNotificationIdsAsRead(ids: [Int!]): Void
   markNotificationsAsRead: Void
   removeListing(nftId: Int!): Listing!
@@ -686,7 +688,7 @@ type Mutation {
   saveSignedCollectionOffer(
     signedOfferInput: CollectionSignedOfferInput!
   ): CollectionOffer!
-  saveSignedSaleOffer(signedOfferInput: SignedOrderInput!): NFTBidSample!
+  saveSignedSaleOffer(signedOfferInput: SignedOrderInput!): SingleNFTOrder!
   saveSignedSingleNftOffer(
     signedOfferInput: SingleNFTSignedOfferInput!
   ): SingleNFTOffer!
@@ -696,7 +698,7 @@ type Mutation {
     contractAddress: Address = "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
     renegotiationId: String!
   ): Renegotiation!
-  showSaleOffer(saleOfferId: String!): NFTBidSample!
+  showSaleOffer(saleOfferId: Int!): SingleNFTOrder!
 }
 
 type NFT implements Node {
@@ -720,33 +722,6 @@ type NFT implements Node {
   tokenId: BigInt!
   traits: [Trait!]!
   url: String
-}
-
-type NFTBidSample implements Node {
-  bidderAddress: Address!
-  currency: Currency
-  currencyAddress: Address!
-  expiration: DateTime!
-  fees: BigInt!
-  hidden: Boolean!
-  id: String!
-  marketPlace: String!
-  netAmount: BigInt!
-  nft: NFT!
-  signature: Signature!
-  startTime: DateTime!
-  status: String!
-}
-
-type NFTBidSampleConnection {
-  edges: [NFTBidSampleEdge!]!
-  pageInfo: PageInfo!
-  totalCount: Int
-}
-
-type NFTBidSampleEdge {
-  cursor: String!
-  node: NFTBidSample!
 }
 
 type NFTConnection {
@@ -953,15 +928,17 @@ interface Order implements Activity & Node {
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
-  executionData: String!
   expiration: DateTime
+  fees: BigInt!
+  hidden: Boolean!
   id: String!
   isAsk: Boolean!
-  maker: String!
+  maker: Address!
   marketPlace: String!
-  marketPlaceId: String!
+  netAmount: BigInt!
   orderType: String!
-  price: Float!
+  price: BigInt!
+  signature: Hash!
   status: String!
   timestamp: DateTime!
   txHash: Hash
@@ -1035,7 +1012,7 @@ type Query {
     sortBy: [AuctionSortInput!] = null
     statuses: [AuctionStatus!] = null
   ): AuctionConnection!
-  listBestBidsForNft(currencyAddress: String!, nftId: Int!): [NFTBidSample!]!
+  listBestBidsForNft(currencyAddress: String!, nftId: Int!): [SingleNFTOrder!]!
   listBids(
     after: String
     auctionId: String = null
@@ -1158,7 +1135,7 @@ type Query {
     statuses: [LoanStatusType!] = null
     terms: TermsFilter = null
   ): SourcesAndLostSourcesConnection!
-  listUserSaleOffers(after: String, first: Int = 10): NFTBidSampleConnection!
+  listUserSaleOffers(after: String, first: Int = 10): SingleNFTOrderConnection!
   me: User
 }
 
@@ -1370,19 +1347,32 @@ type SingleNFTOrder implements Activity & Node & Order {
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
-  executionData: String!
   expiration: DateTime
+  fees: BigInt!
+  hidden: Boolean!
   id: String!
   isAsk: Boolean!
-  maker: String!
+  maker: Address!
   marketPlace: String!
-  marketPlaceId: String!
+  netAmount: BigInt!
   nft: NFT!
   orderType: String!
-  price: Float!
+  price: BigInt!
+  signature: Hash!
   status: String!
   timestamp: DateTime!
   txHash: Hash
+}
+
+type SingleNFTOrderConnection {
+  edges: [SingleNFTOrderEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type SingleNFTOrderEdge {
+  cursor: String!
+  node: SingleNFTOrder!
 }
 
 input SingleNFTSignedOfferInput {

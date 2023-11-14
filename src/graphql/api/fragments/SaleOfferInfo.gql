@@ -1,12 +1,12 @@
-fragment SaleOfferInfo on NFTBidSample {
+fragment SaleOfferInfo on SingleNFTOrder {
   id
   netAmount
   status
   marketPlace
   fees
-  bidderAddress
+  maker
   expiration
-  startTime
+  createdDate
   hidden
   signature
   currencyAddress

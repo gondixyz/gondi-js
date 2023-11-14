@@ -5,9 +5,9 @@ query listBestBidsForNft($nftId: Int!, $currencyAddress: String!) {
     status
     marketPlace
     fees
-    bidderAddress
+    maker
     expiration
-    startTime
+    createdDate
     hidden
     signature
     currencyAddress
