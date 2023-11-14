@@ -374,11 +374,11 @@ export class Gondi {
     });
   }
 
-  async hideSaleOffer({ id }: { id: number }) {
+  async hideSaleOffer({ id }: { id: string }) {
     return this.api.hideSaleOffer({ id });
   }
 
-  async unhideSaleOffer({ id }: { id: number }) {
+  async unhideSaleOffer({ id }: { id: string }) {
     return this.api.unhideSaleOffer({ id });
   }
 

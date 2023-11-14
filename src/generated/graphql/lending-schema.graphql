@@ -677,7 +677,7 @@ type Mutation {
     contractAddress: Address = "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
     renegotiationId: String!
   ): Renegotiation!
-  hideSaleOffer(saleOfferId: Int!): SingleNFTOrder!
+  hideSaleOffer(saleOfferId: String!): SingleNFTOrder!
   markNotificationIdsAsRead(ids: [Int!]): Void
   markNotificationsAsRead: Void
   removeListing(nftId: Int!): Listing!
@@ -698,7 +698,7 @@ type Mutation {
     contractAddress: Address = "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
     renegotiationId: String!
   ): Renegotiation!
-  showSaleOffer(saleOfferId: Int!): SingleNFTOrder!
+  showSaleOffer(saleOfferId: String!): SingleNFTOrder!
 }
 
 type NFT implements Node {

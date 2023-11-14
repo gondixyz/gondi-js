@@ -850,7 +850,7 @@ export type MutationHideRenegotiationArgs = {
 };
 
 export type MutationHideSaleOfferArgs = {
-  saleOfferId: Scalars["Int"];
+  saleOfferId: Scalars["String"];
 };
 
 export type MutationMarkNotificationIdsAsReadArgs = {
@@ -892,7 +892,7 @@ export type MutationShowRenegotiationArgs = {
 };
 
 export type MutationShowSaleOfferArgs = {
-  saleOfferId: Scalars["Int"];
+  saleOfferId: Scalars["String"];
 };
 
 export type Nft = Node & {
@@ -2094,7 +2094,7 @@ export type UnhideRenegotiationOfferMutation = {
 };
 
 export type HideSaleOfferMutationVariables = Exact<{
-  id: Scalars["Int"];
+  id: Scalars["String"];
 }>;
 
 export type HideSaleOfferMutation = {
@@ -2148,7 +2148,7 @@ export type SaveSignedSaleOfferMutation = {
 };
 
 export type UnhideSaleOfferMutationVariables = Exact<{
-  id: Scalars["Int"];
+  id: Scalars["String"];
 }>;
 
 export type UnhideSaleOfferMutation = {
@@ -5270,7 +5270,7 @@ export const UnhideRenegotiationOfferDocument = gql`
   }
 `;
 export const HideSaleOfferDocument = gql`
-  mutation hideSaleOffer($id: Int!) {
+  mutation hideSaleOffer($id: String!) {
     hideSaleOffer(saleOfferId: $id) {
       id
     }
@@ -5312,7 +5312,7 @@ export const SaveSignedSaleOfferDocument = gql`
   }
 `;
 export const UnhideSaleOfferDocument = gql`
-  mutation unhideSaleOffer($id: Int!) {
+  mutation unhideSaleOffer($id: String!) {
     showSaleOffer(saleOfferId: $id) {
       id
     }

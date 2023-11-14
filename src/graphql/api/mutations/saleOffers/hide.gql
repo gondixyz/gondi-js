@@ -1,4 +1,4 @@
-mutation hideSaleOffer($id: Int!) {
+mutation hideSaleOffer($id: String!) {
   hideSaleOffer(saleOfferId: $id) {
     id
   }
