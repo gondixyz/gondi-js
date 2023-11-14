@@ -38,7 +38,9 @@ export class Seaport extends Contract<typeof seaportABI> {
   }
 
   async getCounter() {
-    return await (this.contract.read.getCounter([this.wallet.account.address])) + 1n;
+    return (
+      (await this.contract.read.getCounter([this.wallet.account.address])) + 1n
+    );
   }
 
   async signOrder(order: SeaportOrderParameter) {
