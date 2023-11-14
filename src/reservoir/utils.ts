@@ -1,7 +1,8 @@
 import { adaptViemWallet } from "@reservoir0x/reservoir-sdk";
 import { Address, decodeFunctionData, Hash, zeroAddress } from "viem";
 
-import { Wallet, zeroHash } from "@/blockchain";
+import { Wallet } from "@/blockchain";
+import { MSL_V5_TX_HASH } from "@/deploys";
 import {
   InterruptedCryptoPunksSendTransactionStepError,
   InterruptedGenericSendTransactionStepError,
@@ -81,7 +82,7 @@ export const adaptWalletToCaptureTxData = (
     ) => {
       if (step.id !== "sale") {
         console.log(step);
-        return zeroHash;
+        return MSL_V5_TX_HASH;
       }
       const orderId = stepItem.orderIds?.[0] ?? "";
       const to = stepItem.data.to;
