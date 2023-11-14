@@ -1,4 +1,4 @@
-import { Address, Chain, zeroAddress } from "viem";
+import { Address, Chain, Hash, zeroAddress } from "viem";
 import { goerli } from "viem/chains";
 
 const ANVIL_CHAIN_ID = 31337;
@@ -24,7 +24,7 @@ interface Currencies {
   USDC_ADDRESS: Address;
 }
 
-export const MSL_V5_TX_HASH = '0xb6dfcbc1661d0c0bced9591d06e964f97d41a35984704ffe61f8e062e43919c8';
+export const MSL_V5_TX_HASH = '0xb6dfcbc1661d0c0bced9591d06e964f97d41a35984704ffe61f8e062e43919c8' as Hash;
 
 export const getContracts = (chain: Pick<Chain, "id">): Contracts => {
   if (chain?.id === ANVIL_CHAIN_ID) {
