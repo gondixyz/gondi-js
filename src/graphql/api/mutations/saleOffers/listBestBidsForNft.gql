@@ -13,15 +13,5 @@ query listBestBidsForNft($nftId: Int!, $currencyAddress: String!) {
     currencyAddress
     startTime
     nonce
-    nft {
-      id
-      tokenId
-      collection {
-        id
-        contractData {
-          contractAddress
-        }
-      }
-    }
   }
 }

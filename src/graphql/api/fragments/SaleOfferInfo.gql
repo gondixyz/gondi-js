@@ -12,14 +12,4 @@ fragment SaleOfferInfo on SingleNFTOrder {
   signature
   currencyAddress
   nonce
-  nft {
-    id
-    tokenId
-    collection {
-      id
-      contractData {
-        contractAddress
-      }
-    }
-  }
 }

@@ -1168,6 +1168,19 @@ export type Order = {
   txHash?: Maybe<Scalars["Hash"]>;
 };
 
+export type OrderConnection = {
+  __typename?: "OrderConnection";
+  edges: Array<OrderEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]>;
+};
+
+export type OrderEdge = {
+  __typename?: "OrderEdge";
+  cursor: Scalars["String"];
+  node: Order;
+};
+
 export enum Ordering {
   Asc = "ASC",
   Desc = "DESC",
@@ -1231,7 +1244,7 @@ export type Query = {
   getUserPointActivities: PointActivityConnection;
   getUserPoints: Scalars["Int"];
   listAuctions: AuctionConnection;
-  listBestBidsForNft: Array<SingleNftOrder>;
+  listBestBidsForNft: Array<Order>;
   listBids: BidConnection;
   listCollections: CollectionConnection;
   listCollectionsWithListings: CollectionConnection;
@@ -1246,7 +1259,7 @@ export type Query = {
   listOffers: OfferConnection;
   listRenegotiations: RenegotiationConnection;
   listSources: SourcesAndLostSourcesConnection;
-  listUserSaleOffers: SingleNftOrderConnection;
+  listUserSaleOffers: OrderConnection;
   me?: Maybe<User>;
 };
 
@@ -1681,19 +1694,6 @@ export type SingleNftOrder = Activity &
     txHash?: Maybe<Scalars["Hash"]>;
   };
 
-export type SingleNftOrderConnection = {
-  __typename?: "SingleNFTOrderConnection";
-  edges: Array<SingleNftOrderEdge>;
-  pageInfo: PageInfo;
-  totalCount?: Maybe<Scalars["Int"]>;
-};
-
-export type SingleNftOrderEdge = {
-  __typename?: "SingleNFTOrderEdge";
-  cursor: Scalars["String"];
-  node: SingleNftOrder;
-};
-
 export type SingleNftSignedOfferInput = {
   aprBps: Scalars["BigInt"];
   borrowerAddress: Scalars["Address"];
@@ -1884,19 +1884,6 @@ export type SaleOfferInfoFragment = {
   signature: Hash;
   currencyAddress: Address;
   nonce: bigint;
-  nft: {
-    __typename?: "NFT";
-    id: string;
-    tokenId: bigint;
-    collection?: {
-      __typename?: "Collection";
-      id: string;
-      contractData?: {
-        __typename?: "ContractData";
-        contractAddress: Address;
-      } | null;
-    } | null;
-  };
 };
 
 export type ListNftMutationVariables = Exact<{
@@ -2117,35 +2104,40 @@ export type ListBestBidsForNftQueryVariables = Exact<{
 
 export type ListBestBidsForNftQuery = {
   __typename?: "Query";
-  bids: Array<{
-    __typename?: "SingleNFTOrder";
-    id: string;
-    netAmount: bigint;
-    status: string;
-    marketPlace: string;
-    fees: bigint;
-    maker: Address;
-    expiration?: Date | null;
-    createdDate: Date;
-    hidden: boolean;
-    signature: Hash;
-    currencyAddress: Address;
-    startTime: Date;
-    nonce: bigint;
-    nft: {
-      __typename?: "NFT";
-      id: string;
-      tokenId: bigint;
-      collection?: {
-        __typename?: "Collection";
+  bids: Array<
+    | {
+        __typename?: "CollectionOrder";
         id: string;
-        contractData?: {
-          __typename?: "ContractData";
-          contractAddress: Address;
-        } | null;
-      } | null;
-    };
-  }>;
+        netAmount: bigint;
+        status: string;
+        marketPlace: string;
+        fees: bigint;
+        maker: Address;
+        expiration?: Date | null;
+        createdDate: Date;
+        hidden: boolean;
+        signature: Hash;
+        currencyAddress: Address;
+        startTime: Date;
+        nonce: bigint;
+      }
+    | {
+        __typename?: "SingleNFTOrder";
+        id: string;
+        netAmount: bigint;
+        status: string;
+        marketPlace: string;
+        fees: bigint;
+        maker: Address;
+        expiration?: Date | null;
+        createdDate: Date;
+        hidden: boolean;
+        signature: Hash;
+        currencyAddress: Address;
+        startTime: Date;
+        nonce: bigint;
+      }
+  >;
 };
 
 export type SaveSignedSaleOfferMutationVariables = Exact<{
@@ -3836,6 +3828,26 @@ export type OrderFieldPolicy = {
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   txHash?: FieldPolicy<any> | FieldReadFunction<any>;
 };
+export type OrderConnectionKeySpecifier = (
+  | "edges"
+  | "pageInfo"
+  | "totalCount"
+  | OrderConnectionKeySpecifier
+)[];
+export type OrderConnectionFieldPolicy = {
+  edges?: FieldPolicy<any> | FieldReadFunction<any>;
+  pageInfo?: FieldPolicy<any> | FieldReadFunction<any>;
+  totalCount?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type OrderEdgeKeySpecifier = (
+  | "cursor"
+  | "node"
+  | OrderEdgeKeySpecifier
+)[];
+export type OrderEdgeFieldPolicy = {
+  cursor?: FieldPolicy<any> | FieldReadFunction<any>;
+  node?: FieldPolicy<any> | FieldReadFunction<any>;
+};
 export type OutbidNotificationKeySpecifier = (
   | "auction"
   | "createdOn"
@@ -4239,26 +4251,6 @@ export type SingleNFTOrderFieldPolicy = {
   status?: FieldPolicy<any> | FieldReadFunction<any>;
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   txHash?: FieldPolicy<any> | FieldReadFunction<any>;
-};
-export type SingleNFTOrderConnectionKeySpecifier = (
-  | "edges"
-  | "pageInfo"
-  | "totalCount"
-  | SingleNFTOrderConnectionKeySpecifier
-)[];
-export type SingleNFTOrderConnectionFieldPolicy = {
-  edges?: FieldPolicy<any> | FieldReadFunction<any>;
-  pageInfo?: FieldPolicy<any> | FieldReadFunction<any>;
-  totalCount?: FieldPolicy<any> | FieldReadFunction<any>;
-};
-export type SingleNFTOrderEdgeKeySpecifier = (
-  | "cursor"
-  | "node"
-  | SingleNFTOrderEdgeKeySpecifier
-)[];
-export type SingleNFTOrderEdgeFieldPolicy = {
-  cursor?: FieldPolicy<any> | FieldReadFunction<any>;
-  node?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type SingleSourceLoanKeySpecifier = (
   | "accruedInterest"
@@ -4942,6 +4934,20 @@ export type StrictTypedTypePolicies = {
       | (() => undefined | OrderKeySpecifier);
     fields?: OrderFieldPolicy;
   };
+  OrderConnection?: Omit<TypePolicy, "fields" | "keyFields"> & {
+    keyFields?:
+      | false
+      | OrderConnectionKeySpecifier
+      | (() => undefined | OrderConnectionKeySpecifier);
+    fields?: OrderConnectionFieldPolicy;
+  };
+  OrderEdge?: Omit<TypePolicy, "fields" | "keyFields"> & {
+    keyFields?:
+      | false
+      | OrderEdgeKeySpecifier
+      | (() => undefined | OrderEdgeKeySpecifier);
+    fields?: OrderEdgeFieldPolicy;
+  };
   OutbidNotification?: Omit<TypePolicy, "fields" | "keyFields"> & {
     keyFields?:
       | false
@@ -5048,20 +5054,6 @@ export type StrictTypedTypePolicies = {
       | (() => undefined | SingleNFTOrderKeySpecifier);
     fields?: SingleNFTOrderFieldPolicy;
   };
-  SingleNFTOrderConnection?: Omit<TypePolicy, "fields" | "keyFields"> & {
-    keyFields?:
-      | false
-      | SingleNFTOrderConnectionKeySpecifier
-      | (() => undefined | SingleNFTOrderConnectionKeySpecifier);
-    fields?: SingleNFTOrderConnectionFieldPolicy;
-  };
-  SingleNFTOrderEdge?: Omit<TypePolicy, "fields" | "keyFields"> & {
-    keyFields?:
-      | false
-      | SingleNFTOrderEdgeKeySpecifier
-      | (() => undefined | SingleNFTOrderEdgeKeySpecifier);
-    fields?: SingleNFTOrderEdgeFieldPolicy;
-  };
   SingleSourceLoan?: Omit<TypePolicy, "fields" | "keyFields"> & {
     keyFields?:
       | false
@@ -5136,16 +5128,6 @@ export const SaleOfferInfoFragmentDoc = gql`
     signature
     currencyAddress
     nonce
-    nft {
-      id
-      tokenId
-      collection {
-        id
-        contractData {
-          contractAddress
-        }
-      }
-    }
   }
 `;
 export const ListNftDocument = gql`
@@ -5316,16 +5298,6 @@ export const ListBestBidsForNftDocument = gql`
       currencyAddress
       startTime
       nonce
-      nft {
-        id
-        tokenId
-        collection {
-          id
-          contractData {
-            contractAddress
-          }
-        }
-      }
     }
   }
 `;

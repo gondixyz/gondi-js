@@ -140,7 +140,15 @@ export class Seaport extends Contract<typeof seaportABI> {
     };
   }
 
-  async recoverOrderFromNativeBid(nativeBid: SaleOfferInfoFragment) {
+  async recoverOrderFromNativeBid({
+    nativeBid,
+    collectionContractAddress,
+    tokenId,
+  }: {
+    nativeBid: Omit<SaleOfferInfoFragment, "__typename">;
+    collectionContractAddress: Address;
+    tokenId: bigint;
+  }) {
     const { WETH_ADDRESS } = getCurrencies();
 
     const orderParameters: SeaportOrderParameter = {
@@ -158,10 +166,8 @@ export class Seaport extends Contract<typeof seaportABI> {
       consideration: [
         {
           itemType: 2,
-          token:
-            nativeBid.nft.collection?.contractData?.contractAddress ??
-            zeroAddress,
-          identifierOrCriteria: nativeBid.nft.tokenId,
+          token: collectionContractAddress,
+          identifierOrCriteria: tokenId,
           startAmount: 1n,
           endAmount: 1n,
           recipient: nativeBid.maker,
