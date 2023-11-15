@@ -948,6 +948,17 @@ interface Order implements Activity & Node {
   txHash: Hash
 }
 
+type OrderConnection {
+  edges: [OrderEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type OrderEdge {
+  cursor: String!
+  node: Order!
+}
+
 enum Ordering {
   ASC
   DESC
@@ -1016,7 +1027,7 @@ type Query {
     sortBy: [AuctionSortInput!] = null
     statuses: [AuctionStatus!] = null
   ): AuctionConnection!
-  listBestBidsForNft(currencyAddress: String!, nftId: Int!): [SingleNFTOrder!]!
+  listBestBidsForNft(currencyAddress: String!, nftId: Int!): [Order!]!
   listBids(
     after: String
     auctionId: String = null
@@ -1139,7 +1150,7 @@ type Query {
     statuses: [LoanStatusType!] = null
     terms: TermsFilter = null
   ): SourcesAndLostSourcesConnection!
-  listUserSaleOffers(after: String, first: Int = 10): SingleNFTOrderConnection!
+  listUserSaleOffers(after: String, first: Int = 10): OrderConnection!
   me: User
 }
 
@@ -1368,17 +1379,6 @@ type SingleNFTOrder implements Activity & Node & Order {
   status: String!
   timestamp: DateTime!
   txHash: Hash
-}
-
-type SingleNFTOrderConnection {
-  edges: [SingleNFTOrderEdge!]!
-  pageInfo: PageInfo!
-  totalCount: Int
-}
-
-type SingleNFTOrderEdge {
-  cursor: String!
-  node: SingleNFTOrder!
 }
 
 input SingleNFTSignedOfferInput {
