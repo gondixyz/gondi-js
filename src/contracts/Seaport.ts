@@ -10,7 +10,12 @@ import {
 import { filterLogs, zeroHash } from "@/blockchain";
 import { getContracts, getCurrencies } from "@/deploys";
 import { seaportABI } from "@/generated/blockchain/seaport";
-import { Fulfillment, SeaportOrder, SeaportOrderParameter } from "@/reservoir/utils";
+import { SaleOfferInfoFragment } from "@/generated/graphql";
+import {
+  Fulfillment,
+  SeaportOrder,
+  SeaportOrderParameter,
+} from "@/reservoir/utils";
 import { millisToSeconds } from "@/utils";
 
 import { Contract } from "./Contract";
@@ -26,6 +31,16 @@ export class Seaport extends Contract<typeof seaportABI> {
       address: SeaportAddress,
       abi: seaportABI,
     });
+  }
+
+  async getOrderHash(order: SeaportOrder) {
+    return this.contract.read.getOrderHash([order]);
+  }
+
+  async getCounter() {
+    return (
+      (await this.contract.read.getCounter([this.wallet.account.address])) + 1n
+    );
   }
 
   async signOrder(order: SeaportOrderParameter) {
@@ -115,7 +130,7 @@ export class Seaport extends Contract<typeof seaportABI> {
       zoneHash: zeroHash,
       salt: 0n,
       conduitKey: zeroHash,
-      counter: 0n,
+      counter: await this.getCounter(),
       totalOriginalConsiderationItems: 1n,
     };
 
@@ -127,7 +142,55 @@ export class Seaport extends Contract<typeof seaportABI> {
     };
   }
 
-  generateInverseOrder(order: SeaportOrder): SeaportOrderParameter {
+  async recoverOrderFromNativeBid(nativeBid: SaleOfferInfoFragment) {
+    const { WETH_ADDRESS } = getCurrencies();
+
+    const orderParameters: SeaportOrderParameter = {
+      offerer: nativeBid.maker,
+      zone: zeroAddress,
+      offer: [
+        {
+          itemType: 1,
+          token: WETH_ADDRESS,
+          identifierOrCriteria: 0n,
+          startAmount: nativeBid.netAmount,
+          endAmount: nativeBid.netAmount,
+        },
+      ],
+      consideration: [
+        {
+          itemType: 2,
+          token:
+            nativeBid.nft.collection?.contractData?.contractAddress ??
+            zeroAddress,
+          identifierOrCriteria: nativeBid.nft.tokenId,
+          startAmount: 1n,
+          endAmount: 1n,
+          recipient: nativeBid.maker,
+        },
+      ],
+      orderType: 0,
+      startTime: BigInt(
+        Math.floor(millisToSeconds(nativeBid.startTime.getTime()))
+      ),
+      endTime: BigInt(
+        Math.floor(
+          millisToSeconds(nativeBid.expiration?.getTime() ?? Date.now())
+        )
+      ),
+      zoneHash: zeroHash,
+      salt: 0n,
+      conduitKey: zeroHash,
+      counter: await this.getCounter(),
+      totalOriginalConsiderationItems: 1n,
+    };
+
+    return orderParameters;
+  }
+
+  async generateInverseOrder(
+    order: SeaportOrder
+  ): Promise<SeaportOrderParameter> {
     return {
       offerer: this.wallet.account?.address ?? zeroAddress,
       zone: zeroAddress,
@@ -142,7 +205,7 @@ export class Seaport extends Contract<typeof seaportABI> {
       zoneHash: zeroHash,
       salt: 0n,
       conduitKey: zeroHash,
-      counter: 0n,
+      counter: await this.getCounter(),
       totalOriginalConsiderationItems: BigInt(order.offer.length),
     };
   }

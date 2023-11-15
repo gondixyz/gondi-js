@@ -4,6 +4,7 @@ import {
   createPublicClient,
   createTransport,
   Hash,
+  Hex,
   PublicClient,
   Transport,
 } from "viem";
@@ -26,10 +27,11 @@ import {
   Ordering,
 } from "@/generated/graphql";
 import * as model from "@/model";
-import { millisToSeconds, SECONDS_IN_DAY } from "@/utils";
+import { millisToSeconds, NATIVE_MARKETPLACE, SECONDS_IN_DAY } from "@/utils";
 
+import { getCurrencies } from "./deploys";
 import { Reservoir } from "./reservoir/Reservoir";
-import { SeaportOrder } from "./reservoir/utils";
+import { isNative, SeaportOrder } from "./reservoir/utils";
 
 type GondiProps = {
   wallet: Wallet;
@@ -212,13 +214,21 @@ export class Gondi {
     price: bigint;
     expirationTime: bigint;
   }) {
-    this.contracts.Seaport.generateOrderFromSaleOffer({
+    const {
+      parameters: {
+        totalOriginalConsiderationItems: _totalOriginalConsiderationItems,
+        ...saleOffer
+      },
+      signature,
+    } = await this.contracts.Seaport.generateOrderFromSaleOffer({
       collectionContractAddress,
       tokenId,
       price,
       expirationTime,
     });
-    // TODO: Call the api to create the order
+    return this.api.saveSignedSaleOffer({
+      offer: { ...saleOffer, signature },
+    });
   }
 
   async cancelSaleOffer({ saleOffer }: { saleOffer: SeaportOrder }) {
@@ -362,6 +372,14 @@ export class Gondi {
       id: id.toString(),
       contractAddress,
     });
+  }
+
+  async hideSaleOffer({ id }: { id: string }) {
+    return this.api.hideSaleOffer({ id });
+  }
+
+  async unhideSaleOffer({ id }: { id: string }) {
+    return this.api.unhideSaleOffer({ id });
   }
 
   async cancelAllRenegotiations({
@@ -530,6 +548,26 @@ export class Gondi {
     });
   }
 
+  async getBestNativeSaleOffer({
+    contractAddress,
+    tokenId,
+  }: {
+    contractAddress: Address;
+    tokenId: bigint;
+  }) {
+    const { WETH_ADDRESS } = getCurrencies();
+    const nftId = await this.nftId({ contractAddress, tokenId });
+    const { bids } = await this.api.listBestBidsForNft({
+      nftId,
+      currencyAddress: WETH_ADDRESS,
+    });
+    const nativeBid = bids.find(
+      (bid) => bid.marketPlace === NATIVE_MARKETPLACE
+    );
+
+    return nativeBid ?? null;
+  }
+
   async refinanceFullLoan({
     offer,
     loan,
@@ -677,13 +715,43 @@ export class Gondi {
     price: bigint;
     orderSource: string;
   }) {
-    const executionData = await this.reservoir.getCallbackDataForSellToken({
-      collectionContractAddress: loan.nftCollateralAddress,
-      tokenId: loan.nftCollateralTokenId,
-      price,
-      exactOrderSource: orderSource,
-      leverageAddress: this.contracts.Leverage.address,
-    });
+    let executionData: {
+      callbackData: Hex;
+      isSeaportCall: boolean;
+    } | null = null;
+
+    if (isNative(orderSource)) {
+      const bestNativeBid = await this.getBestNativeSaleOffer({
+        contractAddress: loan.nftCollateralAddress,
+        tokenId: loan.nftCollateralTokenId,
+      });
+      if (!bestNativeBid || bestNativeBid.netAmount < price) {
+        throw new Error(`No native bid for price ${price}`);
+      }
+
+      executionData = await this.reservoir.generateMatchOrdersExecutionData({
+        askOrBid: {
+          rawData: await this.contracts.Seaport.recoverOrderFromNativeBid(
+            bestNativeBid
+          ),
+          price: {
+            netAmount: {
+              raw: String(price),
+            },
+          },
+        },
+        signature: bestNativeBid.signature,
+        side: "bid",
+      });
+    } else {
+      executionData = await this.reservoir.getCallbackDataForSellToken({
+        collectionContractAddress: loan.nftCollateralAddress,
+        tokenId: loan.nftCollateralTokenId,
+        price,
+        exactOrderSource: orderSource,
+        leverageAddress: this.contracts.Leverage.address,
+      });
+    }
 
     const shouldDelegate = executionData.isSeaportCall;
 

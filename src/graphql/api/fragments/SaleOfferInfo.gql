@@ -1,0 +1,25 @@
+fragment SaleOfferInfo on SingleNFTOrder {
+  id
+  netAmount
+  status
+  marketPlace
+  fees
+  maker
+  expiration
+  createdDate
+  startTime
+  hidden
+  signature
+  currencyAddress
+  nonce
+  nft {
+    id
+    tokenId
+    collection {
+      id
+      contractData {
+        contractAddress
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+mutation saveSignedSaleOffer($offer: SignedOrderInput!) {
+  offer: saveSignedSaleOffer(signedOfferInput: $offer) {
+    id
+    status
+  }
+}

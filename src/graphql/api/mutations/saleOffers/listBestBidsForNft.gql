@@ -1,0 +1,27 @@
+query listBestBidsForNft($nftId: Int!, $currencyAddress: String!) {
+  bids: listBestBidsForNft(nftId: $nftId, currencyAddress: $currencyAddress) {
+    id
+    netAmount
+    status
+    marketPlace
+    fees
+    maker
+    expiration
+    createdDate
+    hidden
+    signature
+    currencyAddress
+    startTime
+    nonce
+    nft {
+      id
+      tokenId
+      collection {
+        id
+        contractData {
+          contractAddress
+        }
+      }
+    }
+  }
+}

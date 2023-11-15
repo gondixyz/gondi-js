@@ -170,7 +170,7 @@ export class Reservoir {
       signature,
     };
 
-    const inverseOrderParameters = this.Seaport.generateInverseOrder(
+    const inverseOrderParameters = await this.Seaport.generateInverseOrder(
       order.parameters
     );
 
