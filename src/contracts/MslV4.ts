@@ -1,6 +1,12 @@
-import { Address, Hash } from "viem";
+import { Address, Hash, TransactionReceipt } from "viem";
 
-import { filterLogs, LoanV4, OfferV4, RenegotiationV4, Wallet } from '@/blockchain';
+import {
+  filterLogs,
+  LoanV4,
+  OfferV4,
+  RenegotiationV4,
+  Wallet,
+} from "@/blockchain";
 import { getContracts } from "@/deploys";
 import { multiSourceLoanABI as multiSourceLoanABIV4 } from "@/generated/blockchain/v4";
 import { getDomain } from "@/utils";
@@ -287,10 +293,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
     offer: RenegotiationV4;
     loan: LoanV4;
   }) {
-    const txHash = await this.safeContractWrite.refinancePartial([
-      offer,
-      loan,
-    ]);
+    const txHash = await this.safeContractWrite.refinancePartial([offer, loan]);
 
     return {
       txHash,
@@ -315,6 +318,13 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
         };
       },
     };
+  }
+
+  async extendLoan(): Promise<{
+    txHash: Hash;
+    waitTxInBlock: () => Promise<TransactionReceipt>;
+  }> {
+    throw new Error("Not implemented for V1");
   }
 
   async liquidateLoan({ loan }: { loan: LoanV4 }) {

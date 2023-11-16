@@ -613,6 +613,12 @@ export class Gondi {
     });
   }
 
+  async extendLoan({ loan, newDuration }: { loan: LoanV5; newDuration: bigint }) {
+    return this.contracts
+      .Msl(loan.contractAddress)
+      .extendLoan({ loan, newDuration });
+  }
+
   async liquidateLoan(loan: LoanV4V5) {
     return this.contracts.Msl(loan.contractAddress).liquidateLoan({
       loan,

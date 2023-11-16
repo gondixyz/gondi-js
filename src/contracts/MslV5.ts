@@ -1,6 +1,12 @@
 import { Address, Hash } from "viem";
 
-import { filterLogs, LoanV5, OfferV5, RenegotiationV5, Wallet } from "@/blockchain";
+import {
+  filterLogs,
+  LoanV5,
+  OfferV5,
+  RenegotiationV5,
+  Wallet,
+} from "@/blockchain";
 import { getContracts } from "@/deploys";
 import { multiSourceLoanABI as multiSourceLoanABIV5 } from "@/generated/blockchain/v5";
 import { bpsToPercentage, getDomain, millisToSeconds } from "@/utils";
@@ -321,6 +327,35 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
           renegotiationId: `${this.contract.address.toLowerCase()}.${offer.lender.toLowerCase()}.${
             args.renegotiationId
           }`,
+          ...receipt,
+        };
+      },
+    };
+  }
+
+  async extendLoan({ loan, newDuration }: { loan: LoanV5; newDuration: bigint }) {
+    const txHash = await this.safeContractWrite.extendLoan([
+      loan.source[0].loanId,
+      loan,
+      newDuration - loan.duration,
+    ]);
+
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        const filter = await this.contract.createEventFilter.LoanExtended();
+        const events = filterLogs(receipt, filter);
+        if (events.length == 0) throw new Error("Loan not extended");
+        const args = events[0].args;
+        return {
+          loan: {
+            id: `${this.contract.address.toLowerCase()}.${args.newLoanId}`,
+            ...args.loan,
+            contractAddress: this.contract.address,
+          },
           ...receipt,
         };
       },
