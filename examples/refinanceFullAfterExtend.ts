@@ -74,8 +74,8 @@ const emitRefinaceFullAndRepayLoan = async (contract?: Address) => {
     await generateBlock(); // We need to push a new block into the blockchain [anvil issue]
     const refinanceFullLoan = await users[2].refinanceFullLoan({
       offer: renegotiationOffer,
-      loan: receipt.loan,
-      loanId: receipt.newLoanId,
+      loan: refinancedLoan,
+      loanId: refinancedLoanId,
     });
     const { loan: refinancedLoanResult } =
       await refinanceFullLoan.waitTxInBlock();
