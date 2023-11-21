@@ -1,8 +1,9 @@
-import { Address, Hash, TransactionReceipt } from "viem";
+import { Address, Hash } from "viem";
 
 import {
   filterLogs,
   LoanV4,
+  LoanV4V5,
   OfferV4,
   RenegotiationV4,
   Wallet,
@@ -12,6 +13,7 @@ import { multiSourceLoanABI as multiSourceLoanABIV4 } from "@/generated/blockcha
 import { getDomain } from "@/utils";
 
 import { Contract } from "./Contract";
+import { ContractMethodReturnType } from "./types";
 
 export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
   constructor({ walletClient }: { walletClient: Wallet }) {
@@ -215,15 +217,17 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
   async repayLoan({
     loan,
     nftReceiver,
+    loanId,
   }: {
     loan: LoanV4;
+    loanId: bigint;
     nftReceiver?: Address;
   }) {
     const receiver = nftReceiver ?? this.wallet.account.address;
 
     const txHash = await this.safeContractWrite.repayLoan([
       receiver,
-      loan.source[0].loanId,
+      loanId,
       loan,
       false,
     ]);
@@ -320,18 +324,15 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
     };
   }
 
-  async extendLoan(): Promise<{
-    txHash: Hash;
-    waitTxInBlock: () => Promise<TransactionReceipt>;
+  async extendLoan(): ContractMethodReturnType<{
+    loan: LoanV4V5 & { id: string; contractAddress: Address };
+    newLoanId: bigint;
   }> {
     throw new Error("Not implemented for V1");
   }
 
-  async liquidateLoan({ loan }: { loan: LoanV4 }) {
-    const txHash = await this.safeContractWrite.liquidateLoan([
-      loan.source[0].loanId,
-      loan,
-    ]);
+  async liquidateLoan({ loan, loanId }: { loan: LoanV4; loanId: bigint }) {
+    const txHash = await this.safeContractWrite.liquidateLoan([loanId, loan]);
 
     return {
       txHash,

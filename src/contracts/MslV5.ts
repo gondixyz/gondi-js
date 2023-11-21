@@ -213,9 +213,9 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     };
   }
 
-  async repayLoan({ loan }: { loan: LoanV5 }) {
+  async repayLoan({ loan, loanId }: { loan: LoanV5; loanId: bigint }) {
     const signableRepaymentData = {
-      loanId: loan.source[0].loanId,
+      loanId,
       callbackData: "0x" as Hash, // No callback data is expected here, only for BNPL [Levearage call]
       shouldDelegate: false, // No need to delegate
     };
@@ -333,9 +333,17 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     };
   }
 
-  async extendLoan({ loan, newDuration }: { loan: LoanV5; newDuration: bigint }) {
+  async extendLoan({
+    loan,
+    loanId,
+    newDuration,
+  }: {
+    loan: LoanV5;
+    loanId: bigint;
+    newDuration: bigint;
+  }) {
     const txHash = await this.safeContractWrite.extendLoan([
-      loan.source[0].loanId,
+      loanId,
       loan,
       newDuration - loan.duration,
     ]);
@@ -356,17 +364,15 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
             ...args.loan,
             contractAddress: this.contract.address,
           },
+          newLoanId: args.newLoanId,
           ...receipt,
         };
       },
     };
   }
 
-  async liquidateLoan({ loan }: { loan: LoanV5 }) {
-    const txHash = await this.safeContractWrite.liquidateLoan([
-      loan.source[0].loanId,
-      loan,
-    ]);
+  async liquidateLoan({ loan, loanId }: { loan: LoanV5; loanId: bigint }) {
+    const txHash = await this.safeContractWrite.liquidateLoan([loanId, loan]);
     return {
       txHash,
       waitTxInBlock: async () => {
