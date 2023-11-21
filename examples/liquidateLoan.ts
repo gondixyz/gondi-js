@@ -9,11 +9,18 @@ import {
   users,
 } from "./common";
 
-const emitAndLiquidateLoan = async (owner: Gondi, lender: Gondi, contract?: Address) => {
-  const signedOffer = await lender._makeSingleNftOffer({
-    ...testSingleNftOfferInput,
-    duration: 1n,
-  }, contract);
+const emitAndLiquidateLoan = async (
+  owner: Gondi,
+  lender: Gondi,
+  contract?: Address
+) => {
+  const signedOffer = await lender._makeSingleNftOffer(
+    {
+      ...testSingleNftOfferInput,
+      duration: 1n,
+    },
+    contract
+  );
   const contractVersionString = `msl: ${signedOffer.contractAddress}`;
   console.log(`offer placed successfully: ${contractVersionString}`);
 
@@ -31,20 +38,28 @@ const emitAndLiquidateLoan = async (owner: Gondi, lender: Gondi, contract?: Addr
 
   await sleep(3000);
 
-  const liquidatedLoan = await lender.liquidateLoan(loan);
+  const liquidatedLoan = await lender.liquidateLoan({
+    loan,
+    loanId: loan.source[0].loanId,
+  });
 
   await liquidatedLoan.waitTxInBlock();
   console.log(`loan liquidated: ${contractVersionString}`);
-}
+};
 
 async function main() {
   try {
     await emitAndLiquidateLoan(users[1], users[0]);
 
-    const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
+    const MULTI_SOURCE_LOAN_CONTRACT_V4 =
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
 
     if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
-      await emitAndLiquidateLoan(users[0], users[1], MULTI_SOURCE_LOAN_CONTRACT_V4);
+      await emitAndLiquidateLoan(
+        users[0],
+        users[1],
+        MULTI_SOURCE_LOAN_CONTRACT_V4
+      );
     }
   } catch (e) {
     console.log("Error:");

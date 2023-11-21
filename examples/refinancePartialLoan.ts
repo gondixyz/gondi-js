@@ -1,17 +1,21 @@
 import { Address, isAddress } from "viem";
 
-import { generateBlock, sleep, testSingleNftOfferInput, testTokenId, users } from "./common";
+import {
+  generateBlock,
+  sleep,
+  testSingleNftOfferInput,
+  testTokenId,
+  users,
+} from "./common";
 
 const SLEEP_BUFFER = 3000;
 
 const emitRefinacePartialAndRepayLoan = async (contract?: Address) => {
   const offer = {
     ...testSingleNftOfferInput,
-    duration: 30n
+    duration: 30n,
   };
-  const signedOffer = await users[0]._makeSingleNftOffer(
-    offer, contract,
-  );
+  const signedOffer = await users[0]._makeSingleNftOffer(offer, contract);
   const contractVersionString = `msl: ${signedOffer.contractAddress}`;
   console.log(`offer placed successfully: ${contractVersionString}`);
 
@@ -49,15 +53,20 @@ const emitRefinacePartialAndRepayLoan = async (contract?: Address) => {
     const refinancePartialLoan = await users[2].refinancePartialLoan({
       offer: renegotiationOffer,
       loan,
+      loanId: loan.source[0].loanId,
     });
-    const { loan: refinancedLoanResult } = await refinancePartialLoan.waitTxInBlock();
+    const { loan: refinancedLoanResult } =
+      await refinancePartialLoan.waitTxInBlock();
     refinancedLoan = refinancedLoanResult;
     console.log(`loan partially refinanced: ${contractVersionString}`);
-  } catch(e) {
-    console.log('Error while refinancing loan:');
+  } catch (e) {
+    console.log("Error while refinancing loan:");
     console.log(e);
   } finally {
-    const repayLoan = await users[1].repayLoan({ loan: refinancedLoan });
+    const repayLoan = await users[1].repayLoan({
+      loan: refinancedLoan,
+      loanId: refinancedLoan.source[0].loanId,
+    });
     await repayLoan.waitTxInBlock();
     console.log(`loan repaid: ${contractVersionString}`);
   }
@@ -67,7 +76,8 @@ async function main() {
   try {
     await emitRefinacePartialAndRepayLoan();
 
-    const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
+    const MULTI_SOURCE_LOAN_CONTRACT_V4 =
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
 
     if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
       await emitRefinacePartialAndRepayLoan(MULTI_SOURCE_LOAN_CONTRACT_V4);

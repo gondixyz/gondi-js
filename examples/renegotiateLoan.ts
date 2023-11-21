@@ -1,18 +1,26 @@
 import { Gondi } from "gondi";
 import { Address, isAddress } from "viem";
 
-import { generateBlock, sleep, testSingleNftOfferInput, testTokenId, users } from "./common";
+import {
+  generateBlock,
+  sleep,
+  testSingleNftOfferInput,
+  testTokenId,
+  users,
+} from "./common";
 
 const SLEEP_BUFFER = 3000;
 
-const emitRenegotiateAndRepayLoan = async (lender: Gondi, borrower: Gondi, contract?: Address) => {
+const emitRenegotiateAndRepayLoan = async (
+  lender: Gondi,
+  borrower: Gondi,
+  contract?: Address
+) => {
   const offer = {
     ...testSingleNftOfferInput,
-    duration: 30n
+    duration: 30n,
   };
-  const signedOffer = await lender._makeSingleNftOffer(
-    offer, contract,
-  );
+  const signedOffer = await lender._makeSingleNftOffer(offer, contract);
   const contractVersionString = `msl: ${signedOffer.contractAddress}`;
   console.log(`offer placed successfully: ${contractVersionString}`);
 
@@ -41,7 +49,9 @@ const emitRenegotiateAndRepayLoan = async (lender: Gondi, borrower: Gondi, contr
     contractAddress: signedOffer.contractAddress,
     skipSignature: false,
   });
-  console.log(`renegotiation offer placed successfully: ${contractVersionString}`);
+  console.log(
+    `renegotiation offer placed successfully: ${contractVersionString}`
+  );
 
   let renegotiatedLoan = loan;
   try {
@@ -49,15 +59,22 @@ const emitRenegotiateAndRepayLoan = async (lender: Gondi, borrower: Gondi, contr
     const renegotiation = await borrower.refinanceFullLoan({
       offer: renegotiationOffer,
       loan,
+      loanId: loan.source[0].loanId,
     });
-    const { loan: renegotiatedLoanResult } = await renegotiation.waitTxInBlock();
+    const { loan: renegotiatedLoanResult } =
+      await renegotiation.waitTxInBlock();
     renegotiatedLoan = renegotiatedLoanResult;
-    console.log(`loan renegotiation accepted by the borrower: ${contractVersionString}`);
-  } catch(e) {
-    console.log('Error while renegotiating loan:');
+    console.log(
+      `loan renegotiation accepted by the borrower: ${contractVersionString}`
+    );
+  } catch (e) {
+    console.log("Error while renegotiating loan:");
     console.log(e);
   } finally {
-    const repayLoan = await borrower.repayLoan({ loan: renegotiatedLoan });
+    const repayLoan = await borrower.repayLoan({
+      loan: renegotiatedLoan,
+      loanId: renegotiatedLoan.source[0].loanId,
+    });
     await repayLoan.waitTxInBlock();
     console.log(`loan repaid: ${contractVersionString}`);
   }
@@ -67,10 +84,15 @@ async function main() {
   try {
     await emitRenegotiateAndRepayLoan(users[0], users[1]);
 
-    const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
+    const MULTI_SOURCE_LOAN_CONTRACT_V4 =
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
 
     if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
-      await emitRenegotiateAndRepayLoan(users[0], users[1], MULTI_SOURCE_LOAN_CONTRACT_V4);
+      await emitRenegotiateAndRepayLoan(
+        users[0],
+        users[1],
+        MULTI_SOURCE_LOAN_CONTRACT_V4
+      );
     }
   } catch (e) {
     console.log("Error:");
