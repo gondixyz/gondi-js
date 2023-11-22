@@ -371,6 +371,72 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     };
   }
 
+  async delegate({
+    loan,
+    loanId,
+    to,
+    rights,
+    enable,
+  }: {
+    loan: LoanV5;
+    loanId: bigint;
+    to: Address;
+    rights: Hash;
+    enable: boolean;
+  }) {
+    const txHash = await this.safeContractWrite.delegate([
+      loanId,
+      loan,
+      to,
+      rights,
+      enable,
+    ]);
+
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        const filter = await this.contract.createEventFilter.Delegated();
+        const events = filterLogs(receipt, filter);
+        if (events.length == 0) throw new Error("Token not delegated");
+        const args = events[0].args;
+        return {
+          loan: {
+            ...loan,
+            loanId,
+            contractAddress: this.contract.address,
+          },
+          value: args.value,
+          ...receipt,
+        };
+      },
+    };
+  }
+
+  async revokeDelegate({ to, collection, tokenId }: {
+    to: Address;
+    collection: Address;
+    tokenId: bigint;
+  }) {
+    const txHash = await this.safeContractWrite.revokeDelegate([to, collection, tokenId]);
+
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        const filter = await this.contract.createEventFilter.RevokeDelegate();
+        const events = filterLogs(receipt, filter);
+        if (events.length == 0) throw new Error("Token delegation not revoked");
+        const args = events[0].args;
+        return { ...args, ...receipt };
+      },
+    };
+  }
+
   async liquidateLoan({ loan, loanId }: { loan: LoanV5; loanId: bigint }) {
     const txHash = await this.safeContractWrite.liquidateLoan([loanId, loan]);
     return {

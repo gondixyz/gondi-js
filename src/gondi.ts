@@ -634,6 +634,42 @@ export class Gondi {
       .extendLoan({ loan, newDuration, loanId });
   }
 
+  /** Delegate should be used when token is used as collateral for an active loan. */
+  async delegate({
+    loan,
+    loanId,
+    to,
+    enable,
+    rights = '0x',
+  }: {
+    loan: LoanV5;
+    loanId: bigint;
+    to: Address;
+    enable: boolean
+    rights?: Hash;
+  }) {
+    return this.contracts
+      .Msl(loan.contractAddress)
+      .delegate({ loan, loanId, to, rights, enable });
+  }
+
+  /** RevokeDelegate should be used when token is not being used as collateral. */
+  async revokeDelegate({
+    to,
+    collection,
+    tokenId,
+    contract = this.contracts.MultiSourceLoanV5.address,
+  }: {
+    to: Address;
+    collection: Address;
+    tokenId: bigint;
+    contract?: Address;
+  }) {
+    return this.contracts
+      .Msl(contract)
+      .revokeDelegate({ to, collection, tokenId });
+  }
+
   async liquidateLoan({ loan, loanId }: { loan: LoanV4V5; loanId: bigint }) {
     return this.contracts.Msl(loan.contractAddress).liquidateLoan({
       loan,
