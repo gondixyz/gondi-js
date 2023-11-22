@@ -3,7 +3,6 @@ import { Address, Hash } from "viem";
 import {
   filterLogs,
   LoanV4,
-  LoanV4V5,
   OfferV4,
   RenegotiationV4,
   Wallet,
@@ -13,7 +12,7 @@ import { multiSourceLoanABI as multiSourceLoanABIV4 } from "@/generated/blockcha
 import { getDomain } from "@/utils";
 
 import { Contract } from "./Contract";
-import { ContractMethodReturnType } from "./types";
+import { MslV5 } from "./MslV5";
 
 export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
   constructor({ walletClient }: { walletClient: Wallet }) {
@@ -324,10 +323,15 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
     };
   }
 
-  async extendLoan(): ContractMethodReturnType<{
-    loan: LoanV4V5 & { id: string; contractAddress: Address };
-    newLoanId: bigint;
-  }> {
+  async extendLoan(): ReturnType<MslV5["extendLoan"]> {
+    throw new Error("Not implemented for V1");
+  }
+
+  async delegate(): ReturnType<MslV5["delegate"]> {
+    throw new Error("Not implemented for V1");
+  }
+
+  async revokeDelegate(): ReturnType<MslV5["revokeDelegate"]> {
     throw new Error("Not implemented for V1");
   }
 
