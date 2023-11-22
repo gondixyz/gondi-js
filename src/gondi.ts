@@ -426,14 +426,17 @@ export class Gondi {
 
   async repayLoan({
     loan,
+    loanId,
     nftReceiver,
   }: {
     loan: LoanV4V5;
+    loanId: bigint;
     nftReceiver?: Address;
   }) {
     return this.contracts.Msl(loan.contractAddress).repayLoan({
       loan,
       nftReceiver,
+      loanId,
     });
   }
 
@@ -571,13 +574,15 @@ export class Gondi {
   async refinanceFullLoan({
     offer,
     loan,
+    loanId,
   }: {
     offer: model.RenegotiationOffer;
     loan: LoanV4V5;
+    loanId: bigint;
   }) {
     const offerInput = {
       ...offer,
-      loanId: loan.source[0].loanId,
+      loanId,
       strictImprovement: offer.strictImprovement ?? false,
       lender: offer.lenderAddress,
       signer: offer.signerAddress ?? zeroAddress,
@@ -594,13 +599,15 @@ export class Gondi {
   async refinancePartialLoan({
     offer,
     loan,
+    loanId,
   }: {
     offer: model.RenegotiationOffer;
     loan: LoanV4V5;
+    loanId: bigint;
   }) {
     const offerInput = {
       ...offer,
-      loanId: loan.source[0].loanId,
+      loanId,
       strictImprovement: offer.strictImprovement ?? false,
       lender: offer.lenderAddress,
       signer: offer.signerAddress ?? zeroAddress,
@@ -613,9 +620,24 @@ export class Gondi {
     });
   }
 
-  async liquidateLoan(loan: LoanV4V5) {
+  async extendLoan({
+    loan,
+    newDuration,
+    loanId,
+  }: {
+    loan: LoanV5;
+    newDuration: bigint;
+    loanId: bigint;
+  }) {
+    return this.contracts
+      .Msl(loan.contractAddress)
+      .extendLoan({ loan, newDuration, loanId });
+  }
+
+  async liquidateLoan({ loan, loanId }: { loan: LoanV4V5; loanId: bigint }) {
     return this.contracts.Msl(loan.contractAddress).liquidateLoan({
       loan,
+      loanId,
     });
   }
 
@@ -708,10 +730,12 @@ export class Gondi {
 
   async leverageSell({
     loan,
+    loanId,
     price,
     orderSource,
   }: {
     loan: LoanV5;
+    loanId: bigint;
     price: bigint;
     orderSource: string;
   }) {
@@ -761,6 +785,7 @@ export class Gondi {
       loan,
       callbackData: executionData.callbackData,
       shouldDelegate,
+      loanId,
     });
   }
 

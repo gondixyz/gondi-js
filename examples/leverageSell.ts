@@ -30,6 +30,7 @@ async function main() {
       })),
       contractAddress: loanToRepay.address,
     },
+    loanId: BigInt(loanToRepay.sources[0].loanId),
     price: 10000000000000000000n,
     orderSource: "opensea.io",
   });

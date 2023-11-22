@@ -168,13 +168,15 @@ export class Leverage extends Contract<typeof leverageABI> {
     loan,
     callbackData,
     shouldDelegate,
+    loanId,
   }: {
     loan: LoanV5;
     callbackData: Hash;
     shouldDelegate: boolean;
+    loanId: bigint;
   }) {
     const repaymentData = {
-      loanId: loan.source[0].loanId,
+      loanId,
       callbackData,
       shouldDelegate,
     };

@@ -1,6 +1,12 @@
 import { Address, Hash } from "viem";
 
-import { filterLogs, LoanV5, OfferV5, RenegotiationV5, Wallet } from "@/blockchain";
+import {
+  filterLogs,
+  LoanV5,
+  OfferV5,
+  RenegotiationV5,
+  Wallet,
+} from "@/blockchain";
 import { getContracts } from "@/deploys";
 import { multiSourceLoanABI as multiSourceLoanABIV5 } from "@/generated/blockchain/v5";
 import { bpsToPercentage, getDomain, millisToSeconds } from "@/utils";
@@ -207,9 +213,9 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     };
   }
 
-  async repayLoan({ loan }: { loan: LoanV5 }) {
+  async repayLoan({ loan, loanId }: { loan: LoanV5; loanId: bigint }) {
     const signableRepaymentData = {
-      loanId: loan.source[0].loanId,
+      loanId,
       callbackData: "0x" as Hash, // No callback data is expected here, only for BNPL [Levearage call]
       shouldDelegate: false, // No need to delegate
     };
@@ -327,11 +333,46 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     };
   }
 
-  async liquidateLoan({ loan }: { loan: LoanV5 }) {
-    const txHash = await this.safeContractWrite.liquidateLoan([
-      loan.source[0].loanId,
+  async extendLoan({
+    loan,
+    loanId,
+    newDuration,
+  }: {
+    loan: LoanV5;
+    loanId: bigint;
+    newDuration: bigint;
+  }) {
+    const txHash = await this.safeContractWrite.extendLoan([
+      loanId,
       loan,
+      newDuration - loan.duration,
     ]);
+
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        const filter = await this.contract.createEventFilter.LoanExtended();
+        const events = filterLogs(receipt, filter);
+        if (events.length == 0) throw new Error("Loan not extended");
+        const args = events[0].args;
+        return {
+          loan: {
+            id: `${this.contract.address.toLowerCase()}.${args.newLoanId}`,
+            ...args.loan,
+            contractAddress: this.contract.address,
+          },
+          newLoanId: args.newLoanId,
+          ...receipt,
+        };
+      },
+    };
+  }
+
+  async liquidateLoan({ loan, loanId }: { loan: LoanV5; loanId: bigint }) {
+    const txHash = await this.safeContractWrite.liquidateLoan([loanId, loan]);
     return {
       txHash,
       waitTxInBlock: async () => {

@@ -2,10 +2,10 @@ import { Address, isAddress } from "viem";
 
 import { testSingleNftOfferInput, testTokenId, users } from "./common";
 
-
 const emitCancelRefiOfferAndRepayLoan = async (contract?: Address) => {
   const signedOffer = await users[0]._makeSingleNftOffer(
-    testSingleNftOfferInput, contract,
+    testSingleNftOfferInput,
+    contract
   );
   const contractVersionString = `msl: ${signedOffer.contractAddress}`;
   console.log(`offer placed successfully: ${contractVersionString}`);
@@ -44,6 +44,7 @@ const emitCancelRefiOfferAndRepayLoan = async (contract?: Address) => {
 
   const repayLoan = await users[1].repayLoan({
     loan,
+    loanId: loan.source[0].loanId,
   });
   await repayLoan.waitTxInBlock();
   console.log(`loan repaid: ${contractVersionString}`);
@@ -53,7 +54,8 @@ async function main() {
   try {
     await emitCancelRefiOfferAndRepayLoan();
 
-    const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
+    const MULTI_SOURCE_LOAN_CONTRACT_V4 =
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
 
     if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
       await emitCancelRefiOfferAndRepayLoan(MULTI_SOURCE_LOAN_CONTRACT_V4);

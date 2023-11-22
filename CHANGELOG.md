@@ -1,3 +1,101 @@
+# Breaking Changes 0.3.8
+
+### Important
+
+This document outlines the breaking changes introduced in our codebase for version 0.3.8. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [Repay Loan](#repayLoan)
+- [Refinance Full Loan](#refinanceFullLoan)
+- [Refinance Partial Loan](#refinancePartialLoan)
+- [Liquidate Loan](#liquidateLoan)
+- [Leverage Sell](#leverageSell)
+
+---
+
+## Repay Loan
+
+**Description:**
+
+`repayLoan` method now expects `loanId` argument:
+
+```ts
+  async repayLoan(args: { loan: LoanV4V5; loanId: bigint; nftReceiver?: Address }) { ... }
+```
+
+**Reason:**
+
+We previously assumed that the loanId was equal to the loanId of the first source. Due to loan extension that's no longer the case
+
+---
+
+## Refinance Full Loan
+
+**Description:**
+
+`refinanceFullLoan` method now expects `loanId` argument:
+
+```ts
+  async refinanceFullLoan(args: { loan: LoanV4V5; loanId: bigint; offer: model.RenegotiationOffer; }) { ... }
+```
+
+**Reason:**
+
+We previously assumed that the loanId was equal to the loanId of the first source. Due to loan extension that's no longer the case
+
+---
+
+## Refinance Partial Loan
+
+**Description:**
+
+`refinancePartialLoan` method now expects `loanId` argument:
+
+```ts
+  async refinancePartialLoan(args: { loan: LoanV4V5; loanId: bigint; offer: model.RenegotiationOffer; }) { ... }
+```
+
+**Reason:**
+
+We previously assumed that the loanId was equal to the loanId of the first source. Due to loan extension that's no longer the case
+
+---
+
+## Liquidate Loan
+
+**Description:**
+
+`liquidateLoan` method now expects one argument with both `loanId` and `loan`:
+
+```ts
+  async liquidateLoan(args: { loan: LoanV4V5; loanId: bigint; }) { ... }
+```
+
+**Reason:**
+
+We previously assumed that the loanId was equal to the loanId of the first source. Due to loan extension that's no longer the case.
+We are also using an object to accomodate for the flexibility of adding new parameters in the future
+
+---
+
+
+## Leverage Sell
+
+**Description:**
+
+`leverageSell` method now expects `loanId` argument:
+
+```ts
+  async leverageSell(args: { loan: LoanV4V5; loanId: bigint; price: bigint; orderSource: string; }) { ... }
+```
+
+**Reason:**
+
+We previously assumed that the loanId was equal to the loanId of the first source. Due to loan extension that's no longer the case.
+
+---
+
 # Breaking Changes 0.3.0b4
 
 ### Important
