@@ -204,6 +204,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
             ...args.loan,
             contractAddress: this.contract.address,
           },
+          loanId: args.loanId,
           offerId: `${this.contract.address.toLowerCase()}.${offer.lender.toLowerCase()}.${
             args.offerId
           }`,

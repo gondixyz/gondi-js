@@ -6,6 +6,7 @@ import {
   OfferV5,
   RenegotiationV5,
   Wallet,
+  zeroHash,
 } from "@/blockchain";
 import { getContracts } from "@/deploys";
 import { multiSourceLoanABI as multiSourceLoanABIV5 } from "@/generated/blockchain/v5";
@@ -204,6 +205,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
             ...args.loan,
             contractAddress: this.contract.address,
           },
+          loanId: args.loanId,
           offerId: `${this.contract.address.toLowerCase()}.${offer.lender.toLowerCase()}.${
             args.offerId
           }`,
@@ -375,13 +377,13 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     loan,
     loanId,
     to,
-    rights,
+    rights = zeroHash,
     enable,
   }: {
     loan: LoanV5;
     loanId: bigint;
     to: Address;
-    rights: Hash;
+    rights?: Hash;
     enable: boolean;
   }) {
     const txHash = await this.safeContractWrite.delegate([
