@@ -634,6 +634,17 @@ export class Gondi {
       .extendLoan({ loan, newDuration, loanId });
   }
 
+  /**
+   * Delegate Multicall should be used when token is used as collateral for an active loan.
+   * Multicall will be performed to the contract address of the first delegation.
+  */
+  async delegateMulticall(delegations: Parameters<Gondi['delegate']>[0][]) {
+    const contractAddress = delegations[0].loan.contractAddress;
+    return this.contracts
+      .Msl(contractAddress)
+      .delegateMulticall(delegations);
+  }
+
   /** Delegate should be used when token is used as collateral for an active loan. */
   async delegate({
     loan,
