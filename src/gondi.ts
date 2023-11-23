@@ -640,7 +640,7 @@ export class Gondi {
     loanId,
     to,
     enable,
-    rights = '0x',
+    rights,
   }: {
     loan: LoanV5;
     loanId: bigint;
