@@ -1,4 +1,4 @@
-import { Address, Hash } from "viem";
+import { Address, encodeFunctionData, Hash } from "viem";
 
 import {
   filterLogs,
@@ -368,6 +368,39 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
           },
           newLoanId: args.newLoanId,
           ...receipt,
+        };
+      },
+    };
+  }
+
+  async delegateMulticall(delegations: Parameters<MslV5['delegate']>[0][]) {
+    const txHash = await this.safeContractWrite.multicall([
+      delegations.map((delegation) =>
+        encodeFunctionData({
+          abi: multiSourceLoanABIV5,
+          functionName: "delegate",
+          args: [
+            delegation.loanId,
+            delegation.loan,
+            delegation.to,
+            delegation.rights ?? zeroHash,
+            delegation.enable,
+          ]
+        })
+      )
+    ]);
+
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        const filter = await this.contract.createEventFilter.Delegated();
+        const events = filterLogs(receipt, filter);
+        return {
+          ...receipt,
+          results: events.map(({ args }) => args),
         };
       },
     };

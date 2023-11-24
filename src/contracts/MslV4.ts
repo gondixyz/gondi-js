@@ -328,6 +328,10 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
     throw new Error("Not implemented for V1");
   }
 
+  async delegateMulticall(): ReturnType<MslV5["delegateMulticall"]> {
+    throw new Error("Not implemented for V1");
+  }
+
   async delegate(): ReturnType<MslV5["delegate"]> {
     throw new Error("Not implemented for V1");
   }
