@@ -340,6 +340,9 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
     throw new Error("Not implemented for V1");
   }
 
+  async revokeDelegationsAndEmitLoan(): ReturnType<MslV5["revokeDelegationsAndEmitLoan"]> {
+    throw new Error("Not implemented for V1");
+  }
   async liquidateLoan({ loan, loanId }: { loan: LoanV4; loanId: bigint }) {
     const txHash = await this.safeContractWrite.liquidateLoan([loanId, loan]);
 
