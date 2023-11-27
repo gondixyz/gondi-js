@@ -160,19 +160,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     };
   }
 
-  async emitLoan({
-    offer,
-    signature,
-    tokenId,
-    amount,
-    expirationTime,
-  }: {
-    offer: OfferV5;
-    signature: Hash;
-    tokenId: bigint;
-    amount: bigint;
-    expirationTime: bigint;
-  }) {
+  private mapEmitLoanToMslArgs ({ offer, tokenId, amount, expirationTime, signature }: Parameters<MslV5['emitLoan']>[0]) {
     const executionData = {
       offer,
       tokenId,
@@ -180,15 +168,20 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
       expirationTime,
       callbackData: "0x" as Hash, // No callback data is expected here, only for BNPL [Levearage call]
     };
-    const txHash = await this.safeContractWrite.emitLoan([
-      {
-        executionData,
-        lender: offer.lender,
-        borrower: this.wallet.account.address,
-        lenderOfferSignature: signature,
-        borrowerOfferSignature: "0x", // No signature data is expected here, only for BNPL [Levearage call]
-      },
-    ]);
+
+    return {
+      executionData,
+      lender: offer.lender,
+      borrower: this.wallet.account.address,
+      lenderOfferSignature: signature,
+      borrowerOfferSignature: "0x" as Hash, // No signature data is expected here, only for BNPL [Levearage call]
+    };
+  }
+
+  async emitLoan(emitArgs: { offer: OfferV5; signature: Hash; tokenId: bigint; amount: bigint; expirationTime: bigint }) {
+    const emitLoanMslArgs = this.mapEmitLoanToMslArgs(emitArgs);
+    const txHash = await this.safeContractWrite.emitLoan([emitLoanMslArgs]);
+
     return {
       txHash,
       waitTxInBlock: async () => {
@@ -206,7 +199,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
             contractAddress: this.contract.address,
           },
           loanId: args.loanId,
-          offerId: `${this.contract.address.toLowerCase()}.${offer.lender.toLowerCase()}.${
+          offerId: `${this.contract.address.toLowerCase()}.${emitArgs.offer.lender.toLowerCase()}.${
             args.offerId
           }`,
           ...receipt,
@@ -214,6 +207,62 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
       },
     };
   }
+
+  async revokeDelegationsAndEmitLoan({ delegations, emit }: {
+    delegations: Address[];
+    emit: Parameters<MslV5['emitLoan']>[0];
+  }) {
+    const encodedRevokeDelegations = delegations.map(
+      (delegation) => encodeFunctionData({
+        abi: multiSourceLoanABIV5,
+        functionName: "revokeDelegate",
+        args: [
+          delegation,
+          emit.offer.nftCollateralAddress,
+          emit.offer.nftCollateralTokenId,
+        ]
+      })
+    );
+
+    const emitLoanMslArgs = this.mapEmitLoanToMslArgs(emit);
+    const encodedEmitLoan = encodeFunctionData({
+      abi: multiSourceLoanABIV5,
+      functionName: "emitLoan",
+      args: [emitLoanMslArgs]
+    });
+    
+    const txHash = await this.safeContractWrite.multicall([
+      [...encodedRevokeDelegations, encodedEmitLoan]
+    ]);
+
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        const revokeFilter = await this.contract.createEventFilter.RevokeDelegate();
+        const revokeEvents = filterLogs(receipt, revokeFilter);
+        const emitFilter = await this.contract.createEventFilter.LoanEmitted();
+        const emitEvents = filterLogs(receipt, emitFilter);
+        const results = [
+          ...revokeEvents.map(({ args }) => args),
+          ...emitEvents.map(({ args }) => args),
+        ];
+        const emitLoanArgs = emitEvents[0].args;
+        return {
+          loan: {
+            id: `${this.contract.address.toLowerCase()}.${emitLoanArgs.loanId}`,
+            ...emitLoanArgs.loan,
+            contractAddress: this.contract.address,
+          },
+          loanId: emitLoanArgs.loanId,
+          ...receipt,
+          results,
+        };
+      },
+    };
+  } 
 
   async repayLoan({ loan, loanId }: { loan: LoanV5; loanId: bigint }) {
     const signableRepaymentData = {

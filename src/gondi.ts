@@ -27,7 +27,7 @@ import {
   Ordering,
 } from "@/generated/graphql";
 import * as model from "@/model";
-import { millisToSeconds, NATIVE_MARKETPLACE, SECONDS_IN_DAY } from "@/utils";
+import { emitLoanArgsToMslArgs, NATIVE_MARKETPLACE } from "@/utils";
 
 import { getCurrencies } from "./deploys";
 import { Reservoir } from "./reservoir/Reservoir";
@@ -394,34 +394,14 @@ export class Gondi {
     });
   }
 
-  async emitLoan({
-    offer,
-    tokenId,
-    amount,
-    expirationTime,
-  }: {
+  async emitLoan({ offer, ...rest }: {
     offer: model.SingleNftOffer | model.CollectionOffer;
     tokenId: bigint;
     amount?: bigint;
     expirationTime?: bigint;
   }) {
-    const contractOffer = {
-      ...offer,
-      lender: offer.lenderAddress,
-      borrower: offer.borrowerAddress,
-      signer: offer.signerAddress ?? zeroAddress,
-      validators: offer.offerValidators,
-      requiresLiquidation: !!offer.requiresLiquidation,
-    };
-
-    return this.contracts.Msl(offer.contractAddress).emitLoan({
-      offer: contractOffer,
-      signature: contractOffer.signature,
-      tokenId,
-      amount: amount ?? contractOffer.principalAmount,
-      expirationTime:
-        expirationTime ?? BigInt(millisToSeconds(Date.now()) + SECONDS_IN_DAY),
-    });
+    const emitLoanMslArgs = emitLoanArgsToMslArgs({ offer, ...rest });
+    return this.contracts.Msl(offer.contractAddress).emitLoan(emitLoanMslArgs);
   }
 
   async repayLoan({
@@ -679,6 +659,21 @@ export class Gondi {
     return this.contracts
       .Msl(contract)
       .revokeDelegate({ to, collection, tokenId });
+  }
+
+  /**
+   * RevokeDelegationsAndEmitLoan should be used when token has been delegated without being revoked,
+   * and a new loan wants to be emitted, erasing the delegations provided as argument.
+   */
+  async revokeDelegationsAndEmitLoan({ delegations, emit }: {
+    delegations: Address[];
+    emit: Parameters<Gondi['emitLoan']>[0]
+  }) {
+    const emitLoanMslArgs = emitLoanArgsToMslArgs(emit);
+
+    return this.contracts
+      .Msl(emit.offer.contractAddress)
+      .revokeDelegationsAndEmitLoan({ delegations, emit: emitLoanMslArgs });
   }
 
   async liquidateLoan({ loan, loanId }: { loan: LoanV4V5; loanId: bigint }) {

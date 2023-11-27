@@ -40,10 +40,7 @@ const delegateAndRevoke = async (contract?: Address) => {
     console.log(e);
   }
 
-  const repayLoan = await users[1].repayLoan({
-    loan,
-    loanId: loan.source[0].loanId,
-  });
+  const repayLoan = await users[1].repayLoan({ loan, loanId });
   await repayLoan.waitTxInBlock();
   console.log(`loan repaid: ${contractVersionString}`);
 
