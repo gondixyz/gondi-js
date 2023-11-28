@@ -246,7 +246,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
 
         const revokeFilter = await this.contract.createEventFilter.RevokeDelegate();
         const revokeEvents = filterLogs(receipt, revokeFilter);
-        if (revokeEvents.length === delegations.length) throw new Error("Revoke delegations failed");
+        if (revokeEvents.length !== delegations.length) throw new Error("Revoke delegations failed");
         
         const emitFilter = await this.contract.createEventFilter.LoanEmitted();
         const emitEvents = filterLogs(receipt, emitFilter);
@@ -457,7 +457,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
         const filter = await this.contract.createEventFilter.Delegated();
         const events = filterLogs(receipt, filter);
 
-        if (events.length === delegations.length) throw new Error("Delegate multicall failed");
+        if (events.length !== delegations.length) throw new Error("Delegate multicall failed");
 
         return {
           ...receipt,
