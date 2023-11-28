@@ -221,7 +221,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
         args: [
           delegation,
           emit.offer.nftCollateralAddress,
-          emit.offer.nftCollateralTokenId,
+          emit.tokenId,
         ]
       })
     );
