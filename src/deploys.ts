@@ -1,4 +1,4 @@
-import { Address, Chain, Hash, zeroAddress } from "viem";
+import { Address, Chain, Hash, isAddress, zeroAddress } from "viem";
 import { goerli } from "viem/chains";
 
 const ANVIL_CHAIN_ID = 31337;
@@ -24,20 +24,40 @@ interface Currencies {
   USDC_ADDRESS: Address;
 }
 
-export const MSL_V5_TX_HASH = '0xb6dfcbc1661d0c0bced9591d06e964f97d41a35984704ffe61f8e062e43919c8' as Hash;
+const ensureAddress = (value: string | undefined): Address | null => {
+  if (!value || !isAddress(value)) {
+    return null;
+  }
+  return value;
+};
+
+export const MSL_V5_TX_HASH =
+  "0xb6dfcbc1661d0c0bced9591d06e964f97d41a35984704ffe61f8e062e43919c8" as Hash;
 
 export const getContracts = (chain: Pick<Chain, "id">): Contracts => {
   if (chain?.id === ANVIL_CHAIN_ID) {
     return {
-      MultiSourceLoanV4Address: "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
-      MultiSourceLoanV5Address: "0x68B1D87F95878fE05B998F19b66F4baba5De1aed",
+      MultiSourceLoanV4Address:
+        ensureAddress(process.env.GONDI_MULTI_SOURCE_LOAN_V4) ??
+        "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+      MultiSourceLoanV5Address:
+        ensureAddress(process.env.GONDI_MULTI_SOURCE_LOAN_V5) ??
+        "0x68B1D87F95878fE05B998F19b66F4baba5De1aed",
       AuctionLoanLiquidatorV4Address:
+        ensureAddress(process.env.GONDI_AUCTION_LOAN_LIQUIDATOR_V4) ??
         "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
       AuctionLoanLiquidatorV5Address:
+        ensureAddress(process.env.GONDI_AUCTION_LOAN_LIQUIDATOR_V5) ??
         "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE",
-      LeverageAddress: "0xBe6Eb4ACB499f992ba2DaC7CAD59d56DA9e0D823",
-      SeaportAddress: "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC",
-      CryptoPunksAddress: "0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb",
+      LeverageAddress:
+        ensureAddress(process.env.GONDI_LEVERAGE) ??
+        "0xBe6Eb4ACB499f992ba2DaC7CAD59d56DA9e0D823",
+      SeaportAddress:
+        ensureAddress(process.env.SEAPORT) ??
+        "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC",
+      CryptoPunksAddress:
+        ensureAddress(process.env.CRYPTO_PUNKS) ??
+        "0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb",
     };
   }
 
@@ -59,7 +79,8 @@ export const getContracts = (chain: Pick<Chain, "id">): Contracts => {
     MultiSourceLoanV5Address: "0x478f6F994C6fb3cf3e444a489b3AD9edB8cCaE16",
     AuctionLoanLiquidatorV4Address:
       "0x237e4421C742d843Fdd96D22294D338507e17091",
-    AuctionLoanLiquidatorV5Address: "0x97d34635b605c2f1630d6b4c6c5d222b8a2ca47d",
+    AuctionLoanLiquidatorV5Address:
+      "0x97d34635b605c2f1630d6b4c6c5d222b8a2ca47d",
     LeverageAddress: "0x87Ce6e8124fFd68fa721FcC7f35fdA14A11E233e",
     SeaportAddress: "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC",
     CryptoPunksAddress: "0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb",
