@@ -394,7 +394,10 @@ export class Gondi {
     });
   }
 
-  async emitLoan({ offer, ...rest }: {
+  async emitLoan({
+    offer,
+    ...rest
+  }: {
     offer: model.SingleNftOffer | model.CollectionOffer;
     tokenId: bigint;
     amount?: bigint;
@@ -528,7 +531,18 @@ export class Gondi {
   async getRemainingLockupSeconds({ loan }: { loan: LoanV4V5 }) {
     return this.contracts.Msl(loan.contractAddress).getRemainingLockupSeconds({
       loan,
+      source: loan.source[0],
     });
+  }
+
+  async getSourcesRemainingLockupSeconds({ loan }: { loan: LoanV4V5 }) {
+    return Promise.all(
+      loan.source.map((source) =>
+        this.contracts
+          .Msl(loan.contractAddress)
+          .getRemainingLockupSeconds({ loan, source })
+      )
+    );
   }
 
   async getBestNativeSaleOffer({
@@ -617,12 +631,10 @@ export class Gondi {
   /**
    * Delegate Multicall should be used when token is used as collateral for an active loan.
    * Multicall will be performed to the contract address of the first delegation.
-  */
-  async delegateMulticall(delegations: Parameters<Gondi['delegate']>[0][]) {
+   */
+  async delegateMulticall(delegations: Parameters<Gondi["delegate"]>[0][]) {
     const contractAddress = delegations[0].loan.contractAddress;
-    return this.contracts
-      .Msl(contractAddress)
-      .delegateMulticall(delegations);
+    return this.contracts.Msl(contractAddress).delegateMulticall(delegations);
   }
 
   /** Delegate should be used when token is used as collateral for an active loan. */
@@ -636,7 +648,7 @@ export class Gondi {
     loan: LoanV5;
     loanId: bigint;
     to: Address;
-    enable: boolean
+    enable: boolean;
     rights?: Hash;
   }) {
     return this.contracts
@@ -665,9 +677,12 @@ export class Gondi {
    * RevokeDelegationsAndEmitLoan should be used when token has been delegated without being revoked,
    * and a new loan wants to be emitted, erasing the delegations provided as argument.
    */
-  async revokeDelegationsAndEmitLoan({ delegations, emit }: {
+  async revokeDelegationsAndEmitLoan({
+    delegations,
+    emit,
+  }: {
     delegations: Address[];
-    emit: Parameters<Gondi['emitLoan']>[0]
+    emit: Parameters<Gondi["emitLoan"]>[0];
   }) {
     const emitLoanMslArgs = emitLoanArgsToMslArgs(emit);
 

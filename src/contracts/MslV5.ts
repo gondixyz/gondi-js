@@ -160,7 +160,13 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     };
   }
 
-  private mapEmitLoanToMslArgs ({ offer, tokenId, amount, expirationTime, signature }: Parameters<MslV5['emitLoan']>[0]) {
+  private mapEmitLoanToMslArgs({
+    offer,
+    tokenId,
+    amount,
+    expirationTime,
+    signature,
+  }: Parameters<MslV5["emitLoan"]>[0]) {
     const executionData = {
       offer,
       tokenId,
@@ -178,7 +184,13 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     };
   }
 
-  async emitLoan(emitArgs: { offer: OfferV5; signature: Hash; tokenId: bigint; amount: bigint; expirationTime: bigint }) {
+  async emitLoan(emitArgs: {
+    offer: OfferV5;
+    signature: Hash;
+    tokenId: bigint;
+    amount: bigint;
+    expirationTime: bigint;
+  }) {
     const emitLoanMslArgs = this.mapEmitLoanToMslArgs(emitArgs);
     const txHash = await this.safeContractWrite.emitLoan([emitLoanMslArgs]);
 
@@ -208,21 +220,21 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     };
   }
 
-  async revokeDelegationsAndEmitLoan({ delegations, emit }: {
+  async revokeDelegationsAndEmitLoan({
+    delegations,
+    emit,
+  }: {
     delegations: Address[];
-    emit: Parameters<MslV5['emitLoan']>[0];
+    emit: Parameters<MslV5["emitLoan"]>[0];
   }) {
-    if (delegations.length === 0) throw new Error("At least one delegation must be revoked");
+    if (delegations.length === 0)
+      throw new Error("At least one delegation must be revoked");
 
-    const encodedRevokeDelegations = delegations.map(
-      (delegation) => encodeFunctionData({
+    const encodedRevokeDelegations = delegations.map((delegation) =>
+      encodeFunctionData({
         abi: multiSourceLoanABIV5,
         functionName: "revokeDelegate",
-        args: [
-          delegation,
-          emit.offer.nftCollateralAddress,
-          emit.tokenId,
-        ]
+        args: [delegation, emit.offer.nftCollateralAddress, emit.tokenId],
       })
     );
 
@@ -230,11 +242,11 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     const encodedEmitLoan = encodeFunctionData({
       abi: multiSourceLoanABIV5,
       functionName: "emitLoan",
-      args: [emitLoanMslArgs]
+      args: [emitLoanMslArgs],
     });
-    
+
     const txHash = await this.safeContractWrite.multicall([
-      [...encodedRevokeDelegations, encodedEmitLoan]
+      [...encodedRevokeDelegations, encodedEmitLoan],
     ]);
 
     return {
@@ -244,10 +256,12 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
           hash: txHash,
         });
 
-        const revokeFilter = await this.contract.createEventFilter.RevokeDelegate();
+        const revokeFilter =
+          await this.contract.createEventFilter.RevokeDelegate();
         const revokeEvents = filterLogs(receipt, revokeFilter);
-        if (revokeEvents.length !== delegations.length) throw new Error("Revoke delegations failed");
-        
+        if (revokeEvents.length !== delegations.length)
+          throw new Error("Revoke delegations failed");
+
         const emitFilter = await this.contract.createEventFilter.LoanEmitted();
         const emitEvents = filterLogs(receipt, emitFilter);
         if (emitEvents.length === 0) throw new Error("Loan not emitted");
@@ -269,7 +283,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
         };
       },
     };
-  } 
+  }
 
   async repayLoan({ loan, loanId }: { loan: LoanV5; loanId: bigint }) {
     const signableRepaymentData = {
@@ -298,20 +312,25 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     };
   }
 
-  async getRemainingLockupSeconds({ loan }: { loan: LoanV5 }) {
-    const newestSource = loan.source[0];
+  async getRemainingLockupSeconds({
+    source,
+    loan,
+  }: {
+    loan: LoanV5;
+    source: LoanV5["source"][number];
+  }) {
     const loanEndDate = loan.startTime + loan.duration;
-    const newestSourceDuration = loanEndDate - newestSource.startTime;
+    const sourceDuration = loanEndDate - source.startTime;
 
     const lockPeriodBps = await this.contract.read.getMinLockPeriod();
     const lockPercentage = bpsToPercentage(lockPeriodBps);
 
     const lockupTimeSeconds = Math.ceil(
-      Number(newestSourceDuration) * lockPercentage
+      Number(sourceDuration) * lockPercentage
     );
 
     const ellapsedSeconds = Math.ceil(
-      millisToSeconds(Date.now()) - Number(newestSource.startTime)
+      millisToSeconds(Date.now()) - Number(source.startTime)
     );
 
     if (ellapsedSeconds >= lockupTimeSeconds) return 0;
@@ -429,8 +448,9 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     };
   }
 
-  async delegateMulticall(delegations: Parameters<MslV5['delegate']>[0][]) {
-    if (delegations.length === 0) throw new Error("At least one delegation must be revoked");
+  async delegateMulticall(delegations: Parameters<MslV5["delegate"]>[0][]) {
+    if (delegations.length === 0)
+      throw new Error("At least one delegation must be revoked");
 
     const txHash = await this.safeContractWrite.multicall([
       delegations.map((delegation) =>
@@ -443,9 +463,9 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
             delegation.to,
             delegation.rights ?? zeroHash,
             delegation.enable,
-          ]
+          ],
         })
-      )
+      ),
     ]);
 
     return {
@@ -457,7 +477,8 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
         const filter = await this.contract.createEventFilter.Delegated();
         const events = filterLogs(receipt, filter);
 
-        if (events.length !== delegations.length) throw new Error("Delegate multicall failed");
+        if (events.length !== delegations.length)
+          throw new Error("Delegate multicall failed");
 
         return {
           ...receipt,
@@ -511,12 +532,20 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     };
   }
 
-  async revokeDelegate({ to, collection, tokenId }: {
+  async revokeDelegate({
+    to,
+    collection,
+    tokenId,
+  }: {
     to: Address;
     collection: Address;
     tokenId: bigint;
   }) {
-    const txHash = await this.safeContractWrite.revokeDelegate([to, collection, tokenId]);
+    const txHash = await this.safeContractWrite.revokeDelegate([
+      to,
+      collection,
+      tokenId,
+    ]);
 
     return {
       txHash,
@@ -526,7 +555,8 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
         });
         const filter = await this.contract.createEventFilter.RevokeDelegate();
         const events = filterLogs(receipt, filter);
-        if (events.length === 0) throw new Error("Token delegation not revoked");
+        if (events.length === 0)
+          throw new Error("Token delegation not revoked");
         const args = events[0].args;
         return { ...args, ...receipt };
       },
