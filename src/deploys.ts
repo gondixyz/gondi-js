@@ -46,7 +46,8 @@ export const getContracts = (chain: Pick<Chain, "id">): Contracts => {
         ensureAddress(process.env.GONDI_MULTI_SOURCE_LOAN_V5) ??
         "0x68B1D87F95878fE05B998F19b66F4baba5De1aed",
       MultiSourceLoanV5_1Address:
-        ensureAddress(process.env.GONDI_MULTI_SOURCE_LOAN_V5_1) ?? "0xTODO",
+        ensureAddress(process.env.GONDI_MULTI_SOURCE_LOAN_V5_1) ??
+        "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
       AuctionLoanLiquidatorV4Address:
         ensureAddress(process.env.GONDI_AUCTION_LOAN_LIQUIDATOR_V4) ??
         "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
@@ -57,7 +58,8 @@ export const getContracts = (chain: Pick<Chain, "id">): Contracts => {
         ensureAddress(process.env.GONDI_LEVERAGE) ??
         "0xBe6Eb4ACB499f992ba2DaC7CAD59d56DA9e0D823",
       LeverageAddressV1_1:
-        ensureAddress(process.env.GONDI_LEVERAGE_V1_1) ?? "0xTODO",
+        ensureAddress(process.env.GONDI_LEVERAGE_V1_1) ??
+        "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
       SeaportAddress:
         ensureAddress(process.env.SEAPORT) ??
         "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC",
