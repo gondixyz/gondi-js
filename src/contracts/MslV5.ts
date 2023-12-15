@@ -391,42 +391,8 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     };
   }
 
-  async extendLoan({
-    loan,
-    loanId,
-    newDuration,
-  }: {
-    loan: LoanV5;
-    loanId: bigint;
-    newDuration: bigint;
-  }) {
-    const txHash = await this.safeContractWrite.extendLoan([
-      loanId,
-      loan,
-      newDuration - loan.duration,
-    ]);
-
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const filter = await this.contract.createEventFilter.LoanExtended();
-        const events = filterLogs(receipt, filter);
-        if (events.length === 0) throw new Error("Loan not extended");
-        const args = events[0].args;
-        return {
-          loan: {
-            id: `${this.contract.address.toLowerCase()}.${args.newLoanId}`,
-            ...args.loan,
-            contractAddress: this.contract.address,
-          },
-          newLoanId: args.newLoanId,
-          ...receipt,
-        };
-      },
-    };
+  async extendLoan() {
+    throw new Error("Not implemented for V2");
   }
 
   async delegateMulticall(delegations: Parameters<MslV5['delegate']>[0][]) {
