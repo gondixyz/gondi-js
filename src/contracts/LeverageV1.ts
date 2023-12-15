@@ -17,7 +17,7 @@ import { Contract } from "./Contract";
 
 export type Wallet = WalletClient<Transport, Chain, Account>;
 
-export class Leverage extends Contract<typeof leverageABI> {
+export class LeverageV1 extends Contract<typeof leverageABI> {
   mslAddress: Address;
 
   constructor({
@@ -27,11 +27,11 @@ export class Leverage extends Contract<typeof leverageABI> {
     walletClient: Wallet;
     mslAddress: Address;
   }) {
-    const { LeverageAddress } = getContracts(walletClient.chain);
+    const { LeverageAddressV1 } = getContracts(walletClient.chain);
 
     super({
       walletClient,
-      address: LeverageAddress,
+      address: LeverageAddressV1,
       abi: leverageABI,
     });
 

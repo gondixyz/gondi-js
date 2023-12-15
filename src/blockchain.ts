@@ -32,7 +32,7 @@ import { erc20ABI, erc721ABI } from "@/generated/blockchain/v5";
 import { AllV4 } from "./contracts/AllV4";
 import { AllV5 } from "./contracts/AllV5";
 import { CryptoPunks } from "./contracts/CryptoPunks";
-import { Leverage } from "./contracts/Leverage";
+import { LeverageV1 } from "./contracts/LeverageV1";
 import { MslV4 } from "./contracts/MslV4";
 import { MslV5 } from "./contracts/MslV5";
 import { Seaport } from "./contracts/Seaport";
@@ -48,7 +48,7 @@ export class Contracts {
   MultiSourceLoanV5: MslV5;
   AuctionLoanLiquidatorV4: AllV4;
   AuctionLoanLiquidatorV5: AllV5;
-  Leverage: Leverage;
+  LeverageV1: LeverageV1;
   Seaport: Seaport;
   CryptoPunks: CryptoPunks;
 
@@ -60,7 +60,7 @@ export class Contracts {
     this.MultiSourceLoanV5 = new MslV5({ walletClient });
     this.AuctionLoanLiquidatorV4 = new AllV4({ walletClient });
     this.AuctionLoanLiquidatorV5 = new AllV5({ walletClient });
-    this.Leverage = new Leverage({
+    this.LeverageV1 = new LeverageV1({
       walletClient,
       mslAddress: this.MultiSourceLoanV5.address,
     });

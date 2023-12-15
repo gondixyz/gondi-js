@@ -764,7 +764,7 @@ export class Gondi {
       callbackData: executionData[index].callbackData,
     }));
 
-    return this.contracts.Leverage.buy({
+    return this.contracts.LeverageV1.buy({
       leverageBuyData: dataForLeverageContract,
       ethToSend: ethToSend < 0n ? 0n : ethToSend,
     });
@@ -817,13 +817,13 @@ export class Gondi {
         tokenId: loan.nftCollateralTokenId,
         price,
         exactOrderSource: orderSource,
-        leverageAddress: this.contracts.Leverage.address,
+        leverageAddress: this.contracts.LeverageV1.address,
       });
     }
 
     const shouldDelegate = executionData.isSeaportCall;
 
-    return this.contracts.Leverage.sell({
+    return this.contracts.LeverageV1.sell({
       loan,
       callbackData: executionData.callbackData,
       shouldDelegate,
