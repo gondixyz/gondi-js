@@ -15,12 +15,18 @@ import { bpsToPercentage, getDomain, millisToSeconds } from "@/utils";
 import { Contract } from "./Contract";
 
 export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
-  constructor({ walletClient }: { walletClient: Wallet }) {
+  constructor({
+    walletClient,
+    address,
+  }: {
+    walletClient: Wallet;
+    address?: Address;
+  }) {
     const { MultiSourceLoanV5Address } = getContracts(walletClient.chain);
 
     super({
       walletClient,
-      address: MultiSourceLoanV5Address,
+      address: address ?? MultiSourceLoanV5Address,
       abi: multiSourceLoanABIV5,
     });
   }

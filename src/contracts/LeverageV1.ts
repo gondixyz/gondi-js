@@ -22,16 +22,18 @@ export class LeverageV1 extends Contract<typeof leverageABI> {
 
   constructor({
     walletClient,
+    address,
     mslAddress,
   }: {
     walletClient: Wallet;
+    address?: Address;
     mslAddress: Address;
   }) {
     const { LeverageAddressV1 } = getContracts(walletClient.chain);
 
     super({
       walletClient,
-      address: LeverageAddressV1,
+      address: address ?? LeverageAddressV1,
       abi: leverageABI,
     });
 

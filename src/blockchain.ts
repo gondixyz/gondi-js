@@ -36,6 +36,7 @@ import { LeverageV1 } from "./contracts/LeverageV1";
 import { MslV4 } from "./contracts/MslV4";
 import { MslV5 } from "./contracts/MslV5";
 import { Seaport } from "./contracts/Seaport";
+import { getContracts } from "./deploys";
 import { areSameAddress } from "./utils";
 
 export type Wallet = WalletClient<Transport, Chain, Account>;
@@ -46,9 +47,11 @@ export class Contracts {
 
   MultiSourceLoanV4: MslV4;
   MultiSourceLoanV5: MslV5;
+  MultiSourceLoanV5_1: MslV5;
   AuctionLoanLiquidatorV4: AllV4;
   AuctionLoanLiquidatorV5: AllV5;
   LeverageV1: LeverageV1;
+  LeverageV1_1: LeverageV1;
   Seaport: Seaport;
   CryptoPunks: CryptoPunks;
 
@@ -56,13 +59,26 @@ export class Contracts {
     this.walletClient = walletClient;
     this.publicClient = publicClient;
 
+    const { MultiSourceLoanV5_1Address, LeverageAddressV1_1 } = getContracts(
+      walletClient.chain
+    );
+
     this.MultiSourceLoanV4 = new MslV4({ walletClient });
     this.MultiSourceLoanV5 = new MslV5({ walletClient });
+    this.MultiSourceLoanV5_1 = new MslV5({
+      walletClient,
+      address: MultiSourceLoanV5_1Address,
+    });
     this.AuctionLoanLiquidatorV4 = new AllV4({ walletClient });
     this.AuctionLoanLiquidatorV5 = new AllV5({ walletClient });
     this.LeverageV1 = new LeverageV1({
       walletClient,
       mslAddress: this.MultiSourceLoanV5.address,
+    });
+    this.LeverageV1_1 = new LeverageV1({
+      walletClient,
+      address: LeverageAddressV1_1,
+      mslAddress: this.MultiSourceLoanV5_1.address,
     });
     this.Seaport = new Seaport({ walletClient });
     this.CryptoPunks = new CryptoPunks({ walletClient });
@@ -74,6 +90,19 @@ export class Contracts {
     }
     if (areSameAddress(contractAddress, this.MultiSourceLoanV5.address)) {
       return this.MultiSourceLoanV5;
+    }
+    if (areSameAddress(contractAddress, this.MultiSourceLoanV5_1.address)) {
+      return this.MultiSourceLoanV5_1;
+    }
+    throw new Error(`Invalid Contract Address ${contractAddress}`);
+  }
+
+  Leverage(contractAddress: Address) {
+    if (areSameAddress(contractAddress, this.LeverageV1.address)) {
+      return this.LeverageV1;
+    }
+    if (areSameAddress(contractAddress, this.LeverageV1_1.address)) {
+      return this.LeverageV1_1;
     }
     throw new Error(`Invalid Contract Address ${contractAddress}`);
   }
