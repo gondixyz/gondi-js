@@ -107,6 +107,19 @@ export class Contracts {
     throw new Error(`Invalid Contract Address ${contractAddress}`);
   }
 
+  LeverageFromMsl(contractAddress: Address) {
+    if (areSameAddress(contractAddress, this.MultiSourceLoanV4.address)) {
+      throw new Error(`Leverage not present in V1`);
+    }
+    if (areSameAddress(contractAddress, this.MultiSourceLoanV5.address)) {
+      return this.LeverageV1;
+    }
+    if (areSameAddress(contractAddress, this.MultiSourceLoanV5_1.address)) {
+      return this.LeverageV1_1;
+    }
+    throw new Error(`Invalid Contract Address ${contractAddress}`);
+  }
+
   /**
    *
    * @param contractAddress The contract address of the MultiSourceLoanV4 or MultiSourceLoanV5 contract

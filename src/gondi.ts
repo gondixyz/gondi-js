@@ -827,7 +827,7 @@ export class Gondi {
 
     const shouldDelegate = executionData.isSeaportCall;
 
-    return this.contracts.Leverage(contractAddress).sell({
+    return this.contracts.LeverageFromMsl(loan.contractAddress).sell({
       loan,
       callbackData: executionData.callbackData,
       shouldDelegate,
