@@ -13,16 +13,16 @@ import { privateKeyToAccount } from "viem/accounts";
 dotenv.config();
 
 const RPC = process.env.RPC_URL;
-const MULTI_SOURCE_LOAN_CONTRACT_V5 =
-  process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? "";
+export const MULTI_SOURCE_LOAN_CONTRACT_V5_1 =
+  process.env.MULTI_SOURCE_LOAN_CONTRACT_V5_1 ?? "";
 const SEAPORT_CONTRACT_ADDRESS = "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC";
 const LEVERAGE_CONTRACT = process.env.LEVERAGE_ADDRESS ?? "";
 
 export const MAX_NUMBER =
   115792089237316195423570985008687907853269984665640564039457584007913129639935n;
 
-if (!isAddress(MULTI_SOURCE_LOAN_CONTRACT_V5)) {
-  throw new Error("invalid MULTI_SOURCE_LOAN_CONTRACT_V5 address");
+if (!isAddress(MULTI_SOURCE_LOAN_CONTRACT_V5_1)) {
+  throw new Error("invalid MULTI_SOURCE_LOAN_CONTRACT_V5_1 address");
 }
 
 if (!RPC) throw new Error("RPC_URL is not set");
@@ -153,12 +153,19 @@ const approveForUser = async (user: Gondi, to: Address) => {
   await approveNFT(user, to);
 };
 
-const MULTI_SOURCE_LOAN_CONTRACT_V4 =
+export const MULTI_SOURCE_LOAN_CONTRACT_V4 =
   process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
+
+export const MULTI_SOURCE_LOAN_CONTRACT_V5 =
+  process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? "";
 
 for (const [i, user] of users.entries()) {
   console.log(`approving tokens for user ${i}`);
-  await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V5);
+  await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V5_1);
+
+  if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V5)) {
+    await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V5);
+  }
 
   if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
     await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V4);

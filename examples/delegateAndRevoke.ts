@@ -1,6 +1,6 @@
-import { Address } from "viem";
+import { Address, isAddress } from "viem";
 
-import { testSingleNftOfferInput, testTokenId, users } from './common';
+import { MULTI_SOURCE_LOAN_CONTRACT_V5, testSingleNftOfferInput, testTokenId, users } from './common';
 
 
 const delegateAndRevoke = async (contract?: Address) => {
@@ -58,6 +58,10 @@ const delegateAndRevoke = async (contract?: Address) => {
 async function main() {
   try {
     await delegateAndRevoke();
+
+    if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V5)) {
+      await delegateAndRevoke(MULTI_SOURCE_LOAN_CONTRACT_V5);
+    }
   } catch (e) {
     console.log("Error:");
     console.log(e);

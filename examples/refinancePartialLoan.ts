@@ -2,6 +2,8 @@ import { Address, isAddress } from "viem";
 
 import {
   generateBlock,
+  MULTI_SOURCE_LOAN_CONTRACT_V4,
+  MULTI_SOURCE_LOAN_CONTRACT_V5,
   sleep,
   testSingleNftOfferInput,
   testTokenId,
@@ -76,11 +78,11 @@ async function main() {
   try {
     await emitRefinacePartialAndRepayLoan();
 
-    const MULTI_SOURCE_LOAN_CONTRACT_V4 =
-      process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
-
     if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
       await emitRefinacePartialAndRepayLoan(MULTI_SOURCE_LOAN_CONTRACT_V4);
+    }
+    if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V5)) {
+      await emitRefinacePartialAndRepayLoan(MULTI_SOURCE_LOAN_CONTRACT_V5);
     }
   } catch (e) {
     console.log("Error:");
