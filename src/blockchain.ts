@@ -97,17 +97,12 @@ export class Contracts {
     throw new Error(`Invalid Contract Address ${contractAddress}`);
   }
 
+  /**
+   *
+   * @param contractAddress The contract address of the MultiSourceLoan contract
+   * @returns The corresponding Leverage contract
+   */
   Leverage(contractAddress: Address) {
-    if (areSameAddress(contractAddress, this.LeverageV1.address)) {
-      return this.LeverageV1;
-    }
-    if (areSameAddress(contractAddress, this.LeverageV1_1.address)) {
-      return this.LeverageV1_1;
-    }
-    throw new Error(`Invalid Contract Address ${contractAddress}`);
-  }
-
-  LeverageFromMsl(contractAddress: Address) {
     if (areSameAddress(contractAddress, this.MultiSourceLoanV4.address)) {
       throw new Error(`Leverage not present in V1`);
     }
@@ -122,7 +117,7 @@ export class Contracts {
 
   /**
    *
-   * @param contractAddress The contract address of the MultiSourceLoanV4 or MultiSourceLoanV5 contract
+   * @param contractAddress The contract address of the MultiSourceLoan contract
    * @returns The corresponding AuctionLoanLiquidator contract
    */
   All(contractAddress: Address) {
@@ -130,6 +125,9 @@ export class Contracts {
       return this.AuctionLoanLiquidatorV4;
     }
     if (areSameAddress(contractAddress, this.MultiSourceLoanV5.address)) {
+      return this.AuctionLoanLiquidatorV5;
+    }
+    if (areSameAddress(contractAddress, this.MultiSourceLoanV5_1.address)) {
       return this.AuctionLoanLiquidatorV5;
     }
     throw new Error(`Invalid Contract Address ${contractAddress}`);

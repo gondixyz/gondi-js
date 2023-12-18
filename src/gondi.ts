@@ -724,7 +724,6 @@ export class Gondi {
 
   async leverageBuy({
     leverageBuyData,
-    contractAddress,
   }: {
     leverageBuyData: {
       offer: OfferV5 & { signature: Hash };
@@ -737,7 +736,6 @@ export class Gondi {
         orderSource: string;
       };
     }[];
-    contractAddress: Address;
   }) {
     const executionData = await Promise.all(
       leverageBuyData.map((data) =>
@@ -766,7 +764,7 @@ export class Gondi {
       callbackData: executionData[index].callbackData,
     }));
 
-    return this.contracts.Leverage(contractAddress).buy({
+    return this.contracts.LeverageV1_1.buy({
       leverageBuyData: dataForLeverageContract,
       ethToSend: ethToSend < 0n ? 0n : ethToSend,
     });
@@ -777,18 +775,18 @@ export class Gondi {
     loanId,
     price,
     orderSource,
-    contractAddress,
   }: {
     loan: LoanV5;
     loanId: bigint;
     price: bigint;
     orderSource: string;
-    contractAddress: Address;
   }) {
     let executionData: {
       callbackData: Hex;
       isSeaportCall: boolean;
     } | null = null;
+
+    const LeverageContract = this.contracts.Leverage(loan.contractAddress);
 
     if (isNative(orderSource)) {
       const bestNativeBid = await this.getBestNativeSaleOffer({
@@ -821,13 +819,13 @@ export class Gondi {
         tokenId: loan.nftCollateralTokenId,
         price,
         exactOrderSource: orderSource,
-        leverageAddress: contractAddress,
+        leverageAddress: LeverageContract.address,
       });
     }
 
     const shouldDelegate = executionData.isSeaportCall;
 
-    return this.contracts.LeverageFromMsl(loan.contractAddress).sell({
+    return LeverageContract.sell({
       loan,
       callbackData: executionData.callbackData,
       shouldDelegate,
