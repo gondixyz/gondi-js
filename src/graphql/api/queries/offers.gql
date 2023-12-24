@@ -1,4 +1,5 @@
 query listOffers(
+  $borrowerAddress: String
   $lenderAddress: String
   $sortBy: OffersSortInput!
   $terms: TermsFilter
@@ -11,6 +12,7 @@ query listOffers(
   $after: String
 ) {
   result: listOffers(
+    borrowerAddress: $borrowerAddress
     lenderAddress: $lenderAddress
     sortBy: [$sortBy]
     terms: $terms

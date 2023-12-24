@@ -110,9 +110,7 @@ export class Api {
   async listOffers(props: ListOffersQueryVariables) {
     const {
       result: { edges, pageInfo },
-    } = await this.api.listOffers({
-      ...props,
-    });
+    } = await this.api.listOffers(props);
     const offers = edges.map((edge) => {
       const {
         __typename,

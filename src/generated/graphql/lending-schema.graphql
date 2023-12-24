@@ -327,6 +327,25 @@ Date with time (isoformat)
 """
 scalar DateTime
 
+type Delegation implements Node {
+  contractAddress: String!
+  delegateTo: Address!
+  id: String!
+  nft: NFT!
+  timestamp: DateTime!
+}
+
+type DelegationConnection {
+  edges: [DelegationEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type DelegationEdge {
+  cursor: String!
+  node: Delegation!
+}
+
 scalar Hash
 
 scalar Hex
@@ -407,6 +426,7 @@ input LoanActivitySortInput {
 
 enum LoanActivityType {
   LOAN_AUCTIONED
+  LOAN_EXTENDED
   LOAN_FORECLOSED
   LOAN_INITIATED
   LOAN_REFINANCED
@@ -451,6 +471,26 @@ type LoanDefaultedNotification implements Node & Notification {
   id: String!
   loan: MultiSourceLoan!
   notificationType: String!
+  readOn: DateTime
+  user: User!
+}
+
+type LoanExtended implements LoanActivity & Node {
+  id: String!
+  indexInBlock: Int!
+  loan: Loan!
+  loanId: String!
+  multiSourceLoanHistory: MultiSourceLoanHistory
+  timestamp: DateTime!
+  txHash: Hash!
+}
+
+type LoanExtendedNotification implements Node & Notification {
+  createdOn: DateTime!
+  id: String!
+  newHistory: MultiSourceLoanHistory!
+  notificationType: String!
+  previousHistory: MultiSourceLoanHistory!
   readOn: DateTime
   user: User!
 }
@@ -546,6 +586,7 @@ enum LoanSortField {
   ORIGINATION_FEE
   PAID_INTEREST
   PRINCIPAL_AMOUNT
+  RENEGOTIATION_REQUESTED
   START_TIME
   TOTAL_INTEREST
 }
@@ -622,6 +663,7 @@ type MultiSourceLoan implements Loan & Node {
   offer: Offer!
   principalAddress: Address!
   principalAmount: BigInt!
+  renegotiationRequest: RenegotiationRequest
   repaidActivity: LoanRepaid
   sources: [Source!]!
   startTime: DateTime!
@@ -664,6 +706,12 @@ type Mutation {
     desiredPrincipalAddress: Address = null
     nftId: Int!
   ): Listing!
+  addOrUpdateRenegotiationRequest(
+    desiredAprBps: BigInt!
+    desiredDuration: BigInt!
+    desiredPrincipalAmount: BigInt!
+    loanId: String!
+  ): RenegotiationRequest!
   generateCollectionOfferToBeSigned(
     offerInput: CollectionOfferInput!
   ): CollectionOffer!
@@ -676,7 +724,7 @@ type Mutation {
   hideAllOffers(contractAddress: Address!, minOfferId: String!): [Offer!]!
   hideOffer(contractAddress: Address!, offerId: String!): Offer!
   hideRenegotiation(
-    contractAddress: Address = "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
+    contractAddress: Address = "0xCa5a494Ca20483e21ec1E41FE1D9461Da77595Bd"
     renegotiationId: String!
   ): Renegotiation!
   hideSaleOffer(saleOfferId: String!): SingleNFTOrder!
@@ -684,6 +732,7 @@ type Mutation {
   markNotificationsAsRead: Void
   removeListing(nftId: Int!): Listing!
   removeListingsOfNftsFromUser: Void
+  removeRenegotiationRequest(loanId: String!): RenegotiationRequest!
   saveRenegotiationSignedOffer(
     signedRenegotiationInput: SignedRenegotiationOfferInput!
   ): Renegotiation!
@@ -697,7 +746,7 @@ type Mutation {
   setReferral(referrerId: Int!): Void
   showOffer(contractAddress: Address!, offerId: String!): Offer!
   showRenegotiation(
-    contractAddress: Address = "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
+    contractAddress: Address = "0xCa5a494Ca20483e21ec1E41FE1D9461Da77595Bd"
     renegotiationId: String!
   ): Renegotiation!
   showSaleOffer(saleOfferId: String!): SingleNFTOrder!
@@ -914,6 +963,7 @@ enum OffersSortField {
   DAILY_INTEREST
   DURATION
   EXPIRATION
+  NET_INTEREST
   NET_PRINCIPAL
   PRINCIPAL_AMOUNT
   REPAYMENT
@@ -922,6 +972,7 @@ enum OffersSortField {
 }
 
 input OffersSortInput {
+  durationOfInterest: Int = null
   field: OffersSortField!
   order: Ordering!
 }
@@ -1081,8 +1132,15 @@ type Query {
     statuses: [LoanStatusType!] = null
     terms: TermsFilter = null
   ): MultiSourceLoanConnection!
+  listNftDelegations(
+    after: String
+    contractAddress: Address = null
+    first: Int! = 20
+    nftId: Int!
+  ): DelegationConnection!
   listNftOffersAndRenegotiations(
     after: String
+    collections: [Int!] = null
     currencyAddress: Address = null
     first: Int = 20
     hidden: Boolean = null
@@ -1133,6 +1191,7 @@ type Query {
   ): OfferConnection!
   listRenegotiations(
     after: String
+    collections: [Int!] = null
     first: Int = 10
     hidden: Boolean = null
     loanId: String = null
@@ -1177,6 +1236,7 @@ type Renegotiation implements Node {
   hidden: Boolean
   id: String!
   lenderAddress: Address
+  loan: Loan!
   loanAddress: Address!
   loanId: BigInt!
   loanReferenceId: String!
@@ -1215,6 +1275,27 @@ input RenegotiationOfferInput {
   signerAddress: Address
   strictImprovement: Boolean
   targetPrincipal: [BigInt!]!
+}
+
+type RenegotiationRequest implements Node {
+  desiredAprBps: BigInt!
+  desiredDuration: BigInt!
+  desiredPrincipalAmount: BigInt!
+  id: String!
+  loanId: String!
+}
+
+type RenegotiationRequestedNotification implements Node & Notification {
+  aprBps: BigInt!
+  createdOn: DateTime!
+  duration: BigInt!
+  id: String!
+  loan: MultiSourceLoan!
+  loanId: String!
+  notificationType: String!
+  principalAmount: BigInt!
+  readOn: DateTime
+  user: User!
 }
 
 type Royalty {
@@ -1432,6 +1513,7 @@ type Source implements Node {
   lenderAddress: String!
   loan: MultiSourceLoan!
   loanId: String!
+  loanReferenceId: String!
   originationFee: BigInt!
   principalAmount: BigInt!
   startTime: DateTime!
