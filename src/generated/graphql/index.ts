@@ -2288,7 +2288,11 @@ export type ListListingsQuery = {
   __typename?: "Query";
   result: {
     __typename?: "ListingConnection";
-    pageInfo: { __typename?: "PageInfo"; endCursor?: string | null };
+    pageInfo: {
+      __typename?: "PageInfo";
+      endCursor?: string | null;
+      hasNextPage: boolean;
+    };
     edges: Array<{
       __typename?: "ListingEdge";
       node: {
@@ -2459,7 +2463,11 @@ export type ListOffersQuery = {
   __typename?: "Query";
   result: {
     __typename?: "OfferConnection";
-    pageInfo: { __typename?: "PageInfo"; endCursor?: string | null };
+    pageInfo: {
+      __typename?: "PageInfo";
+      endCursor?: string | null;
+      hasNextPage: boolean;
+    };
     edges: Array<{
       __typename?: "OfferEdge";
       node:
@@ -5627,6 +5635,7 @@ export const ListListingsDocument = gql`
     ) {
       pageInfo {
         endCursor
+        hasNextPage
       }
       edges {
         node {
@@ -5797,6 +5806,7 @@ export const ListOffersDocument = gql`
     ) {
       pageInfo {
         endCursor
+        hasNextPage
       }
       edges {
         node {

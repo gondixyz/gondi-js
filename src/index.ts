@@ -1,5 +1,6 @@
 export { Gondi } from "@/gondi";
 export {
+  LoanStatusType,
   OfferStatus,
   OffersSortField,
   Ordering,
