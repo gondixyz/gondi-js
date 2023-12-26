@@ -15,7 +15,7 @@ import {
 } from "viem";
 import { mainnet } from "viem/chains";
 
-import { Wallet } from "@/blockchain";
+import { Wallet, zeroHash } from "@/blockchain";
 import { CryptoPunks } from "@/contracts/CryptoPunks";
 import { Seaport } from "@/contracts/Seaport";
 import { getApiKeys, getCurrencies } from "@/deploys";
@@ -211,6 +211,43 @@ export class Reservoir {
     };
   }
 
+  async generateFulfillOrderExecutionData({
+    askOrBid,
+    signature,
+  }: {
+    askOrBid: SeaportAskOrBid;
+    signature: Hash;
+  }) {
+    const order = {
+      parameters: {
+        ...askOrBid.rawData,
+        totalOriginalConsiderationItems: BigInt(
+          askOrBid.rawData.consideration.length
+        ),
+      },
+      signature,
+    };
+
+    const fulfillOrderCallbackData = encodeFunctionData({
+      abi: seaportABI,
+      functionName: "fulfillOrder",
+      args: [order, zeroHash],
+    });
+
+    // When we are selling the nft, we need to **receive** the netAmount of WETH
+    const total = BigInt(askOrBid.price.netAmount.raw);
+
+    return {
+      callbackData: this.encodeExecutionData({
+        module: this.Seaport.address,
+        data: fulfillOrderCallbackData,
+        value: total,
+      }),
+      value: total,
+      isSeaportCall: true,
+    };
+  }
+
   async buyTokens(
     tokensToBuy: {
       collectionContractAddress: Address;
@@ -389,10 +426,9 @@ export class Reservoir {
 
         const apiOrder = await this.getBid({ orderId });
 
-        return this.generateMatchOrdersExecutionData({
+        return this.generateFulfillOrderExecutionData({
           askOrBid: apiOrder as unknown as SeaportAskOrBid,
           signature,
-          side: "bid",
         });
       } else if (err instanceof InterruptedGenericSendTransactionStepError) {
         // We use the same callbackData that we get from reservoir
