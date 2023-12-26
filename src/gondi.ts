@@ -440,9 +440,10 @@ export class Gondi {
     });
   }
 
-  async loans({ limit = 20, ...rest }: model.ListLoansProps) {
+  async loans({ limit = 20, cursor, ...rest }: model.ListLoansProps) {
     return await this.api.listLoans({
       first: limit,
+      after: cursor,
       ...rest,
     });
   }
@@ -462,19 +463,13 @@ export class Gondi {
     limit = 20,
     cursor,
   }: model.ListListingsProps) {
-    const {
-      result: { edges, pageInfo },
-    } = await this.api.listListings({
+    return await this.api.listListings({
       collections,
       userFilter: user,
       marketplaceNames: marketPlaces,
       after: cursor,
       first: limit,
     });
-    return {
-      cursor: pageInfo.endCursor,
-      listings: edges.map((edge) => edge.node),
-    };
   }
 
   async nftId(

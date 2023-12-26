@@ -84,7 +84,7 @@ export type Auction = BlockchainAuction;
 
 export type ListOffersProps = {
   limit?: number;
-  cursor?: string;
+  cursor?: string | null;
   sortBy?: OffersSortInput;
   filterBy?: {
     nft?: number;
@@ -99,7 +99,7 @@ export type ListOffersProps = {
 
 export interface ListLoansProps {
   limit?: number;
-  cursor?: string;
+  cursor?: string | null;
   borrowerAddress?: Address;
   collections?: number[];
   nfts?: number[];
@@ -115,5 +115,5 @@ export type ListListingsProps = {
   user?: UserFilter;
   marketPlaces?: MarketplaceEnum[];
   limit?: number;
-  cursor?: string;
+  cursor?: string | null;
 };

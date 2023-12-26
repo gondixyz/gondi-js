@@ -26,6 +26,7 @@ query listOffers(
   ) {
     pageInfo {
       endCursor
+      hasNextPage
     }
     edges {
       node {

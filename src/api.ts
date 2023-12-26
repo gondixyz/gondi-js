@@ -3,6 +3,7 @@ import { ApolloClient, NormalizedCacheObject } from "@apollo/client";
 import { Wallet, zeroAddress } from "@/blockchain";
 import {
   CollectionSignedOfferInput,
+  ListListingsQueryVariables,
   ListLoansQueryVariables,
   ListOffersQueryVariables,
   SingleNftSignedOfferInput,
@@ -17,12 +18,19 @@ export type Props = {
   wallet: Wallet;
 };
 
+type PageInfo = { endCursor?: string | null; hasNextPage: boolean };
+
+const mapPageInfo = ({ endCursor, hasNextPage }: PageInfo) =>
+  hasNextPage
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    ? { hasNextPage, cursor: endCursor! }
+    : { hasNextPage, cursor: null };
+
 export class Api {
   api: ReturnType<typeof getSdkApollo>;
   generateSingleNftOfferHash;
   generateCollectionOfferHash;
   generateRenegotiationOfferHash;
-  listListings;
   nftIdBySlugTokenId;
   nftIdByContractAddressAndTokenId;
   collectionIdBySlug;
@@ -46,7 +54,6 @@ export class Api {
     this.generateCollectionOfferHash = this.api.generateCollectionOfferHash;
     this.generateRenegotiationOfferHash =
       this.api.generateRenegotiationOfferHash;
-    this.listListings = this.api.listListings;
     this.nftIdBySlugTokenId = this.api.nftIdBySlugTokenId;
     this.nftIdByContractAddressAndTokenId =
       this.api.nftIdByContractAddressAndTokenId;
@@ -128,7 +135,7 @@ export class Api {
       };
     });
     return {
-      cursor: pageInfo.endCursor,
+      ...mapPageInfo(pageInfo),
       offers,
     };
   }
@@ -136,9 +143,7 @@ export class Api {
   async listLoans(props: ListLoansQueryVariables) {
     const {
       loans: { edges, pageInfo },
-    } = await this.api.listLoans({
-      ...props,
-    });
+    } = await this.api.listLoans(props);
     const loans = edges.map((edge) => {
       const { __typename, ...node } = edge.node;
       return {
@@ -147,8 +152,19 @@ export class Api {
       };
     });
     return {
-      cursor: pageInfo.endCursor,
+      ...mapPageInfo(pageInfo),
       loans,
+    };
+  }
+
+  async listListings(props: ListListingsQueryVariables) {
+    const {
+      result: { edges, pageInfo },
+    } = await this.api.listListings(props);
+    const listings = edges.map((edge) => edge.node);
+    return {
+      ...mapPageInfo(pageInfo),
+      listings,
     };
   }
 }
