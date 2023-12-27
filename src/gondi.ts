@@ -794,7 +794,7 @@ export class Gondi {
         throw new Error(`No native bid for price ${price}`);
       }
 
-      executionData = await this.reservoir.generateMatchOrdersExecutionData({
+      executionData = await this.reservoir.generateFulfillOrderExecutionData({
         askOrBid: {
           rawData: await this.contracts.Seaport.recoverOrderFromNativeBid({
             nativeBid: bestNativeBid,
@@ -808,7 +808,6 @@ export class Gondi {
           },
         },
         signature: bestNativeBid.signature,
-        side: "bid",
       });
     } else {
       executionData = await this.reservoir.getCallbackDataForSellToken({
