@@ -12,13 +12,14 @@ import {
   Hash,
   http,
   PublicClient,
+  zeroAddress,
 } from "viem";
 import { mainnet } from "viem/chains";
 
 import { Wallet, zeroHash } from "@/blockchain";
 import { CryptoPunks } from "@/contracts/CryptoPunks";
 import { Seaport } from "@/contracts/Seaport";
-import { getApiKeys, getCurrencies } from "@/deploys";
+import { getApiKeys, getContracts, getCurrencies } from "@/deploys";
 import {
   InterruptedCryptoPunksSendTransactionStepError,
   InterruptedGenericSendTransactionStepError,
@@ -214,9 +215,11 @@ export class Reservoir {
   async generateFulfillOrderExecutionData({
     askOrBid,
     signature,
+    tokenId,
   }: {
     askOrBid: SeaportAskOrBid;
     signature: Hash;
+    tokenId: bigint;
   }) {
     const order = {
       parameters: {
@@ -225,13 +228,35 @@ export class Reservoir {
           askOrBid.rawData.consideration.length
         ),
       },
+      numerator: 1n,
+      denominator: 1n,
       signature,
+      extraData: "0x" as Hash,
     };
+
+    const nftWithCriteriaIndex = order.parameters.consideration.findIndex(
+      (consid) => consid.itemType === 4
+    );
 
     const fulfillOrderCallbackData = encodeFunctionData({
       abi: seaportABI,
-      functionName: "fulfillOrder",
-      args: [order, zeroHash],
+      functionName: "fulfillAdvancedOrder",
+      args: [
+        order,
+        nftWithCriteriaIndex !== -1
+          ? [
+              {
+                orderIndex: 0n,
+                side: 1, // consideration
+                index: BigInt(nftWithCriteriaIndex),
+                identifier: tokenId,
+                criteriaProof: [],
+              },
+            ]
+          : [],
+        zeroHash,
+        zeroAddress,
+      ],
     });
 
     // When we are selling the nft, we need to **receive** the netAmount of WETH
@@ -369,19 +394,18 @@ export class Reservoir {
     tokenId,
     price,
     exactOrderSource,
-    leverageAddress,
   }: {
     collectionContractAddress: Address;
     tokenId: bigint;
     price: bigint;
     exactOrderSource: string;
-    leverageAddress: Address;
   }) {
     const adaptedWallet = adaptWalletToCaptureTxData(
       this.wallet,
       exactOrderSource
     );
     const { WETH_ADDRESS } = getCurrencies();
+    const { LeverageAddress } = getContracts(this.wallet.chain);
 
     const erc721 = getContract({
       abi: erc721ABI,
@@ -413,7 +437,7 @@ export class Reservoir {
           // Since we will be generating matchOrders callbackData for the seaport contract, there is no problem in setting the taker
           // to the real owner, just to get the order id from this
           // For other order sources, the taker needs to be the leverage contract, since it's the contract that will execute the tx
-          taker: isOpensea(exactOrderSource) ? owner : leverageAddress,
+          taker: isOpensea(exactOrderSource) ? owner : LeverageAddress,
         },
       });
       throw new Error(
@@ -429,6 +453,7 @@ export class Reservoir {
         return this.generateFulfillOrderExecutionData({
           askOrBid: apiOrder as unknown as SeaportAskOrBid,
           signature,
+          tokenId,
         });
       } else if (err instanceof InterruptedGenericSendTransactionStepError) {
         // We use the same callbackData that we get from reservoir

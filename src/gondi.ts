@@ -808,6 +808,7 @@ export class Gondi {
           },
         },
         signature: bestNativeBid.signature,
+        tokenId: loan.nftCollateralTokenId,
       });
     } else {
       executionData = await this.reservoir.getCallbackDataForSellToken({
@@ -815,7 +816,6 @@ export class Gondi {
         tokenId: loan.nftCollateralTokenId,
         price,
         exactOrderSource: orderSource,
-        leverageAddress: this.contracts.Leverage.address,
       });
     }
 
