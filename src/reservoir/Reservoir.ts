@@ -434,8 +434,8 @@ export class Reservoir {
         options: {
           excludeEOA: true,
           // For opensea orders ONLY, the taker needs to be the real owner of the NFT
-          // Since we will be generating matchOrders callbackData for the seaport contract, there is no problem in setting the taker
-          // to the real owner, just to get the order id from this
+          // Since we will be generating fulfillAdvancedOrder callbackData for the seaport contract, there is no problem in setting the taker
+          // to the real owner (MSL), just to get the order id from this
           // For other order sources, the taker needs to be the leverage contract, since it's the contract that will execute the tx
           taker: isOpensea(exactOrderSource) ? owner : LeverageAddress,
         },
@@ -445,7 +445,6 @@ export class Reservoir {
       );
     } catch (err) {
       if (err instanceof InterruptedSeaportSendTransactionStepError) {
-        // We can save a tx by using match orders execution data
         const { orderId, signature } = err;
 
         const apiOrder = await this.getBid({ orderId });
