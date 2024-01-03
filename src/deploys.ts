@@ -81,7 +81,7 @@ export const getContracts = (chain: Pick<Chain, "id">): Contracts => {
       "0x237e4421C742d843Fdd96D22294D338507e17091",
     AuctionLoanLiquidatorV5Address:
       "0x97d34635b605c2f1630d6b4c6c5d222b8a2ca47d",
-    LeverageAddress: "0x87Ce6e8124fFd68fa721FcC7f35fdA14A11E233e",
+    LeverageAddress: "0x7B486Ed3e4598aFC9F15Edba9Ee683C0C6d3CEbD",
     SeaportAddress: "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC",
     CryptoPunksAddress: "0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb",
   };
