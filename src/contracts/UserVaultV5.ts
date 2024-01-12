@@ -58,6 +58,7 @@ export class UserVaultV5 extends Contract<typeof userVaultABIV5> {
     );
 
     return {
+      vaultId,
       txHash: deposits.map(({ txHash }) => txHash),
       waitTxInBlock: async () => await Promise.all(
         deposits.map(({ waitTxInBlock }) => waitTxInBlock())
