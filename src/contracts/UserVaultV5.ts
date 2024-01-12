@@ -48,7 +48,10 @@ export class UserVaultV5 extends Contract<typeof userVaultABIV5> {
         const filter = await this.contract.createEventFilter.ERC721Withdrawn();
         const events = filterLogs(receipt, filter);
         if (events.length !== tokenIds.length) throw new Error('Withdrawn count mismatch');
-        return { events, ...receipt };
+        return {
+          events: events.map((event) => event.args),
+          ...receipt,
+        };
       },
     };
   }

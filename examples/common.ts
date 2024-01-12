@@ -119,14 +119,18 @@ const approveToken = async (user: Gondi, to: Address) => {
   }
 };
 
-const approveNFT = async (user: Gondi, to: Address) => {
+export const approveNFT = async (
+  user: Gondi,
+  to: Address,
+  collection: Address | undefined = testCollection.contractAddress,
+) => {
   const isApprovedAlready = await user.isApprovedNFTForAll({
-    nftAddress: testCollection.contractAddress,
+    nftAddress: collection,
     to,
   });
   if (!isApprovedAlready) {
     const approveNFT = await user.approveNFTForAll({
-      nftAddress: testCollection.contractAddress,
+      nftAddress: collection,
       to,
     });
     await approveNFT.waitTxInBlock();
