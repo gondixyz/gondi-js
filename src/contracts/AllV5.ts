@@ -53,7 +53,7 @@ export class AllV5 extends Contract<typeof auctionLoanLiquidatorABIV5> {
 
         const filter = await this.contract.createEventFilter.BidPlaced();
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Bid not placed");
+        if (events.length === 0) throw new Error("Bid not placed");
         return { ...events[0].args, ...receipt };
       },
     };
@@ -80,7 +80,7 @@ export class AllV5 extends Contract<typeof auctionLoanLiquidatorABIV5> {
 
         const filter = await this.contract.createEventFilter.AuctionSettled();
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Auction not settled");
+        if (events.length === 0) throw new Error("Auction not settled");
         return { ...events[0].args, ...receipt };
       },
     };

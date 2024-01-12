@@ -270,7 +270,7 @@ export class Seaport extends Contract<typeof seaportABI> {
           offerer: orderComponents.offerer,
         });
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Order not cancelled");
+        if (events.length === 0) throw new Error("Order not cancelled");
         return { ...events[0].args, ...receipt };
       },
     };

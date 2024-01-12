@@ -105,7 +105,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
 
         const filter = await this.contract.createEventFilter.OfferCancelled();
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Offer not cancelled");
+        if (events.length === 0) throw new Error("Offer not cancelled");
         return { ...events[0].args, ...receipt };
       },
     };
@@ -126,7 +126,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
         const filter =
           await this.contract.createEventFilter.AllOffersCancelled();
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Offers not cancelled");
+        if (events.length === 0) throw new Error("Offers not cancelled");
         return { ...events[0].args, ...receipt };
       },
     };
@@ -146,7 +146,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
         const filter =
           await this.contract.createEventFilter.RenegotiationOfferCancelled();
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Offer not cancelled");
+        if (events.length === 0) throw new Error("Offer not cancelled");
         return { ...events[0].args, ...receipt };
       },
     };
@@ -166,7 +166,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
         const filter =
           await this.contract.createEventFilter.RenegotiationOfferCancelled();
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Offer not cancelled");
+        if (events.length === 0) throw new Error("Offer not cancelled");
         return { ...events[0].args, ...receipt };
       },
     };
@@ -196,7 +196,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
         });
         const filter = await this.contract.createEventFilter.LoanEmitted();
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Loan not emitted");
+        if (events.length === 0) throw new Error("Loan not emitted");
         const args = events[0].args;
         return {
           loan: {
@@ -240,7 +240,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
         });
         const filter = await this.contract.createEventFilter.LoanRepaid();
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Loan not repaid");
+        if (events.length === 0) throw new Error("Loan not repaid");
         return { ...events[0].args, ...receipt };
       },
     };
@@ -273,7 +273,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
         });
         const filter = await this.contract.createEventFilter.LoanRefinanced();
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Loan not refinanced");
+        if (events.length === 0) throw new Error("Loan not refinanced");
         const args = events[0].args;
         return {
           loan: {
@@ -307,7 +307,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
         });
         const filter = await this.contract.createEventFilter.LoanRefinanced();
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Loan not refinanced");
+        if (events.length === 0) throw new Error("Loan not refinanced");
         const args = events[0].args;
         return {
           loan: {

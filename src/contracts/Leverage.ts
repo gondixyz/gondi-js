@@ -158,7 +158,7 @@ export class Leverage extends Contract<typeof leverageABI> {
 
         const filter = await this.contract.createEventFilter.BNPLLoansStarted();
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("BNPL Loans not started");
+        if (events.length === 0) throw new Error("BNPL Loans not started");
         return { ...events[0].args, ...receipt };
       },
     };
@@ -207,7 +207,7 @@ export class Leverage extends Contract<typeof leverageABI> {
         const filter =
           await this.contract.createEventFilter.SellAndRepayExecuted();
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Sell and repay not executed");
+        if (events.length === 0) throw new Error("Sell and repay not executed");
         return { ...events[0].args, ...receipt };
       },
     };

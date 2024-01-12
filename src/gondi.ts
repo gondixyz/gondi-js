@@ -871,7 +871,7 @@ export class Gondi {
         });
         const filter = await erc721.createEventFilter.ApprovalForAll({});
         const events = filterLogs(receipt, filter);
-        if (events.length == 0)
+        if (events.length === 0)
           throw new Error("ERC721 approval for all not set");
         return { ...events[0].args, ...receipt };
       },
@@ -913,7 +913,7 @@ export class Gondi {
         });
         const filter = await erc20.createEventFilter.Approval({});
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("ERC20 approval not set");
+        if (events.length === 0) throw new Error("ERC20 approval not set");
         return { ...events[0].args, ...receipt };
       },
     };
