@@ -1,0 +1,13 @@
+node_modules
+
+dist
+
+docs
+
+src/generated
+
+*.log
+.env
+.vscode
+.DS_Store
+*.lock
