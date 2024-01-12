@@ -918,4 +918,32 @@ export class Gondi {
       },
     };
   }
+
+  async createUserVault({
+    nfts,
+    userVaultAddress = this.contracts.UserVaultV5.address,
+  }: {
+    nfts: Parameters<Contracts["UserVaultV5"]["createVault"]>[0];
+    userVaultAddress?: Address;
+  }) {
+    return this.contracts.UserVault(userVaultAddress).createVault(nfts);
+  }
+
+  async depositUserVaultERC721s({
+    userVaultAddress = this.contracts.UserVaultV5.address,
+    ...data
+  }: {
+    userVaultAddress?: Address;
+  } & Parameters<Contracts["UserVaultV5"]["depositERC721s"]>[0]) {
+    return this.contracts.UserVault(userVaultAddress).depositERC721s(data);
+  }
+
+  async burnUserVaultAndWithdraw({
+    userVaultAddress = this.contracts.UserVaultV5.address,
+    ...data
+  }: {
+    userVaultAddress?: Address
+  } & Parameters<Contracts["UserVaultV5"]["burnAndWithdraw"]>[0]) {
+    return this.contracts.UserVault(userVaultAddress).burnAndWithdraw(data);
+  }
 }

@@ -8,6 +8,7 @@ interface Contracts {
   MultiSourceLoanV5Address: Address;
   AuctionLoanLiquidatorV4Address: Address;
   AuctionLoanLiquidatorV5Address: Address;
+  UserVaultV5Address: Address;
   LeverageAddress: Address;
   SeaportAddress: Address;
   CryptoPunksAddress: Address;
@@ -49,6 +50,9 @@ export const getContracts = (chain: Pick<Chain, "id">): Contracts => {
       AuctionLoanLiquidatorV5Address:
         ensureAddress(process.env.GONDI_AUCTION_LOAN_LIQUIDATOR_V5) ??
         "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+      UserVaultV5Address:
+        ensureAddress(process.env.GONDI_USER_VAULT_V5) ??
+        "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
       LeverageAddress:
         ensureAddress(process.env.GONDI_LEVERAGE) ??
         "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
@@ -68,6 +72,7 @@ export const getContracts = (chain: Pick<Chain, "id">): Contracts => {
       AuctionLoanLiquidatorV4Address:
         "0x29C73faa2f9180ea5a7B0bEC243ebc63a5B4f280",
       AuctionLoanLiquidatorV5Address: "0xTODO", // TODO: deploy
+      UserVaultV5Address: "0xTODO", // TODO: deploy
       LeverageAddress: "0xTODO", // TODO: deploy
       SeaportAddress: "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC",
       CryptoPunksAddress: "0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb",
@@ -81,6 +86,8 @@ export const getContracts = (chain: Pick<Chain, "id">): Contracts => {
       "0x237e4421C742d843Fdd96D22294D338507e17091",
     AuctionLoanLiquidatorV5Address:
       "0x97d34635b605c2f1630d6b4c6c5d222b8a2ca47d",
+    UserVaultV5Address:
+      "0x14a6Dcebb2Bb73aae1b199CCAadA75247b81976D",
     LeverageAddress: "0x87Ce6e8124fFd68fa721FcC7f35fdA14A11E233e",
     SeaportAddress: "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC",
     CryptoPunksAddress: "0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb",

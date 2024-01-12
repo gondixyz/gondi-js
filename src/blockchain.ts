@@ -36,6 +36,7 @@ import { Leverage } from "./contracts/Leverage";
 import { MslV4 } from "./contracts/MslV4";
 import { MslV5 } from "./contracts/MslV5";
 import { Seaport } from "./contracts/Seaport";
+import { UserVaultV5 } from "./contracts/UserVaultV5";
 import { areSameAddress } from "./utils";
 
 export type Wallet = WalletClient<Transport, Chain, Account>;
@@ -48,6 +49,7 @@ export class Contracts {
   MultiSourceLoanV5: MslV5;
   AuctionLoanLiquidatorV4: AllV4;
   AuctionLoanLiquidatorV5: AllV5;
+  UserVaultV5: UserVaultV5;
   Leverage: Leverage;
   Seaport: Seaport;
   CryptoPunks: CryptoPunks;
@@ -60,6 +62,7 @@ export class Contracts {
     this.MultiSourceLoanV5 = new MslV5({ walletClient });
     this.AuctionLoanLiquidatorV4 = new AllV4({ walletClient });
     this.AuctionLoanLiquidatorV5 = new AllV5({ walletClient });
+    this.UserVaultV5 = new UserVaultV5({ walletClient });
     this.Leverage = new Leverage({
       walletClient,
       mslAddress: this.MultiSourceLoanV5.address,
@@ -89,6 +92,13 @@ export class Contracts {
     }
     if (areSameAddress(contractAddress, this.MultiSourceLoanV5.address)) {
       return this.AuctionLoanLiquidatorV5;
+    }
+    throw new Error(`Invalid Contract Address ${contractAddress}`);
+  }
+
+  UserVault(contractAddress: Address) {
+    if (areSameAddress(contractAddress, this.UserVaultV5.address)) {
+      return this.UserVaultV5;
     }
     throw new Error(`Invalid Contract Address ${contractAddress}`);
   }
