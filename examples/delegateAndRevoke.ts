@@ -1,12 +1,9 @@
-import { Address } from "viem";
+import { Address } from 'viem';
 
 import { testSingleNftOfferInput, testTokenId, users } from './common';
 
-
 const delegateAndRevoke = async (contract?: Address) => {
-  const signedOffer = await users[0]._makeSingleNftOffer(
-    testSingleNftOfferInput, contract,
-  );
+  const signedOffer = await users[0]._makeSingleNftOffer(testSingleNftOfferInput, contract);
   const contractVersionString = `msl: ${signedOffer.contractAddress}`;
   console.log(`offer placed successfully: ${contractVersionString}`);
 
@@ -23,7 +20,7 @@ const delegateAndRevoke = async (contract?: Address) => {
       loanId,
       to: users[0].wallet.account.address,
       enable: true,
-    })
+    });
     await delegateTrue.waitTxInBlock();
     console.log(`nft from loanId ${loanId} successfully delegated: ${contractVersionString}`);
 
@@ -32,10 +29,12 @@ const delegateAndRevoke = async (contract?: Address) => {
       loanId,
       to: users[0].wallet.account.address,
       enable: false,
-    })
+    });
     await delegateFalse.waitTxInBlock();
-    console.log(`nft from loanId ${loanId} successfully revoked delegation: ${contractVersionString}`);
-  } catch(e) {
+    console.log(
+      `nft from loanId ${loanId} successfully revoked delegation: ${contractVersionString}`,
+    );
+  } catch (e) {
     console.log('Error while delegating and revoking during loan:');
     console.log(e);
   }
@@ -49,17 +48,16 @@ const delegateAndRevoke = async (contract?: Address) => {
     tokenId: signedOffer.nftCollateralTokenId,
     to: users[0].wallet.account.address,
     contract,
-  })
+  });
   await revokeDelegate.waitTxInBlock();
   console.log(`owner succesfully revoked delegate: ${contractVersionString}`);
 };
-
 
 async function main() {
   try {
     await delegateAndRevoke();
   } catch (e) {
-    console.log("Error:");
+    console.log('Error:');
     console.log(e);
   }
 }

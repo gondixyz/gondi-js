@@ -1,8 +1,6 @@
 module.exports = {
   // Input
-  entryPoints: [
-    './src/index.ts',
-  ],
+  entryPoints: ['./src/index.ts'],
   includeVersion: true,
   tsconfig: './tsconfig.json',
   out: './docs',
@@ -17,7 +15,7 @@ module.exports = {
   hideGenerator: true,
   visibilityFilters: {},
   navigationLinks: {
-    "Github": "https://github.com/gondixyz/gondi-js"
+    Github: 'https://github.com/gondixyz/gondi-js',
   },
   excludeInternal: true,
 

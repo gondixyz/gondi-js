@@ -1,5 +1,5 @@
-import { Gondi } from "gondi";
-import { Address, isAddress, zeroAddress } from "viem";
+import { Gondi } from 'gondi';
+import { Address, isAddress, zeroAddress } from 'viem';
 
 import {
   AUCTION_DEFAULT_DURATION,
@@ -8,17 +8,26 @@ import {
   testSingleNftOfferInput,
   testTokenId,
   users,
-} from "./common";
+} from './common';
 
-const emitLoanThenAuctionAndBid = async (owner: Gondi, lender: Gondi, refinancer: Gondi, mslContract?: Address, liquidatorContract?: Address) => {
+const emitLoanThenAuctionAndBid = async (
+  owner: Gondi,
+  lender: Gondi,
+  refinancer: Gondi,
+  mslContract?: Address,
+  liquidatorContract?: Address,
+) => {
   if (!isAddress(liquidatorContract ?? '')) {
     throw new Error(`invalid liquidator contract address: ${liquidatorContract}`);
   }
 
-  const signedOffer = await lender._makeSingleNftOffer({
-    ...testSingleNftOfferInput,
-    duration: 15n,
-  }, mslContract);
+  const signedOffer = await lender._makeSingleNftOffer(
+    {
+      ...testSingleNftOfferInput,
+      duration: 15n,
+    },
+    mslContract,
+  );
   const contractVersionString = `msl: ${signedOffer.contractAddress}`;
   console.log(`offer placed successfully: ${contractVersionString}`);
 
@@ -97,11 +106,11 @@ const emitLoanThenAuctionAndBid = async (owner: Gondi, lender: Gondi, refinancer
   });
   await placeBid.waitTxInBlock();
   console.log(`bid placed successfully: ${contractVersionString}`);
-}
+};
 
 async function main() {
   try {
-    const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
+    const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? '';
     const useV4 = false; // Change to use v4 contracts
 
     if (useV4 && isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
@@ -110,7 +119,7 @@ async function main() {
         users[0],
         users[2],
         MULTI_SOURCE_LOAN_CONTRACT_V4,
-        process.env.AUCTION_LIQUIDATOR_CONTRACT_V4 as Address
+        process.env.AUCTION_LIQUIDATOR_CONTRACT_V4 as Address,
       );
     } else {
       await emitLoanThenAuctionAndBid(
@@ -118,11 +127,11 @@ async function main() {
         users[0],
         users[2],
         process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 as Address,
-        process.env.AUCTION_LIQUIDATOR_CONTRACT_V5 as Address
+        process.env.AUCTION_LIQUIDATOR_CONTRACT_V5 as Address,
       );
     }
   } catch (e) {
-    console.log("Error:");
+    console.log('Error:');
     console.log(e);
   }
 }

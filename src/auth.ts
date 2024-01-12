@@ -4,30 +4,29 @@ import {
   createHttpLink,
   GraphQLRequest,
   InMemoryCache,
-} from "@apollo/client/core/index.js";
-import { gql } from "graphql-tag";
-import { SiweMessage } from "siwe";
+} from '@apollo/client/core/index.js';
+import { gql } from 'graphql-tag';
+import { SiweMessage } from 'siwe';
 
-import { Wallet } from "@/blockchain";
-import { authApiUrl } from "@/const";
+import { Wallet } from '@/blockchain';
+import { authApiUrl } from '@/const';
 
 export type Credential = SessionToken;
 
 export const getAuthClient = async () => {
   const link = ApolloLink.from([
     createHttpLink({
-      uri: ({ operationName }) =>
-        `${authApiUrl()}?operation=${encodeURIComponent(operationName)}`,
+      uri: ({ operationName }) => `${authApiUrl()}?operation=${encodeURIComponent(operationName)}`,
     }) as unknown as ApolloLink,
   ]);
   return new ApolloClient({
     link: ApolloLink.from([link]),
     defaultOptions: {
       query: {
-        errorPolicy: "all",
+        errorPolicy: 'all',
       },
       mutate: {
-        errorPolicy: "all",
+        errorPolicy: 'all',
       },
     },
     cache: new InMemoryCache({}),
@@ -46,22 +45,22 @@ export const signIn = async ({ wallet }: { wallet: Wallet }) => {
     variables: {
       nonceInput: {
         walletAddress: wallet.account.address,
-        blockchain: "ETHEREUM",
+        blockchain: 'ETHEREUM',
       },
     },
   });
 
-  if (errors) throw new Error(errors.map((e) => e.message).join(", "));
+  if (errors) throw new Error(errors.map((e) => e.message).join(', '));
 
   const nonce = data?.generateSignInNonce;
 
   const message = new SiweMessage({
-    domain: "gondi.xyz",
+    domain: 'gondi.xyz',
     address: wallet.account.address,
     chainId: wallet.chain.id,
-    statement: "Sign in with Ethereum to the app.",
+    statement: 'Sign in with Ethereum to the app.',
     uri: authApiUrl(),
-    version: "1",
+    version: '1',
     nonce,
   });
 
@@ -80,11 +79,10 @@ export const signIn = async ({ wallet }: { wallet: Wallet }) => {
     },
   });
 
-  if (siweErrors) throw new Error(siweErrors.map((e) => e.message).join(", "));
+  if (siweErrors) throw new Error(siweErrors.map((e) => e.message).join(', '));
 
   const accessToken = siweData?.signInWithEthereum;
-  if (!accessToken)
-    throw new Error("Couldn't generate Access Token, please try again later");
+  if (!accessToken) throw new Error("Couldn't generate Access Token, please try again later");
   return accessToken;
 };
 

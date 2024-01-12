@@ -1,10 +1,10 @@
-export { Gondi } from "@/gondi";
+export { Gondi } from '@/gondi';
 export {
   LoanStatusType,
   OfferStatus,
   OffersSortField,
   Ordering,
   MarketplaceEnum,
-} from "@/generated/graphql";
+} from '@/generated/graphql';
 
-export type * as Types from "@/model";
+export type * as Types from '@/model';

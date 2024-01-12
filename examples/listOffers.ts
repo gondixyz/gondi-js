@@ -1,15 +1,11 @@
-import { OffersSortField, OfferStatus, Ordering } from "gondi";
+import { OffersSortField, OfferStatus, Ordering } from 'gondi';
 
-import {
-  testCollectionOfferInput,
-  testSingleNftOfferInput,
-  users,
-} from "./common";
+import { testCollectionOfferInput, testSingleNftOfferInput, users } from './common';
 
 async function main() {
   await users[0].makeCollectionOffer(testCollectionOfferInput);
   await users[0].makeSingleNftOffer(testSingleNftOfferInput);
-  console.log("offer placed successfully");
+  console.log('offer placed successfully');
 
   let cursor;
   while (true) {

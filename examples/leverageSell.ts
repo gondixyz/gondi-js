@@ -1,6 +1,6 @@
-import { getAddress } from "viem";
+import { getAddress } from 'viem';
 
-import { users } from "./common";
+import { users } from './common';
 
 async function main() {
   const loanToRepay = (
@@ -10,7 +10,7 @@ async function main() {
     })
   ).loans[0];
 
-  console.log("Attempting to sell & repay", loanToRepay.nft.tokenId)
+  console.log('Attempting to sell & repay', loanToRepay.nft.tokenId);
 
   const { waitTxInBlock } = await users[0].leverageSell({
     loan: {
@@ -18,7 +18,7 @@ async function main() {
       borrower: getAddress(loanToRepay.borrowerAddress),
 
       nftCollateralAddress: getAddress(
-        loanToRepay.nft.collection?.contractData?.contractAddress ?? ""
+        loanToRepay.nft.collection?.contractData?.contractAddress ?? '',
       ),
       nftCollateralTokenId: loanToRepay.nft.tokenId,
       startTime: BigInt(Math.floor(loanToRepay.startTime.getTime() / 1000)),
@@ -32,12 +32,12 @@ async function main() {
     },
     loanId: BigInt(loanToRepay.sources[0].loanId),
     price: 10000000000000000000n,
-    orderSource: "opensea.io",
+    orderSource: 'opensea.io',
   });
 
   await waitTxInBlock();
 
-  console.log("Leverage Sell executed");
+  console.log('Leverage Sell executed');
 }
 
 main();

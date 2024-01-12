@@ -1,14 +1,14 @@
-import { adaptViemWallet } from "@reservoir0x/reservoir-sdk";
-import { Address, decodeFunctionData, Hash, zeroAddress } from "viem";
+import { adaptViemWallet } from '@reservoir0x/reservoir-sdk';
+import { Address, decodeFunctionData, Hash, zeroAddress } from 'viem';
 
-import { Wallet } from "@/blockchain";
-import { MSL_V5_TX_HASH } from "@/deploys";
+import { Wallet } from '@/blockchain';
+import { MSL_V5_TX_HASH } from '@/deploys';
 import {
   InterruptedCryptoPunksSendTransactionStepError,
   InterruptedGenericSendTransactionStepError,
   InterruptedSeaportSendTransactionStepError,
-} from "@/errors";
-import { seaportABI } from "@/generated/blockchain/seaport";
+} from '@/errors';
+import { seaportABI } from '@/generated/blockchain/seaport';
 
 export interface Offer {
   itemType: number;
@@ -59,15 +59,11 @@ export interface Fulfillment {
   considerationComponents: FulfillmentComponent[];
 }
 
-export const isOpensea = (orderSource: string) => orderSource === "opensea.io";
-export const isCryptopunks = (orderSource: string) =>
-  orderSource === "cryptopunks.app";
-export const isNative = (orderSource: string) => orderSource === "gondi.xyz";
+export const isOpensea = (orderSource: string) => orderSource === 'opensea.io';
+export const isCryptopunks = (orderSource: string) => orderSource === 'cryptopunks.app';
+export const isNative = (orderSource: string) => orderSource === 'gondi.xyz';
 
-export const adaptWalletToCaptureTxData = (
-  wallet: Wallet,
-  exactOrderSource: string
-) => {
+export const adaptWalletToCaptureTxData = (wallet: Wallet, exactOrderSource: string) => {
   const viemWallet = adaptViemWallet(wallet);
 
   const adaptedWallet = {
@@ -79,13 +75,13 @@ export const adaptWalletToCaptureTxData = (
         data: { data: Hash; to: Address; value: string };
         orderIds?: string[];
       },
-      step: { id: string }
+      step: { id: string },
     ) => {
-      if (step.id !== "sale") {
+      if (step.id !== 'sale') {
         console.log(step);
         return MSL_V5_TX_HASH;
       }
-      const orderId = stepItem.orderIds?.[0] ?? "";
+      const orderId = stepItem.orderIds?.[0] ?? '';
       const to = stepItem.data.to;
       const callbackData = stepItem.data.data;
       const value = BigInt(stepItem.data.value ?? 0);
@@ -100,9 +96,9 @@ export const adaptWalletToCaptureTxData = (
 
         const signature = Array.isArray(firstArg)
           ? (firstArg[0] as { signature: Hash }).signature
-          : typeof firstArg === "object"
-          ? (firstArg as { signature: Hash }).signature
-          : zeroAddress;
+          : typeof firstArg === 'object'
+            ? (firstArg as { signature: Hash }).signature
+            : zeroAddress;
 
         throw new InterruptedSeaportSendTransactionStepError({
           orderId,

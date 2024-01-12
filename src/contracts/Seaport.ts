@@ -1,24 +1,13 @@
-import {
-  Account,
-  Address,
-  Chain,
-  Transport,
-  WalletClient,
-  zeroAddress,
-} from "viem";
+import { Account, Address, Chain, Transport, WalletClient, zeroAddress } from 'viem';
 
-import { filterLogs, zeroHash } from "@/blockchain";
-import { getContracts, getCurrencies } from "@/deploys";
-import { seaportABI } from "@/generated/blockchain/seaport";
-import { SaleOfferInfoFragment } from "@/generated/graphql";
-import {
-  Fulfillment,
-  SeaportOrder,
-  SeaportOrderParameter,
-} from "@/reservoir/utils";
-import { millisToSeconds } from "@/utils";
+import { filterLogs, zeroHash } from '@/blockchain';
+import { getContracts, getCurrencies } from '@/deploys';
+import { seaportABI } from '@/generated/blockchain/seaport';
+import { SaleOfferInfoFragment } from '@/generated/graphql';
+import { Fulfillment, SeaportOrder, SeaportOrderParameter } from '@/reservoir/utils';
+import { millisToSeconds } from '@/utils';
 
-import { Contract } from "./Contract";
+import { Contract } from './Contract';
 
 export type Wallet = WalletClient<Transport, Chain, Account>;
 
@@ -43,46 +32,46 @@ export class Seaport extends Contract<typeof seaportABI> {
 
   async signOrder(order: SeaportOrderParameter) {
     const domain = {
-      name: "Seaport",
-      version: "1.5",
+      name: 'Seaport',
+      version: '1.5',
       chainId: this.wallet.chain?.id,
       verifyingContract: this.address,
     };
     const types = {
       OrderComponents: [
-        { name: "offerer", type: "address" },
-        { name: "zone", type: "address" },
-        { name: "offer", type: "OfferItem[]" },
-        { name: "consideration", type: "ConsiderationItem[]" },
-        { name: "orderType", type: "uint8" },
-        { name: "startTime", type: "uint256" },
-        { name: "endTime", type: "uint256" },
-        { name: "zoneHash", type: "bytes32" },
-        { name: "salt", type: "uint256" },
-        { name: "conduitKey", type: "bytes32" },
-        { name: "counter", type: "uint256" },
+        { name: 'offerer', type: 'address' },
+        { name: 'zone', type: 'address' },
+        { name: 'offer', type: 'OfferItem[]' },
+        { name: 'consideration', type: 'ConsiderationItem[]' },
+        { name: 'orderType', type: 'uint8' },
+        { name: 'startTime', type: 'uint256' },
+        { name: 'endTime', type: 'uint256' },
+        { name: 'zoneHash', type: 'bytes32' },
+        { name: 'salt', type: 'uint256' },
+        { name: 'conduitKey', type: 'bytes32' },
+        { name: 'counter', type: 'uint256' },
       ],
       OfferItem: [
-        { name: "itemType", type: "uint8" },
-        { name: "token", type: "address" },
-        { name: "identifierOrCriteria", type: "uint256" },
-        { name: "startAmount", type: "uint256" },
-        { name: "endAmount", type: "uint256" },
+        { name: 'itemType', type: 'uint8' },
+        { name: 'token', type: 'address' },
+        { name: 'identifierOrCriteria', type: 'uint256' },
+        { name: 'startAmount', type: 'uint256' },
+        { name: 'endAmount', type: 'uint256' },
       ],
       ConsiderationItem: [
-        { name: "itemType", type: "uint8" },
-        { name: "token", type: "address" },
-        { name: "identifierOrCriteria", type: "uint256" },
-        { name: "startAmount", type: "uint256" },
-        { name: "endAmount", type: "uint256" },
-        { name: "recipient", type: "address" },
+        { name: 'itemType', type: 'uint8' },
+        { name: 'token', type: 'address' },
+        { name: 'identifierOrCriteria', type: 'uint256' },
+        { name: 'startAmount', type: 'uint256' },
+        { name: 'endAmount', type: 'uint256' },
+        { name: 'recipient', type: 'address' },
       ],
     } as const;
 
     return this.wallet.signTypedData({
       domain,
       types,
-      primaryType: "OrderComponents",
+      primaryType: 'OrderComponents',
       message: order,
     });
   }
@@ -145,7 +134,7 @@ export class Seaport extends Contract<typeof seaportABI> {
     collectionContractAddress,
     tokenId,
   }: {
-    nativeBid: Omit<SaleOfferInfoFragment, "__typename">;
+    nativeBid: Omit<SaleOfferInfoFragment, '__typename'>;
     collectionContractAddress: Address;
     tokenId: bigint;
   }) {
@@ -174,14 +163,8 @@ export class Seaport extends Contract<typeof seaportABI> {
         },
       ],
       orderType: 0,
-      startTime: BigInt(
-        Math.floor(millisToSeconds(nativeBid.startTime.getTime()))
-      ),
-      endTime: BigInt(
-        Math.floor(
-          millisToSeconds(nativeBid.expiration?.getTime() ?? Date.now())
-        )
-      ),
+      startTime: BigInt(Math.floor(millisToSeconds(nativeBid.startTime.getTime()))),
+      endTime: BigInt(Math.floor(millisToSeconds(nativeBid.expiration?.getTime() ?? Date.now()))),
       zoneHash: zeroHash,
       salt: 0n,
       conduitKey: zeroHash,
@@ -192,9 +175,7 @@ export class Seaport extends Contract<typeof seaportABI> {
     return orderParameters;
   }
 
-  async generateInverseOrder(
-    order: SeaportOrder
-  ): Promise<SeaportOrderParameter> {
+  async generateInverseOrder(order: SeaportOrder): Promise<SeaportOrderParameter> {
     return {
       offerer: this.wallet.account?.address ?? zeroAddress,
       zone: zeroAddress,
@@ -270,7 +251,7 @@ export class Seaport extends Contract<typeof seaportABI> {
           offerer: orderComponents.offerer,
         });
         const events = filterLogs(receipt, filter);
-        if (events.length === 0) throw new Error("Order not cancelled");
+        if (events.length === 0) throw new Error('Order not cancelled');
         return { ...events[0].args, ...receipt };
       },
     };

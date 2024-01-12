@@ -1,22 +1,15 @@
-import {
-  Account,
-  Address,
-  Chain,
-  Transport,
-  WalletClient,
-} from "viem";
+import { Account, Address, Chain, Transport, WalletClient } from 'viem';
 
-import { filterLogs, LoanV5 } from "@/blockchain";
-import { getContracts } from "@/deploys";
-import { auctionLoanLiquidatorABI as auctionLoanLiquidatorABIV5 } from "@/generated/blockchain/v5";
-import * as model from "@/model";
+import { filterLogs, LoanV5 } from '@/blockchain';
+import { getContracts } from '@/deploys';
+import { auctionLoanLiquidatorABI as auctionLoanLiquidatorABIV5 } from '@/generated/blockchain/v5';
+import * as model from '@/model';
 
-import { Contract } from "./Contract";
+import { Contract } from './Contract';
 
 export type Wallet = WalletClient<Transport, Chain, Account>;
 
 export class AllV5 extends Contract<typeof auctionLoanLiquidatorABIV5> {
-
   constructor({ walletClient }: { walletClient: Wallet }) {
     const { AuctionLoanLiquidatorV5Address } = getContracts(walletClient.chain);
 
@@ -53,23 +46,14 @@ export class AllV5 extends Contract<typeof auctionLoanLiquidatorABIV5> {
 
         const filter = await this.contract.createEventFilter.BidPlaced();
         const events = filterLogs(receipt, filter);
-        if (events.length === 0) throw new Error("Bid not placed");
+        if (events.length === 0) throw new Error('Bid not placed');
         return { ...events[0].args, ...receipt };
       },
     };
   }
 
-  async settleAuction({
-    auction,
-    loan,
-  }: {
-    auction: model.Auction;
-    loan: LoanV5;
-  }) {
-    const txHash = await this.safeContractWrite.settleAuction([
-      auction,
-      loan,
-    ]);
+  async settleAuction({ auction, loan }: { auction: model.Auction; loan: LoanV5 }) {
+    const txHash = await this.safeContractWrite.settleAuction([auction, loan]);
 
     return {
       txHash,
@@ -80,7 +64,7 @@ export class AllV5 extends Contract<typeof auctionLoanLiquidatorABIV5> {
 
         const filter = await this.contract.createEventFilter.AuctionSettled();
         const events = filterLogs(receipt, filter);
-        if (events.length === 0) throw new Error("Auction not settled");
+        if (events.length === 0) throw new Error('Auction not settled');
         return { ...events[0].args, ...receipt };
       },
     };

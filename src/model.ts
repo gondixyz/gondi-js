@@ -1,6 +1,6 @@
-import { Address, Hash } from "viem";
+import { Address, Hash } from 'viem';
 
-import { Auction as BlockchainAuction, Signature } from "@/blockchain";
+import { Auction as BlockchainAuction, Signature } from '@/blockchain';
 import {
   CollectionOfferInput as ApiCollectionOfferInput,
   CollectionSignedOfferInput,
@@ -15,23 +15,16 @@ import {
   SingleNftSignedOfferInput,
   TermsFilter,
   UserFilter,
-} from "@/generated/graphql";
+} from '@/generated/graphql';
 
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
 export type SingleNftOfferInput = Optional<
   ApiSingleNftOfferInput,
-  | "borrowerAddress"
-  | "lenderAddress"
-  | "signerAddress"
-  | "offerValidators"
-  | "contractAddress"
+  'borrowerAddress' | 'lenderAddress' | 'signerAddress' | 'offerValidators' | 'contractAddress'
 >;
 
-export type UnsignedSingleNftOffer = Omit<
-  SingleNftSignedOfferInput,
-  "signature"
-> & {
+export type UnsignedSingleNftOffer = Omit<SingleNftSignedOfferInput, 'signature'> & {
   nftCollateralAddress: Address;
   nftCollateralTokenId: bigint;
 };
@@ -43,17 +36,10 @@ export type SingleNftOffer = UnsignedSingleNftOffer &
 
 export type CollectionOfferInput = Optional<
   ApiCollectionOfferInput,
-  | "borrowerAddress"
-  | "lenderAddress"
-  | "signerAddress"
-  | "offerValidators"
-  | "contractAddress"
+  'borrowerAddress' | 'lenderAddress' | 'signerAddress' | 'offerValidators' | 'contractAddress'
 >;
 
-export type UnsignedCollectionOffer = Omit<
-  CollectionSignedOfferInput,
-  "signature"
-> & {
+export type UnsignedCollectionOffer = Omit<CollectionSignedOfferInput, 'signature'> & {
   nftCollateralAddress: Address;
 };
 
@@ -62,15 +48,9 @@ export type CollectionOffer = UnsignedCollectionOffer & {
   nftCollateralTokenId: 0n;
 };
 
-export type RenegotiationInput = Optional<
-  ApiRenegotiationInput,
-  "lenderAddress" | "signerAddress"
->;
+export type RenegotiationInput = Optional<ApiRenegotiationInput, 'lenderAddress' | 'signerAddress'>;
 
-export type UnsignedRenegotiationOffer = Omit<
-  SignedRenegotiationOfferInput,
-  "signature"
->;
+export type UnsignedRenegotiationOffer = Omit<SignedRenegotiationOfferInput, 'signature'>;
 
 export type RenegotiationOffer = UnsignedRenegotiationOffer & {
   signature: Signature;

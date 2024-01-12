@@ -1,5 +1,5 @@
 query collectionsIdByContractAddress($contractAddress: Address!) {
-    collections: getCollectionsByContractAddress(contractAddress: $contractAddress) {
-        id
-    }
+  collections: getCollectionsByContractAddress(contractAddress: $contractAddress) {
+    id
+  }
 }

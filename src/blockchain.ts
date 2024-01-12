@@ -3,12 +3,8 @@ import {
   AbiParametersToPrimitiveTypes,
   ExtractAbiEventNames,
   ExtractAbiFunction,
-} from "abitype";
-import {
-  DecodeEventLogReturnType,
-  EncodeEventTopicsParameters,
-  WalletClient,
-} from "viem";
+} from 'abitype';
+import { DecodeEventLogReturnType, EncodeEventTopicsParameters, WalletClient } from 'viem';
 import {
   Account,
   Address,
@@ -22,22 +18,22 @@ import {
   TransactionReceipt,
   Transport,
   zeroAddress as zeroAddressViem,
-} from "viem";
+} from 'viem';
 
-import type { multiSourceLoanABI as multiSourceLoanABIV4 } from "@/generated/blockchain/v4";
-import type { auctionLoanLiquidatorABI as auctionLoanLiquidatorABIV5 } from "@/generated/blockchain/v5";
-import type { multiSourceLoanABI as multiSourceLoanABIV5 } from "@/generated/blockchain/v5";
-import { erc20ABI, erc721ABI } from "@/generated/blockchain/v5";
+import type { multiSourceLoanABI as multiSourceLoanABIV4 } from '@/generated/blockchain/v4';
+import type { auctionLoanLiquidatorABI as auctionLoanLiquidatorABIV5 } from '@/generated/blockchain/v5';
+import type { multiSourceLoanABI as multiSourceLoanABIV5 } from '@/generated/blockchain/v5';
+import { erc20ABI, erc721ABI } from '@/generated/blockchain/v5';
 
-import { AllV4 } from "./contracts/AllV4";
-import { AllV5 } from "./contracts/AllV5";
-import { CryptoPunks } from "./contracts/CryptoPunks";
-import { Leverage } from "./contracts/Leverage";
-import { MslV4 } from "./contracts/MslV4";
-import { MslV5 } from "./contracts/MslV5";
-import { Seaport } from "./contracts/Seaport";
-import { UserVaultV5 } from "./contracts/UserVaultV5";
-import { areSameAddress } from "./utils";
+import { AllV4 } from './contracts/AllV4';
+import { AllV5 } from './contracts/AllV5';
+import { CryptoPunks } from './contracts/CryptoPunks';
+import { Leverage } from './contracts/Leverage';
+import { MslV4 } from './contracts/MslV4';
+import { MslV5 } from './contracts/MslV5';
+import { Seaport } from './contracts/Seaport';
+import { UserVaultV5 } from './contracts/UserVaultV5';
+import { areSameAddress } from './utils';
 
 export type Wallet = WalletClient<Transport, Chain, Account>;
 
@@ -104,7 +100,7 @@ export class Contracts {
   }
 
   ERC721(
-    nftAddress: Address
+    nftAddress: Address,
   ): GetContractReturnType<typeof erc721ABI, PublicClient, Wallet, Address> {
     return getContract({
       address: nftAddress,
@@ -115,7 +111,7 @@ export class Contracts {
   }
 
   ERC20(
-    nftAddress: Address
+    nftAddress: Address,
   ): GetContractReturnType<typeof erc20ABI, PublicClient, Wallet, Address> {
     return getContract({
       address: nftAddress,
@@ -127,36 +123,36 @@ export class Contracts {
 }
 
 type RepayAbiTypeV4 = AbiParametersToPrimitiveTypes<
-  ExtractAbiFunction<typeof multiSourceLoanABIV4, "repayLoan">["inputs"]
+  ExtractAbiFunction<typeof multiSourceLoanABIV4, 'repayLoan'>['inputs']
 >;
 type RepayAbiTypeV5 = AbiParametersToPrimitiveTypes<
-  ExtractAbiFunction<typeof multiSourceLoanABIV5, "repayLoan">["inputs"]
+  ExtractAbiFunction<typeof multiSourceLoanABIV5, 'repayLoan'>['inputs']
 >;
 
 type EmitAbiTypeV4 = AbiParametersToPrimitiveTypes<
-  ExtractAbiFunction<typeof multiSourceLoanABIV4, "emitLoan">["inputs"]
+  ExtractAbiFunction<typeof multiSourceLoanABIV4, 'emitLoan'>['inputs']
 >;
 type EmitAbiTypeV5 = AbiParametersToPrimitiveTypes<
-  ExtractAbiFunction<typeof multiSourceLoanABIV5, "emitLoan">["inputs"]
+  ExtractAbiFunction<typeof multiSourceLoanABIV5, 'emitLoan'>['inputs']
 >;
 
 type RefiAbiTypeV4 = AbiParametersToPrimitiveTypes<
-  ExtractAbiFunction<typeof multiSourceLoanABIV4, "refinanceFull">["inputs"]
+  ExtractAbiFunction<typeof multiSourceLoanABIV4, 'refinanceFull'>['inputs']
 >;
 type RefiAbiTypeV5 = AbiParametersToPrimitiveTypes<
-  ExtractAbiFunction<typeof multiSourceLoanABIV5, "refinanceFull">["inputs"]
+  ExtractAbiFunction<typeof multiSourceLoanABIV5, 'refinanceFull'>['inputs']
 >;
 
 type PlaceBidAbiType = AbiParametersToPrimitiveTypes<
-  ExtractAbiFunction<typeof auctionLoanLiquidatorABIV5, "placeBid">["inputs"]
+  ExtractAbiFunction<typeof auctionLoanLiquidatorABIV5, 'placeBid'>['inputs']
 >;
 
 export type LoanV4 = RepayAbiTypeV4[2] & { contractAddress: Address };
-export type LoanV5 = RepayAbiTypeV5[0]["loan"] & { contractAddress: Address };
+export type LoanV5 = RepayAbiTypeV5[0]['loan'] & { contractAddress: Address };
 export type LoanV4V5 = LoanV4 | LoanV5;
 
 export type OfferV4 = EmitAbiTypeV4[0];
-export type OfferV5 = EmitAbiTypeV5[0]["executionData"]["offer"];
+export type OfferV5 = EmitAbiTypeV5[0]['executionData']['offer'];
 
 export type RenegotiationV4 = RefiAbiTypeV4[0];
 export type RenegotiationV5 = RefiAbiTypeV5[0];
@@ -167,15 +163,12 @@ export type HexString = `0x${string}`;
 export type Signature = HexString;
 
 export const zeroAddress: Address = zeroAddressViem;
-export const zeroHash: Hash = `0x${"0".repeat(64)}`;
+export const zeroHash: Hash = `0x${'0'.repeat(64)}`;
 export const zeroHex: HexString = `0x0`;
 
-export function filterLogs<
-  TAbi extends Abi,
-  TEventName extends ExtractAbiEventNames<TAbi>
->(
+export function filterLogs<TAbi extends Abi, TEventName extends ExtractAbiEventNames<TAbi>>(
   receipt: TransactionReceipt,
-  filter: EncodeEventTopicsParameters<TAbi, TEventName>
+  filter: EncodeEventTopicsParameters<TAbi, TEventName>,
 ): DecodeEventLogReturnType<TAbi, TEventName>[] {
   return receipt.logs
     .filter((log) => {

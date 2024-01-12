@@ -1,12 +1,6 @@
-import { Address } from "viem";
+import { Address } from 'viem';
 
-import {
-  generateBlock,
-  sleep,
-  testSingleNftOfferInput,
-  testTokenId,
-  users,
-} from "./common";
+import { generateBlock, sleep, testSingleNftOfferInput, testTokenId, users } from './common';
 
 const SLEEP_BUFFER = 3000;
 
@@ -47,7 +41,7 @@ const emitRefinaceFullAndRepayLoan = async (contract?: Address) => {
 
     console.log(`loan extended: ${contractVersionString}`);
   } catch (e) {
-    console.log("Error while extending loan:");
+    console.log('Error while extending loan:');
     console.log(e);
   } finally {
     const repayLoan = await users[1].repayLoan({
@@ -63,7 +57,7 @@ async function main() {
   try {
     await emitRefinaceFullAndRepayLoan();
   } catch (e) {
-    console.log("Error:");
+    console.log('Error:');
     console.log(e);
   }
 }

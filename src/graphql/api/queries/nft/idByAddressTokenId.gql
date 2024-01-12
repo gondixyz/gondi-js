@@ -1,5 +1,5 @@
 query nftIdByContractAddressAndTokenId($contractAddress: Address!, $tokenId: BigInt!) {
-    nft: getNftByContractAddressAndTokenId(contractAddress: $contractAddress tokenId: $tokenId) {
-        id
-    }
+  nft: getNftByContractAddressAndTokenId(contractAddress: $contractAddress, tokenId: $tokenId) {
+    id
+  }
 }
