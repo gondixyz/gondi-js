@@ -18,21 +18,19 @@ const userVaults = async () => {
   await approveNFT(gondi, USER_VAULT_CONTRACT_V5, ANOTHER_COLLECTION);
 
   console.log('Creating vault with nfts...');
-  const createTxn = await gondi.createUserVault({
+  const { vaultId, receipts } = await gondi.createUserVault({
     nfts: [
       // Assuming user has same tokenId for collections
       { collection: ANOTHER_COLLECTION, tokenIds: [testTokenId] },
       { collection: testCollection.contractAddress, tokenIds: [testTokenId] },
     ],
   });
-  const vaultId = createTxn.vaultId;
-  console.log(`successfully created vaultId ${vaultId}.`);
+  console.log(`
+    Successfully created vaultId ${vaultId}.
+    Successfully deposited ${receipts.length} nfts to vaultId ${vaultId}.`);
 
-  const createResult = await createTxn.waitTxInBlock();
-  console.log(`successfully deposited ${createResult.length} nfts to vaultId ${vaultId}.`);
-
-  for (let i = 0; i < createResult.length; i++) {
-    const element = createResult[i];
+  for (let i = 0; i < receipts.length; i++) {
+    const element = receipts[i];
     const owner = await gondi.getOwner({
       nftAddress: element.collection,
       tokenId: element.tokenId,

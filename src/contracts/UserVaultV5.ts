@@ -58,19 +58,16 @@ export class UserVaultV5 extends Contract<typeof userVaultABIV5> {
 
   async createVault(nfts: { collection: Address; tokenIds: bigint[] }[]) {
     const { id: vaultId } = await this.#mintVault();
+    const receipts = [];
 
-    const deposits = await Promise.all(
-      nfts.map(async ({ collection, tokenIds }) =>
-        this.depositERC721s({ vaultId, collection, tokenIds }),
-      ),
-    );
+    for (let i = 0; i < nfts.length; i++) {
+      const { collection, tokenIds } = nfts[i];
+      const deposit = await this.depositERC721s({ vaultId, collection, tokenIds });
+      const receipt = await deposit.waitTxInBlock();
+      receipts.push(receipt);
+    }
 
-    return {
-      vaultId,
-      txHash: deposits.map(({ txHash }) => txHash),
-      waitTxInBlock: async () =>
-        await Promise.all(deposits.map(({ waitTxInBlock }) => waitTxInBlock())),
-    };
+    return { vaultId, receipts };
   }
 
   async depositERC721s({
