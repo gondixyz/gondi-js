@@ -1,10 +1,8 @@
-import { testCollectionOfferInput, users } from "./common";
+import { testCollectionOfferInput, users } from './common';
 
 async function main() {
   // Remember to set the env collection address to wpunks
-  const signedOffer = await users[1].makeCollectionOffer(
-    testCollectionOfferInput
-  );
+  const signedOffer = await users[1].makeCollectionOffer(testCollectionOfferInput);
   const contractVersionString = `msl: ${signedOffer.contractAddress}`;
   console.log(`offer placed successfully: ${contractVersionString}`);
 
@@ -20,10 +18,10 @@ async function main() {
         expirationTime: signedOffer.expirationTime,
         amount: signedOffer.principalAmount,
         nft: {
-          collectionContractAddress: "0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb",
+          collectionContractAddress: '0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb',
           tokenId: 503n, // change this for listed in cryptopunks
           price: 78000000000000000000n,
-          orderSource: "cryptopunks.app",
+          orderSource: 'cryptopunks.app',
         },
       },
     ],
@@ -31,7 +29,7 @@ async function main() {
 
   await waitTxInBlock();
 
-  console.log("BNPL executed");
+  console.log('BNPL executed');
 }
 
 main();

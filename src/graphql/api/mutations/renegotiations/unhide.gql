@@ -1,5 +1,5 @@
 mutation unhideRenegotiationOffer($id: String!, $contractAddress: Address!) {
-    showRenegotiation(renegotiationId: $id, contractAddress: $contractAddress) {
-        id
-    }
+  showRenegotiation(renegotiationId: $id, contractAddress: $contractAddress) {
+    id
+  }
 }

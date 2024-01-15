@@ -1,32 +1,18 @@
-import {
-  Account,
-  Address,
-  Chain,
-  encodeFunctionData,
-  Hash,
-  Transport,
-  WalletClient,
-} from "viem";
+import { Account, Address, Chain, encodeFunctionData, Hash, Transport, WalletClient } from 'viem';
 
-import { filterLogs, LoanV5, OfferV5 } from "@/blockchain";
-import { getContracts } from "@/deploys";
-import { leverageABI, multiSourceLoanABI } from "@/generated/blockchain/v5";
-import { getDomain } from "@/utils";
+import { filterLogs, LoanV5, OfferV5 } from '@/blockchain';
+import { getContracts } from '@/deploys';
+import { leverageABI, multiSourceLoanABI } from '@/generated/blockchain/v5';
+import { getDomain } from '@/utils';
 
-import { Contract } from "./Contract";
+import { Contract } from './Contract';
 
 export type Wallet = WalletClient<Transport, Chain, Account>;
 
 export class Leverage extends Contract<typeof leverageABI> {
   mslAddress: Address;
 
-  constructor({
-    walletClient,
-    mslAddress,
-  }: {
-    walletClient: Wallet;
-    mslAddress: Address;
-  }) {
+  constructor({ walletClient, mslAddress }: { walletClient: Wallet; mslAddress: Address }) {
     const { LeverageAddress } = getContracts(walletClient.chain);
 
     super({
@@ -47,52 +33,48 @@ export class Leverage extends Contract<typeof leverageABI> {
   }) {
     return this.wallet.signTypedData({
       domain: getDomain(this.wallet.chain.id, this.mslAddress),
-      primaryType: "ExecutionData",
+      primaryType: 'ExecutionData',
       types: {
         ExecutionData: [
-          { name: "offer", type: "LoanOffer" },
-          { name: "tokenId", type: "uint256" },
-          { name: "amount", type: "uint256" },
-          { name: "expirationTime", type: "uint256" },
-          { name: "callbackData", type: "bytes" },
+          { name: 'offer', type: 'LoanOffer' },
+          { name: 'tokenId', type: 'uint256' },
+          { name: 'amount', type: 'uint256' },
+          { name: 'expirationTime', type: 'uint256' },
+          { name: 'callbackData', type: 'bytes' },
         ],
         LoanOffer: [
-          { name: "offerId", type: "uint256" },
-          { name: "lender", type: "address" },
-          { name: "fee", type: "uint256" },
-          { name: "borrower", type: "address" },
-          { name: "capacity", type: "uint256" },
-          { name: "nftCollateralAddress", type: "address" },
-          { name: "nftCollateralTokenId", type: "uint256" },
-          { name: "principalAddress", type: "address" },
-          { name: "principalAmount", type: "uint256" },
-          { name: "aprBps", type: "uint256" },
-          { name: "expirationTime", type: "uint256" },
-          { name: "duration", type: "uint256" },
-          { name: "validators", type: "OfferValidator[]" },
+          { name: 'offerId', type: 'uint256' },
+          { name: 'lender', type: 'address' },
+          { name: 'fee', type: 'uint256' },
+          { name: 'borrower', type: 'address' },
+          { name: 'capacity', type: 'uint256' },
+          { name: 'nftCollateralAddress', type: 'address' },
+          { name: 'nftCollateralTokenId', type: 'uint256' },
+          { name: 'principalAddress', type: 'address' },
+          { name: 'principalAmount', type: 'uint256' },
+          { name: 'aprBps', type: 'uint256' },
+          { name: 'expirationTime', type: 'uint256' },
+          { name: 'duration', type: 'uint256' },
+          { name: 'validators', type: 'OfferValidator[]' },
         ],
         OfferValidator: [
-          { name: "validator", type: "address" },
-          { name: "arguments", type: "bytes" },
+          { name: 'validator', type: 'address' },
+          { name: 'arguments', type: 'bytes' },
         ],
       } as const,
       message: executionData,
     });
   }
 
-  async signRepaymentData(data: {
-    loanId: bigint;
-    callbackData: Hash;
-    shouldDelegate: boolean;
-  }) {
+  async signRepaymentData(data: { loanId: bigint; callbackData: Hash; shouldDelegate: boolean }) {
     return this.wallet.signTypedData({
       domain: getDomain(this.wallet.chain.id, this.mslAddress),
-      primaryType: "SignableRepaymentData",
+      primaryType: 'SignableRepaymentData',
       types: {
         SignableRepaymentData: [
-          { name: "loanId", type: "uint256" },
-          { name: "callbackData", type: "bytes" },
-          { name: "shouldDelegate", type: "bool" },
+          { name: 'loanId', type: 'uint256' },
+          { name: 'callbackData', type: 'bytes' },
+          { name: 'shouldDelegate', type: 'bool' },
         ],
       } as const,
       message: data,
@@ -128,25 +110,23 @@ export class Leverage extends Contract<typeof leverageABI> {
 
             return encodeFunctionData({
               abi: multiSourceLoanABI,
-              functionName: "emitLoan",
+              functionName: 'emitLoan',
               args: [
                 {
                   executionData,
                   lender: data.offer.lender,
                   borrower: this.wallet.account.address,
                   lenderOfferSignature: data.offer.signature,
-                  borrowerOfferSignature: await this.signExecutionData(
-                    executionData
-                  ),
+                  borrowerOfferSignature: await this.signExecutionData(executionData),
                 },
               ],
             });
-          })
+          }),
         ),
       ],
       {
         value: ethToSend,
-      }
+      },
     );
 
     return {
@@ -158,7 +138,7 @@ export class Leverage extends Contract<typeof leverageABI> {
 
         const filter = await this.contract.createEventFilter.BNPLLoansStarted();
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("BNPL Loans not started");
+        if (events.length === 0) throw new Error('BNPL Loans not started');
         return { ...events[0].args, ...receipt };
       },
     };
@@ -185,7 +165,7 @@ export class Leverage extends Contract<typeof leverageABI> {
       [
         encodeFunctionData({
           abi: multiSourceLoanABI,
-          functionName: "repayLoan",
+          functionName: 'repayLoan',
           args: [
             {
               data: repaymentData,
@@ -204,10 +184,9 @@ export class Leverage extends Contract<typeof leverageABI> {
           hash: txHash,
         });
 
-        const filter =
-          await this.contract.createEventFilter.SellAndRepayExecuted();
+        const filter = await this.contract.createEventFilter.SellAndRepayExecuted();
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("Sell and repay not executed");
+        if (events.length === 0) throw new Error('Sell and repay not executed');
         return { ...events[0].args, ...receipt };
       },
     };

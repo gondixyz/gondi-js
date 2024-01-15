@@ -1,5 +1,5 @@
 mutation hideOffer($contract: Address!, $id: String!) {
-    hideOffer(contractAddress: $contract, offerId: $id) {
-        id
-    }
+  hideOffer(contractAddress: $contract, offerId: $id) {
+    id
+  }
 }

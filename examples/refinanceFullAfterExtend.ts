@@ -1,12 +1,6 @@
-import { Address } from "viem";
+import { Address } from 'viem';
 
-import {
-  generateBlock,
-  sleep,
-  testSingleNftOfferInput,
-  testTokenId,
-  users,
-} from "./common";
+import { generateBlock, sleep, testSingleNftOfferInput, testTokenId, users } from './common';
 
 const SLEEP_BUFFER = 500;
 
@@ -63,9 +57,7 @@ const emitRefinaceFullAndRepayLoan = async (contract?: Address) => {
       contractAddress: signedOffer.contractAddress,
       skipSignature: true,
     });
-    console.log(
-      `refinance offer placed successfully: ${contractVersionString}`
-    );
+    console.log(`refinance offer placed successfully: ${contractVersionString}`);
 
     const remainingLockup = await users[2].getRemainingLockupSeconds({ loan });
     console.log(`remaining lockup after extend: ${remainingLockup}`);
@@ -77,14 +69,13 @@ const emitRefinaceFullAndRepayLoan = async (contract?: Address) => {
       loan: refinancedLoan,
       loanId: refinancedLoanId,
     });
-    const { loan: refinancedLoanResult } =
-      await refinanceFullLoan.waitTxInBlock();
+    const { loan: refinancedLoanResult } = await refinanceFullLoan.waitTxInBlock();
 
     refinancedLoan = refinancedLoanResult;
     refinancedLoanId = refinancedLoanResult.source[0].loanId;
     console.log(`loan fully refinanced: ${contractVersionString}`);
   } catch (e) {
-    console.log("Error while extending or refinancing loan:");
+    console.log('Error while extending or refinancing loan:');
     console.log(e);
   } finally {
     const repayLoan = await users[1].repayLoan({
@@ -100,7 +91,7 @@ async function main() {
   try {
     await emitRefinaceFullAndRepayLoan();
   } catch (e) {
-    console.log("Error:");
+    console.log('Error:');
     console.log(e);
   }
 }

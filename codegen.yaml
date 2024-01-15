@@ -11,8 +11,8 @@ generates:
       - typescript-generic-sdk
       - add:
           content:
-            - "/* eslint-disable */"
-            - "//@ts-nocheck"
+            - '/* eslint-disable */'
+            - '//@ts-nocheck'
             - "import { Address, Hash, Hex } from 'viem'"
     config:
       defaultBaseOptions:

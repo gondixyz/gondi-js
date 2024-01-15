@@ -1,11 +1,9 @@
-import { Address, isAddress } from "viem";
+import { Address, isAddress } from 'viem';
 
-import { sleep, testSingleNftOfferInput, testTokenId, users } from "./common";
+import { sleep, testSingleNftOfferInput, testTokenId, users } from './common';
 
 const emitAndRepayLoan = async (contract?: Address) => {
-  const signedOffer = await users[0]._makeSingleNftOffer(
-    testSingleNftOfferInput, contract,
-  );
+  const signedOffer = await users[0]._makeSingleNftOffer(testSingleNftOfferInput, contract);
   const contractVersionString = `msl: ${signedOffer.contractAddress}`;
   console.log(`offer placed successfully: ${contractVersionString}`);
 
@@ -30,13 +28,13 @@ async function main() {
   try {
     await emitAndRepayLoan();
 
-    const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? "";
+    const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? '';
 
     if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
       await emitAndRepayLoan(MULTI_SOURCE_LOAN_CONTRACT_V4);
     }
   } catch (e) {
-    console.log("Error:");
+    console.log('Error:');
     console.log(e);
   }
 }

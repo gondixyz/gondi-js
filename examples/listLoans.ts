@@ -1,4 +1,4 @@
-import { testCollectionId, users } from "./common";
+import { testCollectionId, users } from './common';
 
 const main = async () => {
   const loans = await users[0].loans({

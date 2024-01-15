@@ -1,18 +1,11 @@
-import { Address, encodeFunctionData, Hash } from "viem";
+import { Address, encodeFunctionData, Hash } from 'viem';
 
-import {
-  filterLogs,
-  LoanV5,
-  OfferV5,
-  RenegotiationV5,
-  Wallet,
-  zeroHash,
-} from "@/blockchain";
-import { getContracts } from "@/deploys";
-import { multiSourceLoanABI as multiSourceLoanABIV5 } from "@/generated/blockchain/v5";
-import { bpsToPercentage, getDomain, millisToSeconds } from "@/utils";
+import { filterLogs, LoanV5, OfferV5, RenegotiationV5, Wallet, zeroHash } from '@/blockchain';
+import { getContracts } from '@/deploys';
+import { multiSourceLoanABI as multiSourceLoanABIV5 } from '@/generated/blockchain/v5';
+import { bpsToPercentage, getDomain, millisToSeconds } from '@/utils';
 
-import { Contract } from "./Contract";
+import { Contract } from './Contract';
 
 export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
   constructor({ walletClient }: { walletClient: Wallet }) {
@@ -34,26 +27,26 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
   }) {
     return this.wallet.signTypedData({
       domain: getDomain(this.wallet.chain.id, verifyingContract),
-      primaryType: "LoanOffer",
+      primaryType: 'LoanOffer',
       types: {
         LoanOffer: [
-          { name: "offerId", type: "uint256" },
-          { name: "lender", type: "address" },
-          { name: "fee", type: "uint256" },
-          { name: "borrower", type: "address" },
-          { name: "capacity", type: "uint256" },
-          { name: "nftCollateralAddress", type: "address" },
-          { name: "nftCollateralTokenId", type: "uint256" },
-          { name: "principalAddress", type: "address" },
-          { name: "principalAmount", type: "uint256" },
-          { name: "aprBps", type: "uint256" },
-          { name: "expirationTime", type: "uint256" },
-          { name: "duration", type: "uint256" },
-          { name: "validators", type: "OfferValidator[]" },
+          { name: 'offerId', type: 'uint256' },
+          { name: 'lender', type: 'address' },
+          { name: 'fee', type: 'uint256' },
+          { name: 'borrower', type: 'address' },
+          { name: 'capacity', type: 'uint256' },
+          { name: 'nftCollateralAddress', type: 'address' },
+          { name: 'nftCollateralTokenId', type: 'uint256' },
+          { name: 'principalAddress', type: 'address' },
+          { name: 'principalAmount', type: 'uint256' },
+          { name: 'aprBps', type: 'uint256' },
+          { name: 'expirationTime', type: 'uint256' },
+          { name: 'duration', type: 'uint256' },
+          { name: 'validators', type: 'OfferValidator[]' },
         ],
         OfferValidator: [
-          { name: "validator", type: "address" },
-          { name: "arguments", type: "bytes" },
+          { name: 'validator', type: 'address' },
+          { name: 'arguments', type: 'bytes' },
         ],
       },
       message: structToSign,
@@ -69,18 +62,18 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
   }) {
     return this.wallet.signTypedData({
       domain: getDomain(this.wallet.chain.id, verifyingContract),
-      primaryType: "RenegotiationOffer",
+      primaryType: 'RenegotiationOffer',
       types: {
         RenegotiationOffer: [
-          { name: "renegotiationId", type: "uint256" },
-          { name: "loanId", type: "uint256" },
-          { name: "lender", type: "address" },
-          { name: "fee", type: "uint256" },
-          { name: "targetPrincipal", type: "uint256[]" },
-          { name: "principalAmount", type: "uint256" },
-          { name: "aprBps", type: "uint256" },
-          { name: "expirationTime", type: "uint256" },
-          { name: "duration", type: "uint256" },
+          { name: 'renegotiationId', type: 'uint256' },
+          { name: 'loanId', type: 'uint256' },
+          { name: 'lender', type: 'address' },
+          { name: 'fee', type: 'uint256' },
+          { name: 'targetPrincipal', type: 'uint256[]' },
+          { name: 'principalAmount', type: 'uint256' },
+          { name: 'aprBps', type: 'uint256' },
+          { name: 'expirationTime', type: 'uint256' },
+          { name: 'duration', type: 'uint256' },
         ],
       },
       message: structToSign,
@@ -98,7 +91,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
 
         const filter = await this.contract.createEventFilter.OfferCancelled();
         const events = filterLogs(receipt, filter);
-        if (events.length === 0) throw new Error("Offer not cancelled");
+        if (events.length === 0) throw new Error('Offer not cancelled');
         return { ...events[0].args, ...receipt };
       },
     };
@@ -113,10 +106,9 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filter =
-          await this.contract.createEventFilter.AllOffersCancelled();
+        const filter = await this.contract.createEventFilter.AllOffersCancelled();
         const events = filterLogs(receipt, filter);
-        if (events.length === 0) throw new Error("Offers not cancelled");
+        if (events.length === 0) throw new Error('Offers not cancelled');
         return { ...events[0].args, ...receipt };
       },
     };
@@ -130,43 +122,43 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filter =
-          await this.contract.createEventFilter.RenegotiationOfferCancelled();
+        const filter = await this.contract.createEventFilter.RenegotiationOfferCancelled();
         const events = filterLogs(receipt, filter);
-        if (events.length === 0)
-          throw new Error("Renegotiation offer not cancelled");
+        if (events.length === 0) throw new Error('Renegotiation offer not cancelled');
         return { ...events[0].args, ...receipt };
       },
     };
   }
 
   async cancelAllRenegotiations({ minId }: { minId: bigint }) {
-    const txHash = await this.safeContractWrite.cancelAllRenegotiationOffers([
-      minId,
-    ]);
+    const txHash = await this.safeContractWrite.cancelAllRenegotiationOffers([minId]);
     return {
       txHash,
       waitTxInBlock: async () => {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filter =
-          await this.contract.createEventFilter.AllRenegotiationOffersCancelled();
+        const filter = await this.contract.createEventFilter.AllRenegotiationOffersCancelled();
         const events = filterLogs(receipt, filter);
-        if (events.length === 0)
-          throw new Error("Renegotiation offers not cancelled");
+        if (events.length === 0) throw new Error('Renegotiation offers not cancelled');
         return { ...events[0].args, ...receipt };
       },
     };
   }
 
-  private mapEmitLoanToMslArgs ({ offer, tokenId, amount, expirationTime, signature }: Parameters<MslV5['emitLoan']>[0]) {
+  private mapEmitLoanToMslArgs({
+    offer,
+    tokenId,
+    amount,
+    expirationTime,
+    signature,
+  }: Parameters<MslV5['emitLoan']>[0]) {
     const executionData = {
       offer,
       tokenId,
       amount,
       expirationTime,
-      callbackData: "0x" as Hash, // No callback data is expected here, only for BNPL [Levearage call]
+      callbackData: '0x' as Hash, // No callback data is expected here, only for BNPL [Levearage call]
     };
 
     return {
@@ -174,11 +166,17 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
       lender: offer.lender,
       borrower: this.wallet.account.address,
       lenderOfferSignature: signature,
-      borrowerOfferSignature: "0x" as Hash, // No signature data is expected here, only for BNPL [Levearage call]
+      borrowerOfferSignature: '0x' as Hash, // No signature data is expected here, only for BNPL [Levearage call]
     };
   }
 
-  async emitLoan(emitArgs: { offer: OfferV5; signature: Hash; tokenId: bigint; amount: bigint; expirationTime: bigint }) {
+  async emitLoan(emitArgs: {
+    offer: OfferV5;
+    signature: Hash;
+    tokenId: bigint;
+    amount: bigint;
+    expirationTime: bigint;
+  }) {
     const emitLoanMslArgs = this.mapEmitLoanToMslArgs(emitArgs);
     const txHash = await this.safeContractWrite.emitLoan([emitLoanMslArgs]);
 
@@ -190,7 +188,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
         });
         const filter = await this.contract.createEventFilter.LoanEmitted();
         const events = filterLogs(receipt, filter);
-        if (events.length === 0) throw new Error("Loan not emitted");
+        if (events.length === 0) throw new Error('Loan not emitted');
         const args = events[0].args;
         return {
           loan: {
@@ -208,33 +206,32 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     };
   }
 
-  async revokeDelegationsAndEmitLoan({ delegations, emit }: {
+  async revokeDelegationsAndEmitLoan({
+    delegations,
+    emit,
+  }: {
     delegations: Address[];
     emit: Parameters<MslV5['emitLoan']>[0];
   }) {
-    if (delegations.length === 0) throw new Error("At least one delegation must be revoked");
+    if (delegations.length === 0) throw new Error('At least one delegation must be revoked');
 
-    const encodedRevokeDelegations = delegations.map(
-      (delegation) => encodeFunctionData({
+    const encodedRevokeDelegations = delegations.map((delegation) =>
+      encodeFunctionData({
         abi: multiSourceLoanABIV5,
-        functionName: "revokeDelegate",
-        args: [
-          delegation,
-          emit.offer.nftCollateralAddress,
-          emit.tokenId,
-        ]
-      })
+        functionName: 'revokeDelegate',
+        args: [delegation, emit.offer.nftCollateralAddress, emit.tokenId],
+      }),
     );
 
     const emitLoanMslArgs = this.mapEmitLoanToMslArgs(emit);
     const encodedEmitLoan = encodeFunctionData({
       abi: multiSourceLoanABIV5,
-      functionName: "emitLoan",
-      args: [emitLoanMslArgs]
+      functionName: 'emitLoan',
+      args: [emitLoanMslArgs],
     });
-    
+
     const txHash = await this.safeContractWrite.multicall([
-      [...encodedRevokeDelegations, encodedEmitLoan]
+      [...encodedRevokeDelegations, encodedEmitLoan],
     ]);
 
     return {
@@ -246,11 +243,12 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
 
         const revokeFilter = await this.contract.createEventFilter.RevokeDelegate();
         const revokeEvents = filterLogs(receipt, revokeFilter);
-        if (revokeEvents.length !== delegations.length) throw new Error("Revoke delegations failed");
-        
+        if (revokeEvents.length !== delegations.length)
+          throw new Error('Revoke delegations failed');
+
         const emitFilter = await this.contract.createEventFilter.LoanEmitted();
         const emitEvents = filterLogs(receipt, emitFilter);
-        if (emitEvents.length === 0) throw new Error("Loan not emitted");
+        if (emitEvents.length === 0) throw new Error('Loan not emitted');
 
         const results = [
           ...revokeEvents.map(({ args }) => args),
@@ -269,19 +267,19 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
         };
       },
     };
-  } 
+  }
 
   async repayLoan({ loan, loanId }: { loan: LoanV5; loanId: bigint }) {
     const signableRepaymentData = {
       loanId,
-      callbackData: "0x" as Hash, // No callback data is expected here, only for BNPL [Levearage call]
+      callbackData: '0x' as Hash, // No callback data is expected here, only for BNPL [Levearage call]
       shouldDelegate: false, // No need to delegate
     };
     const txHash = await this.safeContractWrite.repayLoan([
       {
         data: signableRepaymentData,
         loan,
-        borrowerSignature: "0x", // No signature data is expected here, only for BNPL [Levearage call]
+        borrowerSignature: '0x', // No signature data is expected here, only for BNPL [Levearage call]
       },
     ]);
     return {
@@ -292,7 +290,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
         });
         const filter = await this.contract.createEventFilter.LoanRepaid();
         const events = filterLogs(receipt, filter);
-        if (events.length === 0) throw new Error("Loan not repaid");
+        if (events.length === 0) throw new Error('Loan not repaid');
         return { ...events[0].args, ...receipt };
       },
     };
@@ -306,13 +304,9 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     const lockPeriodBps = await this.contract.read.getMinLockPeriod();
     const lockPercentage = bpsToPercentage(lockPeriodBps);
 
-    const lockupTimeSeconds = Math.ceil(
-      Number(newestSourceDuration) * lockPercentage
-    );
+    const lockupTimeSeconds = Math.ceil(Number(newestSourceDuration) * lockPercentage);
 
-    const ellapsedSeconds = Math.ceil(
-      millisToSeconds(Date.now()) - Number(newestSource.startTime)
-    );
+    const ellapsedSeconds = Math.ceil(millisToSeconds(Date.now()) - Number(newestSource.startTime));
 
     if (ellapsedSeconds >= lockupTimeSeconds) return 0;
     return lockupTimeSeconds - ellapsedSeconds;
@@ -327,11 +321,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     signature: Hash;
     loan: LoanV5;
   }) {
-    const txHash = await this.safeContractWrite.refinanceFull([
-      offer,
-      loan,
-      signature,
-    ]);
+    const txHash = await this.safeContractWrite.refinanceFull([offer, loan, signature]);
 
     return {
       txHash,
@@ -341,7 +331,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
         });
         const filter = await this.contract.createEventFilter.LoanRefinanced();
         const events = filterLogs(receipt, filter);
-        if (events.length === 0) throw new Error("Loan not refinanced");
+        if (events.length === 0) throw new Error('Loan not refinanced');
         const args = events[0].args;
         return {
           loan: {
@@ -358,13 +348,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     };
   }
 
-  async refinancePartialLoan({
-    offer,
-    loan,
-  }: {
-    offer: RenegotiationV5;
-    loan: LoanV5;
-  }) {
+  async refinancePartialLoan({ offer, loan }: { offer: RenegotiationV5; loan: LoanV5 }) {
     const txHash = await this.safeContractWrite.refinancePartial([offer, loan]);
     return {
       txHash,
@@ -374,7 +358,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
         });
         const filter = await this.contract.createEventFilter.LoanRefinanced();
         const events = filterLogs(receipt, filter);
-        if (events.length === 0) throw new Error("Loan not refinanced");
+        if (events.length === 0) throw new Error('Loan not refinanced');
         const args = events[0].args;
         return {
           loan: {
@@ -414,7 +398,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
         });
         const filter = await this.contract.createEventFilter.LoanExtended();
         const events = filterLogs(receipt, filter);
-        if (events.length === 0) throw new Error("Loan not extended");
+        if (events.length === 0) throw new Error('Loan not extended');
         const args = events[0].args;
         return {
           loan: {
@@ -430,22 +414,22 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
   }
 
   async delegateMulticall(delegations: Parameters<MslV5['delegate']>[0][]) {
-    if (delegations.length === 0) throw new Error("At least one delegation must be revoked");
+    if (delegations.length === 0) throw new Error('At least one delegation must be revoked');
 
     const txHash = await this.safeContractWrite.multicall([
       delegations.map((delegation) =>
         encodeFunctionData({
           abi: multiSourceLoanABIV5,
-          functionName: "delegate",
+          functionName: 'delegate',
           args: [
             delegation.loanId,
             delegation.loan,
             delegation.to,
             delegation.rights ?? zeroHash,
             delegation.enable,
-          ]
-        })
-      )
+          ],
+        }),
+      ),
     ]);
 
     return {
@@ -457,7 +441,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
         const filter = await this.contract.createEventFilter.Delegated();
         const events = filterLogs(receipt, filter);
 
-        if (events.length !== delegations.length) throw new Error("Delegate multicall failed");
+        if (events.length !== delegations.length) throw new Error('Delegate multicall failed');
 
         return {
           ...receipt,
@@ -480,13 +464,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     rights?: Hash;
     enable: boolean;
   }) {
-    const txHash = await this.safeContractWrite.delegate([
-      loanId,
-      loan,
-      to,
-      rights,
-      enable,
-    ]);
+    const txHash = await this.safeContractWrite.delegate([loanId, loan, to, rights, enable]);
 
     return {
       txHash,
@@ -496,7 +474,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
         });
         const filter = await this.contract.createEventFilter.Delegated();
         const events = filterLogs(receipt, filter);
-        if (events.length === 0) throw new Error("Token not delegated");
+        if (events.length === 0) throw new Error('Token not delegated');
         const args = events[0].args;
         return {
           loan: {
@@ -511,7 +489,11 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     };
   }
 
-  async revokeDelegate({ to, collection, tokenId }: {
+  async revokeDelegate({
+    to,
+    collection,
+    tokenId,
+  }: {
     to: Address;
     collection: Address;
     tokenId: bigint;
@@ -526,7 +508,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
         });
         const filter = await this.contract.createEventFilter.RevokeDelegate();
         const events = filterLogs(receipt, filter);
-        if (events.length === 0) throw new Error("Token delegation not revoked");
+        if (events.length === 0) throw new Error('Token delegation not revoked');
         const args = events[0].args;
         return { ...args, ...receipt };
       },
@@ -541,20 +523,12 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filterForeclosed =
-          await this.contract.createEventFilter.LoanForeclosed();
-        const filterSentToLiquidator =
-          await this.contract.createEventFilter.LoanSentToLiquidator();
+        const filterForeclosed = await this.contract.createEventFilter.LoanForeclosed();
+        const filterSentToLiquidator = await this.contract.createEventFilter.LoanSentToLiquidator();
         const foreclosedEvents = filterLogs(receipt, filterForeclosed);
-        const sentToLiquidatorEvents = filterLogs(
-          receipt,
-          filterSentToLiquidator
-        );
-        if (
-          foreclosedEvents.length === 0 &&
-          sentToLiquidatorEvents.length === 0
-        )
-          throw new Error("Loan not liquidated");
+        const sentToLiquidatorEvents = filterLogs(receipt, filterSentToLiquidator);
+        if (foreclosedEvents.length === 0 && sentToLiquidatorEvents.length === 0)
+          throw new Error('Loan not liquidated');
         return {
           ...(foreclosedEvents?.[0]?.args ?? sentToLiquidatorEvents?.[0]?.args),
           ...receipt,

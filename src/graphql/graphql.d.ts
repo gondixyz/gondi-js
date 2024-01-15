@@ -1,4 +1,4 @@
-declare module "*.graphql" {
+declare module '*.graphql' {
   const Schema: string;
 
   export default Schema;

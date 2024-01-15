@@ -1,10 +1,6 @@
-import { OfferStatus } from "gondi";
+import { OfferStatus } from 'gondi';
 
-import {
-  sleep,
-  testSingleNftOfferInput,
-  users,
-} from "./common";
+import { sleep, testSingleNftOfferInput, users } from './common';
 
 async function main() {
   const user = users[0];
@@ -12,13 +8,13 @@ async function main() {
     await user.makeSingleNftOffer(testSingleNftOfferInput),
     await user.makeSingleNftOffer(testSingleNftOfferInput),
   ];
-  console.log("offers placed successfully");
+  console.log('offers placed successfully');
   const lastOffer = offers[1];
   const { txHash, waitTxInBlock } = await user.cancelAllOffers({
     minId: lastOffer.offerId,
     contractAddress: lastOffer.contractAddress,
   });
-  console.log("sent transaction", txHash);
+  console.log('sent transaction', txHash);
   await waitTxInBlock();
   await sleep(1000);
   const { offers: listedOffers } = await user.offers({
