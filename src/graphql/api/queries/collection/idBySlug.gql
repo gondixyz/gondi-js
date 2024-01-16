@@ -1,5 +1,5 @@
 query collectionIdBySlug($slug: String!) {
-    collection: getCollectionBySlug(slug: $slug) {
-        id
-    }
+  collection: getCollectionBySlug(slug: $slug) {
+    id
+  }
 }

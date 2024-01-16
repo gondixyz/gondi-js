@@ -1,17 +1,17 @@
-import { ApolloClient, NormalizedCacheObject } from "@apollo/client";
+import { ApolloClient, NormalizedCacheObject } from '@apollo/client';
 
-import { Wallet, zeroAddress } from "@/blockchain";
+import { Wallet, zeroAddress } from '@/blockchain';
 import {
   CollectionSignedOfferInput,
   ListListingsQueryVariables,
   ListLoansQueryVariables,
   ListOffersQueryVariables,
   SingleNftSignedOfferInput,
-} from "@/generated/graphql";
-import { apolloClient } from "@/graphql/client";
-import { getSdkApollo } from "@/graphql/sdk";
+} from '@/generated/graphql';
+import { apolloClient } from '@/graphql/client';
+import { getSdkApollo } from '@/graphql/sdk';
 
-import { RenegotiationOffer } from "./model";
+import { RenegotiationOffer } from './model';
 
 export type Props = {
   apiClient?: ApolloClient<NormalizedCacheObject>;
@@ -22,8 +22,8 @@ type PageInfo = { endCursor?: string | null; hasNextPage: boolean };
 
 const mapPageInfo = ({ endCursor, hasNextPage }: PageInfo) =>
   hasNextPage
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    ? { hasNextPage, cursor: endCursor! }
+    ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      { hasNextPage, cursor: endCursor! }
     : { hasNextPage, cursor: null };
 
 export class Api {
@@ -52,14 +52,11 @@ export class Api {
 
     this.generateSingleNftOfferHash = this.api.generateSingleNftOfferHash;
     this.generateCollectionOfferHash = this.api.generateCollectionOfferHash;
-    this.generateRenegotiationOfferHash =
-      this.api.generateRenegotiationOfferHash;
+    this.generateRenegotiationOfferHash = this.api.generateRenegotiationOfferHash;
     this.nftIdBySlugTokenId = this.api.nftIdBySlugTokenId;
-    this.nftIdByContractAddressAndTokenId =
-      this.api.nftIdByContractAddressAndTokenId;
+    this.nftIdByContractAddressAndTokenId = this.api.nftIdByContractAddressAndTokenId;
     this.collectionIdBySlug = this.api.collectionIdBySlug;
-    this.collectionsIdByContractAddress =
-      this.api.collectionsIdByContractAddress;
+    this.collectionsIdByContractAddress = this.api.collectionsIdByContractAddress;
     this.listNft = this.api.listNft;
     this.unlistNft = this.api.unlistNft;
     this.saveSignedSaleOffer = this.api.saveSignedSaleOffer;
@@ -79,8 +76,7 @@ export class Api {
     };
     const response = await this.api.saveSingleNftOffer({ offer });
     const nftCollateralAddress =
-      response.offer.nft.collection?.contractData?.contractAddress ||
-      zeroAddress;
+      response.offer.nft.collection?.contractData?.contractAddress || zeroAddress;
     return {
       id: response.offer.id,
       nftCollateralAddress,
@@ -119,13 +115,7 @@ export class Api {
       result: { edges, pageInfo },
     } = await this.api.listOffers(props);
     const offers = edges.map((edge) => {
-      const {
-        __typename,
-        lenderAddress,
-        borrowerAddress,
-        signerAddress,
-        ...node
-      } = edge.node;
+      const { __typename, lenderAddress, borrowerAddress, signerAddress, ...node } = edge.node;
       return {
         type: __typename,
         lender: lenderAddress,

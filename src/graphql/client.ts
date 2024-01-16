@@ -3,15 +3,15 @@ import {
   ApolloLink,
   createHttpLink,
   InMemoryCache,
-} from "@apollo/client/core/index.js";
-import { setContext } from "@apollo/client/link/context/index.js";
-import { withScalars } from "apollo-link-scalars";
-import { buildSchema } from "graphql";
+} from '@apollo/client/core/index.js';
+import { setContext } from '@apollo/client/link/context/index.js';
+import { withScalars } from 'apollo-link-scalars';
+import { buildSchema } from 'graphql';
 
-import { Credential, SessionToken } from "@/auth";
-import { Wallet } from "@/blockchain";
-import { apiUrl } from "@/const";
-import lendingSchemaText from "@/generated/graphql/lending-schema.graphql";
+import { Credential, SessionToken } from '@/auth';
+import { Wallet } from '@/blockchain';
+import { apiUrl } from '@/const';
+import lendingSchemaText from '@/generated/graphql/lending-schema.graphql';
 
 const lendingSchema = buildSchema(lendingSchemaText);
 
@@ -28,18 +28,18 @@ const typesMap = {
       return null;
     },
     parseValue: (raw: unknown) => {
-      if (typeof raw === "string") return new Date(raw);
+      if (typeof raw === 'string') return new Date(raw);
       if (raw instanceof Date) return raw;
       return null;
     },
   },
   BigInt: {
     serialize: (parsed: unknown) => {
-      if (typeof parsed === "bigint") return String(parsed);
+      if (typeof parsed === 'bigint') return String(parsed);
       return null;
     },
     parseValue: (raw: unknown) => {
-      if (typeof raw === "string") return BigInt(raw);
+      if (typeof raw === 'string') return BigInt(raw);
       return null;
     },
   },
@@ -64,8 +64,7 @@ const authLink = (credential: Credential) =>
 const link = ApolloLink.from([
   withScalars({ schema: lendingSchema, typesMap }),
   createHttpLink({
-    uri: ({ operationName }) =>
-      `${apiUrl()}?operation=${encodeURIComponent(operationName)}`,
+    uri: ({ operationName }) => `${apiUrl()}?operation=${encodeURIComponent(operationName)}`,
   }) as unknown as ApolloLink,
 ]);
 
@@ -75,17 +74,17 @@ export const apolloClient = (wallet: Wallet) => {
     link: ApolloLink.from([authLink(credential), link]),
     defaultOptions: {
       query: {
-        errorPolicy: "all",
-        fetchPolicy: "no-cache",
+        errorPolicy: 'all',
+        fetchPolicy: 'no-cache',
       },
       mutate: {
-        errorPolicy: "all",
-        fetchPolicy: "no-cache",
+        errorPolicy: 'all',
+        fetchPolicy: 'no-cache',
       },
       watchQuery: {
-        fetchPolicy: "no-cache",
-        nextFetchPolicy: "no-cache",
-        errorPolicy: "ignore",
+        fetchPolicy: 'no-cache',
+        nextFetchPolicy: 'no-cache',
+        errorPolicy: 'ignore',
       },
     },
     cache: new InMemoryCache({}),

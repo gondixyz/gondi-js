@@ -79,7 +79,6 @@ We are also using an object to accomodate for the flexibility of adding new para
 
 ---
 
-
 ## Leverage Sell
 
 **Description:**
@@ -134,7 +133,7 @@ Both arguments could be inferred from loan.
 
 **Migration to version 0.3.x is discouraged until release is a stable version, and not a beta version as it is right now.**
 
---- 
+---
 
 This document outlines the breaking changes introduced in our codebase for version 0.3.0b1. Please review these changes carefully to ensure a smooth migration.
 
@@ -147,7 +146,7 @@ This document outlines the breaking changes introduced in our codebase for versi
 
 ## Approve NFT For All
 
-**Description:**  
+**Description:**
 
 `approveNFTForAll` method now expects an object with the following shape:
 
@@ -157,7 +156,7 @@ This document outlines the breaking changes introduced in our codebase for versi
 
 `to` is optional and will default to MultiSourceLoan contract.
 
-**Reason:**  
+**Reason:**
 
 Consistency accross other methods.
 
@@ -165,7 +164,7 @@ Consistency accross other methods.
 
 ## Approve Token
 
-**Description:**  
+**Description:**
 
 `approveToken` method now expects an object with the following shape:
 
@@ -177,7 +176,7 @@ Consistency accross other methods.
 
 `to` is optional and will default to internal `MAX_NUMBER`` constant.
 
-**Reason:**  
+**Reason:**
 
 Consistency accross other methods.
 

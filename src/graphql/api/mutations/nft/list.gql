@@ -1,5 +1,5 @@
 mutation listNft($nftId: Int!) {
-    addOrUpdateListing(nftId: $nftId) {
-        id
-    }
+  addOrUpdateListing(nftId: $nftId) {
+    id
+  }
 }

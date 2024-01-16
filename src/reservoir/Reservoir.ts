@@ -1,8 +1,4 @@
-import {
-  createClient,
-  paths,
-  ReservoirClient,
-} from "@reservoir0x/reservoir-sdk";
+import { createClient, paths, ReservoirClient } from '@reservoir0x/reservoir-sdk';
 import {
   Address,
   createPublicClient,
@@ -13,26 +9,22 @@ import {
   http,
   PublicClient,
   zeroAddress,
-} from "viem";
-import { mainnet } from "viem/chains";
+} from 'viem';
+import { mainnet } from 'viem/chains';
 
-import { Wallet, zeroHash } from "@/blockchain";
-import { CryptoPunks } from "@/contracts/CryptoPunks";
-import { Seaport } from "@/contracts/Seaport";
-import { getApiKeys, getContracts, getCurrencies } from "@/deploys";
+import { Wallet, zeroHash } from '@/blockchain';
+import { CryptoPunks } from '@/contracts/CryptoPunks';
+import { Seaport } from '@/contracts/Seaport';
+import { getApiKeys, getContracts, getCurrencies } from '@/deploys';
 import {
   InterruptedCryptoPunksSendTransactionStepError,
   InterruptedGenericSendTransactionStepError,
   InterruptedSeaportSendTransactionStepError,
-} from "@/errors";
-import { seaportABI } from "@/generated/blockchain/seaport";
-import { erc721ABI } from "@/generated/blockchain/v5";
+} from '@/errors';
+import { seaportABI } from '@/generated/blockchain/seaport';
+import { erc721ABI } from '@/generated/blockchain/v5';
 
-import {
-  adaptWalletToCaptureTxData,
-  isOpensea,
-  SeaportAskOrBid,
-} from "./utils";
+import { adaptWalletToCaptureTxData, isOpensea, SeaportAskOrBid } from './utils';
 
 export class Reservoir {
   baseApiUrl: string;
@@ -45,18 +37,18 @@ export class Reservoir {
   // We don't have this abi in the generated files
   EXECUTION_INFO_ABI = [
     {
-      name: "ExecutionInfo",
-      type: "tuple",
+      name: 'ExecutionInfo',
+      type: 'tuple',
       components: [
-        { name: "module", type: "address" },
-        { name: "data", type: "bytes" },
-        { name: "value", type: "uint256" },
+        { name: 'module', type: 'address' },
+        { name: 'data', type: 'bytes' },
+        { name: 'value', type: 'uint256' },
       ],
     },
   ] as const;
 
   constructor({
-    baseApiUrl = "https://api.reservoir.tools",
+    baseApiUrl = 'https://api.reservoir.tools',
     wallet,
     Seaport,
     CryptoPunks,
@@ -83,7 +75,7 @@ export class Reservoir {
         },
       ],
       apiKey: reservoirApiKey,
-      source: "gondi.xyz",
+      source: 'gondi.xyz',
     });
 
     this.mainnetClient = createPublicClient({
@@ -93,13 +85,11 @@ export class Reservoir {
   }
 
   async getAsk({ orderId }: { orderId: string }) {
-    return fetch(
-      `${this.baseApiUrl}/orders/asks/v5?ids=${orderId}&includeRawData=true`
-    )
+    return fetch(`${this.baseApiUrl}/orders/asks/v5?ids=${orderId}&includeRawData=true`)
       .then(
         (res) =>
           res.json() as Promise<{
-            orders: paths["/orders/asks/v5"]["get"]["responses"]["200"]["schema"]["orders"];
+            orders: paths['/orders/asks/v5']['get']['responses']['200']['schema']['orders'];
           }>
       )
       .then(({ orders }) => {
@@ -111,13 +101,11 @@ export class Reservoir {
   }
 
   async getBid({ orderId }: { orderId: string }) {
-    return fetch(
-      `${this.baseApiUrl}/orders/bids/v6?ids=${orderId}&includeRawData=true`
-    )
+    return fetch(`${this.baseApiUrl}/orders/bids/v6?ids=${orderId}&includeRawData=true`)
       .then(
         (res) =>
           res.json() as Promise<{
-            orders: paths["/orders/bids/v6"]["get"]["responses"]["200"]["schema"]["orders"];
+            orders: paths['/orders/bids/v6']['get']['responses']['200']['schema']['orders'];
           }>
       )
       .then(({ orders }) => {
@@ -138,65 +126,48 @@ export class Reservoir {
     };
   }
 
-  encodeExecutionData({
-    module,
-    data,
-    value,
-  }: {
-    module: Address;
-    data: Hash;
-    value: bigint;
-  }) {
-    return encodeAbiParameters(this.EXECUTION_INFO_ABI, [
-      { module, data, value },
-    ]);
+  encodeExecutionData({ module, data, value }: { module: Address; data: Hash; value: bigint }) {
+    return encodeAbiParameters(this.EXECUTION_INFO_ABI, [{ module, data, value }]);
   }
 
   async generateMatchOrdersExecutionData({
     askOrBid,
     signature,
-    side = "ask",
+    side = 'ask',
   }: {
     askOrBid: SeaportAskOrBid;
     signature: Hash;
-    side?: "ask" | "bid";
+    side?: 'ask' | 'bid';
   }) {
     const order = {
       parameters: {
         ...askOrBid.rawData,
-        totalOriginalConsiderationItems: BigInt(
-          askOrBid.rawData.consideration.length
-        ),
+        totalOriginalConsiderationItems: BigInt(askOrBid.rawData.consideration.length),
       },
       signature,
     };
 
-    const inverseOrderParameters = await this.Seaport.generateInverseOrder(
-      order.parameters
-    );
+    const inverseOrderParameters = await this.Seaport.generateInverseOrder(order.parameters);
 
     const inverseOrder = {
       parameters: inverseOrderParameters,
       signature: await this.Seaport.signOrder(inverseOrderParameters),
     };
 
-    const fulfillments = this.Seaport.generateFulfillmentsForOrderAndInverse(
-      order.parameters
-    );
+    const fulfillments = this.Seaport.generateFulfillmentsForOrderAndInverse(order.parameters);
 
     const matchOrdersCallbackData = encodeFunctionData({
       abi: seaportABI,
-      functionName: "matchOrders",
+      functionName: 'matchOrders',
       args: [[order, inverseOrder], fulfillments],
     });
 
     // When we are buying the nft, we need to send the total amount of the consideration in ETH
     // When we are selling the nft, we need to **receive** the netAmount of WETH
     const total =
-      side === "ask"
+      side === 'ask'
         ? order.parameters.consideration.reduce(
-            (acc, consid) =>
-              acc + (consid.itemType === 0 ? BigInt(consid.endAmount) : 0n),
+            (acc, consid) => acc + (consid.itemType === 0 ? BigInt(consid.endAmount) : 0n),
             0n
           )
         : BigInt(askOrBid.price.netAmount.raw);
@@ -224,14 +195,12 @@ export class Reservoir {
     const order = {
       parameters: {
         ...askOrBid.rawData,
-        totalOriginalConsiderationItems: BigInt(
-          askOrBid.rawData.consideration.length
-        ),
+        totalOriginalConsiderationItems: BigInt(askOrBid.rawData.consideration.length),
       },
       numerator: 1n,
       denominator: 1n,
       signature,
-      extraData: "0x" as Hash,
+      extraData: '0x' as Hash,
     };
 
     const nftWithCriteriaIndex = order.parameters.consideration.findIndex(
@@ -240,7 +209,7 @@ export class Reservoir {
 
     const fulfillOrderCallbackData = encodeFunctionData({
       abi: seaportABI,
-      functionName: "fulfillAdvancedOrder",
+      functionName: 'fulfillAdvancedOrder',
       args: [
         order,
         nftWithCriteriaIndex !== -1
@@ -289,10 +258,7 @@ export class Reservoir {
         quantity: 1,
         exactOrderSource: token.orderSource,
       })),
-      expectedPrice: this.generateExpectedCurrencyPriceObject(
-        totalPrice,
-        ETH_ADDRESS
-      ),
+      expectedPrice: this.generateExpectedCurrencyPriceObject(totalPrice, ETH_ADDRESS),
       wallet: this.wallet,
       onProgress: () => null,
       precheck: false,
@@ -314,10 +280,7 @@ export class Reservoir {
     price: bigint;
     exactOrderSource: string;
   }) {
-    const adaptedWallet = adaptWalletToCaptureTxData(
-      this.wallet,
-      exactOrderSource
-    );
+    const adaptedWallet = adaptWalletToCaptureTxData(this.wallet, exactOrderSource);
     const { ETH_ADDRESS } = getCurrencies();
 
     try {
@@ -329,10 +292,7 @@ export class Reservoir {
             exactOrderSource,
           },
         ],
-        expectedPrice: this.generateExpectedCurrencyPriceObject(
-          price,
-          ETH_ADDRESS
-        ),
+        expectedPrice: this.generateExpectedCurrencyPriceObject(price, ETH_ADDRESS),
         wallet: adaptedWallet,
         onProgress: () => null,
         precheck: false,
@@ -341,9 +301,7 @@ export class Reservoir {
           skipBalanceCheck: true,
         },
       });
-      throw new Error(
-        "This should never happen since we will throw inside the wallet tx"
-      );
+      throw new Error('This should never happen since we will throw inside the wallet tx');
     } catch (err) {
       if (err instanceof InterruptedSeaportSendTransactionStepError) {
         // We can save a tx by using match orders execution data
@@ -355,9 +313,7 @@ export class Reservoir {
           askOrBid: apiOrder as unknown as SeaportAskOrBid,
           signature,
         });
-      } else if (
-        err instanceof InterruptedCryptoPunksSendTransactionStepError
-      ) {
+      } else if (err instanceof InterruptedCryptoPunksSendTransactionStepError) {
         // We need to build the calldata since reservoir doesn't directly generate it
         const { value } = err;
         const callData = await this.CryptoPunks.encodeBuyPunk(tokenId);
@@ -400,10 +356,7 @@ export class Reservoir {
     price: bigint;
     exactOrderSource: string;
   }) {
-    const adaptedWallet = adaptWalletToCaptureTxData(
-      this.wallet,
-      exactOrderSource
-    );
+    const adaptedWallet = adaptWalletToCaptureTxData(this.wallet, exactOrderSource);
     const { WETH_ADDRESS } = getCurrencies();
     const { LeverageAddress } = getContracts(this.wallet.chain);
 
@@ -424,10 +377,7 @@ export class Reservoir {
             exactOrderSource,
           },
         ],
-        expectedPrice: this.generateExpectedCurrencyPriceObject(
-          price,
-          WETH_ADDRESS
-        ),
+        expectedPrice: this.generateExpectedCurrencyPriceObject(price, WETH_ADDRESS),
         wallet: adaptedWallet,
         onProgress: () => null,
         precheck: false,
@@ -440,9 +390,7 @@ export class Reservoir {
           taker: isOpensea(exactOrderSource) ? owner : LeverageAddress,
         },
       });
-      throw new Error(
-        "This should never happen since we will throw inside the wallet tx"
-      );
+      throw new Error('This should never happen since we will throw inside the wallet tx');
     } catch (err) {
       if (err instanceof InterruptedSeaportSendTransactionStepError) {
         const { orderId, signature } = err;

@@ -1,4 +1,4 @@
-import { ExtractAbiFunctionNames } from "abitype";
+import { ExtractAbiFunctionNames } from 'abitype';
 import {
   Abi,
   Address,
@@ -9,9 +9,9 @@ import {
   Hash,
   PublicClient,
   SimulateContractParameters,
-} from "viem";
+} from 'viem';
 
-import { Wallet } from "@/blockchain";
+import { Wallet } from '@/blockchain';
 export class Contract<TAbi extends Abi> {
   abi: TAbi;
   address: Address;
@@ -21,7 +21,7 @@ export class Contract<TAbi extends Abi> {
 
   safeContractWrite: {
     [TFunctionName in ExtractAbiFunctionNames<TAbi>]: (
-      args: SimulateContractParameters<TAbi, TFunctionName>["args"],
+      args: SimulateContractParameters<TAbi, TFunctionName>['args'],
       options?: { value?: bigint }
     ) => Promise<Hash>;
   };
@@ -50,12 +50,9 @@ export class Contract<TAbi extends Abi> {
     });
 
     this.safeContractWrite = new Proxy({} as typeof this.safeContractWrite, {
-      get<TFunctionName extends string>(
-        _: unknown,
-        functionName: TFunctionName
-      ) {
+      get<TFunctionName extends string>(_: unknown, functionName: TFunctionName) {
         return async (
-          args: SimulateContractParameters<TAbi, TFunctionName>["args"],
+          args: SimulateContractParameters<TAbi, TFunctionName>['args'],
           options: { value?: bigint } = {}
         ) => {
           // The typecast here is necessary,

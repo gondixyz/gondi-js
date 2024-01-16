@@ -1,10 +1,8 @@
-import { testCollection } from "./common";
-import { testCollectionOfferInput, users } from "./common";
+import { testCollection } from './common';
+import { testCollectionOfferInput, users } from './common';
 
 async function main() {
-  const signedOffer = await users[1].makeCollectionOffer(
-    testCollectionOfferInput
-  );
+  const signedOffer = await users[1].makeCollectionOffer(testCollectionOfferInput);
   const contractVersionString = `msl: ${signedOffer.contractAddress}`;
   console.log(`offer placed successfully: ${contractVersionString}`);
 
@@ -23,7 +21,7 @@ async function main() {
           collectionContractAddress: testCollection.contractAddress,
           tokenId: 7607n, // change this for listed nft in opensea
           price: 78000000000000000000n,
-          orderSource: "opensea.io",
+          orderSource: 'opensea.io',
         },
       },
     ],
@@ -31,7 +29,7 @@ async function main() {
 
   await waitTxInBlock();
 
-  console.log("BNPL executed");
+  console.log('BNPL executed');
 }
 
 main();

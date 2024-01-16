@@ -24,11 +24,11 @@ yarn add gondi
 To get started, you need to provide a wallet only.
 
 ```javascript
-import { Gondi } from "gondi";
-import { createWalletClient, http } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
-import { mainnet } from "viem/chains";
-const transport = http("https://eth-mainnet.g.alchemy.com/v2/...");
+import { Gondi } from 'gondi';
+import { createWalletClient, http } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
+import { mainnet } from 'viem/chains';
+const transport = http('https://eth-mainnet.g.alchemy.com/v2/...');
 
 const wallet = createWalletClient({
   account: privateKeyToAccount(privateKey),
@@ -47,11 +47,11 @@ Typescript types are included in the package.
 We use integer ids to identify collections and NFTs. We provide helper functions to get them:
 
 ```javascript
-const nftId = await gondi.nftId({ slug: "collection-slug", tokenId: 0n });
-const collectionId = await gondi.collectionId({ slug: "collection-slug" });
+const nftId = await gondi.nftId({ slug: 'collection-slug', tokenId: 0n });
+const collectionId = await gondi.collectionId({ slug: 'collection-slug' });
 const collectionId = (
   await gondi.collectionId({
-    contractAddress: "0x0000000000000000000000000000000000000000",
+    contractAddress: '0x0000000000000000000000000000000000000000',
   })
 )[0]; // It's an array because some collections use same contract (e.g. Artblocks)
 ```
@@ -90,7 +90,7 @@ const offer = await gondi.makeCollectionOffer({
 ### Listing Offers
 
 ```javascript
-import { OffersSortField, Ordering } from "gondi";
+import { OffersSortField, Ordering } from 'gondi';
 const offer = await gondi.offers({
   cusor, // Cursor returned by previous calls.
   limit, // Number results.

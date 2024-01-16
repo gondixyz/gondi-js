@@ -7,9 +7,9 @@ import {
   Hex,
   PublicClient,
   Transport,
-} from "viem";
+} from 'viem';
 
-import { Api, Props as ApiProps } from "@/api";
+import { Api, Props as ApiProps } from '@/api';
 import {
   Contracts,
   filterLogs,
@@ -20,22 +20,18 @@ import {
   zeroAddress,
   zeroHash,
   zeroHex,
-} from "@/blockchain";
-import {
-  MarketplaceEnum,
-  OffersSortField,
-  Ordering,
-} from "@/generated/graphql";
-import * as model from "@/model";
-import { emitLoanArgsToMslArgs, NATIVE_MARKETPLACE } from "@/utils";
+} from '@/blockchain';
+import { MarketplaceEnum, OffersSortField, Ordering } from '@/generated/graphql';
+import * as model from '@/model';
+import { emitLoanArgsToMslArgs, NATIVE_MARKETPLACE } from '@/utils';
 
-import { getCurrencies } from "./deploys";
-import { Reservoir } from "./reservoir/Reservoir";
-import { isNative, SeaportOrder } from "./reservoir/utils";
+import { getCurrencies } from './deploys';
+import { Reservoir } from './reservoir/Reservoir';
+import { isNative, SeaportOrder } from './reservoir/utils';
 
 type GondiProps = {
   wallet: Wallet;
-  apiClient?: ApiProps["apiClient"];
+  apiClient?: ApiProps['apiClient'];
   reservoirBaseApiUrl?: string;
 };
 
@@ -67,10 +63,7 @@ export class Gondi {
   }
 
   /** @internal */
-  async _makeSingleNftOffer(
-    offer: model.SingleNftOfferInput,
-    mslContractAddress?: Address
-  ) {
+  async _makeSingleNftOffer(offer: model.SingleNftOfferInput, mslContractAddress?: Address) {
     const contract = mslContractAddress
       ? this.contracts.Msl(mslContractAddress)
       : this.contracts.MultiSourceLoanV5;
@@ -88,18 +81,11 @@ export class Gondi {
 
     const response = await this.api.generateSingleNftOfferHash({ offerInput });
 
-    const {
-      offerHash,
-      offerId,
-      validators,
-      lenderAddress,
-      signerAddress,
-      borrowerAddress,
-    } = response.offer;
-    const collateralAddress =
-      response.offer.nft.collection?.contractData?.contractAddress;
+    const { offerHash, offerId, validators, lenderAddress, signerAddress, borrowerAddress } =
+      response.offer;
+    const collateralAddress = response.offer.nft.collection?.contractData?.contractAddress;
 
-    if (collateralAddress === undefined) throw new Error("Invalid nft");
+    if (collateralAddress === undefined) throw new Error('Invalid nft');
 
     const structToSign = {
       ...offerInput,
@@ -136,10 +122,7 @@ export class Gondi {
   }
 
   /** @internal */
-  async _makeCollectionOffer(
-    offer: model.CollectionOfferInput,
-    mslContractAddress?: Address
-  ) {
+  async _makeCollectionOffer(offer: model.CollectionOfferInput, mslContractAddress?: Address) {
     const contract = mslContractAddress
       ? this.contracts.Msl(mslContractAddress)
       : this.contracts.MultiSourceLoanV5;
@@ -161,19 +144,12 @@ export class Gondi {
       ],
     };
     const response = await this.api.generateCollectionOfferHash({ offerInput });
-    const collateralAddress =
-      response.offer.collection.contractData?.contractAddress;
+    const collateralAddress = response.offer.collection.contractData?.contractAddress;
 
-    if (collateralAddress === undefined) throw new Error("Invalid collection");
+    if (collateralAddress === undefined) throw new Error('Invalid collection');
 
-    const {
-      offerHash,
-      offerId,
-      validators,
-      lenderAddress,
-      signerAddress,
-      borrowerAddress,
-    } = response.offer;
+    const { offerHash, offerId, validators, lenderAddress, signerAddress, borrowerAddress } =
+      response.offer;
     const structToSign = {
       ...offerInput,
       lender: lenderAddress ?? offerInput.lenderAddress,
@@ -235,47 +211,23 @@ export class Gondi {
     return this.contracts.Seaport.cancel({ orderComponents: saleOffer });
   }
 
-  async cancelOffer({
-    id,
-    contractAddress,
-  }: {
-    id: bigint;
-    contractAddress: Address;
-  }) {
+  async cancelOffer({ id, contractAddress }: { id: bigint; contractAddress: Address }) {
     return this.contracts.Msl(contractAddress).cancelOffer({
       id,
     });
   }
 
-  async cancelAllOffers({
-    minId,
-    contractAddress,
-  }: {
-    minId: bigint;
-    contractAddress: Address;
-  }) {
+  async cancelAllOffers({ minId, contractAddress }: { minId: bigint; contractAddress: Address }) {
     return this.contracts.Msl(contractAddress).cancelAllOffers({
       minId,
     });
   }
 
-  async hideOffer({
-    id,
-    contractAddress,
-  }: {
-    id: bigint;
-    contractAddress: Address;
-  }) {
+  async hideOffer({ id, contractAddress }: { id: bigint; contractAddress: Address }) {
     return this.api.hideOffer({ contract: contractAddress, id: id.toString() });
   }
 
-  async unhideOffer({
-    id,
-    contractAddress,
-  }: {
-    id: bigint;
-    contractAddress: Address;
-  }) {
+  async unhideOffer({ id, contractAddress }: { id: bigint; contractAddress: Address }) {
     return this.api.unhideOffer({
       contract: contractAddress,
       id: id.toString(),
@@ -300,8 +252,7 @@ export class Gondi {
       renegotiationInput,
     });
 
-    const { renegotiationId, offerHash, loanId, lenderAddress, signerAddress } =
-      response.offer;
+    const { renegotiationId, offerHash, loanId, lenderAddress, signerAddress } = response.offer;
     const structToSign = {
       ...renegotiationInput,
       fee: renegotiationInput.feeAmount,
@@ -336,25 +287,13 @@ export class Gondi {
     return await this.api.saveRefinanceOffer(renegotiationOffer);
   }
 
-  async cancelRefinanceOffer({
-    id,
-    contractAddress,
-  }: {
-    id: bigint;
-    contractAddress: Address;
-  }) {
+  async cancelRefinanceOffer({ id, contractAddress }: { id: bigint; contractAddress: Address }) {
     return this.contracts.Msl(contractAddress).cancelRefinanceOffer({
       id,
     });
   }
 
-  async hideRenegotiationOffer({
-    id,
-    contractAddress,
-  }: {
-    id: bigint;
-    contractAddress: Address;
-  }) {
+  async hideRenegotiationOffer({ id, contractAddress }: { id: bigint; contractAddress: Address }) {
     return this.api.hideRenegotiationOffer({
       id: id.toString(),
       contractAddress,
@@ -394,7 +333,10 @@ export class Gondi {
     });
   }
 
-  async emitLoan({ offer, ...rest }: {
+  async emitLoan({
+    offer,
+    ...rest
+  }: {
     offer: model.SingleNftOffer | model.CollectionOffer;
     tokenId: bigint;
     amount?: bigint;
@@ -480,22 +422,15 @@ export class Gondi {
   ) {
     let result;
     if (props.slug) result = await this.api.nftIdBySlugTokenId(props);
-    if (props.contractAddress)
-      result = await this.api.nftIdByContractAddressAndTokenId(props);
+    if (props.contractAddress) result = await this.api.nftIdByContractAddressAndTokenId(props);
     if (!result?.nft) {
       throw new Error(`invalid nft ${props}`);
     }
     return Number(result.nft.id);
   }
 
-  async collectionId(props: {
-    slug: string;
-    contractAddress?: never;
-  }): Promise<number>;
-  async collectionId(props: {
-    slug?: never;
-    contractAddress: Address;
-  }): Promise<number[]>;
+  async collectionId(props: { slug: string; contractAddress?: never }): Promise<number>;
+  async collectionId(props: { slug?: never; contractAddress: Address }): Promise<number[]>;
   async collectionId(
     props:
       | {
@@ -543,9 +478,7 @@ export class Gondi {
       nftId,
       currencyAddress: WETH_ADDRESS,
     });
-    const nativeBid = bids.find(
-      (bid) => bid.marketPlace === NATIVE_MARKETPLACE
-    );
+    const nativeBid = bids.find((bid) => bid.marketPlace === NATIVE_MARKETPLACE);
 
     return nativeBid ?? null;
   }
@@ -608,20 +541,16 @@ export class Gondi {
     newDuration: bigint;
     loanId: bigint;
   }) {
-    return this.contracts
-      .Msl(loan.contractAddress)
-      .extendLoan({ loan, newDuration, loanId });
+    return this.contracts.Msl(loan.contractAddress).extendLoan({ loan, newDuration, loanId });
   }
 
   /**
    * Delegate Multicall should be used when token is used as collateral for an active loan.
    * Multicall will be performed to the contract address of the first delegation.
-  */
+   */
   async delegateMulticall(delegations: Parameters<Gondi['delegate']>[0][]) {
     const contractAddress = delegations[0].loan.contractAddress;
-    return this.contracts
-      .Msl(contractAddress)
-      .delegateMulticall(delegations);
+    return this.contracts.Msl(contractAddress).delegateMulticall(delegations);
   }
 
   /** Delegate should be used when token is used as collateral for an active loan. */
@@ -635,12 +564,10 @@ export class Gondi {
     loan: LoanV5;
     loanId: bigint;
     to: Address;
-    enable: boolean
+    enable: boolean;
     rights?: Hash;
   }) {
-    return this.contracts
-      .Msl(loan.contractAddress)
-      .delegate({ loan, loanId, to, rights, enable });
+    return this.contracts.Msl(loan.contractAddress).delegate({ loan, loanId, to, rights, enable });
   }
 
   /** RevokeDelegate should be used when token is not being used as collateral. */
@@ -655,18 +582,19 @@ export class Gondi {
     tokenId: bigint;
     contract?: Address;
   }) {
-    return this.contracts
-      .Msl(contract)
-      .revokeDelegate({ to, collection, tokenId });
+    return this.contracts.Msl(contract).revokeDelegate({ to, collection, tokenId });
   }
 
   /**
    * RevokeDelegationsAndEmitLoan should be used when token has been delegated without being revoked,
    * and a new loan wants to be emitted, erasing the delegations provided as argument.
    */
-  async revokeDelegationsAndEmitLoan({ delegations, emit }: {
+  async revokeDelegationsAndEmitLoan({
+    delegations,
+    emit,
+  }: {
     delegations: Address[];
-    emit: Parameters<Gondi['emitLoan']>[0]
+    emit: Parameters<Gondi['emitLoan']>[0];
   }) {
     const emitLoanMslArgs = emitLoanArgsToMslArgs(emit);
 
@@ -698,16 +626,8 @@ export class Gondi {
       .placeBid({ collectionContractAddress, tokenId, bid, auction });
   }
 
-  async settleAuction({
-    loan,
-    auction,
-  }: {
-    loan: LoanV4V5;
-    auction: model.Auction;
-  }) {
-    return this.contracts
-      .All(auction.loanAddress)
-      .settleAuction({ loan, auction });
+  async settleAuction({ loan, auction }: { loan: LoanV4V5; auction: model.Auction }) {
+    return this.contracts.All(auction.loanAddress).settleAuction({ loan, auction });
   }
 
   async buy(
@@ -751,10 +671,7 @@ export class Gondi {
     // This is the sum of the eth to send for each nft minus the amount of weth that is being borrowed
     const ethToSend = executionData.reduce(
       (acc, { value }, index) =>
-        acc +
-        value -
-        leverageBuyData[index].amount +
-        leverageBuyData[index].offer.fee,
+        acc + value - leverageBuyData[index].amount + leverageBuyData[index].offer.fee,
       0n
     );
 
@@ -829,13 +746,7 @@ export class Gondi {
     });
   }
 
-  async getOwner({
-    nftAddress,
-    tokenId,
-  }: {
-    nftAddress: Address;
-    tokenId: bigint;
-  }) {
+  async getOwner({ nftAddress, tokenId }: { nftAddress: Address; tokenId: bigint }) {
     const erc721 = this.contracts.ERC721(nftAddress);
     return erc721.read.ownerOf([tokenId]);
   }
@@ -870,8 +781,7 @@ export class Gondi {
         });
         const filter = await erc721.createEventFilter.ApprovalForAll({});
         const events = filterLogs(receipt, filter);
-        if (events.length == 0)
-          throw new Error("ERC721 approval for all not set");
+        if (events.length === 0) throw new Error('ERC721 approval for all not set');
         return { ...events[0].args, ...receipt };
       },
     };
@@ -887,9 +797,7 @@ export class Gondi {
     to?: Address;
   }) {
     const erc20 = this.contracts.ERC20(tokenAddress);
-    return (
-      (await erc20.read.allowance([this.wallet.account?.address, to])) >= amount
-    );
+    return (await erc20.read.allowance([this.wallet.account?.address, to])) >= amount;
   }
 
   async approveToken({
@@ -912,9 +820,37 @@ export class Gondi {
         });
         const filter = await erc20.createEventFilter.Approval({});
         const events = filterLogs(receipt, filter);
-        if (events.length == 0) throw new Error("ERC20 approval not set");
+        if (events.length === 0) throw new Error('ERC20 approval not set');
         return { ...events[0].args, ...receipt };
       },
     };
+  }
+
+  async createUserVault({
+    nfts,
+    userVaultAddress = this.contracts.UserVaultV5.address,
+  }: {
+    nfts: Parameters<Contracts['UserVaultV5']['createVault']>[0];
+    userVaultAddress?: Address;
+  }) {
+    return this.contracts.UserVault(userVaultAddress).createVault(nfts);
+  }
+
+  async depositUserVaultERC721s({
+    userVaultAddress = this.contracts.UserVaultV5.address,
+    ...data
+  }: {
+    userVaultAddress?: Address;
+  } & Parameters<Contracts['UserVaultV5']['depositERC721s']>[0]) {
+    return this.contracts.UserVault(userVaultAddress).depositERC721s(data);
+  }
+
+  async burnUserVaultAndWithdraw({
+    userVaultAddress = this.contracts.UserVaultV5.address,
+    ...data
+  }: {
+    userVaultAddress?: Address;
+  } & Parameters<Contracts['UserVaultV5']['burnAndWithdraw']>[0]) {
+    return this.contracts.UserVault(userVaultAddress).burnAndWithdraw(data);
   }
 }
