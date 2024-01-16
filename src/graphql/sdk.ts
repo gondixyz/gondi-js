@@ -19,7 +19,7 @@ export function getSdkApollo<C>(client: ApolloClient<C>) {
   const requester: Requester = async <R, V>(
     doc: DocumentNode,
     variables?: V,
-    options?: ApolloRequesterOptions<OperationVariables, R>
+    options?: ApolloRequesterOptions<OperationVariables, R>,
   ): Promise<R> => {
     options = {
       ...options,
@@ -31,7 +31,7 @@ export function getSdkApollo<C>(client: ApolloClient<C>) {
     // Valid document should contain *single* query or mutation unless it's has a fragment
     if (
       doc.definitions.filter(
-        (d) => d.kind === 'OperationDefinition' && validDocDefOps.includes(d.operation)
+        (d) => d.kind === 'OperationDefinition' && validDocDefOps.includes(d.operation),
       ).length !== 1
     ) {
       throw new Error('DocumentNode passed to Apollo Client must contain single query or mutation');

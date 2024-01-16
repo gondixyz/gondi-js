@@ -90,7 +90,7 @@ export class Reservoir {
         (res) =>
           res.json() as Promise<{
             orders: paths['/orders/asks/v5']['get']['responses']['200']['schema']['orders'];
-          }>
+          }>,
       )
       .then(({ orders }) => {
         if (!orders) {
@@ -106,7 +106,7 @@ export class Reservoir {
         (res) =>
           res.json() as Promise<{
             orders: paths['/orders/bids/v6']['get']['responses']['200']['schema']['orders'];
-          }>
+          }>,
       )
       .then(({ orders }) => {
         if (!orders) {
@@ -168,7 +168,7 @@ export class Reservoir {
       side === 'ask'
         ? order.parameters.consideration.reduce(
             (acc, consid) => acc + (consid.itemType === 0 ? BigInt(consid.endAmount) : 0n),
-            0n
+            0n,
           )
         : BigInt(askOrBid.price.netAmount.raw);
 
@@ -204,7 +204,7 @@ export class Reservoir {
     };
 
     const nftWithCriteriaIndex = order.parameters.consideration.findIndex(
-      (consid) => consid.itemType === 4
+      (consid) => consid.itemType === 4,
     );
 
     const fulfillOrderCallbackData = encodeFunctionData({
@@ -248,7 +248,7 @@ export class Reservoir {
       tokenId: bigint;
       price: bigint;
       orderSource: string;
-    }[]
+    }[],
   ) {
     const { ETH_ADDRESS } = getCurrencies();
     const totalPrice = tokensToBuy.reduce((acc, cur) => acc + cur.price, 0n);

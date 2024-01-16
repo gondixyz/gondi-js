@@ -100,7 +100,7 @@ export class Contracts {
   }
 
   ERC721(
-    nftAddress: Address
+    nftAddress: Address,
   ): GetContractReturnType<typeof erc721ABI, PublicClient, Wallet, Address> {
     return getContract({
       address: nftAddress,
@@ -111,7 +111,7 @@ export class Contracts {
   }
 
   ERC20(
-    nftAddress: Address
+    nftAddress: Address,
   ): GetContractReturnType<typeof erc20ABI, PublicClient, Wallet, Address> {
     return getContract({
       address: nftAddress,
@@ -168,7 +168,7 @@ export const zeroHex: HexString = `0x0`;
 
 export function filterLogs<TAbi extends Abi, TEventName extends ExtractAbiEventNames<TAbi>>(
   receipt: TransactionReceipt,
-  filter: EncodeEventTopicsParameters<TAbi, TEventName>
+  filter: EncodeEventTopicsParameters<TAbi, TEventName>,
 ): DecodeEventLogReturnType<TAbi, TEventName>[] {
   return receipt.logs
     .filter((log) => {

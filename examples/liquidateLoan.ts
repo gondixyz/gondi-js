@@ -9,7 +9,7 @@ const emitAndLiquidateLoan = async (owner: Gondi, lender: Gondi, contract?: Addr
       ...testSingleNftOfferInput,
       duration: 1n,
     },
-    contract
+    contract,
   );
   const contractVersionString = `msl: ${signedOffer.contractAddress}`;
   console.log(`offer placed successfully: ${contractVersionString}`);

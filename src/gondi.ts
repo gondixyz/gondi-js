@@ -418,7 +418,7 @@ export class Gondi {
     props: (
       | { slug: string; contractAddress?: never }
       | { slug?: never; contractAddress: Address }
-    ) & { tokenId: bigint }
+    ) & { tokenId: bigint },
   ) {
     let result;
     if (props.slug) result = await this.api.nftIdBySlugTokenId(props);
@@ -440,7 +440,7 @@ export class Gondi {
       | {
           slug?: never;
           contractAddress: Address;
-        }
+        },
   ) {
     let result;
     if (props.slug) {
@@ -636,7 +636,7 @@ export class Gondi {
       tokenId: bigint;
       price: bigint;
       orderSource: string;
-    }[]
+    }[],
   ) {
     return this.reservoir.buyTokens(tokensToBuy);
   }
@@ -663,8 +663,8 @@ export class Gondi {
           tokenId: data.nft.tokenId,
           price: data.nft.price,
           exactOrderSource: data.nft.orderSource,
-        })
-      )
+        }),
+      ),
     );
 
     // We calculate the amount of eth to send to the contract
@@ -672,7 +672,7 @@ export class Gondi {
     const ethToSend = executionData.reduce(
       (acc, { value }, index) =>
         acc + value - leverageBuyData[index].amount + leverageBuyData[index].offer.fee,
-      0n
+      0n,
     );
 
     const dataForLeverageContract = leverageBuyData.map((data, index) => ({

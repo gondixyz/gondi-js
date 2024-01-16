@@ -15,7 +15,7 @@ const emitLoanThenAuctionAndBid = async (
   lender: Gondi,
   refinancer: Gondi,
   mslContract?: Address,
-  liquidatorContract?: Address
+  liquidatorContract?: Address,
 ) => {
   if (!isAddress(liquidatorContract ?? '')) {
     throw new Error(`invalid liquidator contract address: ${liquidatorContract}`);
@@ -26,7 +26,7 @@ const emitLoanThenAuctionAndBid = async (
       ...testSingleNftOfferInput,
       duration: 15n,
     },
-    mslContract
+    mslContract,
   );
   const contractVersionString = `msl: ${signedOffer.contractAddress}`;
   console.log(`offer placed successfully: ${contractVersionString}`);
@@ -119,7 +119,7 @@ async function main() {
         users[0],
         users[2],
         MULTI_SOURCE_LOAN_CONTRACT_V4,
-        process.env.AUCTION_LIQUIDATOR_CONTRACT_V4 as Address
+        process.env.AUCTION_LIQUIDATOR_CONTRACT_V4 as Address,
       );
     } else {
       await emitLoanThenAuctionAndBid(
@@ -127,7 +127,7 @@ async function main() {
         users[0],
         users[2],
         process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 as Address,
-        process.env.AUCTION_LIQUIDATOR_CONTRACT_V5 as Address
+        process.env.AUCTION_LIQUIDATOR_CONTRACT_V5 as Address,
       );
     }
   } catch (e) {

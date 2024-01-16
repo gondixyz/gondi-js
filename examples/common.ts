@@ -70,7 +70,7 @@ export const users = wallets.map(
     new Gondi({
       wallet,
       reservoirBaseApiUrl: 'http://localhost:8080/marketplaces/reservoir',
-    })
+    }),
 );
 
 export const testCollectionId = (await users[0].collectionId(testCollection))[0];
@@ -122,7 +122,7 @@ const approveToken = async (user: Gondi, to: Address) => {
 export const approveNFT = async (
   user: Gondi,
   to: Address,
-  collection: Address | undefined = testCollection.contractAddress
+  collection: Address | undefined = testCollection.contractAddress,
 ) => {
   const isApprovedAlready = await user.isApprovedNFTForAll({
     nftAddress: collection,

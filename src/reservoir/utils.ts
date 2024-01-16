@@ -75,7 +75,7 @@ export const adaptWalletToCaptureTxData = (wallet: Wallet, exactOrderSource: str
         data: { data: Hash; to: Address; value: string };
         orderIds?: string[];
       },
-      step: { id: string }
+      step: { id: string },
     ) => {
       if (step.id !== 'sale') {
         console.log(step);

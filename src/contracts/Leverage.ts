@@ -121,12 +121,12 @@ export class Leverage extends Contract<typeof leverageABI> {
                 },
               ],
             });
-          })
+          }),
         ),
       ],
       {
         value: ethToSend,
-      }
+      },
     );
 
     return {

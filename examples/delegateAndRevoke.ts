@@ -32,7 +32,7 @@ const delegateAndRevoke = async (contract?: Address) => {
     });
     await delegateFalse.waitTxInBlock();
     console.log(
-      `nft from loanId ${loanId} successfully revoked delegation: ${contractVersionString}`
+      `nft from loanId ${loanId} successfully revoked delegation: ${contractVersionString}`,
     );
   } catch (e) {
     console.log('Error while delegating and revoking during loan:');

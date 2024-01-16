@@ -220,7 +220,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
         abi: multiSourceLoanABIV5,
         functionName: 'revokeDelegate',
         args: [delegation, emit.offer.nftCollateralAddress, emit.tokenId],
-      })
+      }),
     );
 
     const emitLoanMslArgs = this.mapEmitLoanToMslArgs(emit);
@@ -428,7 +428,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
             delegation.rights ?? zeroHash,
             delegation.enable,
           ],
-        })
+        }),
       ),
     ]);
 

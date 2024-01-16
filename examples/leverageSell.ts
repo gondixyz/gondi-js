@@ -18,7 +18,7 @@ async function main() {
       borrower: getAddress(loanToRepay.borrowerAddress),
 
       nftCollateralAddress: getAddress(
-        loanToRepay.nft.collection?.contractData?.contractAddress ?? ''
+        loanToRepay.nft.collection?.contractData?.contractAddress ?? '',
       ),
       nftCollateralTokenId: loanToRepay.nft.tokenId,
       startTime: BigInt(Math.floor(loanToRepay.startTime.getTime() / 1000)),
