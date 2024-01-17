@@ -12,27 +12,27 @@
       "error",
       {
         "argsIgnorePattern": "^_",
-        "varsIgnorePattern": "^_",
-      },
+        "varsIgnorePattern": "^_"
+      }
     ],
     "import/no-extraneous-dependencies": [
       "error",
       {
         "peerDependencies": true,
         "bundledDependencies": true,
-        "includeTypes": true,
-      },
+        "includeTypes": true
+      }
     ],
     "prefer-const": "error",
     "import/named": "error",
     "import/no-unresolved": "error",
 
-    "@typescript-eslint/ban-ts-comment": "off",
+    "@typescript-eslint/ban-ts-comment": "off"
   },
   "settings": {
     "import/resolver": {
-      "typescript": {}, // this loads <rootdir>/tsconfig.json to eslint
-    },
+      "typescript": {} // this loads <rootdir>/tsconfig.json to eslint
+    }
   },
 
   "parserOptions": {
