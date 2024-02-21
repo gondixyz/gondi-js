@@ -71,7 +71,7 @@ export class Gondi {
 
     const offerInput = {
       ...offer,
-      lenderAddress: this.wallet.account?.address,
+      lenderAddress: offer.lenderAddress ? offer.lenderAddress : this.wallet.account?.address,
       signerAddress: this.wallet.account?.address,
       borrowerAddress: offer.borrowerAddress ?? zeroAddress,
       requiresLiquidation: !!offer.requiresLiquidation,
@@ -130,7 +130,7 @@ export class Gondi {
 
     const offerInput = {
       ...offer,
-      lenderAddress: this.wallet.account?.address,
+      lenderAddress: offer.lenderAddress ? offer.lenderAddress : this.wallet.account?.address,
       signerAddress: this.wallet.account?.address,
       borrowerAddress: offer.borrowerAddress ?? zeroAddress,
       requiresLiquidation: !!offer.requiresLiquidation,
