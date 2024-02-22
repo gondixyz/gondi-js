@@ -1,15 +1,14 @@
-import { Account, Address, Chain, encodeFunctionData, Hash, Transport, WalletClient } from 'viem';
+import { Address, encodeFunctionData, Hash } from 'viem';
 
 import { filterLogs, LoanV5, OfferV5 } from '@/blockchain';
+import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { leverageABI, multiSourceLoanABI } from '@/generated/blockchain/v5';
 import { getDomain } from '@/utils';
 
-import { Contract } from './Contract';
+import { BaseContract } from './BaseContract';
 
-export type Wallet = WalletClient<Transport, Chain, Account>;
-
-export class Leverage extends Contract<typeof leverageABI> {
+export class Leverage extends BaseContract<typeof leverageABI> {
   mslAddress: Address;
 
   constructor({ walletClient, mslAddress }: { walletClient: Wallet; mslAddress: Address }) {

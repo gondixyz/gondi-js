@@ -1,12 +1,13 @@
 import { Address } from 'viem';
 
-import { filterLogs, Wallet } from '@/blockchain';
+import { filterLogs } from '@/blockchain';
+import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { userVaultABI as userVaultABIV5 } from '@/generated/blockchain/v5';
 
-import { Contract } from './Contract';
+import { BaseContract } from './BaseContract';
 
-export class UserVault extends Contract<typeof userVaultABIV5> {
+export class UserVault extends BaseContract<typeof userVaultABIV5> {
   constructor({ walletClient }: { walletClient: Wallet }) {
     const { UserVault } = getContracts(walletClient.chain);
 

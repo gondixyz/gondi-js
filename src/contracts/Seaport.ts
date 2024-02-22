@@ -1,17 +1,16 @@
-import { Account, Address, Chain, Transport, WalletClient, zeroAddress } from 'viem';
+import { Address, zeroAddress } from 'viem';
 
 import { filterLogs, zeroHash } from '@/blockchain';
+import { Wallet } from '@/contracts';
 import { getContracts, getCurrencies } from '@/deploys';
 import { seaportABI } from '@/generated/blockchain/seaport';
 import { SaleOfferInfoFragment } from '@/generated/graphql';
 import { Fulfillment, SeaportOrder, SeaportOrderParameter } from '@/reservoir/utils';
 import { millisToSeconds } from '@/utils';
 
-import { Contract } from './Contract';
+import { BaseContract } from './BaseContract';
 
-export type Wallet = WalletClient<Transport, Chain, Account>;
-
-export class Seaport extends Contract<typeof seaportABI> {
+export class Seaport extends BaseContract<typeof seaportABI> {
   constructor({ walletClient }: { walletClient: Wallet }) {
     const { SeaportAddress } = getContracts(walletClient.chain);
 

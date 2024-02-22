@@ -11,8 +11,9 @@ import {
   SimulateContractParameters,
 } from 'viem';
 
-import { Wallet } from '@/blockchain';
-export class Contract<TAbi extends Abi> {
+import { Wallet } from '@/contracts';
+
+export class BaseContract<TAbi extends Abi> {
   abi: TAbi;
   address: Address;
   bcClient: PublicClient;

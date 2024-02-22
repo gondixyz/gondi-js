@@ -1,15 +1,16 @@
 import { Address, Hash, zeroAddress } from 'viem';
 
-import { filterLogs, LoanV4, OfferV4, RenegotiationV4, Wallet } from '@/blockchain';
+import { filterLogs, LoanV4, OfferV4, RenegotiationV4 } from '@/blockchain';
+import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { multiSourceLoanABI as multiSourceLoanABIV4 } from '@/generated/blockchain/v4';
 import { EmitLoanArgs } from '@/gondi';
 import { getDomain } from '@/utils';
 
-import { Contract } from './Contract';
+import { BaseContract } from './BaseContract';
 import { MslV5 } from './MslV5';
 
-export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
+export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
   constructor({ walletClient }: { walletClient: Wallet }) {
     const {
       MultiSourceLoan: { v4 },

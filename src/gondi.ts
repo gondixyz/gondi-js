@@ -10,21 +10,12 @@ import {
 } from 'viem';
 
 import { Api, Props as ApiProps } from '@/api';
-import {
-  Contracts,
-  filterLogs,
-  Loan,
-  LoanV5,
-  OfferV5,
-  Wallet,
-  zeroAddress,
-  zeroHash,
-  zeroHex,
-} from '@/blockchain';
+import { filterLogs, Loan, LoanV5, OfferV5, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { MarketplaceEnum, OffersSortField, Ordering } from '@/generated/graphql';
 import * as model from '@/model';
 import { NATIVE_MARKETPLACE } from '@/utils';
 
+import { Contracts, Wallet } from './contracts';
 import { getCurrencies } from './deploys';
 import { Reservoir } from './reservoir/Reservoir';
 import { isNative, SeaportOrder } from './reservoir/utils';

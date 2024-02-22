@@ -13,7 +13,7 @@
     "docs": "typedoc --options ./typedocconfig.ts --out docs/$npm_package_version && rm -rf docs/lts && cp -r docs/$npm_package_version/ docs/lts/",
     "build": "node esbuild.js && tsc && tsc-alias",
     "build-unbundle": "tsc --outDir dist && tsc-alias",
-    "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
+    "lint": "yarn run fmt-check && eslint src/ --ext .js,.jsx,.ts,.tsx",
     "fmt-check": "prettier --config .prettierrc --ignore-path .prettierignore --check .",
     "fmt": "prettier --config .prettierrc --ignore-path .prettierignore --write .",
     "gql:types": "graphql-code-generator",

@@ -1,14 +1,15 @@
 import { Address, encodeFunctionData, Hash } from 'viem';
 
-import { filterLogs, LoanV5, OfferV5, RenegotiationV5, Wallet, zeroHash } from '@/blockchain';
+import { filterLogs, LoanV5, OfferV5, RenegotiationV5, zeroHash } from '@/blockchain';
+import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { multiSourceLoanABI as multiSourceLoanABIV5 } from '@/generated/blockchain/v5';
 import { EmitLoanArgs } from '@/gondi';
 import { bpsToPercentage, getDomain, millisToSeconds, SECONDS_IN_DAY } from '@/utils';
 
-import { Contract } from './Contract';
+import { BaseContract } from './BaseContract';
 
-export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
+export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
   constructor({ walletClient }: { walletClient: Wallet }) {
     const {
       MultiSourceLoan: { v5 },
