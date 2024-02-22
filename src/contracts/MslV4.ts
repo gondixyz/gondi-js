@@ -1,8 +1,9 @@
-import { Address, Hash } from 'viem';
+import { Address, Hash, zeroAddress } from 'viem';
 
 import { filterLogs, LoanV4, OfferV4, RenegotiationV4, Wallet } from '@/blockchain';
 import { getContracts } from '@/deploys';
 import { multiSourceLoanABI as multiSourceLoanABIV4 } from '@/generated/blockchain/v4';
+import { EmitLoanArgs } from '@/gondi';
 import { getDomain } from '@/utils';
 
 import { Contract } from './Contract';
@@ -162,16 +163,22 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
     };
   }
 
-  async emitLoan({
-    offer,
-    signature,
-    tokenId,
-  }: {
-    offer: OfferV4;
-    signature: Hash;
-    tokenId: bigint;
-  }) {
-    const txHash = await this.safeContractWrite.emitLoan([offer, tokenId, signature, false]);
+  private mapEmitLoanToMslEmitLoanArgs({ offerExecution, tokenId }: EmitLoanArgs) {
+    const { offer, lenderOfferSignature } = offerExecution[0];
+    const mappedOffer = {
+      ...offer,
+      signer: offer.signerAddress ?? zeroAddress,
+      lender: offer.lenderAddress,
+      borrower: offer.borrowerAddress,
+      validators: offer.offerValidators,
+      requiresLiquidation: !!offer.requiresLiquidation,
+    };
+    return [mappedOffer, tokenId, lenderOfferSignature, false] as const;
+  }
+
+  async emitLoan(emitArgs: EmitLoanArgs) {
+    const mslEmitArgs = this.mapEmitLoanToMslEmitLoanArgs(emitArgs);
+    const txHash = await this.safeContractWrite.emitLoan(mslEmitArgs);
 
     return {
       txHash,
@@ -190,7 +197,7 @@ export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
             contractAddress: this.contract.address,
           },
           loanId: args.loanId,
-          offerId: `${this.contract.address.toLowerCase()}.${offer.lender.toLowerCase()}.${
+          offerId: `${this.contract.address.toLowerCase()}.${mslEmitArgs[0].lender.toLowerCase()}.${
             args.offerId
           }`,
           ...receipt,

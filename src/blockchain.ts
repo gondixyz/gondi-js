@@ -24,13 +24,16 @@ import type { multiSourceLoanABI as multiSourceLoanABIV4 } from '@/generated/blo
 import type { auctionLoanLiquidatorABI as auctionLoanLiquidatorABIV5 } from '@/generated/blockchain/v5';
 import type { multiSourceLoanABI as multiSourceLoanABIV5 } from '@/generated/blockchain/v5';
 import { erc20ABI, erc721ABI } from '@/generated/blockchain/v5';
+import type { multiSourceLoanAbi as multiSourceLoanABIV6 } from '@/generated/blockchain/v6';
 
 import { AllV4 } from './contracts/AllV4';
 import { AllV5 } from './contracts/AllV5';
+import { AllV6 } from './contracts/AllV6';
 import { CryptoPunks } from './contracts/CryptoPunks';
 import { Leverage } from './contracts/Leverage';
 import { MslV4 } from './contracts/MslV4';
 import { MslV5 } from './contracts/MslV5';
+import { MslV6 } from './contracts/MslV6';
 import { Seaport } from './contracts/Seaport';
 import { UserVault } from './contracts/UserVault';
 import { areSameAddress } from './utils';
@@ -43,8 +46,10 @@ export class Contracts {
 
   MultiSourceLoanV4: MslV4;
   MultiSourceLoanV5: MslV5;
+  MultiSourceLoanV6: MslV6;
   AuctionLoanLiquidatorV4: AllV4;
   AuctionLoanLiquidatorV5: AllV5;
+  AuctionLoanLiquidatorV6: AllV6;
   UserVaultV5: UserVault;
   Leverage: Leverage;
   Seaport: Seaport;
@@ -56,8 +61,10 @@ export class Contracts {
 
     this.MultiSourceLoanV4 = new MslV4({ walletClient });
     this.MultiSourceLoanV5 = new MslV5({ walletClient });
+    this.MultiSourceLoanV6 = new MslV6({ walletClient });
     this.AuctionLoanLiquidatorV4 = new AllV4({ walletClient });
     this.AuctionLoanLiquidatorV5 = new AllV5({ walletClient });
+    this.AuctionLoanLiquidatorV6 = new AllV6({ walletClient });
     this.UserVaultV5 = new UserVault({ walletClient });
     this.Leverage = new Leverage({
       walletClient,
@@ -74,6 +81,9 @@ export class Contracts {
     if (areSameAddress(contractAddress, this.MultiSourceLoanV5.address)) {
       return this.MultiSourceLoanV5;
     }
+    if (areSameAddress(contractAddress, this.MultiSourceLoanV6.address)) {
+      return this.MultiSourceLoanV6;
+    }
     throw new Error(`Invalid Contract Address ${contractAddress}`);
   }
 
@@ -88,6 +98,9 @@ export class Contracts {
     }
     if (areSameAddress(contractAddress, this.MultiSourceLoanV5.address)) {
       return this.AuctionLoanLiquidatorV5;
+    }
+    if (areSameAddress(contractAddress, this.MultiSourceLoanV6.address)) {
+      return this.AuctionLoanLiquidatorV6;
     }
     throw new Error(`Invalid Contract Address ${contractAddress}`);
   }
@@ -128,12 +141,18 @@ type RepayAbiTypeV4 = AbiParametersToPrimitiveTypes<
 type RepayAbiTypeV5 = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof multiSourceLoanABIV5, 'repayLoan'>['inputs']
 >;
+type RepayAbiTypeV6 = AbiParametersToPrimitiveTypes<
+  ExtractAbiFunction<typeof multiSourceLoanABIV6, 'repayLoan'>['inputs']
+>;
 
 type EmitAbiTypeV4 = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof multiSourceLoanABIV4, 'emitLoan'>['inputs']
 >;
 type EmitAbiTypeV5 = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof multiSourceLoanABIV5, 'emitLoan'>['inputs']
+>;
+type EmitAbiTypeV6 = AbiParametersToPrimitiveTypes<
+  ExtractAbiFunction<typeof multiSourceLoanABIV6, 'emitLoan'>['inputs']
 >;
 
 type RefiAbiTypeV4 = AbiParametersToPrimitiveTypes<
@@ -142,6 +161,9 @@ type RefiAbiTypeV4 = AbiParametersToPrimitiveTypes<
 type RefiAbiTypeV5 = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof multiSourceLoanABIV5, 'refinanceFull'>['inputs']
 >;
+type RefiAbiTypeV6 = AbiParametersToPrimitiveTypes<
+  ExtractAbiFunction<typeof multiSourceLoanABIV6, 'refinanceFull'>['inputs']
+>;
 
 type PlaceBidAbiType = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof auctionLoanLiquidatorABIV5, 'placeBid'>['inputs']
@@ -149,13 +171,16 @@ type PlaceBidAbiType = AbiParametersToPrimitiveTypes<
 
 export type LoanV4 = RepayAbiTypeV4[2] & { contractAddress: Address };
 export type LoanV5 = RepayAbiTypeV5[0]['loan'] & { contractAddress: Address };
-export type LoanV4V5 = LoanV4 | LoanV5;
+export type LoanV6 = RepayAbiTypeV6[0]['loan'] & { contractAddress: Address };
+export type Loan = LoanV4 | LoanV5 | LoanV6;
 
 export type OfferV4 = EmitAbiTypeV4[0];
 export type OfferV5 = EmitAbiTypeV5[0]['executionData']['offer'];
+export type OfferV6 = EmitAbiTypeV6[0]['executionData']['offerExecution'][number]['offer'];
 
 export type RenegotiationV4 = RefiAbiTypeV4[0];
 export type RenegotiationV5 = RefiAbiTypeV5[0];
+export type RenegotiationV6 = RefiAbiTypeV6[0];
 
 export type Auction = PlaceBidAbiType[2];
 

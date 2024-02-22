@@ -19,10 +19,15 @@ import {
 
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
+type MaxTrancheFloorArg = {
+  maxTrancheFloor: Exclude<ApiSingleNftOfferInput['maxTrancheFloor'], null | undefined>;
+};
+
 export type SingleNftOfferInput = Optional<
   ApiSingleNftOfferInput,
   'borrowerAddress' | 'lenderAddress' | 'signerAddress' | 'offerValidators' | 'contractAddress'
->;
+> &
+  MaxTrancheFloorArg;
 
 export type UnsignedSingleNftOffer = Omit<SingleNftSignedOfferInput, 'signature'> & {
   nftCollateralAddress: Address;
@@ -32,12 +37,13 @@ export type UnsignedSingleNftOffer = Omit<SingleNftSignedOfferInput, 'signature'
 export type SingleNftOffer = UnsignedSingleNftOffer &
   SingleNftSignedOfferInput & {
     signature: Hash;
-  };
+  } & MaxTrancheFloorArg;
 
 export type CollectionOfferInput = Optional<
   ApiCollectionOfferInput,
   'borrowerAddress' | 'lenderAddress' | 'signerAddress' | 'offerValidators' | 'contractAddress'
->;
+> &
+  MaxTrancheFloorArg;
 
 export type UnsignedCollectionOffer = Omit<CollectionSignedOfferInput, 'signature'> & {
   nftCollateralAddress: Address;
@@ -46,9 +52,22 @@ export type UnsignedCollectionOffer = Omit<CollectionSignedOfferInput, 'signatur
 export type CollectionOffer = UnsignedCollectionOffer & {
   signature: Hash;
   nftCollateralTokenId: 0n;
-};
+} & MaxTrancheFloorArg;
 
-export type RenegotiationInput = Optional<ApiRenegotiationInput, 'lenderAddress' | 'signerAddress'>;
+export type RenegotiationInput = Optional<
+  ApiRenegotiationInput,
+  'lenderAddress' | 'signerAddress'
+> &
+  (
+    | {
+        trancheIndex: Exclude<ApiRenegotiationInput['trancheIndex'], null | undefined>;
+        targetPrincipal: never;
+      }
+    | {
+        trancheIndex: never;
+        targetPrincipal: Exclude<ApiRenegotiationInput['targetPrincipal'], null | undefined>;
+      }
+  );
 
 export type UnsignedRenegotiationOffer = Omit<SignedRenegotiationOfferInput, 'signature'>;
 

@@ -13,7 +13,7 @@ import { Api, Props as ApiProps } from '@/api';
 import {
   Contracts,
   filterLogs,
-  LoanV4V5,
+  Loan,
   LoanV5,
   OfferV5,
   Wallet,
@@ -23,17 +23,11 @@ import {
 } from '@/blockchain';
 import { MarketplaceEnum, OffersSortField, Ordering } from '@/generated/graphql';
 import * as model from '@/model';
-import { emitLoanArgsToMslArgs, NATIVE_MARKETPLACE } from '@/utils';
+import { NATIVE_MARKETPLACE } from '@/utils';
 
 import { getCurrencies } from './deploys';
 import { Reservoir } from './reservoir/Reservoir';
 import { isNative, SeaportOrder } from './reservoir/utils';
-
-type GondiProps = {
-  wallet: Wallet;
-  apiClient?: ApiProps['apiClient'];
-  reservoirBaseApiUrl?: string;
-};
 
 export class Gondi {
   contracts: Contracts;
@@ -66,7 +60,7 @@ export class Gondi {
   async _makeSingleNftOffer(offer: model.SingleNftOfferInput, mslContractAddress?: Address) {
     const contract = mslContractAddress
       ? this.contracts.Msl(mslContractAddress)
-      : this.contracts.MultiSourceLoanV5;
+      : this.contracts.MultiSourceLoanV6;
     const contractAddress = contract.address;
 
     const offerInput = {
@@ -125,7 +119,7 @@ export class Gondi {
   async _makeCollectionOffer(offer: model.CollectionOfferInput, mslContractAddress?: Address) {
     const contract = mslContractAddress
       ? this.contracts.Msl(mslContractAddress)
-      : this.contracts.MultiSourceLoanV5;
+      : this.contracts.MultiSourceLoanV6;
     const contractAddress = contract.address;
 
     const offerInput = {
@@ -333,17 +327,9 @@ export class Gondi {
     });
   }
 
-  async emitLoan({
-    offer,
-    ...rest
-  }: {
-    offer: model.SingleNftOffer | model.CollectionOffer;
-    tokenId: bigint;
-    amount?: bigint;
-    expirationTime?: bigint;
-  }) {
-    const emitLoanMslArgs = emitLoanArgsToMslArgs({ offer, ...rest });
-    return this.contracts.Msl(offer.contractAddress).emitLoan(emitLoanMslArgs);
+  async emitLoan(args: EmitLoanArgs) {
+    const contractAddress = args.offerExecution[0].offer.contractAddress;
+    return this.contracts.Msl(contractAddress).emitLoan(args);
   }
 
   async repayLoan({
@@ -351,7 +337,7 @@ export class Gondi {
     loanId,
     nftReceiver,
   }: {
-    loan: LoanV4V5;
+    loan: Loan;
     loanId: bigint;
     nftReceiver?: Address;
   }) {
@@ -459,7 +445,7 @@ export class Gondi {
     }
   }
 
-  async getRemainingLockupSeconds({ loan }: { loan: LoanV4V5 }) {
+  async getRemainingLockupSeconds({ loan }: { loan: Loan }) {
     return this.contracts.Msl(loan.contractAddress).getRemainingLockupSeconds({
       loan,
     });
@@ -489,7 +475,7 @@ export class Gondi {
     loanId,
   }: {
     offer: model.RenegotiationOffer;
-    loan: LoanV4V5;
+    loan: Loan;
     loanId: bigint;
   }) {
     const offerInput = {
@@ -514,7 +500,7 @@ export class Gondi {
     loanId,
   }: {
     offer: model.RenegotiationOffer;
-    loan: LoanV4V5;
+    loan: Loan;
     loanId: bigint;
   }) {
     const offerInput = {
@@ -603,7 +589,7 @@ export class Gondi {
       .revokeDelegationsAndEmitLoan({ delegations, emit: emitLoanMslArgs });
   }
 
-  async liquidateLoan({ loan, loanId }: { loan: LoanV4V5; loanId: bigint }) {
+  async liquidateLoan({ loan, loanId }: { loan: Loan; loanId: bigint }) {
     return this.contracts.Msl(loan.contractAddress).liquidateLoan({
       loan,
       loanId,
@@ -626,7 +612,7 @@ export class Gondi {
       .placeBid({ collectionContractAddress, tokenId, bid, auction });
   }
 
-  async settleAuction({ loan, auction }: { loan: LoanV4V5; auction: model.Auction }) {
+  async settleAuction({ loan, auction }: { loan: Loan; auction: model.Auction }) {
     return this.contracts.All(auction.loanAddress).settleAuction({ loan, auction });
   }
 
@@ -853,4 +839,21 @@ export class Gondi {
   } & Parameters<Contracts['UserVaultV5']['burnAndWithdraw']>[0]) {
     return this.contracts.UserVault(userVaultAddress).burnAndWithdraw(data);
   }
+}
+
+interface GondiProps {
+  wallet: Wallet;
+  apiClient?: ApiProps['apiClient'];
+  reservoirBaseApiUrl?: string;
+}
+
+export interface EmitLoanArgs {
+  offerExecution: {
+    offer: model.SingleNftOffer | model.CollectionOffer;
+    amount?: bigint;
+    lenderOfferSignature: Hash;
+  }[];
+  tokenId: bigint;
+  duration: bigint;
+  expirationTime?: bigint;
 }

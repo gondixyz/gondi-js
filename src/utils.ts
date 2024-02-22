@@ -1,8 +1,6 @@
 import { Address } from 'abitype';
 
-import { zeroAddress } from './blockchain';
 import { getContracts } from './deploys';
-import * as model from './model';
 
 export const areSameAddress = (
   adr1: Address | null | undefined,
@@ -13,7 +11,12 @@ export const areSameAddress = (
 
 export const getDomain = (chainId: number, verifyingContract: Address) => {
   const contracts = getContracts({ id: chainId });
-  const version = areSameAddress(verifyingContract, contracts.MultiSourceLoanV4Address) ? '1' : '2';
+  let version = '3';
+  if (areSameAddress(verifyingContract, contracts.MultiSourceLoan.v4)) {
+    version = '1';
+  } else if (areSameAddress(verifyingContract, contracts.MultiSourceLoan.v5)) {
+    version = '2';
+  }
   return {
     name: 'GONDI_MULTI_SOURCE_LOAN',
     version,
@@ -30,32 +33,3 @@ export const SECONDS_IN_DAY = 60 * 60 * 24;
 export const bpsToPercentage = (bps: bigint | number) => toInteger(bps) / 10000;
 
 export const NATIVE_MARKETPLACE = 'MarketPlace.Native';
-
-export const emitLoanArgsToMslArgs = ({
-  offer,
-  tokenId,
-  amount,
-  expirationTime,
-}: {
-  offer: model.SingleNftOffer | model.CollectionOffer;
-  tokenId: bigint;
-  amount?: bigint;
-  expirationTime?: bigint;
-}) => {
-  const contractOffer = {
-    ...offer,
-    lender: offer.lenderAddress,
-    borrower: offer.borrowerAddress,
-    signer: offer.signerAddress ?? zeroAddress,
-    validators: offer.offerValidators,
-    requiresLiquidation: !!offer.requiresLiquidation,
-  };
-
-  return {
-    offer: contractOffer,
-    signature: contractOffer.signature,
-    tokenId,
-    amount: amount ?? contractOffer.principalAmount,
-    expirationTime: expirationTime ?? BigInt(millisToSeconds(Date.now()) + SECONDS_IN_DAY),
-  };
-};
