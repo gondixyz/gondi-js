@@ -10,11 +10,13 @@ import { MslV5 } from './MslV5';
 
 export class MslV4 extends Contract<typeof multiSourceLoanABIV4> {
   constructor({ walletClient }: { walletClient: Wallet }) {
-    const { MultiSourceLoanV4Address } = getContracts(walletClient.chain);
+    const {
+      MultiSourceLoan: { v4 },
+    } = getContracts(walletClient.chain);
 
     super({
       walletClient,
-      address: MultiSourceLoanV4Address,
+      address: v4,
       abi: multiSourceLoanABIV4,
     });
   }

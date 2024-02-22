@@ -32,7 +32,7 @@ import { Leverage } from './contracts/Leverage';
 import { MslV4 } from './contracts/MslV4';
 import { MslV5 } from './contracts/MslV5';
 import { Seaport } from './contracts/Seaport';
-import { UserVaultV5 } from './contracts/UserVaultV5';
+import { UserVault } from './contracts/UserVault';
 import { areSameAddress } from './utils';
 
 export type Wallet = WalletClient<Transport, Chain, Account>;
@@ -45,7 +45,7 @@ export class Contracts {
   MultiSourceLoanV5: MslV5;
   AuctionLoanLiquidatorV4: AllV4;
   AuctionLoanLiquidatorV5: AllV5;
-  UserVaultV5: UserVaultV5;
+  UserVaultV5: UserVault;
   Leverage: Leverage;
   Seaport: Seaport;
   CryptoPunks: CryptoPunks;
@@ -58,7 +58,7 @@ export class Contracts {
     this.MultiSourceLoanV5 = new MslV5({ walletClient });
     this.AuctionLoanLiquidatorV4 = new AllV4({ walletClient });
     this.AuctionLoanLiquidatorV5 = new AllV5({ walletClient });
-    this.UserVaultV5 = new UserVaultV5({ walletClient });
+    this.UserVaultV5 = new UserVault({ walletClient });
     this.Leverage = new Leverage({
       walletClient,
       mslAddress: this.MultiSourceLoanV5.address,

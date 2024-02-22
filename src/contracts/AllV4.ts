@@ -46,11 +46,13 @@ export class AllV4 extends Contract<typeof auctionLoanLiquidatorABIV4> {
   ];
 
   constructor({ walletClient }: { walletClient: Wallet }) {
-    const { AuctionLoanLiquidatorV4Address } = getContracts(walletClient.chain);
+    const {
+      AuctionLoanLiquidator: { v4 },
+    } = getContracts(walletClient.chain);
 
     super({
       walletClient,
-      address: AuctionLoanLiquidatorV4Address,
+      address: v4,
       abi: auctionLoanLiquidatorABIV4,
     });
   }

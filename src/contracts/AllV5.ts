@@ -11,11 +11,13 @@ export type Wallet = WalletClient<Transport, Chain, Account>;
 
 export class AllV5 extends Contract<typeof auctionLoanLiquidatorABIV5> {
   constructor({ walletClient }: { walletClient: Wallet }) {
-    const { AuctionLoanLiquidatorV5Address } = getContracts(walletClient.chain);
+    const {
+      AuctionLoanLiquidator: { v5 },
+    } = getContracts(walletClient.chain);
 
     super({
       walletClient,
-      address: AuctionLoanLiquidatorV5Address,
+      address: v5,
       abi: auctionLoanLiquidatorABIV5,
     });
   }
