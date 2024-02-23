@@ -17,6 +17,7 @@ import { MarketplaceEnum, OffersSortField, Ordering } from '@/generated/graphql'
 import * as model from '@/model';
 import { Reservoir } from '@/reservoir/Reservoir';
 import { isNative, SeaportOrder } from '@/reservoir/utils';
+import { loanToMslLoan } from '@/utils/loan';
 import { NATIVE_MARKETPLACE } from '@/utils/string';
 
 export class Gondi {
@@ -323,7 +324,7 @@ export class Gondi {
     nftReceiver?: Address;
   }) {
     return this.contracts.Msl(loan.contractAddress).repayLoan({
-      loan,
+      loan: loanToMslLoan(loan),
       nftReceiver,
       loanId,
     });
