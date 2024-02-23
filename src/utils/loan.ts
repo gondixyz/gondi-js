@@ -1,4 +1,19 @@
-import { Loan } from '@/blockchain';
+import { Loan, zeroAddress } from '@/blockchain';
+import * as model from '@/model';
+
+export const renegotiationToMslRenegotiation = (
+  renegotiation: model.RenegotiationOffer,
+  loanId: bigint,
+) => ({
+  ...renegotiation,
+  loanId,
+  strictImprovement: renegotiation.strictImprovement ?? false,
+  lender: renegotiation.lenderAddress,
+  signer: renegotiation.signerAddress ?? zeroAddress,
+  fee: renegotiation.feeAmount,
+  trancheIndex: renegotiation.trancheIndex ?? [],
+  targetPrincipal: renegotiation.targetPrincipal ?? [],
+});
 
 export const loanToMslLoan = (loan: Loan) => {
   let source;

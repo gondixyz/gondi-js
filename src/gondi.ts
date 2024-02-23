@@ -17,7 +17,7 @@ import { MarketplaceEnum, OffersSortField, Ordering } from '@/generated/graphql'
 import * as model from '@/model';
 import { Reservoir } from '@/reservoir/Reservoir';
 import { isNative, SeaportOrder } from '@/reservoir/utils';
-import { loanToMslLoan } from '@/utils/loan';
+import { loanToMslLoan, renegotiationToMslRenegotiation } from '@/utils/loan';
 import { NATIVE_MARKETPLACE } from '@/utils/string';
 
 export class Gondi {
@@ -460,18 +460,9 @@ export class Gondi {
     loan: Loan;
     loanId: bigint;
   }) {
-    const offerInput = {
-      ...offer,
-      loanId,
-      strictImprovement: offer.strictImprovement ?? false,
-      lender: offer.lenderAddress,
-      signer: offer.signerAddress ?? zeroAddress,
-      fee: offer.feeAmount,
-    };
-
     return this.contracts.Msl(loan.contractAddress).refinanceFullLoan({
-      offer: offerInput,
-      loan,
+      offer: renegotiationToMslRenegotiation(offer, loanId),
+      loan: loanToMslLoan(loan),
       signature: offer.signature,
     });
   }
@@ -485,18 +476,9 @@ export class Gondi {
     loan: Loan;
     loanId: bigint;
   }) {
-    const offerInput = {
-      ...offer,
-      loanId,
-      strictImprovement: offer.strictImprovement ?? false,
-      lender: offer.lenderAddress,
-      signer: offer.signerAddress ?? zeroAddress,
-      fee: offer.feeAmount,
-    };
-
     return this.contracts.Msl(loan.contractAddress).refinancePartialLoan({
-      offer: offerInput,
-      loan,
+      offer: renegotiationToMslRenegotiation(offer, loanId),
+      loan: loanToMslLoan(loan),
     });
   }
 
