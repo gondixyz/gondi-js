@@ -16,8 +16,7 @@ import {
   TermsFilter,
   UserFilter,
 } from '@/generated/graphql';
-
-type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
+import { Optional } from '@/utils/types';
 
 type MaxTrancheFloorArg = {
   maxTrancheFloor: Exclude<ApiSingleNftOfferInput['maxTrancheFloor'], null | undefined>;

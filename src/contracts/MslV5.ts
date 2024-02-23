@@ -5,7 +5,8 @@ import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { multiSourceLoanABI as multiSourceLoanABIV5 } from '@/generated/blockchain/v5';
 import { EmitLoanArgs } from '@/gondi';
-import { bpsToPercentage, getDomain, millisToSeconds, SECONDS_IN_DAY } from '@/utils';
+import { bpsToPercentage, millisToSeconds, SECONDS_IN_DAY } from '@/utils/number';
+import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 
 import { BaseContract } from './BaseContract';
 
@@ -22,15 +23,18 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
     });
   }
 
-  async signOffer({
-    verifyingContract,
-    structToSign,
-  }: {
-    verifyingContract: Address;
-    structToSign: OfferV5;
-  }) {
+  private getDomain() {
+    return {
+      name: CONTRACT_DOMAIN_NAME,
+      version: '2',
+      chainId: this.wallet.chain.id,
+      verifyingContract: this.address,
+    };
+  }
+
+  async signOffer({ structToSign }: { structToSign: OfferV5 }) {
     return this.wallet.signTypedData({
-      domain: getDomain(this.wallet.chain.id, verifyingContract),
+      domain: this.getDomain(),
       primaryType: 'LoanOffer',
       types: {
         LoanOffer: [
@@ -57,15 +61,9 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
     });
   }
 
-  async signRenegotiationOffer({
-    verifyingContract,
-    structToSign,
-  }: {
-    verifyingContract: Address;
-    structToSign: RenegotiationV5;
-  }) {
+  async signRenegotiationOffer({ structToSign }: { structToSign: RenegotiationV5 }) {
     return this.wallet.signTypedData({
-      domain: getDomain(this.wallet.chain.id, verifyingContract),
+      domain: this.getDomain(),
       primaryType: 'RenegotiationOffer',
       types: {
         RenegotiationOffer: [

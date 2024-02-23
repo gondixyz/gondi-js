@@ -4,11 +4,11 @@ import { filterLogs, LoanV5, OfferV5 } from '@/blockchain';
 import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { leverageABI, multiSourceLoanABI } from '@/generated/blockchain/v5';
-import { getDomain } from '@/utils';
+import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 
 import { BaseContract } from './BaseContract';
 
-export class Leverage extends BaseContract<typeof leverageABI> {
+export class LeverageV5 extends BaseContract<typeof leverageABI> {
   mslAddress: Address;
 
   constructor({ walletClient, mslAddress }: { walletClient: Wallet; mslAddress: Address }) {
@@ -23,6 +23,16 @@ export class Leverage extends BaseContract<typeof leverageABI> {
     this.mslAddress = mslAddress;
   }
 
+  private getDomain() {
+    // TODO: Get this from MSL v5
+    return {
+      name: CONTRACT_DOMAIN_NAME,
+      version: '2',
+      chainId: this.wallet.chain.id,
+      verifyingContract: this.mslAddress,
+    };
+  }
+
   async signExecutionData(executionData: {
     offer: OfferV5 & { signature: Hash };
     tokenId: bigint;
@@ -31,7 +41,7 @@ export class Leverage extends BaseContract<typeof leverageABI> {
     callbackData: Hash;
   }) {
     return this.wallet.signTypedData({
-      domain: getDomain(this.wallet.chain.id, this.mslAddress),
+      domain: this.getDomain(),
       primaryType: 'ExecutionData',
       types: {
         ExecutionData: [
@@ -67,7 +77,7 @@ export class Leverage extends BaseContract<typeof leverageABI> {
 
   async signRepaymentData(data: { loanId: bigint; callbackData: Hash; shouldDelegate: boolean }) {
     return this.wallet.signTypedData({
-      domain: getDomain(this.wallet.chain.id, this.mslAddress),
+      domain: this.getDomain(),
       primaryType: 'SignableRepaymentData',
       types: {
         SignableRepaymentData: [

@@ -10,13 +10,13 @@ import {
 } from 'viem';
 
 import { erc20ABI, erc721ABI } from '@/generated/blockchain/v5';
-import { areSameAddress } from '@/utils';
+import { areSameAddress } from '@/utils/string';
 
 import { AllV4 } from './AllV4';
 import { AllV5 } from './AllV5';
 import { AllV6 } from './AllV6';
 import { CryptoPunks } from './CryptoPunks';
-import { Leverage } from './Leverage';
+import { LeverageV5 } from './LeverageV5';
 import { MslV4 } from './MslV4';
 import { MslV5 } from './MslV5';
 import { MslV6 } from './MslV6';
@@ -36,7 +36,7 @@ export class Contracts {
   AuctionLoanLiquidatorV5: AllV5;
   AuctionLoanLiquidatorV6: AllV6;
   UserVaultV5: UserVault;
-  Leverage: Leverage;
+  Leverage: LeverageV5;
   Seaport: Seaport;
   CryptoPunks: CryptoPunks;
 
@@ -51,7 +51,7 @@ export class Contracts {
     this.AuctionLoanLiquidatorV5 = new AllV5({ walletClient });
     this.AuctionLoanLiquidatorV6 = new AllV6({ walletClient });
     this.UserVaultV5 = new UserVault({ walletClient });
-    this.Leverage = new Leverage({
+    this.Leverage = new LeverageV5({
       walletClient,
       mslAddress: this.MultiSourceLoanV5.address,
     });

@@ -11,14 +11,13 @@ import {
 
 import { Api, Props as ApiProps } from '@/api';
 import { filterLogs, Loan, LoanV5, OfferV5, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
+import { Contracts, Wallet } from '@/contracts';
+import { getCurrencies } from '@/deploys';
 import { MarketplaceEnum, OffersSortField, Ordering } from '@/generated/graphql';
 import * as model from '@/model';
-import { NATIVE_MARKETPLACE } from '@/utils';
-
-import { Contracts, Wallet } from './contracts';
-import { getCurrencies } from './deploys';
-import { Reservoir } from './reservoir/Reservoir';
-import { isNative, SeaportOrder } from './reservoir/utils';
+import { Reservoir } from '@/reservoir/Reservoir';
+import { isNative, SeaportOrder } from '@/reservoir/utils';
+import { NATIVE_MARKETPLACE } from '@/utils/string';
 
 export class Gondi {
   contracts: Contracts;
@@ -83,10 +82,7 @@ export class Gondi {
       offerId,
     };
 
-    const signature = await contract.signOffer({
-      verifyingContract: offerInput.contractAddress,
-      structToSign,
-    });
+    const signature = await contract.signOffer({ structToSign });
 
     const signedOffer = {
       ...offerInput,
@@ -146,10 +142,7 @@ export class Gondi {
       offerId,
     };
 
-    const signature = await contract.signOffer({
-      verifyingContract: offerInput.contractAddress,
-      structToSign,
-    });
+    const signature = await contract.signOffer({ structToSign });
 
     const signedOffer = {
       ...offerInput,
@@ -258,10 +251,7 @@ export class Gondi {
     }
 
     const contract = this.contracts.Msl(contractAddress);
-    const signature = await contract.signRenegotiationOffer({
-      verifyingContract: contractAddress,
-      structToSign,
-    });
+    const signature = await contract.signRenegotiationOffer({ structToSign });
 
     const renegotiationOffer = {
       ...renegotiationInput,

@@ -5,7 +5,8 @@ import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { multiSourceLoanAbi as multiSourceLoanAbiV6 } from '@/generated/blockchain/v6';
 import { EmitLoanArgs } from '@/gondi';
-import { bpsToPercentage, getDomain, millisToSeconds, SECONDS_IN_DAY } from '@/utils';
+import { bpsToPercentage, millisToSeconds, SECONDS_IN_DAY } from '@/utils/number';
+import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 
 import { BaseContract } from './BaseContract';
 import { MslV5 } from './MslV5';
@@ -28,15 +29,18 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     throw new Error('Not implemented for V6');
   }
 
-  async signOffer({
-    verifyingContract,
-    structToSign,
-  }: {
-    verifyingContract: Address;
-    structToSign: OfferV6;
-  }) {
+  private getDomain() {
+    return {
+      name: CONTRACT_DOMAIN_NAME,
+      version: '2',
+      chainId: this.wallet.chain.id,
+      verifyingContract: this.address,
+    };
+  }
+
+  async signOffer({ structToSign }: { structToSign: OfferV6 }) {
     return this.wallet.signTypedData({
-      domain: getDomain(this.wallet.chain.id, verifyingContract),
+      domain: this.getDomain(),
       primaryType: 'LoanOffer',
       types: {
         LoanOffer: [
@@ -63,15 +67,9 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     });
   }
 
-  async signRenegotiationOffer({
-    verifyingContract,
-    structToSign,
-  }: {
-    verifyingContract: Address;
-    structToSign: RenegotiationV6;
-  }) {
+  async signRenegotiationOffer({ structToSign }: { structToSign: RenegotiationV6 }) {
     return this.wallet.signTypedData({
-      domain: getDomain(this.wallet.chain.id, verifyingContract),
+      domain: this.getDomain(),
       primaryType: 'RenegotiationOffer',
       types: {
         RenegotiationOffer: [
