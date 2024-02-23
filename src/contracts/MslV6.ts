@@ -32,7 +32,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
   private getDomain() {
     return {
       name: CONTRACT_DOMAIN_NAME,
-      version: '2',
+      version: '3',
       chainId: this.wallet.chain.id,
       verifyingContract: this.address,
     };
@@ -158,6 +158,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     offerExecution,
     tokenId,
     duration,
+    principalReceiver,
     expirationTime,
   }: EmitLoanArgs) {
     const executionData = {
@@ -173,7 +174,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
       tokenId,
       duration,
       expirationTime: expirationTime ?? BigInt(millisToSeconds(Date.now()) + SECONDS_IN_DAY),
-      principalReceiver: this.wallet.account.address,
+      principalReceiver: principalReceiver ?? this.wallet.account.address,
       callbackData: '0x' as Hash, // No callback data is expected here, only for BNPL [Levearage call]
     };
 

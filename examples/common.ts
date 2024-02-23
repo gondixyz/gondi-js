@@ -6,15 +6,13 @@ import { privateKeyToAccount } from 'viem/accounts';
 dotenv.config();
 
 const RPC = process.env.RPC_URL;
-const MULTI_SOURCE_LOAN_CONTRACT_V5 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? '';
-const SEAPORT_CONTRACT_ADDRESS = '0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC';
-const LEVERAGE_CONTRACT = process.env.LEVERAGE_ADDRESS ?? '';
+const MULTI_SOURCE_LOAN_CONTRACT_V6 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ?? '';
 
 export const MAX_NUMBER =
   115792089237316195423570985008687907853269984665640564039457584007913129639935n;
 
-if (!isAddress(MULTI_SOURCE_LOAN_CONTRACT_V5)) {
-  throw new Error('invalid MULTI_SOURCE_LOAN_CONTRACT_V5 address');
+if (!isAddress(MULTI_SOURCE_LOAN_CONTRACT_V6)) {
+  throw new Error('invalid MULTI_SOURCE_LOAN_CONTRACT_V6 address');
 }
 
 if (!RPC) throw new Error('RPC_URL is not set');
@@ -92,6 +90,7 @@ const offerInput = {
   expirationTime: BigInt(expirationTimeSeconds),
   duration: 1294967295n,
   borrowerAddress: zeroAddress,
+  maxTrancheFloor: 0n,
 };
 
 export const testCollectionOfferInput = {
@@ -142,21 +141,22 @@ const approveForUser = async (user: Gondi, to: Address) => {
   await approveNFT(user, to);
 };
 
-const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? '';
-
+const SEAPORT_CONTRACT_ADDRESS = '0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC';
+const CONTRACTS = [
+  MULTI_SOURCE_LOAN_CONTRACT_V6,
+  process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? '',
+  process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? '',
+  process.env.LEVERAGE_ADDRESS ?? '',
+  SEAPORT_CONTRACT_ADDRESS,
+];
 for (const [i, user] of users.entries()) {
   console.log(`approving tokens for user ${i}`);
-  await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V5);
-
-  if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
-    await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V4);
+  for (let k = 0; k < CONTRACTS.length; k++) {
+    const contract = CONTRACTS[k];
+    if (isAddress(contract)) {
+      await approveForUser(user, contract);
+    }
   }
-
-  if (isAddress(LEVERAGE_CONTRACT)) {
-    await approveForUser(user, LEVERAGE_CONTRACT);
-  }
-
-  await approveForUser(user, SEAPORT_CONTRACT_ADDRESS);
 }
 
 // Assuming MSL contract default: 3 days (seconds)

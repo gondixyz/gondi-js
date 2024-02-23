@@ -828,5 +828,6 @@ export interface EmitLoanArgs {
   }[];
   tokenId: bigint;
   duration: bigint;
+  principalReceiver?: Address;
   expirationTime?: bigint;
 }
