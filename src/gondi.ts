@@ -500,7 +500,12 @@ export class Gondi {
    */
   async delegateMulticall(delegations: Parameters<Gondi['delegate']>[0][]) {
     const contractAddress = delegations[0].loan.contractAddress;
-    return this.contracts.Msl(contractAddress).delegateMulticall(delegations);
+    return this.contracts.Msl(contractAddress).delegateMulticall(
+      delegations.map((delegation) => ({
+        ...delegation,
+        loan: loanToMslLoan(delegation.loan),
+      })),
+    );
   }
 
   /** Delegate should be used when token is used as collateral for an active loan. */
@@ -511,13 +516,19 @@ export class Gondi {
     enable,
     rights,
   }: {
-    loan: LoanV5;
+    loan: Loan;
     loanId: bigint;
     to: Address;
     enable: boolean;
     rights?: Hash;
   }) {
-    return this.contracts.Msl(loan.contractAddress).delegate({ loan, loanId, to, rights, enable });
+    return this.contracts.Msl(loan.contractAddress).delegate({
+      loan: loanToMslLoan(loan),
+      loanId,
+      to,
+      rights,
+      enable,
+    });
   }
 
   /** RevokeDelegate should be used when token is not being used as collateral. */
@@ -546,11 +557,8 @@ export class Gondi {
     delegations: Address[];
     emit: Parameters<Gondi['emitLoan']>[0];
   }) {
-    const emitLoanMslArgs = emitLoanArgsToMslArgs(emit);
-
-    return this.contracts
-      .Msl(emit.offer.contractAddress)
-      .revokeDelegationsAndEmitLoan({ delegations, emit: emitLoanMslArgs });
+    const contractAddress = emit.offerExecution[0].offer.contractAddress;
+    return this.contracts.Msl(contractAddress).revokeDelegationsAndEmitLoan({ delegations, emit });
   }
 
   async liquidateLoan({ loan, loanId }: { loan: Loan; loanId: bigint }) {
