@@ -3,7 +3,7 @@ generates:
     schema:
       - https://api.gondi.xyz/lending/graphql
     documents:
-      - './src/graphql/api/**/*.gql'
+      - './src/api/graphql/**/*.gql'
     plugins:
       - typescript
       - typescript-operations

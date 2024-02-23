@@ -8,11 +8,12 @@ import { setContext } from '@apollo/client/link/context/index.js';
 import { withScalars } from 'apollo-link-scalars';
 import { buildSchema } from 'graphql';
 
-import { Credential, SessionToken } from '@/auth';
-import { Wallet } from '@/blockchain';
-import { apiUrl } from '@/const';
+import { apiDomain } from '@/api';
+import { Credential, SessionToken } from '@/api/auth';
+import { Wallet } from '@/contracts';
 import lendingSchemaText from '@/generated/graphql/lending-schema.graphql';
 
+const apiUrl = () => `${apiDomain()}/lending/graphql`;
 const lendingSchema = buildSchema(lendingSchemaText);
 
 Object.assign(BigInt.prototype, {

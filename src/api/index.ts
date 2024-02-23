@@ -1,6 +1,9 @@
 import { ApolloClient, NormalizedCacheObject } from '@apollo/client';
 
-import { Wallet, zeroAddress } from '@/blockchain';
+import { apolloClient } from '@/api/client';
+import { getSdkApollo } from '@/api/sdk';
+import { zeroAddress } from '@/blockchain';
+import { Wallet } from '@/contracts';
 import {
   CollectionSignedOfferInput,
   ListListingsQueryVariables,
@@ -8,10 +11,7 @@ import {
   ListOffersQueryVariables,
   SingleNftSignedOfferInput,
 } from '@/generated/graphql';
-import { apolloClient } from '@/graphql/client';
-import { getSdkApollo } from '@/graphql/sdk';
-
-import { RenegotiationOffer } from './model';
+import { RenegotiationOffer } from '@/model';
 
 export type Props = {
   apiClient?: ApolloClient<NormalizedCacheObject>;
@@ -25,6 +25,8 @@ const mapPageInfo = ({ endCursor, hasNextPage }: PageInfo) =>
     ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       { hasNextPage, cursor: endCursor! }
     : { hasNextPage, cursor: null };
+
+export const apiDomain = () => process.env.GONDI_URL ?? 'https://api.gondi.xyz';
 
 export class Api {
   api: ReturnType<typeof getSdkApollo>;
