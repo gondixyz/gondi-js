@@ -489,6 +489,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
 
   async liquidateLoan({ loan, loanId }: { loan: LoanV6; loanId: bigint }) {
     const txHash = await this.safeContractWrite.liquidateLoan([loanId, loan]);
+    // TODO: Check with examples if events from other contracts are included in the receipt
     return {
       txHash,
       waitTxInBlock: async () => await this.bcClient.waitForTransactionReceipt({ hash: txHash }),

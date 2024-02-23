@@ -429,7 +429,7 @@ export class Gondi {
 
   async getRemainingLockupSeconds({ loan }: { loan: Loan }) {
     return this.contracts.Msl(loan.contractAddress).getRemainingLockupSeconds({
-      loan,
+      loan: loanToMslLoan(loan),
     });
   }
 
@@ -572,10 +572,9 @@ export class Gondi {
   }
 
   async liquidateLoan({ loan, loanId }: { loan: Loan; loanId: bigint }) {
-    return this.contracts.Msl(loan.contractAddress).liquidateLoan({
-      loan,
-      loanId,
-    });
+    return this.contracts
+      .Msl(loan.contractAddress)
+      .liquidateLoan({ loanId, loan: loanToMslLoan(loan) });
   }
 
   async placeBid({
@@ -595,7 +594,9 @@ export class Gondi {
   }
 
   async settleAuction({ loan, auction }: { loan: Loan; auction: model.Auction }) {
-    return this.contracts.All(auction.loanAddress).settleAuction({ loan, auction });
+    return this.contracts
+      .All(auction.loanAddress)
+      .settleAuction({ auction, loan: loanToMslLoan(loan) });
   }
 
   async buy(
