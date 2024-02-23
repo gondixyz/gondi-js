@@ -1,7 +1,7 @@
 import { adaptViemWallet } from '@reservoir0x/reservoir-sdk';
 import { Address, decodeFunctionData, Hash, zeroAddress } from 'viem';
 
-import { Wallet } from '@/blockchain';
+import { Wallet } from '@/contracts';
 import { MSL_V5_TX_HASH } from '@/deploys';
 import {
   InterruptedCryptoPunksSendTransactionStepError,
