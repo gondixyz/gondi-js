@@ -536,7 +536,7 @@ export class Gondi {
     to,
     collection,
     tokenId,
-    contract = this.contracts.MultiSourceLoanV5.address,
+    contract = this.contracts.MultiSourceLoanV6.address,
   }: {
     to: Address;
     collection: Address;
@@ -712,7 +712,7 @@ export class Gondi {
 
   async isApprovedNFTForAll({
     nftAddress,
-    to = this.contracts.MultiSourceLoanV5.address,
+    to = this.contracts.MultiSourceLoanV6.address,
   }: {
     nftAddress: Address;
     to?: Address;
@@ -723,7 +723,7 @@ export class Gondi {
 
   async approveNFTForAll({
     nftAddress,
-    to = this.contracts.MultiSourceLoanV5.address,
+    to = this.contracts.MultiSourceLoanV6.address,
   }: {
     nftAddress: Address;
     to?: Address;
@@ -749,7 +749,7 @@ export class Gondi {
   async isApprovedToken({
     tokenAddress,
     amount,
-    to = this.contracts.MultiSourceLoanV5.address,
+    to = this.contracts.MultiSourceLoanV6.address,
   }: {
     tokenAddress: Address;
     amount: bigint;
@@ -762,7 +762,7 @@ export class Gondi {
   async approveToken({
     tokenAddress,
     amount = model.MAX_NUMBER,
-    to = this.contracts.MultiSourceLoanV5.address,
+    to = this.contracts.MultiSourceLoanV6.address,
   }: {
     tokenAddress: Address;
     amount?: bigint;
