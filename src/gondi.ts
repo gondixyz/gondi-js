@@ -487,11 +487,15 @@ export class Gondi {
     newDuration,
     loanId,
   }: {
-    loan: LoanV5;
+    loan: Loan;
     newDuration: bigint;
     loanId: bigint;
   }) {
-    return this.contracts.Msl(loan.contractAddress).extendLoan({ loan, newDuration, loanId });
+    return this.contracts.Msl(loan.contractAddress).extendLoan({
+      loan: loanToMslLoan(loan),
+      newDuration,
+      loanId,
+    });
   }
 
   /**
