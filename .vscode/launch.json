@@ -1,0 +1,146 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Program",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "program": "${workspaceFolder}/dist/index.mjs",
+      "outFiles": [
+        "${workspaceFolder}/**/*.js"
+      ]
+    },
+    {
+      "name": "cancel all offers",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test cancelAllOffers.ts",
+      "type": "node-terminal"
+    },
+    {
+      "name": "cancel offer",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test cancelOffer.ts",
+      "type": "node-terminal"
+    },
+    {
+      "name": "cancel refinance offer",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test cancelRefinanceOffer.ts",
+      "type": "node-terminal"
+    },
+    {
+      "name": "delegate and revoke",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test delegateAndRevoke.ts",
+      "type": "node-terminal"
+    },
+    {
+      "name": "delegate and revoke all",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test delegateAndRevokeAll.ts",
+      "type": "node-terminal"
+    },
+    {
+      "name": "emit single NFT offer loan",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test emitSingleNFTOfferLoan.ts",
+      "type": "node-terminal"
+    },
+    {
+      "name": "emit collection offer loan",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test emitCollectionOfferLoan.ts",
+      "type": "node-terminal"
+    },
+    {
+      "name": "hide offer",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test hideOffer.ts",
+      "type": "node-terminal"
+    },
+    {
+      "name": "liquidate loan",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test liquidateLoan.ts",
+      "type": "node-terminal"
+    },
+    {
+      "name": "list offers",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test listOffers.ts",
+      "type": "node-terminal"
+    },
+    {
+      "name": "list listings",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test listListings.ts",
+      "type": "node-terminal"
+    },
+    {
+      "name": "make offer",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test makeOffers.ts",
+      "type": "node-terminal"
+    },
+    {
+      "name": "refinance full loan",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test refinanceFullLoan.ts",
+      "type": "node-terminal"
+    },
+    {
+      "name": "refinance partial loan",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test refinancePartialLoan.ts",
+      "type": "node-terminal"
+    },
+    {
+      "name": "renegotiate loan",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test renegotiateLoan.ts",
+      "type": "node-terminal"
+    },
+    {
+      "name": "revoke delegations and emit loan",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test revokeDelegationsAndEmitLoan.ts",
+      "type": "node-terminal"
+    },
+    {
+      "name": "send loan to auction and bid",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test sendLoanToAuctionAndBid.ts",
+      "type": "node-terminal"
+    },
+    {
+      "name": "user vault creation, deposit, burn and withdraw",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test userVaults.ts",
+      "type": "node-terminal"
+    },
+  ]
+}
