@@ -79,19 +79,20 @@ export const zeroHex: HexString = `0x0`;
 export function filterLogs<TAbi extends Abi, TEventName extends ExtractAbiEventNames<TAbi>>(
   receipt: TransactionReceipt,
   filter: EncodeEventTopicsParameters<TAbi, TEventName>,
-): DecodeEventLogReturnType<TAbi, TEventName>[] {
+): (DecodeEventLogReturnType<TAbi, TEventName> & { topics: string[] })[] {
   return receipt.logs
     .filter((log) => {
       const topics = encodeEventTopics(filter);
       return topics[0] == log.topics[0];
     })
     .map((log) => {
-      return decodeEventLog({
+      const decoded = decodeEventLog({
         abi: filter.abi,
         data: log.data,
         topics: log.topics,
         eventName: filter.eventName,
       });
+      return { ...decoded, topics: log.topics };
     })
     .filter((event) => event.eventName == filter.eventName);
 }
