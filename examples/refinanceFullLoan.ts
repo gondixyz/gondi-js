@@ -14,7 +14,16 @@ const emitRefinaceFullAndRepayLoan = async (contract?: Address) => {
   console.log(`offer placed successfully: ${contractVersionString}`);
 
   const emitLoan = await users[1].emitLoan({
-    offer: signedOffer,
+    offerExecution: [
+      {
+        offer: {
+          ...signedOffer,
+          maxTrancheFloor: signedOffer.maxTrancheFloor ?? 0n,
+        },
+        lenderOfferSignature: signedOffer.signature,
+      },
+    ],
+    duration: signedOffer.duration,
     tokenId: testTokenId,
   });
   const { loan } = await emitLoan.waitTxInBlock();

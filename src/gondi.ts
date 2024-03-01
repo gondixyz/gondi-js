@@ -226,21 +226,14 @@ export class Gondi {
       lenderAddress: this.wallet.account?.address,
       signerAddress: this.wallet.account?.address,
       ...renegotiation,
+      targetPrincipal: renegotiation.targetPrincipal ?? [],
+      trancheIndex: renegotiation.trancheIndex ?? [],
     };
     const response = await this.api.generateRenegotiationOfferHash({
       renegotiationInput,
     });
 
     const { renegotiationId, offerHash, loanId, lenderAddress, signerAddress } = response.offer;
-    const structToSign = {
-      ...renegotiationInput,
-      fee: renegotiationInput.feeAmount,
-      lender: lenderAddress ?? renegotiationInput.lenderAddress,
-      signer: signerAddress ?? renegotiationInput.signerAddress ?? zeroAddress,
-      strictImprovement: false,
-      loanId,
-      renegotiationId,
-    };
 
     if (skipSignature) {
       return {
@@ -250,6 +243,16 @@ export class Gondi {
         renegotiationId,
       };
     }
+
+    const structToSign = {
+      ...renegotiationInput,
+      fee: renegotiationInput.feeAmount,
+      lender: lenderAddress ?? renegotiationInput.lenderAddress,
+      signer: signerAddress ?? renegotiationInput.signerAddress ?? zeroAddress,
+      strictImprovement: false,
+      loanId,
+      renegotiationId,
+    };
 
     const contract = this.contracts.Msl(contractAddress);
     const signature = await contract.signRenegotiationOffer({ structToSign });
