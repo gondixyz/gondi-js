@@ -26,7 +26,9 @@ const emitCancelRefiOfferAndRepayLoan = async (contract?: Address) => {
   await new Promise((resolve) => setTimeout(resolve, 3000));
 
   try {
-    const isV6 = contract === process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 || !('source' in loan);
+    const isV6 =
+      signedOffer.contractAddress === process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ||
+      !('source' in loan);
     const refinanceOffer = await users[0].makeRefinanceOffer({
       contractAddress: signedOffer.contractAddress,
       renegotiation: {

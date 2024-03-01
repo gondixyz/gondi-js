@@ -262,6 +262,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
             ...args.loan,
             contractAddress: this.address,
           },
+          loanId: args.newLoanId,
           renegotiationId: `${this.contract.address.toLowerCase()}.${offer.lender.toLowerCase()}.${
             args.renegotiationId
           }`,
@@ -290,6 +291,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
             ...args.loan,
             contractAddress: this.contract.address,
           },
+          loanId: args.newLoanId,
           renegotiationId: `${this.contract.address.toLowerCase()}.${offer.lender.toLowerCase()}.${
             args.renegotiationId
           }`,
