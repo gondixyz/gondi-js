@@ -1,6 +1,6 @@
 query listOffers(
   $borrowerAddress: String
-  $lenderAddress: String
+  $lenders: [String!]
   $sortBy: OffersSortInput!
   $terms: TermsFilter
   $statuses: [OfferStatus!] = [ACTIVE, CANCELLED, INACTIVE, EXPIRED]
@@ -13,7 +13,7 @@ query listOffers(
 ) {
   result: listOffers(
     borrowerAddress: $borrowerAddress
-    lenderAddress: $lenderAddress
+    lenders: $lenders
     sortBy: [$sortBy]
     terms: $terms
     nfts: $nfts

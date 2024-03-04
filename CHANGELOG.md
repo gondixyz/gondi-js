@@ -1,3 +1,29 @@
+# Breaking Changes 0.5.0
+
+### Important
+
+---
+
+This document outlines the breaking changes introduced in our codebase for version 0.3.0b4. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [Offers](#offers)
+
+---
+
+## Offers
+
+**Description:**
+
+`offers` method now expects `lenders: Address[]` instead of `lender: Address` uin the `filterBy` argument.
+
+**Reason:**
+
+Query now allows multiple addresses in the filter.
+
+---
+
 # Breaking Changes 0.3.8
 
 ### Important

@@ -72,7 +72,7 @@ export type ListOffersProps = {
     collection?: number;
     onlyCollectionOffers?: boolean;
     borrower?: Address;
-    lender?: Address;
+    lenders?: Address[];
     status?: OfferStatus[];
   };
 };

@@ -21,13 +21,13 @@ import {
   zeroHash,
   zeroHex,
 } from '@/blockchain';
+import { getCurrencies } from '@/deploys';
 import { MarketplaceEnum, OffersSortField, Ordering } from '@/generated/graphql';
 import * as model from '@/model';
+import { Reservoir } from '@/reservoir/Reservoir';
+import { isNative, SeaportOrder } from '@/reservoir/utils';
 import { emitLoanArgsToMslArgs, NATIVE_MARKETPLACE } from '@/utils';
-
-import { getCurrencies } from './deploys';
-import { Reservoir } from './reservoir/Reservoir';
-import { isNative, SeaportOrder } from './reservoir/utils';
+import { loanToMslLoan, renegotiationToMslRenegotiation } from '@/utils/loan';
 
 type GondiProps = {
   wallet: Wallet;
@@ -247,6 +247,8 @@ export class Gondi {
       lenderAddress: this.wallet.account?.address,
       signerAddress: this.wallet.account?.address,
       ...renegotiation,
+      targetPrincipal: renegotiation.targetPrincipal ?? [],
+      trancheIndex: renegotiation.trancheIndex ?? [],
     };
     const response = await this.api.generateRenegotiationOfferHash({
       renegotiationInput,
@@ -368,7 +370,7 @@ export class Gondi {
     sortBy = { field: OffersSortField.CreatedDate, order: Ordering.Desc },
     filterBy = {},
   }: model.ListOffersProps) {
-    const { status, nft, collection, lender, borrower, ...fields } = filterBy;
+    const { status, nft, collection, borrower, ...fields } = filterBy;
     return await this.api.listOffers({
       first: limit,
       after: cursor,
@@ -376,7 +378,6 @@ export class Gondi {
       statuses: status,
       nfts: nft ? [nft] : [],
       collections: collection ? [collection] : [],
-      lenderAddress: lender,
       borrowerAddress: borrower,
       ...fields,
     });
@@ -492,18 +493,9 @@ export class Gondi {
     loan: LoanV4V5;
     loanId: bigint;
   }) {
-    const offerInput = {
-      ...offer,
-      loanId,
-      strictImprovement: offer.strictImprovement ?? false,
-      lender: offer.lenderAddress,
-      signer: offer.signerAddress ?? zeroAddress,
-      fee: offer.feeAmount,
-    };
-
     return this.contracts.Msl(loan.contractAddress).refinanceFullLoan({
-      offer: offerInput,
-      loan,
+      offer: renegotiationToMslRenegotiation(offer, loanId),
+      loan: loanToMslLoan(loan),
       signature: offer.signature,
     });
   }
@@ -517,18 +509,9 @@ export class Gondi {
     loan: LoanV4V5;
     loanId: bigint;
   }) {
-    const offerInput = {
-      ...offer,
-      loanId,
-      strictImprovement: offer.strictImprovement ?? false,
-      lender: offer.lenderAddress,
-      signer: offer.signerAddress ?? zeroAddress,
-      fee: offer.feeAmount,
-    };
-
     return this.contracts.Msl(loan.contractAddress).refinancePartialLoan({
-      offer: offerInput,
-      loan,
+      offer: renegotiationToMslRenegotiation(offer, loanId),
+      loan: loanToMslLoan(loan),
     });
   }
 
