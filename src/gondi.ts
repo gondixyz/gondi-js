@@ -56,7 +56,7 @@ export class Gondi {
 
     const offerInput = {
       ...offer,
-      lenderAddress: this.wallet.account?.address,
+      lenderAddress: offer.lenderAddress ? offer.lenderAddress : this.wallet.account?.address,
       signerAddress: this.wallet.account?.address,
       borrowerAddress: offer.borrowerAddress ?? zeroAddress,
       requiresLiquidation: !!offer.requiresLiquidation,
@@ -112,7 +112,7 @@ export class Gondi {
 
     const offerInput = {
       ...offer,
-      lenderAddress: this.wallet.account?.address,
+      lenderAddress: offer.lenderAddress ? offer.lenderAddress : this.wallet.account?.address,
       signerAddress: this.wallet.account?.address,
       borrowerAddress: offer.borrowerAddress ?? zeroAddress,
       requiresLiquidation: !!offer.requiresLiquidation,
@@ -339,7 +339,7 @@ export class Gondi {
     sortBy = { field: OffersSortField.CreatedDate, order: Ordering.Desc },
     filterBy = {},
   }: model.ListOffersProps) {
-    const { status, nft, collection, lender, borrower, ...fields } = filterBy;
+    const { status, nft, collection, borrower, ...fields } = filterBy;
     return await this.api.listOffers({
       first: limit,
       after: cursor,
@@ -347,7 +347,6 @@ export class Gondi {
       statuses: status,
       nfts: nft ? [nft] : [],
       collections: collection ? [collection] : [],
-      lenderAddress: lender,
       borrowerAddress: borrower,
       ...fields,
     });
