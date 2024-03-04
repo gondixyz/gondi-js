@@ -61,16 +61,19 @@ export class UserVaultV5 extends Contract<typeof userVaultABIV5> {
     const receipts = [];
 
     // Regroup all elements in the same collection in case users send tokenIds as separate elements of the array
-    const groupedNfts = nfts.reduce((acc, curr) => {
-      const { collection, tokenIds } = curr;
-      const index = acc.findIndex((element) => element.collection === collection);
-      if (index === -1) {
-        acc.push({ collection, tokenIds });
-      } else {
-        acc[index].tokenIds = [...acc[index].tokenIds, ...tokenIds];
-      }
-      return acc;
-    }, [] as typeof nfts);
+    const groupedNfts = nfts.reduce(
+      (acc, curr) => {
+        const { collection, tokenIds } = curr;
+        const index = acc.findIndex((element) => element.collection === collection);
+        if (index === -1) {
+          acc.push({ collection, tokenIds });
+        } else {
+          acc[index].tokenIds = [...acc[index].tokenIds, ...tokenIds];
+        }
+        return acc;
+      },
+      [] as typeof nfts,
+    );
 
     for (let i = 0; i < groupedNfts.length; i++) {
       const { collection, tokenIds } = groupedNfts[i];
