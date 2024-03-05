@@ -33,10 +33,12 @@ export class Api {
   generateRenegotiationOfferHash;
   nftIdBySlugTokenId;
   nftIdByContractAddressAndTokenId;
+  collections;
   collectionIdBySlug;
   collectionsIdByContractAddress;
   listNft;
   unlistNft;
+  ownedNfts;
   hideOffer;
   hideRenegotiationOffer;
   unhideOffer;
@@ -57,8 +59,10 @@ export class Api {
     this.nftIdByContractAddressAndTokenId = this.api.nftIdByContractAddressAndTokenId;
     this.collectionIdBySlug = this.api.collectionIdBySlug;
     this.collectionsIdByContractAddress = this.api.collectionsIdByContractAddress;
+    this.collections = this.api.collections;
     this.listNft = this.api.listNft;
     this.unlistNft = this.api.unlistNft;
+    this.ownedNfts = this.api.ownedNfts;
     this.saveSignedSaleOffer = this.api.saveSignedSaleOffer;
     this.hideOffer = this.api.hideOffer;
     this.hideRenegotiationOffer = this.api.hideRenegotiationOffer;
@@ -115,12 +119,24 @@ export class Api {
       result: { edges, pageInfo },
     } = await this.api.listOffers(props);
     const offers = edges.map((edge) => {
-      const { __typename, lenderAddress, borrowerAddress, signerAddress, ...node } = edge.node;
+      const { __typename, ...node } = edge.node;
+      const nftCollateralAddress =
+        __typename == 'CollectionOffer'
+          ? edge.node.collection.contractData?.contractAddress
+          : __typename == 'SingleNFTOffer' &&
+            edge.node.nft.collection?.contractData?.contractAddress;
+      const nftCollateralTokenId =
+        __typename == 'CollectionOffer'
+          ? 0n
+          : __typename == 'SingleNFTOffer' && edge.node.nft.tokenId;
       return {
         type: __typename,
-        lender: lenderAddress,
-        borrower: borrowerAddress,
-        signer: signerAddress,
+        lender: node.lenderAddress,
+        borrower: node.borrowerAddress,
+        signer: node.signerAddress,
+        offerValidators: node.validators,
+        nftCollateralAddress,
+        nftCollateralTokenId,
         ...node,
       };
     });
@@ -137,8 +153,18 @@ export class Api {
     const loans = edges.map((edge) => {
       const { __typename, ...node } = edge.node;
       return {
-        type: __typename,
         ...node,
+        type: __typename,
+        contractAddress: node.address,
+        nftCollateralTokenId: node.nft.tokenId,
+        nftCollateralAddress: node.nft.collection?.contractData?.contractAddress,
+        borrower: node.borrowerAddress,
+        source: node.sources.map((source) => ({
+          ...source,
+          lender: source.lenderAddress,
+          loanId: BigInt(source.loanId),
+          startTime: BigInt(source.startTime.getTime() / 1_000),
+        })),
       };
     });
     return {

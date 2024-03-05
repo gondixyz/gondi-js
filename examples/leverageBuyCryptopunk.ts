@@ -1,6 +1,7 @@
-import { testCollectionOfferInput, users } from './common';
+import { setAllowances, testCollectionOfferInput, users } from './common';
 
 async function main() {
+  await setAllowances();
   // Remember to set the env collection address to wpunks
   const signedOffer = await users[1].makeCollectionOffer(testCollectionOfferInput);
   const contractVersionString = `msl: ${signedOffer.contractAddress}`;

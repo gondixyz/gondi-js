@@ -1,8 +1,9 @@
 import { OfferStatus } from 'gondi';
 
-import { sleep, testSingleNftOfferInput, users } from './common';
+import { setAllowances, sleep, testSingleNftOfferInput, users } from './common';
 
 async function main() {
+  await setAllowances();
   const user = users[0];
   const offers = [
     await user.makeSingleNftOffer(testSingleNftOfferInput),

@@ -357,8 +357,13 @@ export class Gondi {
     loanId: bigint;
     nftReceiver?: Address;
   }) {
+    const startTime = loan.startTime as Date | bigint;
+    const loanInContractFormat = {
+      ...loan,
+      startTime: BigInt(startTime instanceof Date ? startTime.getTime() / 1_000 : startTime),
+    };
     return this.contracts.Msl(loan.contractAddress).repayLoan({
-      loan,
+      loan: loanInContractFormat,
       nftReceiver,
       loanId,
     });
@@ -430,6 +435,11 @@ export class Gondi {
     return Number(result.nft.id);
   }
 
+  async collections(props: { statsCurrency?: Address }) {
+    const result = await this.api.collections({ currency: props.statsCurrency ?? zeroAddress });
+    const { edges: collections, pageInfo } = result.collections;
+    return { collections: collections.map((edge) => edge.node), pageInfo };
+  }
   async collectionId(props: { slug: string; contractAddress?: never }): Promise<number>;
   async collectionId(props: { slug?: never; contractAddress: Address }): Promise<number[]>;
   async collectionId(
@@ -458,6 +468,12 @@ export class Gondi {
       }
       return result.collections.map((collection) => Number(collection.id));
     }
+  }
+
+  async ownedNfts() {
+    const result = await this.api.ownedNfts();
+    const { edges: ownedNfts, pageInfo } = result.ownedNfts;
+    return { ownedNfts: ownedNfts.map((edge) => edge.node), pageInfo };
   }
 
   async getRemainingLockupSeconds({ loan }: { loan: LoanV4V5 }) {

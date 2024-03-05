@@ -2056,6 +2056,10 @@ export type UserStatisticsWavgRepaidAprArgs = {
   walletsAddresses: Array<Scalars['Address']>;
 };
 
+export type CurrencyAmountInfoFragment = { __typename?: 'CurrencyAmount', amount: number, currency: { __typename?: 'Currency', address: Address, decimals: number } };
+
+export type CurrencyInfoFragment = { __typename?: 'Currency', address: Address, decimals: number };
+
 export type SaleOfferInfoFragment = { __typename?: 'SingleNFTOrder', id: string, netAmount: bigint, status: string, marketPlace: string, fees: bigint, maker: Address, expiration?: Date | null, createdDate: Date, startTime: Date, hidden: boolean, signature: Hash, currencyAddress: Address, nonce: bigint };
 
 export type ListNftMutationVariables = Exact<{
@@ -2175,6 +2179,14 @@ export type UnhideSaleOfferMutationVariables = Exact<{
 
 export type UnhideSaleOfferMutation = { __typename?: 'Mutation', showSaleOffer: { __typename?: 'SingleNFTOrder', id: string } };
 
+export type CollectionsQueryVariables = Exact<{
+  currency: Scalars['Address'];
+  after?: InputMaybe<Scalars['String']>;
+}>;
+
+
+export type CollectionsQuery = { __typename?: 'Query', collections: { __typename?: 'CollectionConnection', pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'CollectionEdge', node: { __typename?: 'Collection', id: string, name?: string | null, slug?: string | null, description?: string | null, discordUrl?: string | null, twitterUsername?: string | null, externalUrl?: string | null, collectionUrl?: string | null, verified: boolean, royalties: Array<{ __typename?: 'Royalty', percentage: number, beneficiary: string }>, image?: { __typename?: 'Asset', cacheUrl?: string | null } | null, bannerImage?: { __typename?: 'Asset', cacheUrl?: string | null } | null, contractData?: { __typename?: 'ContractData', blockchain: string, contractAddress: Address, createdDate: Date, creatorAddress?: Address | null } | null, statistics: { __typename?: 'CollectionStatistics', floorPrice7d?: number | null, floorPrice30d?: number | null, totalVolume?: number | null, totalVolume1y?: number | null, totalVolume3m?: number | null, totalVolume1m?: number | null, totalVolume1w?: number | null, totalLoanVolume: bigint, totalLoanVolume1w: bigint, totalLoanVolume1m: bigint, totalLoanVolume3m: bigint, totalLoanVolume1y: bigint, numberOfPricedNfts: number, nftsCount?: number | null, percentageInOutstandingLoans: number, repaymentRate: number, numberOfOffers: number, floorPrice?: { __typename?: 'CurrencyAmount', amount: number, currency: { __typename?: 'Currency', address: Address, decimals: number } } | null, bestOffer?: { __typename?: 'CurrencyAmount', amount: number, currency: { __typename?: 'Currency', address: Address, decimals: number } } | null } } }> } };
+
 export type CollectionsIdByContractAddressQueryVariables = Exact<{
   contractAddress: Scalars['Address'];
 }>;
@@ -2231,6 +2243,13 @@ export type NftIdBySlugTokenIdQueryVariables = Exact<{
 
 
 export type NftIdBySlugTokenIdQuery = { __typename?: 'Query', nft?: { __typename?: 'NFT', id: string } | null };
+
+export type OwnedNftsQueryVariables = Exact<{
+  after?: InputMaybe<Scalars['String']>;
+}>;
+
+
+export type OwnedNftsQuery = { __typename?: 'Query', ownedNfts: { __typename?: 'NFTConnection', pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'NFTEdge', node: { __typename?: 'NFT', id: string, tokenId: bigint, price?: bigint | null, priceCurrencyAddress?: string | null, collection?: { __typename?: 'Collection', id: string } | null, activeLoan?: { __typename?: 'MultiSourceLoan', id: string } | null, statistics: { __typename?: 'NftStatistics', lastSale?: { __typename?: 'Sale', order: { __typename?: 'CollectionOrder', price: bigint, currency: { __typename?: 'Currency', address: Address, decimals: number } } | { __typename?: 'SingleNFTOrder', price: bigint, currency: { __typename?: 'Currency', address: Address, decimals: number } } } | null, topTraitFloorPrice?: { __typename?: 'CurrencyAmount', amount: number, currency: { __typename?: 'Currency', address: Address, decimals: number } } | null } } }> } };
 
 export type ListOffersQueryVariables = Exact<{
   borrowerAddress?: InputMaybe<Scalars['String']>;
@@ -3735,6 +3754,20 @@ export type StrictTypedTypePolicies = {
 	}
 };
 export type TypedTypePolicies = StrictTypedTypePolicies & TypePolicies;
+export const CurrencyInfoFragmentDoc = gql`
+    fragment CurrencyInfo on Currency {
+  address
+  decimals
+}
+    `;
+export const CurrencyAmountInfoFragmentDoc = gql`
+    fragment CurrencyAmountInfo on CurrencyAmount {
+  amount
+  currency {
+    ...CurrencyInfo
+  }
+}
+    ${CurrencyInfoFragmentDoc}`;
 export const SaleOfferInfoFragmentDoc = gql`
     fragment SaleOfferInfo on SingleNFTOrder {
   id
@@ -3936,6 +3969,70 @@ export const UnhideSaleOfferDocument = gql`
   }
 }
     `;
+export const CollectionsDocument = gql`
+    query collections($currency: Address!, $after: String) {
+  collections: listCollections(after: $after) {
+    pageInfo {
+      endCursor
+      hasNextPage
+    }
+    edges {
+      node {
+        id
+        name
+        slug
+        description
+        discordUrl
+        twitterUsername
+        externalUrl
+        collectionUrl
+        verified
+        royalties {
+          percentage
+          beneficiary
+        }
+        image {
+          cacheUrl
+        }
+        bannerImage {
+          cacheUrl
+        }
+        contractData {
+          blockchain
+          contractAddress
+          createdDate
+          creatorAddress
+        }
+        statistics {
+          floorPrice {
+            ...CurrencyAmountInfo
+          }
+          floorPrice7d
+          floorPrice30d
+          bestOffer {
+            ...CurrencyAmountInfo
+          }
+          totalVolume
+          totalVolume1y
+          totalVolume3m
+          totalVolume1m
+          totalVolume1w
+          totalLoanVolume(currencyAddress: $currency)
+          totalLoanVolume1w(currencyAddress: $currency)
+          totalLoanVolume1m(currencyAddress: $currency)
+          totalLoanVolume3m(currencyAddress: $currency)
+          totalLoanVolume1y(currencyAddress: $currency)
+          numberOfPricedNfts
+          nftsCount
+          percentageInOutstandingLoans
+          repaymentRate
+          numberOfOffers(currencyAddress: $currency)
+        }
+      }
+    }
+  }
+}
+    ${CurrencyAmountInfoFragmentDoc}`;
 export const CollectionsIdByContractAddressDocument = gql`
     query collectionsIdByContractAddress($contractAddress: Address!) {
   collections: getCollectionsByContractAddress(contractAddress: $contractAddress) {
@@ -4089,6 +4186,44 @@ export const NftIdBySlugTokenIdDocument = gql`
   }
 }
     `;
+export const OwnedNftsDocument = gql`
+    query ownedNfts($after: String) {
+  ownedNfts: listNftsFromUser(after: $after) {
+    pageInfo {
+      endCursor
+      hasNextPage
+    }
+    edges {
+      node {
+        id
+        collection {
+          id
+        }
+        tokenId
+        price
+        priceCurrencyAddress
+        activeLoan {
+          id
+        }
+        statistics {
+          lastSale {
+            order {
+              price
+              currency {
+                ...CurrencyInfo
+              }
+            }
+          }
+          topTraitFloorPrice {
+            ...CurrencyAmountInfo
+          }
+        }
+      }
+    }
+  }
+}
+    ${CurrencyInfoFragmentDoc}
+${CurrencyAmountInfoFragmentDoc}`;
 export const ListOffersDocument = gql`
     query listOffers($borrowerAddress: String, $lenders: [String!], $sortBy: OffersSortInput!, $terms: TermsFilter, $statuses: [OfferStatus!] = [ACTIVE, CANCELLED, INACTIVE, EXPIRED], $nfts: [Int!], $collections: [Int!], $onlySingleNftOffers: Boolean, $onlyCollectionOffers: Boolean, $first: Int = 24, $after: String) {
   result: listOffers(
@@ -4217,6 +4352,9 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
     unhideSaleOffer(variables: UnhideSaleOfferMutationVariables, options?: C): Promise<UnhideSaleOfferMutation> {
       return requester<UnhideSaleOfferMutation, UnhideSaleOfferMutationVariables>(UnhideSaleOfferDocument, variables, options) as Promise<UnhideSaleOfferMutation>;
     },
+    collections(variables: CollectionsQueryVariables, options?: C): Promise<CollectionsQuery> {
+      return requester<CollectionsQuery, CollectionsQueryVariables>(CollectionsDocument, variables, options) as Promise<CollectionsQuery>;
+    },
     collectionsIdByContractAddress(variables: CollectionsIdByContractAddressQueryVariables, options?: C): Promise<CollectionsIdByContractAddressQuery> {
       return requester<CollectionsIdByContractAddressQuery, CollectionsIdByContractAddressQueryVariables>(CollectionsIdByContractAddressDocument, variables, options) as Promise<CollectionsIdByContractAddressQuery>;
     },
@@ -4234,6 +4372,9 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
     },
     nftIdBySlugTokenId(variables: NftIdBySlugTokenIdQueryVariables, options?: C): Promise<NftIdBySlugTokenIdQuery> {
       return requester<NftIdBySlugTokenIdQuery, NftIdBySlugTokenIdQueryVariables>(NftIdBySlugTokenIdDocument, variables, options) as Promise<NftIdBySlugTokenIdQuery>;
+    },
+    ownedNfts(variables?: OwnedNftsQueryVariables, options?: C): Promise<OwnedNftsQuery> {
+      return requester<OwnedNftsQuery, OwnedNftsQueryVariables>(OwnedNftsDocument, variables, options) as Promise<OwnedNftsQuery>;
     },
     listOffers(variables: ListOffersQueryVariables, options?: C): Promise<ListOffersQuery> {
       return requester<ListOffersQuery, ListOffersQueryVariables>(ListOffersDocument, variables, options) as Promise<ListOffersQuery>;

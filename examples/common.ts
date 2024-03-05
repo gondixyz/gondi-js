@@ -104,7 +104,7 @@ export const testSingleNftOfferInput = {
   nftId: testNftId,
 };
 
-const approveToken = async (user: Gondi, to: Address) => {
+export const approveToken = async (user: Gondi, to: Address) => {
   const isEnoughApproved = await user.isApprovedToken({
     tokenAddress: testCurrency,
     amount: MAX_NUMBER / 2n,
@@ -144,20 +144,22 @@ const approveForUser = async (user: Gondi, to: Address) => {
 
 const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? '';
 
-for (const [i, user] of users.entries()) {
-  console.log(`approving tokens for user ${i}`);
-  await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V5);
+export const setAllowances = async () => {
+  for (const [i, user] of users.entries()) {
+    console.log(`approving tokens for user ${i}`);
+    await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V5);
 
-  if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
-    await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V4);
+    if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
+      await approveForUser(user, MULTI_SOURCE_LOAN_CONTRACT_V4);
+    }
+
+    if (isAddress(LEVERAGE_CONTRACT)) {
+      await approveForUser(user, LEVERAGE_CONTRACT);
+    }
+
+    await approveForUser(user, SEAPORT_CONTRACT_ADDRESS);
   }
-
-  if (isAddress(LEVERAGE_CONTRACT)) {
-    await approveForUser(user, LEVERAGE_CONTRACT);
-  }
-
-  await approveForUser(user, SEAPORT_CONTRACT_ADDRESS);
-}
+};
 
 // Assuming MSL contract default: 3 days (seconds)
 export const AUCTION_DEFAULT_DURATION = 3n * 24n * 60n * 60n;

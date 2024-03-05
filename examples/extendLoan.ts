@@ -1,6 +1,13 @@
 import { Address } from 'viem';
 
-import { generateBlock, sleep, testSingleNftOfferInput, testTokenId, users } from './common';
+import {
+  generateBlock,
+  setAllowances,
+  sleep,
+  testSingleNftOfferInput,
+  testTokenId,
+  users,
+} from './common';
 
 const SLEEP_BUFFER = 3000;
 
@@ -55,6 +62,7 @@ const emitRefinaceFullAndRepayLoan = async (contract?: Address) => {
 
 async function main() {
   try {
+    await setAllowances();
     await emitRefinaceFullAndRepayLoan();
   } catch (e) {
     console.log('Error:');

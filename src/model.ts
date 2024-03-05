@@ -39,7 +39,10 @@ export type CollectionOfferInput = Optional<
   'borrowerAddress' | 'lenderAddress' | 'signerAddress' | 'offerValidators' | 'contractAddress'
 >;
 
-export type UnsignedCollectionOffer = Omit<CollectionSignedOfferInput, 'signature'> & {
+export type UnsignedCollectionOffer = Omit<
+  CollectionSignedOfferInput,
+  'signature' | 'collectionId'
+> & {
   nftCollateralAddress: Address;
 };
 
