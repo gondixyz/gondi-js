@@ -308,7 +308,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
   }
 
   async getRemainingLockupSeconds({ loan }: { loan: LoanV6 }) {
-    const newestSource = loan.tranche[0];
+    const newestSource = loan.tranche[loan.tranche.length - 1];
     const loanEndDate = loan.startTime + loan.duration;
     const newestSourceDuration = loanEndDate - newestSource.startTime;
 
