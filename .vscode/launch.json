@@ -66,6 +66,13 @@
       "type": "node-terminal"
     },
     {
+      "name": "emit multiple offers loan",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test emitMultipleOffersLoan.ts",
+      "type": "node-terminal"
+    },
+    {
       "name": "hide offer",
       "request": "launch",
       "cwd": "${workspaceFolder}/examples",
