@@ -1,14 +1,14 @@
 import { Address } from 'viem';
 
-import { sleep, testCollectionOfferInput, testTokenId, users } from './common';
+import { sleep, testSingleNftOfferInput, testTokenId, users } from './common';
 
 const emitAndRepayLoan = async (contract?: Address) => {
-  const signedOffer = await users[0]._makeCollectionOffer(testCollectionOfferInput, contract);
+  const signedOffer = await users[0]._makeSingleNftOffer(testSingleNftOfferInput, contract);
   const anotherOfferInput = {
-    ...testCollectionOfferInput,
-    maxTrancheFloor: testCollectionOfferInput.principalAmount,
+    ...testSingleNftOfferInput,
+    maxTrancheFloor: testSingleNftOfferInput.principalAmount,
   };
-  const anotherSignedOffer = await users[0]._makeCollectionOffer(anotherOfferInput, contract);
+  const anotherSignedOffer = await users[0]._makeSingleNftOffer(anotherOfferInput, contract);
   const contractVersionString = `msl: ${signedOffer.contractAddress}`;
   console.log(`offers placed successfully: ${contractVersionString}`);
 

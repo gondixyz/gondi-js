@@ -108,6 +108,13 @@
       "type": "node-terminal"
     },
     {
+      "name": "refinance full after extend loan",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test refinanceFullAfterExtend.ts",
+      "type": "node-terminal"
+    },
+    {
       "name": "refinance full loan",
       "request": "launch",
       "cwd": "${workspaceFolder}/examples",
@@ -122,10 +129,10 @@
       "type": "node-terminal"
     },
     {
-      "name": "refinance full after extend loan",
+      "name": "refinance partial multiple tranches loan",
       "request": "launch",
       "cwd": "${workspaceFolder}/examples",
-      "command": "yarn run-test refinanceFullAfterExtend.ts",
+      "command": "yarn run-test refinancePartialMultipleTranchesLoan.ts",
       "type": "node-terminal"
     },
     {
