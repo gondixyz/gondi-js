@@ -1,5 +1,5 @@
 import * as dotenv from 'dotenv';
-import { Gondi, LoanStatusType } from 'gondi';
+import { Gondi, LoanStatusType, OfferStatus } from 'gondi';
 
 import { approveNFT, approveToken, sleep, testCurrency, wallets } from './common';
 
@@ -151,7 +151,7 @@ async function lend(gondi: Gondi, collections: Collection[]) {
   const nfts = (await gondi.ownedNfts()).ownedNfts;
   if (nfts.length == 0) return;
   const nft = nfts[Math.floor(Math.random() * nfts.length)];
-  const { offers } = await gondi.offers({ filterBy: { nft: Number(nft.id) } });
+  const { offers } = await gondi.offers({ filterBy: { nft: Number(nft.id), status: [OfferStatus.Active] } });
   let skipOffers = Math.random() * offers.length;
   for (const offer of offers) {
     if (--skipOffers >= 0) continue;
