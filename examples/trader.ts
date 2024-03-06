@@ -7,10 +7,11 @@ dotenv.config();
 
 export const TICK = 600;
 export const LOAN_DURATIONS = [
+  60n * 60n * 3n,
   60n * 60n * 24n,
-  7n * 60n * 60n * 24n,
-  30n * 60n * 60n * 24n,
-  365n * 60n * 60n * 24n,
+  60n * 60n * 24n * 7n,
+  60n * 60n * 24n * 30n,
+  60n * 60n * 24n * 365n,
 ];
 export const RISK_MARGIN = 10_00n;
 export const NUMBER_OF_LOANS_PER_OFFER = 10n;
@@ -152,6 +153,7 @@ async function lend(gondi: Gondi, collections: Collection[]) {
   if (nfts.length == 0) {
     return;
   }
+  const desiredDuration = LOAN_DURATIONS[Math.floor(LOAN_DURATIONS.length * Math.random())];
   const nft = nfts[Math.floor(Math.random() * nfts.length)];
   const { offers } = await gondi.offers({
     filterBy: { nft: Number(nft.id), status: [OfferStatus.Active] },
@@ -165,7 +167,7 @@ async function lend(gondi: Gondi, collections: Collection[]) {
     const desiredPrincipal = BigInt(
       floor.amount * 10 ** floor.currency.decimals * principalMargin ** 2,
     );
-    if (offer.principalAmount > desiredPrincipal) {
+    if (offer.principalAmount > desiredPrincipal && offer.duration == desiredDuration) {
       console.log('emitting loan ', nft.collection?.id, nft.tokenId);
       await approveNFT(gondi, offer.contractAddress, offer.nftCollateralAddress);
       await approveToken(gondi, offer.contractAddress);
