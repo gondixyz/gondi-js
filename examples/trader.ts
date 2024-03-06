@@ -1,7 +1,7 @@
 import * as dotenv from 'dotenv';
 import { Gondi, LoanStatusType, OfferStatus } from 'gondi';
 
-import { approveNFT, approveToken, sleep, testCurrency, wallets } from './common';
+import { approveNFT, approveToken, sleep, testCurrency, users, wallets } from './common';
 
 dotenv.config();
 
@@ -20,15 +20,15 @@ export const APR_PREMIUM = 1_00n;
 const principalMargin = 1 - Number(RISK_MARGIN + APR_BASE) / 10000;
 
 export const main = async () => {
-  const wallet = wallets[0];
-  const gondi = new Gondi({ wallet });
-  const collections = (await gondi.collections({ statsCurrency: testCurrency })).collections;
-
   while (true) {
-    console.log('making offers');
-    await makeOffers(gondi, collections);
-    await lend(gondi, collections);
-    await repay(gondi, collections);
+    for (const user of users) {
+      const collections = (await user.collections({ statsCurrency: testCurrency })).collections;
+      console.log('making offers');
+      await makeOffers(user, collections);
+      await lend(user, collections);
+      await repay(user, collections);
+    }
+    console.log(`waiting ${TICK} seconds`);
     await sleep(TICK * 1000);
   }
 };
@@ -149,14 +149,14 @@ async function makeOffers(gondi: Gondi, collections: Collection[]) {
 
 async function lend(gondi: Gondi, collections: Collection[]) {
   const nfts = (await gondi.ownedNfts()).ownedNfts;
-  if (nfts.length == 0) return;
+  if (nfts.length == 0) {
+    return;
+  }
   const nft = nfts[Math.floor(Math.random() * nfts.length)];
   const { offers } = await gondi.offers({
     filterBy: { nft: Number(nft.id), status: [OfferStatus.Active] },
   });
-  let skipOffers = Math.random() * offers.length;
   for (const offer of offers) {
-    if (--skipOffers >= 0) continue;
     const collection = collections.find((collection) => collection.id == nft.collection?.id);
     const floor = collection?.statistics.floorPrice ?? {
       amount: Number.POSITIVE_INFINITY,
