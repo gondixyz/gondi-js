@@ -1,0 +1,4 @@
+fragment CurrencyInfo on Currency {
+  address
+  decimals
+}

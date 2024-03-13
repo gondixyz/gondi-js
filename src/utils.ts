@@ -59,3 +59,6 @@ export const emitLoanArgsToMslArgs = ({
     expirationTime: expirationTime ?? BigInt(millisToSeconds(Date.now()) + SECONDS_IN_DAY),
   };
 };
+
+export const isDefined = <T>(value: T | undefined | null): value is T =>
+  value !== undefined && value !== null;

@@ -1,6 +1,6 @@
 import { Address } from 'viem';
 
-import { testSingleNftOfferInput, testTokenId, users } from './common';
+import { setAllowances, testSingleNftOfferInput, testTokenId, users } from './common';
 
 const delegateAndRevokeAll = async (contract?: Address) => {
   const signedOffer = await users[0]._makeSingleNftOffer(testSingleNftOfferInput, contract);
@@ -41,6 +41,7 @@ const delegateAndRevokeAll = async (contract?: Address) => {
 
 async function main() {
   try {
+    await setAllowances();
     await delegateAndRevokeAll();
   } catch (e) {
     console.log('Error:');

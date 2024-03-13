@@ -12,6 +12,7 @@ import { apolloClient } from '@/graphql/client';
 import { getSdkApollo } from '@/graphql/sdk';
 
 import { RenegotiationOffer } from './model';
+import { isDefined } from './utils';
 
 export type Props = {
   apiClient?: ApolloClient<NormalizedCacheObject>;
@@ -33,10 +34,12 @@ export class Api {
   generateRenegotiationOfferHash;
   nftIdBySlugTokenId;
   nftIdByContractAddressAndTokenId;
+  collections;
   collectionIdBySlug;
   collectionsIdByContractAddress;
   listNft;
   unlistNft;
+  ownedNfts;
   hideOffer;
   hideRenegotiationOffer;
   unhideOffer;
@@ -57,8 +60,10 @@ export class Api {
     this.nftIdByContractAddressAndTokenId = this.api.nftIdByContractAddressAndTokenId;
     this.collectionIdBySlug = this.api.collectionIdBySlug;
     this.collectionsIdByContractAddress = this.api.collectionsIdByContractAddress;
+    this.collections = this.api.collections;
     this.listNft = this.api.listNft;
     this.unlistNft = this.api.unlistNft;
+    this.ownedNfts = this.api.ownedNfts;
     this.saveSignedSaleOffer = this.api.saveSignedSaleOffer;
     this.hideOffer = this.api.hideOffer;
     this.hideRenegotiationOffer = this.api.hideRenegotiationOffer;
@@ -114,16 +119,27 @@ export class Api {
     const {
       result: { edges, pageInfo },
     } = await this.api.listOffers(props);
-    const offers = edges.map((edge) => {
-      const { __typename, lenderAddress, borrowerAddress, signerAddress, ...node } = edge.node;
-      return {
-        type: __typename,
-        lender: lenderAddress,
-        borrower: borrowerAddress,
-        signer: signerAddress,
-        ...node,
-      };
-    });
+    const offers = edges
+      .map((edge) => {
+        const { __typename, ...node } = edge.node;
+        const nftCollateralAddress =
+          'collection' in node
+            ? node.collection.contractData?.contractAddress
+            : node.nft.collection?.contractData?.contractAddress;
+        const nftCollateralTokenId = 'collection' in node ? 0n : node.nft.tokenId;
+        if (!isDefined(nftCollateralAddress)) return undefined;
+        return {
+          type: __typename,
+          lender: node.lenderAddress,
+          borrower: node.borrowerAddress,
+          signer: node.signerAddress,
+          offerValidators: node.validators,
+          nftCollateralAddress,
+          nftCollateralTokenId,
+          ...node,
+        };
+      })
+      .filter(isDefined);
     return {
       ...mapPageInfo(pageInfo),
       offers,
@@ -137,8 +153,19 @@ export class Api {
     const loans = edges.map((edge) => {
       const { __typename, ...node } = edge.node;
       return {
-        type: __typename,
         ...node,
+        type: __typename,
+        contractAddress: node.address,
+        nftCollateralTokenId: node.nft.tokenId,
+        nftCollateralAddress: node.nft.collection?.contractData?.contractAddress,
+        borrower: node.borrowerAddress,
+        startTime: BigInt(node.startTime.getTime() / 1_000),
+        source: node.sources.map((source) => ({
+          ...source,
+          lender: source.lenderAddress,
+          loanId: BigInt(source.loanId),
+          startTime: BigInt(source.startTime.getTime() / 1_000),
+        })),
       };
     });
     return {

@@ -213,12 +213,12 @@ input CollectionOfferInput {
   expirationTime: BigInt!
   fee: BigInt!
   lenderAddress: Address!
-  maxTrancheFloor: BigInt
+  maxTrancheFloor: BigInt = null
   offerValidators: [OfferValidatorInput!]!
   principalAddress: Address!
   principalAmount: BigInt!
-  requiresLiquidation: Boolean
-  signerAddress: Address
+  requiresLiquidation: Boolean = null
+  signerAddress: Address = null
 }
 
 type CollectionOfferStatistics {
@@ -259,15 +259,15 @@ input CollectionSignedOfferInput {
   expirationTime: BigInt!
   fee: BigInt!
   lenderAddress: Address!
-  maxTrancheFloor: BigInt
+  maxTrancheFloor: BigInt = null
   offerHash: Hash!
   offerId: BigInt!
   offerValidators: [OfferValidatorInput!]!
   principalAddress: Address!
   principalAmount: BigInt!
-  requiresLiquidation: Boolean
+  requiresLiquidation: Boolean = null
   signature: Signature!
-  signerAddress: Address
+  signerAddress: Address = null
 }
 
 enum CollectionSortField {
@@ -716,7 +716,7 @@ type Mutation {
   generateSingleNftOfferToBeSigned(offerInput: SingleNFTOfferInput!): SingleNFTOffer!
   hideAllOffers(contractAddress: Address!, minOfferId: String!): [Offer!]!
   hideOffer(contractAddress: Address!, offerId: String!): Offer!
-  hideRenegotiation(contractAddress: Address = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9", renegotiationId: String!): Renegotiation!
+  hideRenegotiation(contractAddress: Address = "0xCa5a494Ca20483e21ec1E41FE1D9461Da77595Bd", renegotiationId: String!): Renegotiation!
   hideSaleOffer(saleOfferId: String!): SingleNFTOrder!
   markNotificationIdsAsRead(ids: [Int!]): Void
   markNotificationsAsRead: Void
@@ -729,7 +729,7 @@ type Mutation {
   saveSignedSingleNftOffer(signedOfferInput: SingleNFTSignedOfferInput!): SingleNFTOffer!
   setReferral(referrerId: Int!): Void
   showOffer(contractAddress: Address!, offerId: String!): Offer!
-  showRenegotiation(contractAddress: Address = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9", renegotiationId: String!): Renegotiation!
+  showRenegotiation(contractAddress: Address = "0xCa5a494Ca20483e21ec1E41FE1D9461Da77595Bd", renegotiationId: String!): Renegotiation!
   showSaleOffer(saleOfferId: String!): SingleNFTOrder!
 }
 
@@ -1120,11 +1120,11 @@ input RenegotiationOfferInput {
   lenderAddress: Address!
   loanId: String!
   principalAmount: BigInt!
-  requiresLiquidation: Boolean
-  signerAddress: Address
-  strictImprovement: Boolean
-  targetPrincipal: [BigInt!]
-  trancheIndex: [BigInt!]
+  requiresLiquidation: Boolean = null
+  signerAddress: Address = null
+  strictImprovement: Boolean = null
+  targetPrincipal: [BigInt!] = null
+  trancheIndex: [BigInt!] = null
 }
 
 type RenegotiationRequest implements Node {
@@ -1197,12 +1197,12 @@ input SignedRenegotiationOfferInput {
   offerHash: Hash!
   principalAmount: BigInt!
   renegotiationId: BigInt!
-  requiresLiquidation: Boolean
+  requiresLiquidation: Boolean = null
   signature: Signature!
-  signerAddress: Address
-  strictImprovement: Boolean
-  targetPrincipal: [BigInt!]
-  trancheIndex: [BigInt!]
+  signerAddress: Address = null
+  strictImprovement: Boolean = null
+  targetPrincipal: [BigInt!] = null
+  trancheIndex: [BigInt!] = null
 }
 
 type SingleNFTOffer implements Node & Offer {
@@ -1245,13 +1245,13 @@ input SingleNFTOfferInput {
   expirationTime: BigInt!
   fee: BigInt!
   lenderAddress: Address!
-  maxTrancheFloor: BigInt
+  maxTrancheFloor: BigInt = null
   nftId: Int!
   offerValidators: [OfferValidatorInput!]!
   principalAddress: Address!
   principalAmount: BigInt!
-  requiresLiquidation: Boolean
-  signerAddress: Address
+  requiresLiquidation: Boolean = null
+  signerAddress: Address = null
 }
 
 union SingleNFTOfferRenegotiation = Renegotiation | SingleNFTOffer
@@ -1299,16 +1299,16 @@ input SingleNFTSignedOfferInput {
   expirationTime: BigInt!
   fee: BigInt!
   lenderAddress: Address!
-  maxTrancheFloor: BigInt
+  maxTrancheFloor: BigInt = null
   nftId: Int!
   offerHash: Hash!
   offerId: BigInt!
   offerValidators: [OfferValidatorInput!]!
   principalAddress: Address!
   principalAmount: BigInt!
-  requiresLiquidation: Boolean
+  requiresLiquidation: Boolean = null
   signature: Signature!
-  signerAddress: Address
+  signerAddress: Address = null
 }
 
 type Source implements Node {
