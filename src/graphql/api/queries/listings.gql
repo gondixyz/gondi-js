@@ -21,6 +21,8 @@ query listListings(
         id
         marketplaceName
         createdDate
+        desiredDuration
+        desiredPrincipalAddress
         user {
           walletAddress
         }
