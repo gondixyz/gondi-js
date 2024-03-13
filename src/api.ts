@@ -12,6 +12,7 @@ import { apolloClient } from '@/graphql/client';
 import { getSdkApollo } from '@/graphql/sdk';
 
 import { RenegotiationOffer } from './model';
+import { isDefined } from './utils';
 
 export type Props = {
   apiClient?: ApolloClient<NormalizedCacheObject>;
@@ -118,28 +119,27 @@ export class Api {
     const {
       result: { edges, pageInfo },
     } = await this.api.listOffers(props);
-    const offers = edges.map((edge) => {
-      const { __typename, ...node } = edge.node;
-      const nftCollateralAddress =
-        __typename == 'CollectionOffer'
-          ? edge.node.collection.contractData?.contractAddress
-          : __typename == 'SingleNFTOffer' &&
-            edge.node.nft.collection?.contractData?.contractAddress;
-      const nftCollateralTokenId =
-        __typename == 'CollectionOffer'
-          ? 0n
-          : __typename == 'SingleNFTOffer' && edge.node.nft.tokenId;
-      return {
-        type: __typename,
-        lender: node.lenderAddress,
-        borrower: node.borrowerAddress,
-        signer: node.signerAddress,
-        offerValidators: node.validators,
-        nftCollateralAddress,
-        nftCollateralTokenId,
-        ...node,
-      };
-    });
+    const offers = edges
+      .map((edge) => {
+        const { __typename, ...node } = edge.node;
+        const nftCollateralAddress =
+          'collection' in node
+            ? node.collection.contractData?.contractAddress
+            : node.nft.collection?.contractData?.contractAddress;
+        const nftCollateralTokenId = 'collection' in node ? 0n : node.nft.tokenId;
+        if (!isDefined(nftCollateralAddress)) return undefined;
+        return {
+          type: __typename,
+          lender: node.lenderAddress,
+          borrower: node.borrowerAddress,
+          signer: node.signerAddress,
+          offerValidators: node.validators,
+          nftCollateralAddress,
+          nftCollateralTokenId,
+          ...node,
+        };
+      })
+      .filter(isDefined);
     return {
       ...mapPageInfo(pageInfo),
       offers,
