@@ -1,7 +1,7 @@
 import * as dotenv from 'dotenv';
 import { Gondi, LoanStatusType, OfferStatus } from 'gondi';
 
-import { approveNFT, approveToken, sleep, testCurrency, users, wallets } from './common';
+import { approveNFT, approveToken, sleep, testCurrency, users } from './common';
 
 dotenv.config();
 
@@ -20,6 +20,8 @@ export const APR_BASE = 10_00n;
 export const APR_PREMIUM = 1_00n;
 const principalMargin = 1 - Number(RISK_MARGIN + APR_BASE) / 10000;
 
+type Collection = Awaited<ReturnType<Gondi['collections']>>['collections'][number];
+
 export const main = async () => {
   while (true) {
     for (const user of users) {
@@ -35,92 +37,6 @@ export const main = async () => {
 };
 
 await main();
-
-interface Collection {
-  __typename?: 'Collection' | undefined;
-  id: string;
-  name?: string | null | undefined;
-  slug?: string | null | undefined;
-  description?: string | null | undefined;
-  discordUrl?: string | null | undefined;
-  twitterUsername?: string | null | undefined;
-  externalUrl?: string | null | undefined;
-  collectionUrl?: string | null | undefined;
-  verified: boolean;
-  royalties: {
-    __typename?: 'Royalty' | undefined;
-    percentage: number;
-    beneficiary: string;
-  }[];
-  image?:
-    | {
-        __typename?: 'Asset' | undefined;
-        cacheUrl?: string | null | undefined;
-      }
-    | null
-    | undefined;
-  bannerImage?:
-    | {
-        __typename?: 'Asset' | undefined;
-        cacheUrl?: string | null | undefined;
-      }
-    | null
-    | undefined;
-  contractData?:
-    | {
-        __typename?: 'ContractData' | undefined;
-        blockchain: string;
-        contractAddress: `0x${string}`;
-        createdDate: Date;
-        creatorAddress?: `0x${string}` | null | undefined;
-      }
-    | null
-    | undefined;
-  statistics: {
-    __typename?: 'CollectionStatistics' | undefined;
-    floorPrice7d?: number | null | undefined;
-    floorPrice30d?: number | null | undefined;
-    totalVolume?: number | null | undefined;
-    totalVolume1y?: number | null | undefined;
-    totalVolume3m?: number | null | undefined;
-    totalVolume1m?: number | null | undefined;
-    totalVolume1w?: number | null | undefined;
-    totalLoanVolume: bigint;
-    totalLoanVolume1w: bigint;
-    totalLoanVolume1m: bigint;
-    totalLoanVolume3m: bigint;
-    totalLoanVolume1y: bigint;
-    numberOfPricedNfts: number;
-    nftsCount?: number | null | undefined;
-    percentageInOutstandingLoans: number;
-    repaymentRate: number;
-    numberOfOffers: number;
-    floorPrice?:
-      | {
-          __typename?: 'CurrencyAmount' | undefined;
-          amount: number;
-          currency: {
-            __typename?: 'Currency' | undefined;
-            address: `0x${string}`;
-            decimals: number;
-          };
-        }
-      | null
-      | undefined;
-    bestOffer?:
-      | {
-          __typename?: 'CurrencyAmount' | undefined;
-          amount: number;
-          currency: {
-            __typename?: 'Currency' | undefined;
-            address: `0x${string}`;
-            decimals: number;
-          };
-        }
-      | null
-      | undefined;
-  };
-}
 
 async function makeOffers(gondi: Gondi, collections: Collection[]) {
   for (const collection of collections) {
@@ -194,7 +110,7 @@ async function repay(gondi: Gondi, collections: Collection[]) {
     const isTimeToRepay = remainingTime < 1 - LOAN_EFFECTIVE_DURATION;
     if (isTimeToRepay && isAcceptableRepayment) {
       console.log('repaying loan ', loan.id);
-      await gondi.repayLoan({ loan, loanId: loan.loanId });
+      await gondi.repayLoan({ loan, loanId: BigInt(loan.loanId) });
     }
   }
 }
