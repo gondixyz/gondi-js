@@ -103,10 +103,7 @@ async function repay(gondi: Gondi, collections: Collection[]) {
     const floor = collection?.statistics.floorPrice ?? { amount: 0, currency: { decimals: 1 } };
     const acceptableRepayment = BigInt(floor.amount * 10 ** floor.currency.decimals);
     const isAcceptableRepayment = repayment < acceptableRepayment;
-    const remainingTime =
-      (BigInt(Math.floor(loan.startTime.getTime() - new Date().getTime())) / 1_000n +
-        loan.duration) /
-      loan.duration;
+    const remainingTime = loan.startTime + loan.duration - BigInt(new Date().getTime()) / 1_000n;
     const isTimeToRepay = remainingTime < 1 - LOAN_EFFECTIVE_DURATION;
     if (isTimeToRepay && isAcceptableRepayment) {
       console.log('repaying loan ', loan.id);

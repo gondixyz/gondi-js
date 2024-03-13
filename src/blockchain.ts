@@ -147,7 +147,7 @@ type PlaceBidAbiType = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof auctionLoanLiquidatorABIV5, 'placeBid'>['inputs']
 >;
 
-export type LoanV4 = RepayAbiTypeV4[2] & { contractAddress: Address; startTime: Date | bigint };
+export type LoanV4 = RepayAbiTypeV4[2] & { contractAddress: Address };
 export type LoanV5 = RepayAbiTypeV5[0]['loan'] & {
   contractAddress: Address;
   startTime: Date | bigint;

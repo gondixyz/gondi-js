@@ -159,6 +159,7 @@ export class Api {
         nftCollateralTokenId: node.nft.tokenId,
         nftCollateralAddress: node.nft.collection?.contractData?.contractAddress,
         borrower: node.borrowerAddress,
+        startTime: BigInt(node.startTime.getTime() / 1_000),
         source: node.sources.map((source) => ({
           ...source,
           lender: source.lenderAddress,

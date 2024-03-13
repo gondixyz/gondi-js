@@ -357,13 +357,8 @@ export class Gondi {
     loanId: bigint;
     nftReceiver?: Address;
   }) {
-    const startTime = loan.startTime as Date | bigint;
-    const loanInContractFormat = {
-      ...loan,
-      startTime: BigInt(startTime instanceof Date ? startTime.getTime() / 1_000 : startTime),
-    };
     return this.contracts.Msl(loan.contractAddress).repayLoan({
-      loan: loanInContractFormat,
+      loan,
       nftReceiver,
       loanId,
     });
