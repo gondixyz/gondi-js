@@ -1,6 +1,6 @@
 import { Address, isAddress } from 'viem';
 
-import { testSingleNftOfferInput, testTokenId, users } from './common';
+import { setAllowances, testSingleNftOfferInput, testTokenId, users } from './common';
 
 const emitCancelRefiOfferAndRepayLoan = async (contract?: Address) => {
   const signedOffer = await users[0]._makeSingleNftOffer(testSingleNftOfferInput, contract);
@@ -65,6 +65,7 @@ const emitCancelRefiOfferAndRepayLoan = async (contract?: Address) => {
 
 async function main() {
   try {
+    await setAllowances();
     await emitCancelRefiOfferAndRepayLoan();
 
     const oldContracts = [

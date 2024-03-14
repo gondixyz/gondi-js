@@ -1,8 +1,9 @@
 import { getAddress } from 'viem';
 
-import { users } from './common';
+import { setAllowances, users } from './common';
 
 async function main() {
+  await setAllowances();
   const loanToRepay = (
     await users[0].loans({
       borrowerAddress: users[0].wallet.account.address,

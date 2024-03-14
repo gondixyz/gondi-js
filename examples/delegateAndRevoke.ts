@@ -1,6 +1,6 @@
 import { Address, isAddress } from 'viem';
 
-import { testSingleNftOfferInput, testTokenId, users } from './common';
+import { setAllowances, testSingleNftOfferInput, testTokenId, users } from './common';
 
 const delegateAndRevoke = async (contract?: Address) => {
   const signedOffer = await users[0]._makeSingleNftOffer(testSingleNftOfferInput, contract);
@@ -64,6 +64,7 @@ const delegateAndRevoke = async (contract?: Address) => {
 
 async function main() {
   try {
+    await setAllowances();
     await delegateAndRevoke();
 
     const oldContracts = [process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? ''];

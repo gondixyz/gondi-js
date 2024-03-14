@@ -1,0 +1,66 @@
+query collections($currency: Address!, $after: String) {
+  collections: listCollections(after: $after) {
+    pageInfo {
+      endCursor
+      hasNextPage
+    }
+    edges {
+      node {
+        id
+        name
+        slug
+        description
+        discordUrl
+        twitterUsername
+        externalUrl
+        collectionUrl
+        verified
+        royalties {
+          percentage
+          beneficiary
+        }
+        image {
+          cacheUrl
+        }
+        bannerImage {
+          cacheUrl
+        }
+        contractData {
+          blockchain
+          contractAddress
+          createdDate
+          creatorAddress
+        }
+
+        statistics {
+          floorPrice {
+            ...CurrencyAmountInfo
+          }
+          floorPrice7d
+          floorPrice30d
+          bestOffer {
+            ...CurrencyAmountInfo
+          }
+          totalVolume
+          totalVolume1y
+          totalVolume3m
+          totalVolume1m
+          totalVolume1w
+
+          totalLoanVolume(currencyAddress: $currency)
+          totalLoanVolume1w(currencyAddress: $currency)
+          totalLoanVolume1m(currencyAddress: $currency)
+          totalLoanVolume3m(currencyAddress: $currency)
+          totalLoanVolume1y(currencyAddress: $currency)
+
+          numberOfPricedNfts
+          nftsCount
+          percentageInOutstandingLoans
+          repaymentRate
+
+          numberOfOffers(currencyAddress: $currency)
+        }
+      }
+    }
+  }
+}

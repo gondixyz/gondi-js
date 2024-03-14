@@ -103,7 +103,7 @@ export const testSingleNftOfferInput = {
   nftId: testNftId,
 };
 
-const approveToken = async (user: Gondi, to: Address) => {
+export const approveToken = async (user: Gondi, to: Address) => {
   const isEnoughApproved = await user.isApprovedToken({
     tokenAddress: testCurrency,
     amount: MAX_NUMBER / 2n,
@@ -149,15 +149,17 @@ const CONTRACTS = [
   process.env.LEVERAGE_ADDRESS ?? '',
   SEAPORT_CONTRACT_ADDRESS,
 ];
-for (const [i, user] of users.entries()) {
-  console.log(`approving tokens for user ${i}`);
-  for (let k = 0; k < CONTRACTS.length; k++) {
-    const contract = CONTRACTS[k];
-    if (isAddress(contract)) {
-      await approveForUser(user, contract);
+export const setAllowances = async () => {
+  for (const [i, user] of users.entries()) {
+    console.log(`approving tokens for user ${i}`);
+    for (let k = 0; k < CONTRACTS.length; k++) {
+      const contract = CONTRACTS[k];
+      if (isAddress(contract)) {
+        await approveForUser(user, contract);
+      }
     }
   }
-}
+};
 
 // Assuming MSL contract default: 3 days (seconds)
 export const AUCTION_DEFAULT_DURATION = 3n * 24n * 60n * 60n;

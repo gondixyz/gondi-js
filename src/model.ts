@@ -44,7 +44,10 @@ export type CollectionOfferInput = Optional<
 > &
   MaxTrancheFloorArg;
 
-export type UnsignedCollectionOffer = Omit<CollectionSignedOfferInput, 'signature'> & {
+export type UnsignedCollectionOffer = Omit<
+  CollectionSignedOfferInput,
+  'signature' | 'collectionId'
+> & {
   nftCollateralAddress: Address;
 };
 

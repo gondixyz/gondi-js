@@ -1,6 +1,13 @@
 import { Address, isAddress } from 'viem';
 
-import { generateBlock, sleep, testSingleNftOfferInput, testTokenId, users } from './common';
+import {
+  generateBlock,
+  setAllowances,
+  sleep,
+  testSingleNftOfferInput,
+  testTokenId,
+  users,
+} from './common';
 
 const SLEEP_BUFFER = 3000;
 
@@ -64,6 +71,7 @@ const emitExtendAndRepayLoan = async (contract?: Address) => {
 
 async function main() {
   try {
+    await setAllowances();
     // v5 has extend loan feature only
     const oldContracts = [process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? ''];
     for (const contract of oldContracts) {

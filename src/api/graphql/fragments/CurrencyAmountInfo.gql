@@ -1,0 +1,6 @@
+fragment CurrencyAmountInfo on CurrencyAmount {
+  amount
+  currency {
+    ...CurrencyInfo
+  }
+}
