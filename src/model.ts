@@ -18,15 +18,15 @@ import {
 } from '@/generated/graphql';
 import { Optional } from '@/utils/types';
 
-type MaxTrancheFloorArg = {
-  maxTrancheFloor: Exclude<ApiSingleNftOfferInput['maxTrancheFloor'], null | undefined>;
+type MaxSeniorRepaymentArg = {
+  maxSeniorRepayment: Exclude<ApiSingleNftOfferInput['maxSeniorRepayment'], null | undefined>;
 };
 
 export type SingleNftOfferInput = Optional<
   ApiSingleNftOfferInput,
   'borrowerAddress' | 'lenderAddress' | 'signerAddress' | 'offerValidators' | 'contractAddress'
 > &
-  MaxTrancheFloorArg;
+  MaxSeniorRepaymentArg;
 
 export type UnsignedSingleNftOffer = Omit<SingleNftSignedOfferInput, 'signature'> & {
   nftCollateralAddress: Address;
@@ -36,13 +36,13 @@ export type UnsignedSingleNftOffer = Omit<SingleNftSignedOfferInput, 'signature'
 export type SingleNftOffer = UnsignedSingleNftOffer &
   SingleNftSignedOfferInput & {
     signature: Hash;
-  } & MaxTrancheFloorArg;
+  } & MaxSeniorRepaymentArg;
 
 export type CollectionOfferInput = Optional<
   ApiCollectionOfferInput,
   'borrowerAddress' | 'lenderAddress' | 'signerAddress' | 'offerValidators' | 'contractAddress'
 > &
-  MaxTrancheFloorArg;
+  MaxSeniorRepaymentArg;
 
 export type UnsignedCollectionOffer = Omit<
   CollectionSignedOfferInput,
@@ -54,7 +54,7 @@ export type UnsignedCollectionOffer = Omit<
 export type CollectionOffer = UnsignedCollectionOffer & {
   signature: Hash;
   nftCollateralTokenId: 0n;
-} & MaxTrancheFloorArg;
+} & MaxSeniorRepaymentArg;
 
 export type RenegotiationInput = Optional<
   ApiRenegotiationInput,

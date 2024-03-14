@@ -55,7 +55,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
           { name: 'aprBps', type: 'uint256' },
           { name: 'expirationTime', type: 'uint256' },
           { name: 'duration', type: 'uint256' },
-          { name: 'maxTrancheFloor', type: 'uint256' },
+          { name: 'maxSeniorRepayment', type: 'uint256' },
           { name: 'validators', type: 'OfferValidator[]' },
         ],
         OfferValidator: [
