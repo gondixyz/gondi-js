@@ -138,20 +138,8 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     };
   }
 
-  async cancelAllRenegotiations({ minId }: { minId: bigint }) {
-    const txHash = await this.safeContractWrite.cancelAllRenegotiationOffers([minId]);
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const filter = await this.contract.createEventFilter.AllRenegotiationOffersCancelled();
-        const events = filterLogs(receipt, filter);
-        if (events.length === 0) throw new Error('Renegotiation offers not cancelled');
-        return { ...events[0].args, ...receipt };
-      },
-    };
+  async cancelAllRenegotiations(_: { minId: bigint }) {
+    throw new Error('Not implemented for V6');
   }
 
   private mapEmitLoanToMslEmitLoanArgs({

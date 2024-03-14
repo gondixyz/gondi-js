@@ -1,4 +1,109 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// AaveUsdcBaseInterestAllocator
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const aaveUsdcBaseInterestAllocatorAbi = [
+  {
+    type: 'constructor',
+    inputs: [
+      { name: '_pool', internalType: 'address', type: 'address' },
+      { name: '__aavePool', internalType: 'address', type: 'address' },
+      { name: '__usdc', internalType: 'address', type: 'address' },
+      { name: '__aToken', internalType: 'address', type: 'address' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  { type: 'error', inputs: [], name: 'InvalidAprError' },
+  { type: 'error', inputs: [], name: 'InvalidCallerError' },
+  { type: 'error', inputs: [], name: 'InvalidPoolError' },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [{ name: 'total', internalType: 'uint256', type: 'uint256', indexed: false }],
+    name: 'AllTransfered',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'user', internalType: 'address', type: 'address', indexed: true },
+      { name: 'newOwner', internalType: 'address', type: 'address', indexed: true },
+    ],
+    name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'currentIdle', internalType: 'uint256', type: 'uint256', indexed: false },
+      { name: 'targetIdle', internalType: 'uint256', type: 'uint256', indexed: false },
+    ],
+    name: 'Reallocated',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'claimRewards',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getAssetsAllocated',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getBaseApr',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getBaseAprWithUpdate',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getPool',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'owner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_currentIdle', internalType: 'uint256', type: 'uint256' },
+      { name: '_targetIdle', internalType: 'uint256', type: 'uint256' },
+      { name: '', internalType: 'bool', type: 'bool' },
+    ],
+    name: 'reallocate',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  { type: 'function', inputs: [], name: 'transferAll', outputs: [], stateMutability: 'nonpayable' },
+  {
+    type: 'function',
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
+    name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // AddressManager
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -494,6 +599,7 @@ export const baseLoanAbi = [
     name: 'InvalidAmountError',
   },
   { type: 'error', inputs: [], name: 'InvalidDurationError' },
+  { type: 'error', inputs: [], name: 'InvalidInputError' },
   {
     type: 'error',
     inputs: [{ name: '_loanId', internalType: 'uint256', type: 'uint256' }],
@@ -540,6 +646,7 @@ export const baseLoanAbi = [
     inputs: [{ name: '_pendingProtocolFeeSetTime', internalType: 'uint256', type: 'uint256' }],
     name: 'TooEarlyError',
   },
+  { type: 'error', inputs: [], name: 'TooSoonError' },
   { type: 'error', inputs: [], name: 'ZeroDurationError' },
   { type: 'error', inputs: [], name: 'ZeroInterestError' },
   {
@@ -550,15 +657,6 @@ export const baseLoanAbi = [
       { name: 'minOfferId', internalType: 'uint256', type: 'uint256', indexed: false },
     ],
     name: 'AllOffersCancelled',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      { name: 'lender', internalType: 'address', type: 'address', indexed: false },
-      { name: 'minRenegotiationId', internalType: 'uint256', type: 'uint256', indexed: false },
-    ],
-    name: 'AllRenegotiationOffersCancelled',
   },
   {
     type: 'event',
@@ -667,6 +765,12 @@ export const baseLoanAbi = [
     name: 'RenegotiationOfferCancelled',
   },
   {
+    type: 'event',
+    anonymous: false,
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address', indexed: false }],
+    name: 'TransferOwnerRequested',
+  },
+  {
     type: 'function',
     inputs: [],
     name: 'DOMAIN_SEPARATOR',
@@ -710,15 +814,22 @@ export const baseLoanAbi = [
   },
   {
     type: 'function',
-    inputs: [{ name: '_minOfferId', internalType: 'uint256', type: 'uint256' }],
-    name: 'cancelAllOffers',
-    outputs: [],
-    stateMutability: 'nonpayable',
+    inputs: [],
+    name: 'MIN_WAIT_TIME',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
   },
   {
     type: 'function',
-    inputs: [{ name: '_minRenegotiationId', internalType: 'uint256', type: 'uint256' }],
-    name: 'cancelAllRenegotiationOffers',
+    inputs: [],
+    name: 'VERSION',
+    outputs: [{ name: '', internalType: 'bytes', type: 'bytes' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_minOfferId', internalType: 'uint256', type: 'uint256' }],
+    name: 'cancelAllOffers',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -863,13 +974,6 @@ export const baseLoanAbi = [
   {
     type: 'function',
     inputs: [{ name: '', internalType: 'address', type: 'address' }],
-    name: 'lenderMinRenegotiationOfferId',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'address', type: 'address' }],
     name: 'minOfferId',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
@@ -899,6 +1003,27 @@ export const baseLoanAbi = [
     name: 'owner',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
     stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingOwner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingOwnerTime',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_newOwner', internalType: 'address', type: 'address' }],
+    name: 'requestTransferOwner',
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -972,6 +1097,7 @@ export const baseLoanAbi = [
 export const baseLoanHelpersAbi = [
   { type: 'error', inputs: [], name: 'AddressZeroError' },
   { type: 'error', inputs: [], name: 'InvalidDurationError' },
+  { type: 'error', inputs: [], name: 'InvalidInputError' },
   {
     type: 'error',
     inputs: [{ name: '_fraction', internalType: 'uint256', type: 'uint256' }],
@@ -992,6 +1118,7 @@ export const baseLoanHelpersAbi = [
     inputs: [{ name: '_pendingProtocolFeeSetTime', internalType: 'uint256', type: 'uint256' }],
     name: 'TooEarlyError',
   },
+  { type: 'error', inputs: [], name: 'TooSoonError' },
   {
     type: 'event',
     anonymous: false,
@@ -1063,6 +1190,12 @@ export const baseLoanHelpersAbi = [
     name: 'ProtocolFeeUpdated',
   },
   {
+    type: 'event',
+    anonymous: false,
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address', indexed: false }],
+    name: 'TransferOwnerRequested',
+  },
+  {
     type: 'function',
     inputs: [],
     name: 'FEE_UPDATE_NOTICE',
@@ -1088,6 +1221,13 @@ export const baseLoanHelpersAbi = [
     inputs: [],
     name: 'MIN_AUCTION_DURATION',
     outputs: [{ name: '', internalType: 'uint48', type: 'uint48' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'MIN_WAIT_TIME',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -1319,6 +1459,27 @@ export const baseLoanHelpersAbi = [
   {
     type: 'function',
     inputs: [],
+    name: 'pendingOwner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingOwnerTime',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_newOwner', internalType: 'address', type: 'address' }],
+    name: 'requestTransferOwner',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
     name: 'setProtocolFee',
     outputs: [],
     stateMutability: 'nonpayable',
@@ -1385,7 +1546,7 @@ export const baseLoanHelpersAbi = [
               { name: 'aprBps', internalType: 'uint256', type: 'uint256' },
               { name: 'expirationTime', internalType: 'uint256', type: 'uint256' },
               { name: 'duration', internalType: 'uint256', type: 'uint256' },
-              { name: 'maxTrancheFloor', internalType: 'uint256', type: 'uint256' },
+              { name: 'maxSeniorRepayment', internalType: 'uint256', type: 'uint256' },
               {
                 name: 'validators',
                 internalType: 'struct IBaseLoan.OfferValidator[]',
@@ -2927,6 +3088,232 @@ export const ethBaseInterestAllocatorAbi = [
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// FeeManager
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const feeManagerAbi = [
+  {
+    type: 'constructor',
+    inputs: [
+      {
+        name: '__fees',
+        internalType: 'struct IFeeManager.Fees',
+        type: 'tuple',
+        components: [
+          { name: 'managementFee', internalType: 'uint256', type: 'uint256' },
+          { name: 'performanceFee', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  { type: 'error', inputs: [], name: 'InvalidInputError' },
+  { type: 'error', inputs: [], name: 'TooSoonError' },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'user', internalType: 'address', type: 'address', indexed: true },
+      { name: 'newOwner', internalType: 'address', type: 'address', indexed: true },
+    ],
+    name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address', indexed: false }],
+    name: 'TransferOwnerRequested',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'MIN_WAIT_TIME',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'WAIT_TIME',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getFees',
+    outputs: [
+      {
+        name: '',
+        internalType: 'struct IFeeManager.Fees',
+        type: 'tuple',
+        components: [
+          { name: 'managementFee', internalType: 'uint256', type: 'uint256' },
+          { name: 'performanceFee', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getPendingFees',
+    outputs: [
+      {
+        name: '',
+        internalType: 'struct IFeeManager.Fees',
+        type: 'tuple',
+        components: [
+          { name: 'managementFee', internalType: 'uint256', type: 'uint256' },
+          { name: 'performanceFee', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getPendingFeesSetTime',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'owner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingOwner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingOwnerTime',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_principal', internalType: 'uint256', type: 'uint256' },
+      { name: '_interest', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'processFees',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_newOwner', internalType: 'address', type: 'address' }],
+    name: 'requestTransferOwner',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: '_fee',
+        internalType: 'struct IFeeManager.Fees',
+        type: 'tuple',
+        components: [
+          { name: 'managementFee', internalType: 'uint256', type: 'uint256' },
+          { name: 'performanceFee', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+    ],
+    name: 'setFees',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: '_fee',
+        internalType: 'struct IFeeManager.Fees',
+        type: 'tuple',
+        components: [
+          { name: 'managementFee', internalType: 'uint256', type: 'uint256' },
+          { name: 'performanceFee', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+    ],
+    name: 'setPendingFees',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
+    name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// IAaveLendingPool
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const iAaveLendingPoolAbi = [
+  {
+    type: 'function',
+    inputs: [
+      { name: 'asset', internalType: 'address', type: 'address' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+      { name: 'onBehalfOf', internalType: 'address', type: 'address' },
+      { name: 'referralCode', internalType: 'uint16', type: 'uint16' },
+    ],
+    name: 'deposit',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'asset', internalType: 'address', type: 'address' }],
+    name: 'getReserveData',
+    outputs: [
+      { name: 'configuration', internalType: 'uint256', type: 'uint256' },
+      { name: 'liquidityIndex', internalType: 'uint128', type: 'uint128' },
+      { name: 'currentLiquidityRate', internalType: 'uint128', type: 'uint128' },
+      { name: 'variableBorrowIndex', internalType: 'uint128', type: 'uint128' },
+      { name: 'currentVariableBorrowRate', internalType: 'uint128', type: 'uint128' },
+      { name: 'currentStableBorrowRate', internalType: 'uint128', type: 'uint128' },
+      { name: 'lastUpdateTimestamp', internalType: 'uint40', type: 'uint40' },
+      { name: 'id', internalType: 'uint16', type: 'uint16' },
+      { name: 'aTokenAddress', internalType: 'address', type: 'address' },
+      { name: 'stableDebtTokenAddress', internalType: 'address', type: 'address' },
+      { name: 'variableDebtTokenAddress', internalType: 'address', type: 'address' },
+      { name: 'interestRateStrategyAddress', internalType: 'address', type: 'address' },
+      { name: 'accruedToTreasury', internalType: 'uint128', type: 'uint128' },
+      { name: 'unbacked', internalType: 'uint128', type: 'uint128' },
+      { name: 'isolationModeTotalDebt', internalType: 'uint128', type: 'uint128' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'asset', internalType: 'address', type: 'address' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+      { name: 'to', internalType: 'address', type: 'address' },
+    ],
+    name: 'withdraw',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // IAuctionLoanLiquidator
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -3098,6 +3485,21 @@ export const iAuctionLoanLiquidatorAbi = [
 
 export const iBaseInterestAllocatorAbi = [
   {
+    type: 'event',
+    anonymous: false,
+    inputs: [{ name: 'total', internalType: 'uint256', type: 'uint256', indexed: false }],
+    name: 'AllTransfered',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'currentIdle', internalType: 'uint256', type: 'uint256', indexed: false },
+      { name: 'targetIdle', internalType: 'uint256', type: 'uint256', indexed: false },
+    ],
+    name: 'Reallocated',
+  },
+  {
     type: 'function',
     inputs: [],
     name: 'getAssetsAllocated',
@@ -3141,13 +3543,6 @@ export const iBaseLoanAbi = [
     type: 'function',
     inputs: [{ name: '_minOfferId', internalType: 'uint256', type: 'uint256' }],
     name: 'cancelAllOffers',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '_minRenegotiationId', internalType: 'uint256', type: 'uint256' }],
-    name: 'cancelAllRenegotiationOffers',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -3943,6 +4338,98 @@ export const ierc721TokenReceiverAbi = [
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// IFeeManager
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const iFeeManagerAbi = [
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getFees',
+    outputs: [
+      {
+        name: '',
+        internalType: 'struct IFeeManager.Fees',
+        type: 'tuple',
+        components: [
+          { name: 'managementFee', internalType: 'uint256', type: 'uint256' },
+          { name: 'performanceFee', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getPendingFees',
+    outputs: [
+      {
+        name: '',
+        internalType: 'struct IFeeManager.Fees',
+        type: 'tuple',
+        components: [
+          { name: 'managementFee', internalType: 'uint256', type: 'uint256' },
+          { name: 'performanceFee', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getPendingFeesSetTime',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_principal', internalType: 'uint256', type: 'uint256' },
+      { name: '_interest', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'processFees',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: '_fee',
+        internalType: 'struct IFeeManager.Fees',
+        type: 'tuple',
+        components: [
+          { name: 'managementFee', internalType: 'uint256', type: 'uint256' },
+          { name: 'performanceFee', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+    ],
+    name: 'setFees',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: '_fee',
+        internalType: 'struct IFeeManager.Fees',
+        type: 'tuple',
+        components: [
+          { name: 'managementFee', internalType: 'uint256', type: 'uint256' },
+          { name: 'performanceFee', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+    ],
+    name: 'setPendingFees',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ILeverage
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -4092,6 +4579,13 @@ export const iLidoAbi = [
     name: 'getTotalShares',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_referral', internalType: 'address', type: 'address' }],
+    name: 'submit',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'payable',
   },
 ] as const
 
@@ -4361,6 +4855,235 @@ export const iLoanManagerRegistryAbi = [
 
 export const iMultiSourceLoanAbi = [
   {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'newdelegateRegistry', internalType: 'address', type: 'address', indexed: false },
+    ],
+    name: 'DelegateRegistryUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'loanId', internalType: 'uint256', type: 'uint256', indexed: false },
+      { name: 'delegate', internalType: 'address', type: 'address', indexed: false },
+      { name: 'value', internalType: 'bool', type: 'bool', indexed: false },
+    ],
+    name: 'Delegated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'newFlashActionContract', internalType: 'address', type: 'address', indexed: false },
+    ],
+    name: 'FlashActionContractUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'loanId', internalType: 'uint256', type: 'uint256', indexed: false },
+      { name: 'target', internalType: 'address', type: 'address', indexed: false },
+      { name: 'data', internalType: 'bytes', type: 'bytes', indexed: false },
+    ],
+    name: 'FlashActionExecuted',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'loanId', internalType: 'uint256', type: 'uint256', indexed: false },
+      { name: 'offerId', internalType: 'uint256[]', type: 'uint256[]', indexed: false },
+      {
+        name: 'loan',
+        internalType: 'struct IMultiSourceLoan.Loan',
+        type: 'tuple',
+        components: [
+          { name: 'borrower', internalType: 'address', type: 'address' },
+          { name: 'nftCollateralTokenId', internalType: 'uint256', type: 'uint256' },
+          { name: 'nftCollateralAddress', internalType: 'address', type: 'address' },
+          { name: 'principalAddress', internalType: 'address', type: 'address' },
+          { name: 'principalAmount', internalType: 'uint256', type: 'uint256' },
+          { name: 'startTime', internalType: 'uint256', type: 'uint256' },
+          { name: 'duration', internalType: 'uint256', type: 'uint256' },
+          {
+            name: 'tranche',
+            internalType: 'struct IMultiSourceLoan.Tranche[]',
+            type: 'tuple[]',
+            components: [
+              { name: 'loanId', internalType: 'uint256', type: 'uint256' },
+              { name: 'floor', internalType: 'uint256', type: 'uint256' },
+              { name: 'principalAmount', internalType: 'uint256', type: 'uint256' },
+              { name: 'lender', internalType: 'address', type: 'address' },
+              { name: 'accruedInterest', internalType: 'uint256', type: 'uint256' },
+              { name: 'startTime', internalType: 'uint256', type: 'uint256' },
+              { name: 'aprBps', internalType: 'uint256', type: 'uint256' },
+            ],
+          },
+          { name: 'protocolFee', internalType: 'uint256', type: 'uint256' },
+        ],
+        indexed: false,
+      },
+      { name: 'fee', internalType: 'uint256', type: 'uint256', indexed: false },
+    ],
+    name: 'LoanEmitted',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [{ name: 'loanId', internalType: 'uint256', type: 'uint256', indexed: false }],
+    name: 'LoanLiquidated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'renegotiationId', internalType: 'uint256', type: 'uint256', indexed: false },
+      { name: 'oldLoanId', internalType: 'uint256', type: 'uint256', indexed: false },
+      { name: 'newLoanId', internalType: 'uint256', type: 'uint256', indexed: false },
+      {
+        name: 'loan',
+        internalType: 'struct IMultiSourceLoan.Loan',
+        type: 'tuple',
+        components: [
+          { name: 'borrower', internalType: 'address', type: 'address' },
+          { name: 'nftCollateralTokenId', internalType: 'uint256', type: 'uint256' },
+          { name: 'nftCollateralAddress', internalType: 'address', type: 'address' },
+          { name: 'principalAddress', internalType: 'address', type: 'address' },
+          { name: 'principalAmount', internalType: 'uint256', type: 'uint256' },
+          { name: 'startTime', internalType: 'uint256', type: 'uint256' },
+          { name: 'duration', internalType: 'uint256', type: 'uint256' },
+          {
+            name: 'tranche',
+            internalType: 'struct IMultiSourceLoan.Tranche[]',
+            type: 'tuple[]',
+            components: [
+              { name: 'loanId', internalType: 'uint256', type: 'uint256' },
+              { name: 'floor', internalType: 'uint256', type: 'uint256' },
+              { name: 'principalAmount', internalType: 'uint256', type: 'uint256' },
+              { name: 'lender', internalType: 'address', type: 'address' },
+              { name: 'accruedInterest', internalType: 'uint256', type: 'uint256' },
+              { name: 'startTime', internalType: 'uint256', type: 'uint256' },
+              { name: 'aprBps', internalType: 'uint256', type: 'uint256' },
+            ],
+          },
+          { name: 'protocolFee', internalType: 'uint256', type: 'uint256' },
+        ],
+        indexed: false,
+      },
+      { name: 'fee', internalType: 'uint256', type: 'uint256', indexed: false },
+    ],
+    name: 'LoanRefinanced',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'loanId', internalType: 'uint256', type: 'uint256', indexed: false },
+      { name: 'newLoanId', internalType: 'uint256', type: 'uint256', indexed: false },
+      {
+        name: 'loan',
+        internalType: 'struct IMultiSourceLoan.Loan',
+        type: 'tuple',
+        components: [
+          { name: 'borrower', internalType: 'address', type: 'address' },
+          { name: 'nftCollateralTokenId', internalType: 'uint256', type: 'uint256' },
+          { name: 'nftCollateralAddress', internalType: 'address', type: 'address' },
+          { name: 'principalAddress', internalType: 'address', type: 'address' },
+          { name: 'principalAmount', internalType: 'uint256', type: 'uint256' },
+          { name: 'startTime', internalType: 'uint256', type: 'uint256' },
+          { name: 'duration', internalType: 'uint256', type: 'uint256' },
+          {
+            name: 'tranche',
+            internalType: 'struct IMultiSourceLoan.Tranche[]',
+            type: 'tuple[]',
+            components: [
+              { name: 'loanId', internalType: 'uint256', type: 'uint256' },
+              { name: 'floor', internalType: 'uint256', type: 'uint256' },
+              { name: 'principalAmount', internalType: 'uint256', type: 'uint256' },
+              { name: 'lender', internalType: 'address', type: 'address' },
+              { name: 'accruedInterest', internalType: 'uint256', type: 'uint256' },
+              { name: 'startTime', internalType: 'uint256', type: 'uint256' },
+              { name: 'aprBps', internalType: 'uint256', type: 'uint256' },
+            ],
+          },
+          { name: 'protocolFee', internalType: 'uint256', type: 'uint256' },
+        ],
+        indexed: false,
+      },
+      { name: 'offerIds', internalType: 'uint256[]', type: 'uint256[]', indexed: false },
+      { name: 'totalFee', internalType: 'uint256', type: 'uint256', indexed: false },
+    ],
+    name: 'LoanRefinancedFromNewOffers',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'loanId', internalType: 'uint256', type: 'uint256', indexed: false },
+      { name: 'totalRepayment', internalType: 'uint256', type: 'uint256', indexed: false },
+      { name: 'fee', internalType: 'uint256', type: 'uint256', indexed: false },
+    ],
+    name: 'LoanRepaid',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [{ name: 'minLockPeriod', internalType: 'uint256', type: 'uint256', indexed: false }],
+    name: 'MinLockPeriodUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'delegate', internalType: 'address', type: 'address', indexed: false },
+      { name: 'collection', internalType: 'address', type: 'address', indexed: false },
+      { name: 'tokenId', internalType: 'uint256', type: 'uint256', indexed: false },
+    ],
+    name: 'RevokeDelegate',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'loan',
+        internalType: 'struct IMultiSourceLoan.Loan',
+        type: 'tuple',
+        components: [
+          { name: 'borrower', internalType: 'address', type: 'address' },
+          { name: 'nftCollateralTokenId', internalType: 'uint256', type: 'uint256' },
+          { name: 'nftCollateralAddress', internalType: 'address', type: 'address' },
+          { name: 'principalAddress', internalType: 'address', type: 'address' },
+          { name: 'principalAmount', internalType: 'uint256', type: 'uint256' },
+          { name: 'startTime', internalType: 'uint256', type: 'uint256' },
+          { name: 'duration', internalType: 'uint256', type: 'uint256' },
+          {
+            name: 'tranche',
+            internalType: 'struct IMultiSourceLoan.Tranche[]',
+            type: 'tuple[]',
+            components: [
+              { name: 'loanId', internalType: 'uint256', type: 'uint256' },
+              { name: 'floor', internalType: 'uint256', type: 'uint256' },
+              { name: 'principalAmount', internalType: 'uint256', type: 'uint256' },
+              { name: 'lender', internalType: 'address', type: 'address' },
+              { name: 'accruedInterest', internalType: 'uint256', type: 'uint256' },
+              { name: 'startTime', internalType: 'uint256', type: 'uint256' },
+              { name: 'aprBps', internalType: 'uint256', type: 'uint256' },
+            ],
+          },
+          { name: 'protocolFee', internalType: 'uint256', type: 'uint256' },
+        ],
+        indexed: false,
+      },
+      { name: 'minTranche', internalType: 'uint256', type: 'uint256', indexed: false },
+      { name: 'maxTranche', internalType: 'uint256', type: 'uint256', indexed: false },
+    ],
+    name: 'TranchesMerged',
+  },
+  {
     type: 'function',
     inputs: [
       {
@@ -4520,7 +5243,7 @@ export const iMultiSourceLoanAbi = [
                       { name: 'aprBps', internalType: 'uint256', type: 'uint256' },
                       { name: 'expirationTime', internalType: 'uint256', type: 'uint256' },
                       { name: 'duration', internalType: 'uint256', type: 'uint256' },
-                      { name: 'maxTrancheFloor', internalType: 'uint256', type: 'uint256' },
+                      { name: 'maxSeniorRepayment', internalType: 'uint256', type: 'uint256' },
                       {
                         name: 'validators',
                         internalType: 'struct IBaseLoan.OfferValidator[]',
@@ -4869,7 +5592,7 @@ export const iMultiSourceLoanAbi = [
                       { name: 'aprBps', internalType: 'uint256', type: 'uint256' },
                       { name: 'expirationTime', internalType: 'uint256', type: 'uint256' },
                       { name: 'duration', internalType: 'uint256', type: 'uint256' },
-                      { name: 'maxTrancheFloor', internalType: 'uint256', type: 'uint256' },
+                      { name: 'maxSeniorRepayment', internalType: 'uint256', type: 'uint256' },
                       {
                         name: 'validators',
                         internalType: 'struct IBaseLoan.OfferValidator[]',
@@ -5164,6 +5887,13 @@ export const iMultiSourceLoanAbi = [
       { name: '_tokenId', internalType: 'uint256', type: 'uint256' },
     ],
     name: 'revokeDelegate',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_callbackHandler', internalType: 'address', type: 'address' }],
+    name: 'setCallbackHandler',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -5497,7 +6227,7 @@ export const iOfferValidatorAbi = [
           { name: 'aprBps', internalType: 'uint256', type: 'uint256' },
           { name: 'expirationTime', internalType: 'uint256', type: 'uint256' },
           { name: 'duration', internalType: 'uint256', type: 'uint256' },
-          { name: 'maxTrancheFloor', internalType: 'uint256', type: 'uint256' },
+          { name: 'maxSeniorRepayment', internalType: 'uint256', type: 'uint256' },
           {
             name: 'validators',
             internalType: 'struct IBaseLoan.OfferValidator[]',
@@ -5551,40 +6281,24 @@ export const iOracleAbi = [
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 export const iPoolAbi = [
-  { type: 'function', inputs: [], name: 'closePool', outputs: [], stateMutability: 'nonpayable' },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [{ name: 'status', internalType: 'bool', type: 'bool', indexed: false }],
+    name: 'PoolPaused',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_newBaseInterestAllocator', internalType: 'address', type: 'address' }],
+    name: 'confirmBaseInterestAllocator',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
   {
     type: 'function',
     inputs: [],
     name: 'getBaseInterestAllocator',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getBonusAprAdjustment',
-    outputs: [{ name: '', internalType: 'uint16', type: 'uint16' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getBonusDepositAdjustment',
-    outputs: [{ name: '', internalType: 'uint16', type: 'uint16' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getCurrentBonusAprAdjustment',
-    outputs: [{ name: '', internalType: 'uint16', type: 'uint16' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getCurrentBonusDepositAdjustment',
-    outputs: [{ name: '', internalType: 'uint16', type: 'uint16' }],
     stateMutability: 'nonpayable',
   },
   {
@@ -5604,16 +6318,16 @@ export const iPoolAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'getTotalOutstandingValue',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
+    name: 'getPendingBaseInterestAllocator',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
     inputs: [],
-    name: 'getUndeployedAssets',
+    name: 'getPendingBaseInterestAllocatorSetTime',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -5622,25 +6336,18 @@ export const iPoolAbi = [
     outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
     stateMutability: 'nonpayable',
   },
-  { type: 'function', inputs: [], name: 'reallocate', outputs: [], stateMutability: 'nonpayable' },
+  { type: 'function', inputs: [], name: 'pausePool', outputs: [], stateMutability: 'nonpayable' },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'reallocate',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+  },
   {
     type: 'function',
     inputs: [{ name: '_newBaseInterestAllocator', internalType: 'address', type: 'address' }],
     name: 'setBaseInterestAllocator',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '_bonusAprAdjustment', internalType: 'uint16', type: 'uint16' }],
-    name: 'setBonusAprAdjustment',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '_bonusDepositAdjustment', internalType: 'uint16', type: 'uint16' }],
-    name: 'setBonusDepositAdjustment',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -5652,13 +6359,20 @@ export const iPoolAbi = [
         internalType: 'struct IPool.OptimalIdleRange',
         type: 'tuple',
         components: [
-          { name: 'min', internalType: 'uint16', type: 'uint16' },
-          { name: 'max', internalType: 'uint16', type: 'uint16' },
-          { name: 'mid', internalType: 'uint16', type: 'uint16' },
+          { name: 'min', internalType: 'uint80', type: 'uint80' },
+          { name: 'max', internalType: 'uint80', type: 'uint80' },
+          { name: 'mid', internalType: 'uint80', type: 'uint80' },
         ],
       },
     ],
     name: 'setOptimalIdleRange',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_newReallocationBonus', internalType: 'uint256', type: 'uint256' }],
+    name: 'setReallocationBonus',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -5715,10 +6429,7 @@ export const iPoolUnderwriterAbi = [
   {
     type: 'function',
     inputs: [
-      { name: '_idleAssets', internalType: 'uint256', type: 'uint256' },
-      { name: '_outstandingAssets', internalType: 'uint256', type: 'uint256' },
       { name: '_baseRate', internalType: 'uint256', type: 'uint256' },
-      { name: '_bonusAprAdjustment', internalType: 'uint16', type: 'uint16' },
       { name: '_offer', internalType: 'bytes', type: 'bytes' },
     ],
     name: 'validateOffer',
@@ -6037,6 +6748,7 @@ export const leverageAbi = [
           { name: 'sellTax', internalType: 'uint128', type: 'uint128' },
         ],
       },
+      { name: '_minWaitTime', internalType: 'uint256', type: 'uint256' },
       {
         name: '__protocolFee',
         internalType: 'struct WithProtocolFee.ProtocolFee',
@@ -6054,6 +6766,7 @@ export const leverageAbi = [
   { type: 'error', inputs: [], name: 'CurrencyNotSupportedError' },
   { type: 'error', inputs: [], name: 'InvalidAddressUpdateError' },
   { type: 'error', inputs: [], name: 'InvalidCallbackError' },
+  { type: 'error', inputs: [], name: 'InvalidInputError' },
   {
     type: 'error',
     inputs: [{ name: '_fraction', internalType: 'uint256', type: 'uint256' }],
@@ -6082,6 +6795,7 @@ export const leverageAbi = [
     inputs: [{ name: '_pendingProtocolFeeSetTime', internalType: 'uint256', type: 'uint256' }],
     name: 'TooEarlyError',
   },
+  { type: 'error', inputs: [], name: 'TooSoonError' },
   {
     type: 'event',
     anonymous: false,
@@ -6183,6 +6897,12 @@ export const leverageAbi = [
     ],
     name: 'TaxesUpdated',
   },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address', indexed: false }],
+    name: 'TransferOwnerRequested',
+  },
   { type: 'fallback', stateMutability: 'payable' },
   {
     type: 'function',
@@ -6195,6 +6915,13 @@ export const leverageAbi = [
     type: 'function',
     inputs: [],
     name: 'MAX_PROTOCOL_FEE',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'MIN_WAIT_TIME',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
@@ -6437,6 +7164,27 @@ export const leverageAbi = [
   },
   {
     type: 'function',
+    inputs: [],
+    name: 'pendingOwner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingOwnerTime',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_newOwner', internalType: 'address', type: 'address' }],
+    name: 'requestTransferOwner',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     inputs: [{ name: '_executionData', internalType: 'bytes[]', type: 'bytes[]' }],
     name: 'sell',
     outputs: [],
@@ -6495,6 +7243,152 @@ export const leverageAbi = [
       },
     ],
     name: 'updateTaxes',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  { type: 'receive', stateMutability: 'payable' },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// LidoEthBaseInterestAllocator
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const lidoEthBaseInterestAllocatorAbi = [
+  {
+    type: 'constructor',
+    inputs: [
+      { name: '_pool', internalType: 'address', type: 'address' },
+      { name: '__curvePool', internalType: 'address payable', type: 'address' },
+      { name: '__weth', internalType: 'address payable', type: 'address' },
+      { name: '__lido', internalType: 'address', type: 'address' },
+      { name: '_currentBaseAprBps', internalType: 'uint256', type: 'uint256' },
+      { name: '_lidoUpdateTolerance', internalType: 'uint96', type: 'uint96' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  { type: 'error', inputs: [], name: 'InvalidAprError' },
+  { type: 'error', inputs: [], name: 'InvalidCallerError' },
+  { type: 'error', inputs: [], name: 'InvalidPoolError' },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [{ name: 'total', internalType: 'uint256', type: 'uint256', indexed: false }],
+    name: 'AllTransfered',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [{ name: 'maxSlippage', internalType: 'uint256', type: 'uint256', indexed: false }],
+    name: 'MaxSlippageSet',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'user', internalType: 'address', type: 'address', indexed: true },
+      { name: 'newOwner', internalType: 'address', type: 'address', indexed: true },
+    ],
+    name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'currentIdle', internalType: 'uint256', type: 'uint256', indexed: false },
+      { name: 'targetIdle', internalType: 'uint256', type: 'uint256', indexed: false },
+    ],
+    name: 'Reallocated',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getAssetsAllocated',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getBaseApr',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getBaseAprWithUpdate',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getLidoData',
+    outputs: [
+      { name: 'lastTs', internalType: 'uint96', type: 'uint96' },
+      { name: 'shareRate', internalType: 'uint144', type: 'uint144' },
+      { name: 'aprBps', internalType: 'uint16', type: 'uint16' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getLidoUpdateTolerance',
+    outputs: [{ name: '', internalType: 'uint96', type: 'uint96' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getMaxSlippage',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getPool',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'owner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_currentIdle', internalType: 'uint256', type: 'uint256' },
+      { name: '_targetIdle', internalType: 'uint256', type: 'uint256' },
+      { name: '_force', internalType: 'bool', type: 'bool' },
+    ],
+    name: 'reallocate',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_maxSlippage', internalType: 'uint256', type: 'uint256' }],
+    name: 'setMaxSlippage',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  { type: 'function', inputs: [], name: 'transferAll', outputs: [], stateMutability: 'nonpayable' },
+  {
+    type: 'function',
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
+    name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'updateLidoValues',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -6565,6 +7459,7 @@ export const liquidationDistributorAbi = [
 export const liquidationHandlerAbi = [
   { type: 'error', inputs: [], name: 'AddressZeroError' },
   { type: 'error', inputs: [], name: 'InvalidDurationError' },
+  { type: 'error', inputs: [], name: 'InvalidInputError' },
   {
     type: 'error',
     inputs: [{ name: '_fraction', internalType: 'uint256', type: 'uint256' }],
@@ -6585,6 +7480,7 @@ export const liquidationHandlerAbi = [
     inputs: [{ name: '_pendingProtocolFeeSetTime', internalType: 'uint256', type: 'uint256' }],
     name: 'TooEarlyError',
   },
+  { type: 'error', inputs: [], name: 'TooSoonError' },
   {
     type: 'event',
     anonymous: false,
@@ -6656,6 +7552,12 @@ export const liquidationHandlerAbi = [
     name: 'ProtocolFeeUpdated',
   },
   {
+    type: 'event',
+    anonymous: false,
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address', indexed: false }],
+    name: 'TransferOwnerRequested',
+  },
+  {
     type: 'function',
     inputs: [],
     name: 'FEE_UPDATE_NOTICE',
@@ -6681,6 +7583,13 @@ export const liquidationHandlerAbi = [
     inputs: [],
     name: 'MIN_AUCTION_DURATION',
     outputs: [{ name: '', internalType: 'uint48', type: 'uint48' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'MIN_WAIT_TIME',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -6744,6 +7653,27 @@ export const liquidationHandlerAbi = [
     name: 'owner',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
     stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingOwner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingOwnerTime',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_newOwner', internalType: 'address', type: 'address' }],
+    name: 'requestTransferOwner',
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -7150,20 +8080,24 @@ export const loanHelpersAbi = [
 export const loanManagerAbi = [
   { type: 'error', inputs: [], name: 'AddressZeroError' },
   { type: 'error', inputs: [], name: 'CallerNotAccepted' },
+  { type: 'error', inputs: [], name: 'InvalidInputError' },
+  { type: 'error', inputs: [], name: 'TooSoonError' },
   {
     type: 'event',
     anonymous: false,
     inputs: [
-      { name: 'caller', internalType: 'address', type: 'address', indexed: false },
-      { name: 'isLoanContract', internalType: 'bool', type: 'bool', indexed: false },
+      {
+        name: 'callers',
+        internalType: 'struct LoanManager.PendingCaller[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'caller', internalType: 'address', type: 'address' },
+          { name: 'isLoanContract', internalType: 'bool', type: 'bool' },
+        ],
+        indexed: false,
+      },
     ],
-    name: 'CallerAdded',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [{ name: 'caller', internalType: 'address', type: 'address', indexed: false }],
-    name: 'CallerRemoved',
+    name: 'CallersAdded',
   },
   {
     type: 'event',
@@ -7178,17 +8112,105 @@ export const loanManagerAbi = [
     type: 'event',
     anonymous: false,
     inputs: [{ name: 'underwriter', internalType: 'address', type: 'address', indexed: false }],
+    name: 'PendingUnderwriterSet',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'callers',
+        internalType: 'struct LoanManager.PendingCaller[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'caller', internalType: 'address', type: 'address' },
+          { name: 'isLoanContract', internalType: 'bool', type: 'bool' },
+        ],
+        indexed: false,
+      },
+    ],
+    name: 'RequestCallersAdded',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address', indexed: false }],
+    name: 'TransferOwnerRequested',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [{ name: 'underwriter', internalType: 'address', type: 'address', indexed: false }],
     name: 'UnderwriterSet',
   },
   {
     type: 'function',
+    inputs: [],
+    name: 'MIN_WAIT_TIME',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'UPDATE_WAITING_TIME',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [
-      { name: '_caller', internalType: 'address', type: 'address' },
-      { name: '__isLoanContract', internalType: 'bool', type: 'bool' },
+      {
+        name: '_callers',
+        internalType: 'struct LoanManager.PendingCaller[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'caller', internalType: 'address', type: 'address' },
+          { name: 'isLoanContract', internalType: 'bool', type: 'bool' },
+        ],
+      },
     ],
-    name: 'addCaller',
+    name: 'addCallers',
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '__underwriter', internalType: 'address', type: 'address' }],
+    name: 'confirmUnderwriter',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    name: 'getPendingAcceptedCallers',
+    outputs: [
+      { name: 'caller', internalType: 'address', type: 'address' },
+      { name: 'isLoanContract', internalType: 'bool', type: 'bool' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getPendingAcceptedCallersSetTime',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getPendingUnderwriter',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getPendingUnderwriterSetTime',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -7239,6 +8261,44 @@ export const loanManagerAbi = [
     name: 'owner',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
     stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingOwner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingOwnerTime',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: '_callers',
+        internalType: 'struct LoanManager.PendingCaller[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'caller', internalType: 'address', type: 'address' },
+          { name: 'isLoanContract', internalType: 'bool', type: 'bool' },
+        ],
+      },
+    ],
+    name: 'requestAddCallers',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_newOwner', internalType: 'address', type: 'address' }],
+    name: 'requestTransferOwner',
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -7644,6 +8704,85 @@ export const mockErc721Abi = [
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// MockedAave
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const mockedAaveAbi = [
+  {
+    type: 'constructor',
+    inputs: [{ name: '__baseAsset', internalType: 'contract SampleToken', type: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'aToken',
+    outputs: [{ name: '', internalType: 'contract SampleToken', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'baseAsset',
+    outputs: [{ name: '', internalType: 'contract ERC20', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'address', type: 'address' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+      { name: 'onBehalfOf', internalType: 'address', type: 'address' },
+      { name: '', internalType: 'uint16', type: 'uint16' },
+    ],
+    name: 'deposit',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'address', type: 'address' }],
+    name: 'getReserveData',
+    outputs: [
+      { name: '', internalType: 'uint256', type: 'uint256' },
+      { name: '', internalType: 'uint128', type: 'uint128' },
+      { name: '', internalType: 'uint128', type: 'uint128' },
+      { name: '', internalType: 'uint128', type: 'uint128' },
+      { name: '', internalType: 'uint128', type: 'uint128' },
+      { name: '', internalType: 'uint128', type: 'uint128' },
+      { name: '', internalType: 'uint40', type: 'uint40' },
+      { name: '', internalType: 'uint16', type: 'uint16' },
+      { name: '', internalType: 'address', type: 'address' },
+      { name: '', internalType: 'address', type: 'address' },
+      { name: '', internalType: 'address', type: 'address' },
+      { name: '', internalType: 'address', type: 'address' },
+      { name: '', internalType: 'uint128', type: 'uint128' },
+      { name: '', internalType: 'uint128', type: 'uint128' },
+      { name: '', internalType: 'uint128', type: 'uint128' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '__apr', internalType: 'uint128', type: 'uint128' }],
+    name: 'setAprBps',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'address', type: 'address' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+      { name: 'to', internalType: 'address', type: 'address' },
+    ],
+    name: 'withdraw',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // MockedCurve
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -7839,6 +8978,13 @@ export const mockedLidoAbi = [
     name: 'setTotalShares',
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_referral', internalType: 'address', type: 'address' }],
+    name: 'submit',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'payable',
   },
   {
     type: 'function',
@@ -8192,6 +9338,7 @@ export const multiSourceLoanAbi = [
       { name: 'delegateRegistry', internalType: 'address', type: 'address' },
       { name: 'loanManagerRegistry', internalType: 'address', type: 'address' },
       { name: 'flashActionContract', internalType: 'address', type: 'address' },
+      { name: 'minWaitTime', internalType: 'uint256', type: 'uint256' },
     ],
     stateMutability: 'nonpayable',
   },
@@ -8235,6 +9382,7 @@ export const multiSourceLoanAbi = [
   { type: 'error', inputs: [], name: 'InvalidCallerError' },
   { type: 'error', inputs: [], name: 'InvalidCollateralIdError' },
   { type: 'error', inputs: [], name: 'InvalidDurationError' },
+  { type: 'error', inputs: [], name: 'InvalidInputError' },
   {
     type: 'error',
     inputs: [{ name: '_loanId', internalType: 'uint256', type: 'uint256' }],
@@ -8310,6 +9458,7 @@ export const multiSourceLoanAbi = [
     name: 'TooEarlyError',
   },
   { type: 'error', inputs: [], name: 'TooManyTranchesError' },
+  { type: 'error', inputs: [], name: 'TooSoonError' },
   {
     type: 'error',
     inputs: [{ name: 'minTimestamp', internalType: 'uint256', type: 'uint256' }],
@@ -8325,15 +9474,6 @@ export const multiSourceLoanAbi = [
       { name: 'minOfferId', internalType: 'uint256', type: 'uint256', indexed: false },
     ],
     name: 'AllOffersCancelled',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      { name: 'lender', internalType: 'address', type: 'address', indexed: false },
-      { name: 'minRenegotiationId', internalType: 'uint256', type: 'uint256', indexed: false },
-    ],
-    name: 'AllRenegotiationOffersCancelled',
   },
   {
     type: 'event',
@@ -8499,6 +9639,7 @@ export const multiSourceLoanAbi = [
     anonymous: false,
     inputs: [
       { name: 'loanId', internalType: 'uint256', type: 'uint256', indexed: false },
+      { name: 'newLoanId', internalType: 'uint256', type: 'uint256', indexed: false },
       {
         name: 'loan',
         internalType: 'struct IMultiSourceLoan.Loan',
@@ -8670,6 +9811,12 @@ export const multiSourceLoanAbi = [
     name: 'TranchesMerged',
   },
   {
+    type: 'event',
+    anonymous: false,
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address', indexed: false }],
+    name: 'TransferOwnerRequested',
+  },
+  {
     type: 'function',
     inputs: [],
     name: 'DOMAIN_SEPARATOR',
@@ -8709,6 +9856,20 @@ export const multiSourceLoanAbi = [
     inputs: [],
     name: 'MIN_AUCTION_DURATION',
     outputs: [{ name: '', internalType: 'uint48', type: 'uint48' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'MIN_WAIT_TIME',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'VERSION',
+    outputs: [{ name: '', internalType: 'bytes', type: 'bytes' }],
     stateMutability: 'view',
   },
   {
@@ -8805,13 +9966,6 @@ export const multiSourceLoanAbi = [
   },
   {
     type: 'function',
-    inputs: [{ name: '_minRenegotiationId', internalType: 'uint256', type: 'uint256' }],
-    name: 'cancelAllRenegotiationOffers',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
     inputs: [{ name: '_offerId', internalType: 'uint256', type: 'uint256' }],
     name: 'cancelOffer',
     outputs: [],
@@ -8899,7 +10053,7 @@ export const multiSourceLoanAbi = [
                       { name: 'aprBps', internalType: 'uint256', type: 'uint256' },
                       { name: 'expirationTime', internalType: 'uint256', type: 'uint256' },
                       { name: 'duration', internalType: 'uint256', type: 'uint256' },
-                      { name: 'maxTrancheFloor', internalType: 'uint256', type: 'uint256' },
+                      { name: 'maxSeniorRepayment', internalType: 'uint256', type: 'uint256' },
                       {
                         name: 'validators',
                         internalType: 'struct IBaseLoan.OfferValidator[]',
@@ -9184,13 +10338,6 @@ export const multiSourceLoanAbi = [
   },
   {
     type: 'function',
-    inputs: [{ name: '', internalType: 'address', type: 'address' }],
-    name: 'lenderMinRenegotiationOfferId',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     inputs: [
       { name: '_loanId', internalType: 'uint256', type: 'uint256' },
       {
@@ -9378,6 +10525,20 @@ export const multiSourceLoanAbi = [
   },
   {
     type: 'function',
+    inputs: [],
+    name: 'pendingOwner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingOwnerTime',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [
       { name: '_loanId', internalType: 'uint256', type: 'uint256' },
       {
@@ -9440,7 +10601,7 @@ export const multiSourceLoanAbi = [
                       { name: 'aprBps', internalType: 'uint256', type: 'uint256' },
                       { name: 'expirationTime', internalType: 'uint256', type: 'uint256' },
                       { name: 'duration', internalType: 'uint256', type: 'uint256' },
-                      { name: 'maxTrancheFloor', internalType: 'uint256', type: 'uint256' },
+                      { name: 'maxSeniorRepayment', internalType: 'uint256', type: 'uint256' },
                       {
                         name: 'validators',
                         internalType: 'struct IBaseLoan.OfferValidator[]',
@@ -9729,6 +10890,13 @@ export const multiSourceLoanAbi = [
   },
   {
     type: 'function',
+    inputs: [{ name: '_newOwner', internalType: 'address', type: 'address' }],
+    name: 'requestTransferOwner',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     inputs: [
       { name: '_delegate', internalType: 'address', type: 'address' },
       { name: '_collection', internalType: 'address', type: 'address' },
@@ -9887,7 +11055,7 @@ export const nftBitVectorValidatorAbi = [
           { name: 'aprBps', internalType: 'uint256', type: 'uint256' },
           { name: 'expirationTime', internalType: 'uint256', type: 'uint256' },
           { name: 'duration', internalType: 'uint256', type: 'uint256' },
-          { name: 'maxTrancheFloor', internalType: 'uint256', type: 'uint256' },
+          { name: 'maxSeniorRepayment', internalType: 'uint256', type: 'uint256' },
           {
             name: 'validators',
             internalType: 'struct IBaseLoan.OfferValidator[]',
@@ -9943,7 +11111,7 @@ export const nftPackedListValidatorAbi = [
           { name: 'aprBps', internalType: 'uint256', type: 'uint256' },
           { name: 'expirationTime', internalType: 'uint256', type: 'uint256' },
           { name: 'duration', internalType: 'uint256', type: 'uint256' },
-          { name: 'maxTrancheFloor', internalType: 'uint256', type: 'uint256' },
+          { name: 'maxSeniorRepayment', internalType: 'uint256', type: 'uint256' },
           {
             name: 'validators',
             internalType: 'struct IBaseLoan.OfferValidator[]',
@@ -10119,20 +11287,21 @@ export const poolAbi = [
   {
     type: 'constructor',
     inputs: [
+      { name: '_feeManager', internalType: 'contract IFeeManager', type: 'address' },
       { name: '_underwriter', internalType: 'address', type: 'address' },
+      { name: '_waitingTimeBetweenUpdates', internalType: 'uint256', type: 'uint256' },
       {
         name: '_optimalIdleRange',
         internalType: 'struct IPool.OptimalIdleRange',
         type: 'tuple',
         components: [
-          { name: 'min', internalType: 'uint16', type: 'uint16' },
-          { name: 'max', internalType: 'uint16', type: 'uint16' },
-          { name: 'mid', internalType: 'uint16', type: 'uint16' },
+          { name: 'min', internalType: 'uint80', type: 'uint80' },
+          { name: 'max', internalType: 'uint80', type: 'uint80' },
+          { name: 'mid', internalType: 'uint80', type: 'uint80' },
         ],
       },
-      { name: '_bonusAprAdjustment', internalType: 'uint16', type: 'uint16' },
-      { name: '_bonusDepositAdjustment', internalType: 'uint16', type: 'uint16' },
       { name: '_maxTotalWithdrawalQueues', internalType: 'uint256', type: 'uint256' },
+      { name: '_reallocationBonus', internalType: 'uint256', type: 'uint256' },
       { name: '_asset', internalType: 'contract ERC20', type: 'address' },
       { name: '_name', internalType: 'string', type: 'string' },
       { name: '_symbol', internalType: 'string', type: 'string' },
@@ -10142,18 +11311,12 @@ export const poolAbi = [
   { type: 'error', inputs: [], name: 'AddressZeroError' },
   { type: 'error', inputs: [], name: 'AllocationAlreadyOptimalError' },
   { type: 'error', inputs: [], name: 'CallerNotAccepted' },
-  { type: 'error', inputs: [], name: 'CannotDeployVaultTooSoonError' },
+  { type: 'error', inputs: [], name: 'CannotDeployQueueTooSoonError' },
   { type: 'error', inputs: [], name: 'InsufficientAssetsError' },
-  {
-    type: 'error',
-    inputs: [
-      { name: 'i', internalType: 'uint256', type: 'uint256' },
-      { name: 'returndata', internalType: 'bytes', type: 'bytes' },
-    ],
-    name: 'MulticallFailed',
-  },
+  { type: 'error', inputs: [], name: 'InvalidInputError' },
   { type: 'error', inputs: [], name: 'NoSharesPendingWithdrawalError' },
   { type: 'error', inputs: [], name: 'PoolStatusError' },
+  { type: 'error', inputs: [], name: 'TooSoonError' },
   {
     type: 'event',
     anonymous: false,
@@ -10181,32 +11344,18 @@ export const poolAbi = [
     type: 'event',
     anonymous: false,
     inputs: [
-      { name: 'bonusAprAdjustment', internalType: 'uint16', type: 'uint16', indexed: false },
+      {
+        name: 'callers',
+        internalType: 'struct LoanManager.PendingCaller[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'caller', internalType: 'address', type: 'address' },
+          { name: 'isLoanContract', internalType: 'bool', type: 'bool' },
+        ],
+        indexed: false,
+      },
     ],
-    name: 'BonusAprAdjustmentSet',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      { name: 'bonusDepositAdjustment', internalType: 'uint16', type: 'uint16', indexed: false },
-    ],
-    name: 'BonusDepositAdjustmentSet',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      { name: 'caller', internalType: 'address', type: 'address', indexed: false },
-      { name: 'isLoanContract', internalType: 'bool', type: 'bool', indexed: false },
-    ],
-    name: 'CallerAdded',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [{ name: 'caller', internalType: 'address', type: 'address', indexed: false }],
-    name: 'CallerRemoved',
+    name: 'CallersAdded',
   },
   {
     type: 'event',
@@ -10223,23 +11372,14 @@ export const poolAbi = [
     type: 'event',
     anonymous: false,
     inputs: [
-      { name: 'claimer', internalType: 'address', type: 'address', indexed: false },
-      { name: 'total', internalType: 'uint256', type: 'uint256', indexed: false },
-    ],
-    name: 'DustClaimed',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
       {
         name: 'optimalIdleRange',
         internalType: 'struct IPool.OptimalIdleRange',
         type: 'tuple',
         components: [
-          { name: 'min', internalType: 'uint16', type: 'uint16' },
-          { name: 'max', internalType: 'uint16', type: 'uint16' },
-          { name: 'mid', internalType: 'uint16', type: 'uint16' },
+          { name: 'min', internalType: 'uint80', type: 'uint80' },
+          { name: 'max', internalType: 'uint80', type: 'uint80' },
+          { name: 'mid', internalType: 'uint80', type: 'uint80' },
         ],
         indexed: false,
       },
@@ -10255,7 +11395,74 @@ export const poolAbi = [
     ],
     name: 'OwnershipTransferred',
   },
-  { type: 'event', anonymous: false, inputs: [], name: 'PoolClosed' },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'newBaseInterestAllocator',
+        internalType: 'address',
+        type: 'address',
+        indexed: false,
+      },
+    ],
+    name: 'PendingBaseInterestAllocatorSet',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [{ name: 'underwriter', internalType: 'address', type: 'address', indexed: false }],
+    name: 'PendingUnderwriterSet',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [{ name: 'status', internalType: 'bool', type: 'bool', indexed: false }],
+    name: 'PoolPaused',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'queue', internalType: 'address', type: 'address', indexed: false },
+      { name: 'amount', internalType: 'uint256', type: 'uint256', indexed: false },
+    ],
+    name: 'QueueClaimed',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'delta', internalType: 'uint256', type: 'uint256', indexed: false },
+      { name: 'bonusShares', internalType: 'uint256', type: 'uint256', indexed: false },
+    ],
+    name: 'Reallocated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'newReallocationBonus', internalType: 'uint256', type: 'uint256', indexed: false },
+    ],
+    name: 'ReallocationBonusUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'callers',
+        internalType: 'struct LoanManager.PendingCaller[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'caller', internalType: 'address', type: 'address' },
+          { name: 'isLoanContract', internalType: 'bool', type: 'bool' },
+        ],
+        indexed: false,
+      },
+    ],
+    name: 'RequestCallersAdded',
+  },
   {
     type: 'event',
     anonymous: false,
@@ -10269,17 +11476,14 @@ export const poolAbi = [
   {
     type: 'event',
     anonymous: false,
-    inputs: [{ name: 'underwriter', internalType: 'address', type: 'address', indexed: false }],
-    name: 'UnderwriterSet',
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address', indexed: false }],
+    name: 'TransferOwnerRequested',
   },
   {
     type: 'event',
     anonymous: false,
-    inputs: [
-      { name: 'queue', internalType: 'address', type: 'address', indexed: false },
-      { name: 'amount', internalType: 'uint256', type: 'uint256', indexed: false },
-    ],
-    name: 'VaultClaimed',
+    inputs: [{ name: 'underwriter', internalType: 'address', type: 'address', indexed: false }],
+    name: 'UnderwriterSet',
   },
   {
     type: 'event',
@@ -10303,17 +11507,38 @@ export const poolAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'LOAN_BUFFER_TIME',
+    name: 'MIN_WAIT_TIME',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'PRINCIPAL_PRECISION',
+    outputs: [{ name: '', internalType: 'uint80', type: 'uint80' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'UPDATE_WAITING_TIME',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
   {
     type: 'function',
     inputs: [
-      { name: '_caller', internalType: 'address', type: 'address' },
-      { name: '__isLoanContract', internalType: 'bool', type: 'bool' },
+      {
+        name: '_callers',
+        internalType: 'struct LoanManager.PendingCaller[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'caller', internalType: 'address', type: 'address' },
+          { name: 'isLoanContract', internalType: 'bool', type: 'bool' },
+        ],
+      },
     ],
-    name: 'addCaller',
+    name: 'addCallers',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -10351,7 +11576,20 @@ export const poolAbi = [
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
-  { type: 'function', inputs: [], name: 'closePool', outputs: [], stateMutability: 'nonpayable' },
+  {
+    type: 'function',
+    inputs: [{ name: '_newBaseInterestAllocator', internalType: 'address', type: 'address' }],
+    name: 'confirmBaseInterestAllocator',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '__underwriter', internalType: 'address', type: 'address' }],
+    name: 'confirmUnderwriter',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
   {
     type: 'function',
     inputs: [{ name: 'shares', internalType: 'uint256', type: 'uint256' }],
@@ -10400,9 +11638,8 @@ export const poolAbi = [
         internalType: 'struct Pool.QueueAccounting',
         type: 'tuple',
         components: [
-          { name: 'shares', internalType: 'uint256', type: 'uint256' },
-          { name: 'totalShares', internalType: 'uint256', type: 'uint256' },
-          { name: 'netPoolFractionBps', internalType: 'uint128', type: 'uint128' },
+          { name: 'thisQueueFraction', internalType: 'uint128', type: 'uint128' },
+          { name: 'netPoolFraction', internalType: 'uint128', type: 'uint128' },
         ],
       },
     ],
@@ -10424,34 +11661,6 @@ export const poolAbi = [
   },
   {
     type: 'function',
-    inputs: [],
-    name: 'getBonusAprAdjustment',
-    outputs: [{ name: '', internalType: 'uint16', type: 'uint16' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getBonusDepositAdjustment',
-    outputs: [{ name: '', internalType: 'uint16', type: 'uint16' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getCurrentBonusAprAdjustment',
-    outputs: [{ name: '', internalType: 'uint16', type: 'uint16' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getCurrentBonusDepositAdjustment',
-    outputs: [{ name: '', internalType: 'uint16', type: 'uint16' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     inputs: [{ name: '_idx', internalType: 'uint256', type: 'uint256' }],
     name: 'getDeployedQueue',
     outputs: [
@@ -10465,6 +11674,13 @@ export const poolAbi = [
         ],
       },
     ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getFeeManager',
+    outputs: [{ name: '', internalType: 'contract IFeeManager', type: 'address' }],
     stateMutability: 'view',
   },
   {
@@ -10496,9 +11712,9 @@ export const poolAbi = [
     inputs: [],
     name: 'getOptimalIdleRange',
     outputs: [
-      { name: 'min', internalType: 'uint16', type: 'uint16' },
-      { name: 'max', internalType: 'uint16', type: 'uint16' },
-      { name: 'mid', internalType: 'uint16', type: 'uint16' },
+      { name: 'min', internalType: 'uint80', type: 'uint80' },
+      { name: 'max', internalType: 'uint80', type: 'uint80' },
+      { name: 'mid', internalType: 'uint80', type: 'uint80' },
     ],
     stateMutability: 'view',
   },
@@ -10542,6 +11758,37 @@ export const poolAbi = [
   },
   {
     type: 'function',
+    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    name: 'getPendingAcceptedCallers',
+    outputs: [
+      { name: 'caller', internalType: 'address', type: 'address' },
+      { name: 'isLoanContract', internalType: 'bool', type: 'bool' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getPendingAcceptedCallersSetTime',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getPendingBaseInterestAllocator',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getPendingBaseInterestAllocatorSetTime',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [],
     name: 'getPendingQueueIndex',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
@@ -10550,7 +11797,21 @@ export const poolAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'getTotalOutstandingValue',
+    name: 'getPendingUnderwriter',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getPendingUnderwriterSetTime',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getReallocationBonus',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
@@ -10559,13 +11820,6 @@ export const poolAbi = [
     inputs: [{ name: 'queueIndex', internalType: 'uint256', type: 'uint256' }],
     name: 'getTotalReceived',
     outputs: [{ name: 'totalReceived', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getUndeployedAssets',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -10658,13 +11912,6 @@ export const poolAbi = [
   },
   {
     type: 'function',
-    inputs: [{ name: 'data', internalType: 'bytes[]', type: 'bytes[]' }],
-    name: 'multicall',
-    outputs: [{ name: 'results', internalType: 'bytes[]', type: 'bytes[]' }],
-    stateMutability: 'payable',
-  },
-  {
-    type: 'function',
     inputs: [],
     name: 'name',
     outputs: [{ name: '', internalType: 'string', type: 'string' }],
@@ -10682,6 +11929,21 @@ export const poolAbi = [
     inputs: [],
     name: 'owner',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  { type: 'function', inputs: [], name: 'pausePool', outputs: [], stateMutability: 'nonpayable' },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingOwner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingOwnerTime',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -10734,19 +11996,11 @@ export const poolAbi = [
     outputs: [],
     stateMutability: 'nonpayable',
   },
-  { type: 'function', inputs: [], name: 'reallocate', outputs: [], stateMutability: 'nonpayable' },
   {
     type: 'function',
     inputs: [],
-    name: 'reallocatePreDeposit',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'reallocatePreOffer',
-    outputs: [],
+    name: 'reallocate',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'nonpayable',
   },
   {
@@ -10762,22 +12016,32 @@ export const poolAbi = [
   },
   {
     type: 'function',
+    inputs: [
+      {
+        name: '_callers',
+        internalType: 'struct LoanManager.PendingCaller[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'caller', internalType: 'address', type: 'address' },
+          { name: 'isLoanContract', internalType: 'bool', type: 'bool' },
+        ],
+      },
+    ],
+    name: 'requestAddCallers',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_newOwner', internalType: 'address', type: 'address' }],
+    name: 'requestTransferOwner',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     inputs: [{ name: '_newBaseInterestAllocator', internalType: 'address', type: 'address' }],
     name: 'setBaseInterestAllocator',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '_bonusAprAdjustment', internalType: 'uint16', type: 'uint16' }],
-    name: 'setBonusAprAdjustment',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '_bonusDepositAdjustment', internalType: 'uint16', type: 'uint16' }],
-    name: 'setBonusDepositAdjustment',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -10789,13 +12053,20 @@ export const poolAbi = [
         internalType: 'struct IPool.OptimalIdleRange',
         type: 'tuple',
         components: [
-          { name: 'min', internalType: 'uint16', type: 'uint16' },
-          { name: 'max', internalType: 'uint16', type: 'uint16' },
-          { name: 'mid', internalType: 'uint16', type: 'uint16' },
+          { name: 'min', internalType: 'uint80', type: 'uint80' },
+          { name: 'max', internalType: 'uint80', type: 'uint80' },
+          { name: 'mid', internalType: 'uint80', type: 'uint80' },
         ],
       },
     ],
     name: 'setOptimalIdleRange',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_newReallocationBonus', internalType: 'uint256', type: 'uint256' }],
+    name: 'setReallocationBonus',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -11101,22 +12372,16 @@ export const poolUnderwriterAbi = [
   {
     type: 'constructor',
     inputs: [
-      {
-        name: '_parameters',
-        internalType: 'struct PoolUnderwriter.HandlerParameters',
-        type: 'tuple',
-        components: [
-          { name: 'minRiskPremium', internalType: 'uint128', type: 'uint128' },
-          { name: 'mapper', internalType: 'uint128', type: 'uint128' },
-        ],
-      },
       { name: '_maxDuration', internalType: 'uint32', type: 'uint32' },
+      { name: '_newTermsWaitingTime', internalType: 'uint256', type: 'uint256' },
     ],
     stateMutability: 'nonpayable',
   },
   { type: 'error', inputs: [], name: 'InvalidAprError' },
   { type: 'error', inputs: [], name: 'InvalidDurationError' },
+  { type: 'error', inputs: [], name: 'InvalidInputError' },
   { type: 'error', inputs: [], name: 'InvalidPrincipalAmountError' },
+  { type: 'error', inputs: [], name: 'InvalidTermsError' },
   {
     type: 'error',
     inputs: [
@@ -11125,43 +12390,7 @@ export const poolUnderwriterAbi = [
     ],
     name: 'MulticallFailed',
   },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      { name: 'collection', internalType: 'address', type: 'address', indexed: false },
-      { name: 'duration', internalType: 'uint256', type: 'uint256', indexed: false },
-      { name: 'apr', internalType: 'uint256', type: 'uint256', indexed: false },
-    ],
-    name: 'CollectionAprPremiumSet',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      { name: 'collection', internalType: 'address', type: 'address', indexed: false },
-      { name: 'duration', internalType: 'uint256', type: 'uint256', indexed: false },
-      { name: 'principalAmount', internalType: 'uint256', type: 'uint256', indexed: false },
-    ],
-    name: 'CollectionPrincipalSet',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'parameters',
-        internalType: 'struct PoolUnderwriter.HandlerParameters',
-        type: 'tuple',
-        components: [
-          { name: 'minRiskPremium', internalType: 'uint128', type: 'uint128' },
-          { name: 'mapper', internalType: 'uint128', type: 'uint128' },
-        ],
-        indexed: false,
-      },
-    ],
-    name: 'HandlerParametersSet',
-  },
+  { type: 'error', inputs: [], name: 'TooSoonError' },
   {
     type: 'event',
     anonymous: false,
@@ -11172,34 +12401,95 @@ export const poolUnderwriterAbi = [
     name: 'OwnershipTransferred',
   },
   {
-    type: 'function',
+    type: 'event',
+    anonymous: false,
     inputs: [
-      { name: 'collection', internalType: 'address', type: 'address' },
-      { name: 'duration', internalType: 'uint256', type: 'uint256' },
+      {
+        name: 'keys',
+        internalType: 'struct PoolUnderwriter.UnderwritingTermsKey[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'collection', internalType: 'address', type: 'address' },
+          { name: 'duration', internalType: 'uint256', type: 'uint256' },
+          { name: 'maxSeniorRepayment', internalType: 'uint256', type: 'uint256' },
+        ],
+        indexed: false,
+      },
+      {
+        name: 'terms',
+        internalType: 'struct PoolUnderwriter.UnderwritingTerms[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'principalAmount', internalType: 'uint256', type: 'uint256' },
+          { name: 'aprPremium', internalType: 'uint256', type: 'uint256' },
+        ],
+        indexed: false,
+      },
+      { name: 'ts', internalType: 'uint256', type: 'uint256', indexed: false },
     ],
-    name: 'getCollectionAprPremium',
-    outputs: [{ name: 'aprPremium', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
+    name: 'PendingUnderwritingTermsSet',
   },
   {
-    type: 'function',
+    type: 'event',
+    anonymous: false,
     inputs: [
-      { name: 'collection', internalType: 'address', type: 'address' },
-      { name: 'duration', internalType: 'uint256', type: 'uint256' },
+      {
+        name: 'keys',
+        internalType: 'struct PoolUnderwriter.UnderwritingTermsKey[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'collection', internalType: 'address', type: 'address' },
+          { name: 'duration', internalType: 'uint256', type: 'uint256' },
+          { name: 'maxSeniorRepayment', internalType: 'uint256', type: 'uint256' },
+        ],
+        indexed: false,
+      },
+      {
+        name: 'terms',
+        internalType: 'struct PoolUnderwriter.UnderwritingTerms[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'principalAmount', internalType: 'uint256', type: 'uint256' },
+          { name: 'aprPremium', internalType: 'uint256', type: 'uint256' },
+        ],
+        indexed: false,
+      },
     ],
-    name: 'getCollectionPrincipal',
-    outputs: [{ name: 'amount', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
+    name: 'UnderwritingTermsSet',
   },
   {
     type: 'function',
     inputs: [],
-    name: 'getHandlerParameters',
-    outputs: [
-      { name: 'minRiskPremium', internalType: 'uint128', type: 'uint128' },
-      { name: 'mapper', internalType: 'uint128', type: 'uint128' },
-    ],
+    name: 'NEW_TERMS_WAITING_TIME',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: '_termKeys',
+        internalType: 'struct PoolUnderwriter.UnderwritingTermsKey[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'collection', internalType: 'address', type: 'address' },
+          { name: 'duration', internalType: 'uint256', type: 'uint256' },
+          { name: 'maxSeniorRepayment', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+      {
+        name: '_terms',
+        internalType: 'struct PoolUnderwriter.UnderwritingTerms[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'principalAmount', internalType: 'uint256', type: 'uint256' },
+          { name: 'aprPremium', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+    ],
+    name: 'confirmUnderwritingTerms',
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -11211,10 +12501,30 @@ export const poolUnderwriterAbi = [
   {
     type: 'function',
     inputs: [
-      { name: '_idleAssets', internalType: 'uint256', type: 'uint256' },
-      { name: '_outstandingAssets', internalType: 'uint256', type: 'uint256' },
       { name: '_collection', internalType: 'address', type: 'address' },
       { name: '_duration', internalType: 'uint256', type: 'uint256' },
+      { name: '_maxSeniorRepayment', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'getPendingUnderwritingTerms',
+    outputs: [
+      {
+        name: '',
+        internalType: 'struct PoolUnderwriter.UnderwritingTerms',
+        type: 'tuple',
+        components: [
+          { name: 'principalAmount', internalType: 'uint256', type: 'uint256' },
+          { name: 'aprPremium', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_collection', internalType: 'address', type: 'address' },
+      { name: '_duration', internalType: 'uint256', type: 'uint256' },
+      { name: '_maxSeniorRepayment', internalType: 'uint256', type: 'uint256' },
     ],
     name: 'getRiskPremium',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
@@ -11223,11 +12533,22 @@ export const poolUnderwriterAbi = [
   {
     type: 'function',
     inputs: [
-      { name: '_idleAssets', internalType: 'uint256', type: 'uint256' },
-      { name: '_outstandingAssets', internalType: 'uint256', type: 'uint256' },
+      { name: '_collection', internalType: 'address', type: 'address' },
+      { name: '_duration', internalType: 'uint256', type: 'uint256' },
+      { name: '_maxSeniorRepayment', internalType: 'uint256', type: 'uint256' },
     ],
-    name: 'getUtilizationPremium',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    name: 'getUnderwritingTerms',
+    outputs: [
+      {
+        name: '',
+        internalType: 'struct PoolUnderwriter.UnderwritingTerms',
+        type: 'tuple',
+        components: [
+          { name: 'principalAmount', internalType: 'uint256', type: 'uint256' },
+          { name: 'aprPremium', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+    ],
     stateMutability: 'view',
   },
   {
@@ -11246,40 +12567,35 @@ export const poolUnderwriterAbi = [
   },
   {
     type: 'function',
-    inputs: [
-      { name: '_collection', internalType: 'address', type: 'address' },
-      { name: '_duration', internalType: 'uint256', type: 'uint256' },
-      { name: '_apr', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'setCollectionAprPremium',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: '_collection', internalType: 'address', type: 'address' },
-      { name: '_duration', internalType: 'uint256', type: 'uint256' },
-      { name: '_principal', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'setCollectionPrincipal',
-    outputs: [],
-    stateMutability: 'nonpayable',
+    inputs: [],
+    name: 'pendingTermsSetTime',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
   },
   {
     type: 'function',
     inputs: [
       {
-        name: '_parameters',
-        internalType: 'struct PoolUnderwriter.HandlerParameters',
-        type: 'tuple',
+        name: '_termKeys',
+        internalType: 'struct PoolUnderwriter.UnderwritingTermsKey[]',
+        type: 'tuple[]',
         components: [
-          { name: 'minRiskPremium', internalType: 'uint128', type: 'uint128' },
-          { name: 'mapper', internalType: 'uint128', type: 'uint128' },
+          { name: 'collection', internalType: 'address', type: 'address' },
+          { name: 'duration', internalType: 'uint256', type: 'uint256' },
+          { name: 'maxSeniorRepayment', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+      {
+        name: '_terms',
+        internalType: 'struct PoolUnderwriter.UnderwritingTerms[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'principalAmount', internalType: 'uint256', type: 'uint256' },
+          { name: 'aprPremium', internalType: 'uint256', type: 'uint256' },
         ],
       },
     ],
-    name: 'setHandlerParameters',
+    name: 'setUnderwritingTerms',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -11293,10 +12609,7 @@ export const poolUnderwriterAbi = [
   {
     type: 'function',
     inputs: [
-      { name: '_idleAssets', internalType: 'uint256', type: 'uint256' },
-      { name: '_outstandingAssets', internalType: 'uint256', type: 'uint256' },
       { name: '_baseRate', internalType: 'uint256', type: 'uint256' },
-      { name: '_bonusAprAdjustment', internalType: 'uint16', type: 'uint16' },
       { name: '_offer', internalType: 'bytes', type: 'bytes' },
     ],
     name: 'validateOffer',
@@ -11510,7 +12823,7 @@ export const rangeValidatorAbi = [
           { name: 'aprBps', internalType: 'uint256', type: 'uint256' },
           { name: 'expirationTime', internalType: 'uint256', type: 'uint256' },
           { name: 'duration', internalType: 'uint256', type: 'uint256' },
-          { name: 'maxTrancheFloor', internalType: 'uint256', type: 'uint256' },
+          { name: 'maxSeniorRepayment', internalType: 'uint256', type: 'uint256' },
           {
             name: 'validators',
             internalType: 'struct IBaseLoan.OfferValidator[]',
@@ -12240,6 +13553,72 @@ export const testNftMaliciousFlashActionAbi = [
     name: 'onERC721Received',
     outputs: [{ name: '', internalType: 'bytes4', type: 'bytes4' }],
     stateMutability: 'pure',
+  },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// TwoStepOwned
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const twoStepOwnedAbi = [
+  { type: 'error', inputs: [], name: 'InvalidInputError' },
+  { type: 'error', inputs: [], name: 'TooSoonError' },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'user', internalType: 'address', type: 'address', indexed: true },
+      { name: 'newOwner', internalType: 'address', type: 'address', indexed: true },
+    ],
+    name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address', indexed: false }],
+    name: 'TransferOwnerRequested',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'MIN_WAIT_TIME',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'owner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingOwner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingOwnerTime',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_newOwner', internalType: 'address', type: 'address' }],
+    name: 'requestTransferOwner',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
+    name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
 ] as const
 
@@ -13370,6 +14749,7 @@ export const withLoanManagersAbi = [
 
 export const withProtocolFeeAbi = [
   { type: 'error', inputs: [], name: 'AddressZeroError' },
+  { type: 'error', inputs: [], name: 'InvalidInputError' },
   {
     type: 'error',
     inputs: [{ name: '_fraction', internalType: 'uint256', type: 'uint256' }],
@@ -13380,6 +14760,7 @@ export const withProtocolFeeAbi = [
     inputs: [{ name: '_pendingProtocolFeeSetTime', internalType: 'uint256', type: 'uint256' }],
     name: 'TooEarlyError',
   },
+  { type: 'error', inputs: [], name: 'TooSoonError' },
   {
     type: 'event',
     anonymous: false,
@@ -13424,6 +14805,12 @@ export const withProtocolFeeAbi = [
     name: 'ProtocolFeeUpdated',
   },
   {
+    type: 'event',
+    anonymous: false,
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address', indexed: false }],
+    name: 'TransferOwnerRequested',
+  },
+  {
     type: 'function',
     inputs: [],
     name: 'FEE_UPDATE_NOTICE',
@@ -13434,6 +14821,13 @@ export const withProtocolFeeAbi = [
     type: 'function',
     inputs: [],
     name: 'MAX_PROTOCOL_FEE',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'MIN_WAIT_TIME',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
@@ -13488,6 +14882,27 @@ export const withProtocolFeeAbi = [
   {
     type: 'function',
     inputs: [],
+    name: 'pendingOwner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingOwnerTime',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_newOwner', internalType: 'address', type: 'address' }],
+    name: 'requestTransferOwner',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
     name: 'setProtocolFee',
     outputs: [],
     stateMutability: 'nonpayable',
@@ -13528,8 +14943,32 @@ export const withdrawalQueueAbi = [
     inputs: [{ name: '__asset', internalType: 'contract ERC20', type: 'address' }],
     stateMutability: 'nonpayable',
   },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'tokenId', internalType: 'uint256', type: 'uint256' },
+      { name: 'unlockTime', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'CanOnlyExtendWithdrawalError',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'i', internalType: 'uint256', type: 'uint256' },
+      { name: 'returndata', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'MulticallFailed',
+  },
   { type: 'error', inputs: [], name: 'NotApprovedOrOwnerError' },
   { type: 'error', inputs: [], name: 'PoolOnlyCallableError' },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'tokenId', internalType: 'uint256', type: 'uint256' },
+      { name: 'unlockTime', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'WithdrawalsLockedError',
+  },
   {
     type: 'event',
     anonymous: false,
@@ -13559,6 +14998,15 @@ export const withdrawalQueueAbi = [
       { name: 'id', internalType: 'uint256', type: 'uint256', indexed: true },
     ],
     name: 'Transfer',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'tokenId', internalType: 'uint256', type: 'uint256', indexed: false },
+      { name: 'unlockTime', internalType: 'uint256', type: 'uint256', indexed: false },
+    ],
+    name: 'WithdrawalLocked',
   },
   {
     type: 'event',
@@ -13627,9 +15075,9 @@ export const withdrawalQueueAbi = [
   },
   {
     type: 'function',
-    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    inputs: [{ name: 'tokenId', internalType: 'uint256', type: 'uint256' }],
     name: 'getShares',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    outputs: [{ name: 'shares', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -13641,9 +15089,16 @@ export const withdrawalQueueAbi = [
   },
   {
     type: 'function',
-    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    inputs: [{ name: 'tokenId', internalType: 'uint256', type: 'uint256' }],
+    name: 'getUnlockTime',
+    outputs: [{ name: 'unlockTime', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'tokenId', internalType: 'uint256', type: 'uint256' }],
     name: 'getWithdrawn',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    outputs: [{ name: 'withdrawn', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -13659,12 +15114,29 @@ export const withdrawalQueueAbi = [
   {
     type: 'function',
     inputs: [
+      { name: '_tokenId', internalType: 'uint256', type: 'uint256' },
+      { name: '_time', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'lockWithdrawals',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
       { name: '_to', internalType: 'address', type: 'address' },
       { name: '_shares', internalType: 'uint256', type: 'uint256' },
     ],
     name: 'mint',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'data', internalType: 'bytes[]', type: 'bytes[]' }],
+    name: 'multicall',
+    outputs: [{ name: 'results', internalType: 'bytes[]', type: 'bytes[]' }],
+    stateMutability: 'payable',
   },
   {
     type: 'function',
