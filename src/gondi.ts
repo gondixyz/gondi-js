@@ -404,6 +404,7 @@ export class Gondi {
     const { edges: collections, pageInfo } = result.collections;
     return { collections: collections.map((edge) => edge.node), pageInfo };
   }
+
   async collectionId(props: { slug: string; contractAddress?: never }): Promise<number>;
   async collectionId(props: { slug?: never; contractAddress: Address }): Promise<number[]>;
   async collectionId(

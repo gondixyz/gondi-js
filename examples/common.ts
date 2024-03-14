@@ -149,6 +149,7 @@ const CONTRACTS = [
   process.env.LEVERAGE_ADDRESS ?? '',
   SEAPORT_CONTRACT_ADDRESS,
 ];
+
 export const setAllowances = async () => {
   for (const [i, user] of users.entries()) {
     console.log(`approving tokens for user ${i}`);
