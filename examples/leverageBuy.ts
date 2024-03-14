@@ -1,7 +1,8 @@
-import { testCollection } from './common';
+import { setAllowances, testCollection } from './common';
 import { testCollectionOfferInput, users } from './common';
 
 async function main() {
+  await setAllowances();
   const signedOffer = await users[1].makeCollectionOffer(testCollectionOfferInput);
   const contractVersionString = `msl: ${signedOffer.contractAddress}`;
   console.log(`offer placed successfully: ${contractVersionString}`);

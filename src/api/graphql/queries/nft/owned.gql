@@ -1,0 +1,35 @@
+query ownedNfts($after: String) {
+  ownedNfts: listNftsFromUser(after: $after) {
+    pageInfo {
+      endCursor
+      hasNextPage
+    }
+    edges {
+      node {
+        id
+        collection {
+          id
+        }
+        tokenId
+        price
+        priceCurrencyAddress
+        activeLoan {
+          id
+        }
+        statistics {
+          lastSale {
+            order {
+              price
+              currency {
+                ...CurrencyInfo
+              }
+            }
+          }
+          topTraitFloorPrice {
+            ...CurrencyAmountInfo
+          }
+        }
+      }
+    }
+  }
+}
