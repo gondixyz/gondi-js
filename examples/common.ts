@@ -90,7 +90,7 @@ const offerInput = {
   expirationTime: BigInt(expirationTimeSeconds),
   duration: 1294967295n,
   borrowerAddress: zeroAddress,
-  maxTrancheFloor: 0n,
+  maxSeniorRepayment: 0n,
 };
 
 export const testCollectionOfferInput = {

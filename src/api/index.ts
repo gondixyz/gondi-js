@@ -131,6 +131,7 @@ export class Api {
         const nftCollateralTokenId = 'collection' in node ? 0n : node.nft.tokenId;
         if (!isDefined(nftCollateralAddress)) return undefined;
         return {
+          ...node,
           type: __typename,
           lender: node.lenderAddress,
           borrower: node.borrowerAddress,
@@ -138,7 +139,6 @@ export class Api {
           offerValidators: node.validators,
           nftCollateralAddress,
           nftCollateralTokenId,
-          ...node,
         };
       })
       .filter(isDefined);

@@ -6,7 +6,7 @@ const emitAndRepayLoan = async (contract?: Address) => {
   const signedOffer = await users[0]._makeSingleNftOffer(testSingleNftOfferInput, contract);
   const anotherOfferInput = {
     ...testSingleNftOfferInput,
-    maxTrancheFloor: testSingleNftOfferInput.principalAmount,
+    maxSeniorRepayment: testSingleNftOfferInput.principalAmount,
   };
   const anotherSignedOffer = await users[0]._makeSingleNftOffer(anotherOfferInput, contract);
   const contractVersionString = `msl: ${signedOffer.contractAddress}`;
@@ -18,7 +18,7 @@ const emitAndRepayLoan = async (contract?: Address) => {
       {
         offer: {
           ...signedOffer,
-          maxTrancheFloor: signedOffer.maxTrancheFloor ?? 0n,
+          maxSeniorRepayment: signedOffer.maxSeniorRepayment ?? 0n,
           nftId,
         },
         amount: signedOffer.principalAmount / 2n,
@@ -27,7 +27,7 @@ const emitAndRepayLoan = async (contract?: Address) => {
       {
         offer: {
           ...anotherSignedOffer,
-          maxTrancheFloor: anotherSignedOffer.maxTrancheFloor ?? 0n,
+          maxSeniorRepayment: anotherSignedOffer.maxSeniorRepayment ?? 0n,
           nftId,
         },
         amount: anotherSignedOffer.principalAmount / 2n,

@@ -55,6 +55,7 @@ query listOffers(
         createdDate
         repayment
         hidden
+        maxSeniorRepayment
         validators {
           arguments
           validator

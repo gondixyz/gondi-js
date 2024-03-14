@@ -13,7 +13,7 @@ const emitAndRepayLoan = async (contract?: Address) => {
         offer: {
           ...signedOffer,
           nftId: Number(signedOffer.nftCollateralTokenId.valueOf()),
-          maxTrancheFloor: signedOffer.maxTrancheFloor ?? 0n,
+          maxSeniorRepayment: signedOffer.maxSeniorRepayment ?? 0n,
         },
         lenderOfferSignature: signedOffer.signature,
       },

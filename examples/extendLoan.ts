@@ -25,7 +25,7 @@ const emitExtendAndRepayLoan = async (contract?: Address) => {
       {
         offer: {
           ...signedOffer,
-          maxTrancheFloor: signedOffer.maxTrancheFloor ?? 0n,
+          maxSeniorRepayment: signedOffer.maxSeniorRepayment ?? 0n,
         },
         lenderOfferSignature: signedOffer.signature,
       },

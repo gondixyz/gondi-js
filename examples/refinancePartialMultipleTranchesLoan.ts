@@ -8,7 +8,7 @@ const emitRefinacePartialAndRepayLoan = async (contract?: Address) => {
   const offer = {
     ...testSingleNftOfferInput,
     duration: 30n,
-    maxTrancheFloor: testSingleNftOfferInput.principalAmount,
+    maxSeniorRepayment: testSingleNftOfferInput.principalAmount,
   };
   const signedOffer = await users[0]._makeSingleNftOffer(offer, contract);
   const secondSignedOffer = await users[0]._makeSingleNftOffer(offer, contract);
@@ -23,7 +23,7 @@ const emitRefinacePartialAndRepayLoan = async (contract?: Address) => {
       {
         offer: {
           ...signedOffer,
-          maxTrancheFloor: signedOffer.maxTrancheFloor ?? 0n,
+          maxSeniorRepayment: signedOffer.maxSeniorRepayment ?? 0n,
           nftId,
         },
         lenderOfferSignature: signedOffer.signature,
@@ -32,7 +32,7 @@ const emitRefinacePartialAndRepayLoan = async (contract?: Address) => {
       {
         offer: {
           ...secondSignedOffer,
-          maxTrancheFloor: secondSignedOffer.maxTrancheFloor ?? 0n,
+          maxSeniorRepayment: secondSignedOffer.maxSeniorRepayment ?? 0n,
           nftId,
         },
         lenderOfferSignature: secondSignedOffer.signature,
@@ -41,7 +41,7 @@ const emitRefinacePartialAndRepayLoan = async (contract?: Address) => {
       {
         offer: {
           ...thirdSignedOffer,
-          maxTrancheFloor: thirdSignedOffer.maxTrancheFloor ?? 0n,
+          maxSeniorRepayment: thirdSignedOffer.maxSeniorRepayment ?? 0n,
           nftId,
         },
         lenderOfferSignature: thirdSignedOffer.signature,
