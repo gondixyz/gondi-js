@@ -1,7 +1,14 @@
 import { Gondi } from 'gondi';
 import { Address, isAddress } from 'viem';
 
-import { generateBlock, sleep, testSingleNftOfferInput, testTokenId, users } from './common';
+import {
+  generateBlock,
+  setAllowances,
+  sleep,
+  testSingleNftOfferInput,
+  testTokenId,
+  users,
+} from './common';
 
 const emitAndLiquidateLoan = async (owner: Gondi, lender: Gondi, contract?: Address) => {
   const signedOffer = await lender._makeSingleNftOffer(
@@ -39,6 +46,7 @@ const emitAndLiquidateLoan = async (owner: Gondi, lender: Gondi, contract?: Addr
 
 async function main() {
   try {
+    await setAllowances();
     await emitAndLiquidateLoan(users[1], users[0]);
 
     const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? '';

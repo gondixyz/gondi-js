@@ -85,7 +85,7 @@ const offerInput = {
   principalAddress: testCurrency,
   principalAmount: 1_000_000_000_000_000_000n,
   capacity: 1_000_000_000_000_000_000n,
-  fee: 0n,
+  fee: 100n,
   aprBps: 100n,
   expirationTime: BigInt(expirationTimeSeconds),
   duration: 1294967295n,
@@ -167,11 +167,4 @@ export const AUCTION_DEFAULT_DURATION = 3n * 24n * 60n * 60n;
 
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const generateBlock = async () => {
-  const collectionOfferToCancel = await users[0].makeCollectionOffer(testCollectionOfferInput);
-  await users[0].cancelOffer({
-    id: collectionOfferToCancel.offerId,
-    contractAddress: collectionOfferToCancel.contractAddress,
-  });
-  await sleep(1000);
-};
+export const generateBlock = async () => await sleep(6000);

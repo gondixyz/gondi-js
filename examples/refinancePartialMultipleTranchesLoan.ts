@@ -75,11 +75,11 @@ const emitRefinacePartialAndRepayLoan = async (contract?: Address) => {
       aprBps: signedOffer.aprBps - signedOffer.aprBps / 2n,
       duration: 0n,
       expirationTime: signedOffer.expirationTime,
-      principalAmount: amount,
+      principalAmount: amount * 2n,
       strictImprovement: true,
       requiresLiquidation: signedOffer.requiresLiquidation,
       ...(isV6
-        ? { trancheIndex: [1n], targetPrincipal: undefined }
+        ? { trancheIndex: [2n], targetPrincipal: undefined }
         : {
             trancheIndex: undefined,
             targetPrincipal: loan.source.map((s) => s.principalAmount / 2n),

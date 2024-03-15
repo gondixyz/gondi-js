@@ -1,7 +1,14 @@
 import { Gondi } from 'gondi';
 import { Address, isAddress } from 'viem';
 
-import { generateBlock, sleep, testSingleNftOfferInput, testTokenId, users } from './common';
+import {
+  generateBlock,
+  setAllowances,
+  sleep,
+  testSingleNftOfferInput,
+  testTokenId,
+  users,
+} from './common';
 
 const SLEEP_BUFFER = 3000;
 
@@ -67,6 +74,7 @@ const emitRenegotiateAndRepayLoan = async (lender: Gondi, borrower: Gondi, contr
 
 async function main() {
   try {
+    await setAllowances();
     await emitRenegotiateAndRepayLoan(users[0], users[1]);
 
     const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? '';

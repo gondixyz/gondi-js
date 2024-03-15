@@ -4,6 +4,7 @@ import { Address, isAddress, zeroAddress } from 'viem';
 import {
   AUCTION_DEFAULT_DURATION,
   generateBlock,
+  setAllowances,
   sleep,
   testSingleNftOfferInput,
   testTokenId,
@@ -110,6 +111,7 @@ const emitLoanThenAuctionAndBid = async (
 
 async function main() {
   try {
+    await setAllowances();
     const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? '';
     const useV4 = false; // Change to use v4 contracts
 
