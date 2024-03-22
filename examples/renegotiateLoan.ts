@@ -21,53 +21,69 @@ const emitRenegotiateAndRepayLoan = async (lender: Gondi, borrower: Gondi, contr
   const contractVersionString = `msl: ${signedOffer.contractAddress}`;
   console.log(`offer placed successfully: ${contractVersionString}`);
 
-  const emitLoan = await borrower.emitLoan({
-    offer: signedOffer,
+  const emitLoan = await users[1].emitLoan({
+    offerExecution: [
+      {
+        offer: {
+          ...signedOffer,
+          maxSeniorRepayment: signedOffer.maxSeniorRepayment ?? 0n,
+        },
+        lenderOfferSignature: signedOffer.signature,
+      },
+    ],
+    duration: signedOffer.duration,
     tokenId: testTokenId,
   });
-  const { loan } = await emitLoan.waitTxInBlock();
+  const { loan, loanId } = await emitLoan.waitTxInBlock();
   console.log(`loan emitted: ${contractVersionString}`);
 
   const remainingLockup = await users[0].getRemainingLockupSeconds({ loan });
   await sleep(remainingLockup * 1_000 + SLEEP_BUFFER);
 
-  const renegotiationOffer = await lender.makeRefinanceOffer({
+  const isV6 =
+    signedOffer.contractAddress === process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ||
+    !('source' in loan);
+  const renegotiationOffer = await users[0].makeRefinanceOffer({
     renegotiation: {
       loanId: loan.id,
-      feeAmount: 0n,
+      feeAmount: 100n,
       aprBps: signedOffer.aprBps * 2n,
       duration: signedOffer.duration,
       expirationTime: signedOffer.expirationTime,
       principalAmount: signedOffer.principalAmount,
       strictImprovement: false,
       requiresLiquidation: signedOffer.requiresLiquidation,
-      targetPrincipal: loan.source.map((_) => 0n),
+      ...(isV6
+        ? { trancheIndex: [0n], targetPrincipal: undefined }
+        : { trancheIndex: undefined, targetPrincipal: loan.source.map((_) => 0n) }),
     },
     contractAddress: signedOffer.contractAddress,
     skipSignature: false,
   });
   console.log(`renegotiation offer placed successfully: ${contractVersionString}`);
 
-  let renegotiatedLoan = loan;
+  let repayLoan = loan;
+  let repayLoanId = loanId;
   try {
     await generateBlock(); // We need to push a new block into the blockchain [anvil issue]
     const renegotiation = await borrower.refinanceFullLoan({
       offer: renegotiationOffer,
       loan,
-      loanId: loan.source[0].loanId,
+      loanId,
     });
-    const { loan: renegotiatedLoanResult } = await renegotiation.waitTxInBlock();
-    renegotiatedLoan = renegotiatedLoanResult;
+    const { loan: renegotiatedLoanResult, loanId: newLoanId } = await renegotiation.waitTxInBlock();
+    repayLoan = renegotiatedLoanResult;
+    repayLoanId = newLoanId;
     console.log(`loan renegotiation accepted by the borrower: ${contractVersionString}`);
   } catch (e) {
     console.log('Error while renegotiating loan:');
     console.log(e);
   } finally {
-    const repayLoan = await borrower.repayLoan({
-      loan: renegotiatedLoan,
-      loanId: renegotiatedLoan.source[0].loanId,
+    const repaidLoan = await borrower.repayLoan({
+      loan: repayLoan,
+      loanId: repayLoanId,
     });
-    await repayLoan.waitTxInBlock();
+    await repaidLoan.waitTxInBlock();
     console.log(`loan repaid: ${contractVersionString}`);
   }
 };
@@ -77,10 +93,14 @@ async function main() {
     await setAllowances();
     await emitRenegotiateAndRepayLoan(users[0], users[1]);
 
-    const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? '';
-
-    if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
-      await emitRenegotiateAndRepayLoan(users[0], users[1], MULTI_SOURCE_LOAN_CONTRACT_V4);
+    const oldContracts = [
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? '',
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? '',
+    ];
+    for (const contract of oldContracts) {
+      if (isAddress(contract)) {
+        await emitRenegotiateAndRepayLoan(users[0], users[1], contract);
+      }
     }
   } catch (e) {
     console.log('Error:');
