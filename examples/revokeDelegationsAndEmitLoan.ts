@@ -1,4 +1,4 @@
-import { Address } from 'viem';
+import { Address, isAddress } from 'viem';
 
 import { setAllowances, testSingleNftOfferInput, testTokenId, users } from './common';
 
@@ -8,7 +8,16 @@ const revokeAndEmitLoan = async (contract?: Address) => {
   console.log(`offer placed successfully: ${contractVersionString}`);
 
   const emitLoan = await users[1].emitLoan({
-    offer: signedOffer,
+    offerExecution: [
+      {
+        offer: {
+          ...signedOffer,
+          maxSeniorRepayment: signedOffer.maxSeniorRepayment ?? 0n,
+        },
+        lenderOfferSignature: signedOffer.signature,
+      },
+    ],
+    duration: signedOffer.duration,
     tokenId: testTokenId,
   });
   const { loan, loanId } = await emitLoan.waitTxInBlock();
@@ -39,7 +48,16 @@ const revokeAndEmitLoan = async (contract?: Address) => {
   const revokeDelegationsAndEmitLoan = await users[1].revokeDelegationsAndEmitLoan({
     delegations: [delegateTo],
     emit: {
-      offer: newSignedOffer,
+      offerExecution: [
+        {
+          offer: {
+            ...newSignedOffer,
+            maxSeniorRepayment: newSignedOffer.maxSeniorRepayment ?? 0n,
+          },
+          lenderOfferSignature: newSignedOffer.signature,
+        },
+      ],
+      duration: newSignedOffer.duration,
       tokenId: testTokenId,
     },
   });
@@ -55,6 +73,13 @@ async function main() {
   try {
     await setAllowances();
     await revokeAndEmitLoan();
+
+    const oldContracts = [process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? ''];
+    for (const contract of oldContracts) {
+      if (isAddress(contract)) {
+        await revokeAndEmitLoan(contract);
+      }
+    }
   } catch (e) {
     console.log('Error:');
     console.log(e);
