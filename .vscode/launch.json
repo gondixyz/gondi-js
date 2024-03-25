@@ -150,6 +150,13 @@
       "type": "node-terminal"
     },
     {
+      "name": "send loan to auction and bid (pre v3)",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test sendLoanToAuctionAndBidPreV3.ts",
+      "type": "node-terminal"
+    },
+    {
       "name": "send loan to auction and bid",
       "request": "launch",
       "cwd": "${workspaceFolder}/examples",
