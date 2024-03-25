@@ -312,6 +312,20 @@ export class Gondi {
     });
   }
 
+  offerExecutionFromOffers(
+    offers: Awaited<ReturnType<Gondi['makeSingleNftOffer']>>[],
+    amounts?: bigint[],
+  ) {
+    return offers.map((offer, idx) => ({
+      offer: {
+        ...offer,
+        maxSeniorRepayment: offer.maxSeniorRepayment ?? 0n,
+      },
+      amount: amounts?.[idx] ?? offer.principalAmount,
+      lenderOfferSignature: offer.signature,
+    }));
+  }
+
   async emitLoan(args: EmitLoanArgs) {
     const contractAddress = args.offerExecution[0].offer.contractAddress;
     return this.contracts.Msl(contractAddress).emitLoan(args);

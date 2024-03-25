@@ -22,15 +22,7 @@ const emitRenegotiateAndRepayLoan = async (lender: Gondi, borrower: Gondi, contr
   console.log(`offer placed successfully: ${contractVersionString}`);
 
   const emitLoan = await users[1].emitLoan({
-    offerExecution: [
-      {
-        offer: {
-          ...signedOffer,
-          maxSeniorRepayment: signedOffer.maxSeniorRepayment ?? 0n,
-        },
-        lenderOfferSignature: signedOffer.signature,
-      },
-    ],
+    offerExecution: users[1].offerExecutionFromOffers([signedOffer]),
     duration: signedOffer.duration,
     tokenId: testTokenId,
   });

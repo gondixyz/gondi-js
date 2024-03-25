@@ -8,15 +8,7 @@ const revokeAndEmitLoan = async (contract?: Address) => {
   console.log(`offer placed successfully: ${contractVersionString}`);
 
   const emitLoan = await users[1].emitLoan({
-    offerExecution: [
-      {
-        offer: {
-          ...signedOffer,
-          maxSeniorRepayment: signedOffer.maxSeniorRepayment ?? 0n,
-        },
-        lenderOfferSignature: signedOffer.signature,
-      },
-    ],
+    offerExecution: users[1].offerExecutionFromOffers([signedOffer]),
     duration: signedOffer.duration,
     tokenId: testTokenId,
   });
@@ -45,18 +37,11 @@ const revokeAndEmitLoan = async (contract?: Address) => {
   const newSignedOffer = await users[2]._makeSingleNftOffer(testSingleNftOfferInput, contract);
   console.log(`new offer placed successfully: ${contractVersionString}`);
 
+  // TODO: This step fails to be processed by the backend
   const revokeDelegationsAndEmitLoan = await users[1].revokeDelegationsAndEmitLoan({
     delegations: [delegateTo],
     emit: {
-      offerExecution: [
-        {
-          offer: {
-            ...newSignedOffer,
-            maxSeniorRepayment: newSignedOffer.maxSeniorRepayment ?? 0n,
-          },
-          lenderOfferSignature: newSignedOffer.signature,
-        },
-      ],
+      offerExecution: users[1].offerExecutionFromOffers([newSignedOffer]),
       duration: newSignedOffer.duration,
       tokenId: testTokenId,
     },

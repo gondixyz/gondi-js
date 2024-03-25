@@ -8,16 +8,12 @@ const emitAndRepayLoan = async (contract?: Address) => {
   console.log(`offer placed successfully: ${contractVersionString}`);
 
   const emitLoan = await users[1].emitLoan({
-    offerExecution: [
+    offerExecution: users[1].offerExecutionFromOffers([
       {
-        offer: {
-          ...signedOffer,
-          nftId: Number(signedOffer.nftCollateralTokenId.valueOf()),
-          maxSeniorRepayment: signedOffer.maxSeniorRepayment ?? 0n,
-        },
-        lenderOfferSignature: signedOffer.signature,
+        ...signedOffer,
+        nftId: Number(signedOffer.nftCollateralTokenId.valueOf()),
       },
-    ],
+    ]),
     duration: signedOffer.duration,
     tokenId: testTokenId,
   });

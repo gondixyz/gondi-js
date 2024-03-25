@@ -23,38 +23,12 @@ const emitRefinacePartialAndRepayLoan = async (contract?: Address) => {
   const contractVersionString = `msl: ${signedOffer.contractAddress}`;
   console.log(`offers placed successfully: ${contractVersionString}`);
 
-  const nftId = Number(signedOffer.nftCollateralTokenId.valueOf());
   const amount = signedOffer.principalAmount / 4n;
   const emitLoan = await users[1].emitLoan({
-    offerExecution: [
-      {
-        offer: {
-          ...signedOffer,
-          maxSeniorRepayment: signedOffer.maxSeniorRepayment ?? 0n,
-          nftId,
-        },
-        lenderOfferSignature: signedOffer.signature,
-        amount,
-      },
-      {
-        offer: {
-          ...secondSignedOffer,
-          maxSeniorRepayment: secondSignedOffer.maxSeniorRepayment ?? 0n,
-          nftId,
-        },
-        lenderOfferSignature: secondSignedOffer.signature,
-        amount,
-      },
-      {
-        offer: {
-          ...thirdSignedOffer,
-          maxSeniorRepayment: thirdSignedOffer.maxSeniorRepayment ?? 0n,
-          nftId,
-        },
-        lenderOfferSignature: thirdSignedOffer.signature,
-        amount,
-      },
-    ],
+    offerExecution: users[1].offerExecutionFromOffers(
+      [signedOffer, secondSignedOffer, thirdSignedOffer],
+      [amount, amount, amount],
+    ),
     duration: signedOffer.duration,
     tokenId: testTokenId,
   });
