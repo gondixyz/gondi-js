@@ -57,10 +57,13 @@ const delegateAndRevoke = async (contract?: Address) => {
 async function main() {
   try {
     await setAllowances();
-    await delegateAndRevoke();
 
-    const oldContracts = [process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? ''];
-    for (const contract of oldContracts) {
+    const contracts = [
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ?? '',
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? '',
+    ];
+
+    for (const contract of contracts) {
       if (isAddress(contract)) {
         await delegateAndRevoke(contract);
       }

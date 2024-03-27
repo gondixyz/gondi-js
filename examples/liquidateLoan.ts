@@ -38,7 +38,11 @@ const emitAndLiquidateLoan = async (owner: Gondi, lender: Gondi, contract?: Addr
 async function main() {
   try {
     await setAllowances();
-    await emitAndLiquidateLoan(users[1], users[0]);
+    const MULTI_SOURCE_LOAN_CONTRACT_V6 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ?? '';
+    if (!isAddress(MULTI_SOURCE_LOAN_CONTRACT_V6)) {
+      throw new Error(`invalid msl contract address: ${MULTI_SOURCE_LOAN_CONTRACT_V6}`);
+    }
+    await emitAndLiquidateLoan(users[1], users[0], MULTI_SOURCE_LOAN_CONTRACT_V6);
 
     const MULTI_SOURCE_LOAN_CONTRACT_V5 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? '';
     if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V5)) {
@@ -51,7 +55,7 @@ async function main() {
     }
 
     // execute liquidation one more time to return the item to the original owner
-    await emitAndLiquidateLoan(users[0], users[1]);
+    await emitAndLiquidateLoan(users[0], users[1], MULTI_SOURCE_LOAN_CONTRACT_V6);
   } catch (e) {
     console.log('Error:');
     console.log(e);

@@ -34,9 +34,10 @@ const emitLoanThenAuctionAndBid = async (
   const { loan, loanId } = await emitLoan.waitTxInBlock();
   console.log(`loan emitted: ${contractVersionString}`);
 
-  const isV6 =
-    signedOffer.contractAddress === process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ||
-    !('source' in loan);
+  const renegotiationChanges =
+    'source' in loan
+      ? { targetPrincipal: loan.source.map((s) => s.principalAmount / 2n) }
+      : { trancheIndex: [0n] };
   const renegotiationOffer = await refinancer.makeRefinanceOffer({
     renegotiation: {
       loanId: loan.id,
@@ -47,12 +48,7 @@ const emitLoanThenAuctionAndBid = async (
       principalAmount: signedOffer.principalAmount / 2n,
       strictImprovement: true,
       requiresLiquidation: signedOffer.requiresLiquidation,
-      ...(isV6
-        ? { trancheIndex: [0n], targetPrincipal: undefined }
-        : {
-            trancheIndex: undefined,
-            targetPrincipal: loan.source.map((s) => s.principalAmount / 2n),
-          }),
+      ...renegotiationChanges,
     },
     contractAddress: loan.contractAddress,
     skipSignature: true,

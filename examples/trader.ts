@@ -1,15 +1,7 @@
 import * as dotenv from 'dotenv';
 import { Gondi, LoanStatusType, OfferStatus } from 'gondi';
 
-import {
-  approveNFT,
-  approveToken,
-  sleep,
-  testCollectionOfferInput,
-  testCurrency,
-  users,
-} from './common';
-import { zeroAddress } from 'viem';
+import { approveNFT, approveToken, sleep, testCurrency, users } from './common';
 
 dotenv.config();
 
@@ -97,16 +89,7 @@ async function lend(gondi: Gondi, collections: Collection[]) {
       await approveNFT(gondi, offer.contractAddress, offer.nftCollateralAddress);
       await approveToken(gondi, offer.contractAddress);
       await users[1].emitLoan({
-        offerExecution: [
-          {
-            offer: {
-              ...offer,
-              nftId: Number(nft.id),
-              maxSeniorRepayment: offer.maxSeniorRepayment ?? 0n,
-            },
-            lenderOfferSignature: offer.signature,
-          },
-        ],
+        offerExecution: users[1].offerExecutionFromOffers([offer]),
         duration: offer.duration,
         tokenId: nft.tokenId,
       });

@@ -63,10 +63,10 @@ export type RenegotiationInput = Optional<
   (
     | {
         trancheIndex: Exclude<ApiRenegotiationInput['trancheIndex'], null | undefined>;
-        targetPrincipal: undefined;
+        targetPrincipal?: undefined;
       }
     | {
-        trancheIndex: undefined;
+        trancheIndex?: undefined;
         targetPrincipal: Exclude<ApiRenegotiationInput['targetPrincipal'], null | undefined>;
       }
   );

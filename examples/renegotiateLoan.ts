@@ -32,9 +32,8 @@ const emitRenegotiateAndRepayLoan = async (lender: Gondi, borrower: Gondi, contr
   const remainingLockup = await users[0].getRemainingLockupSeconds({ loan });
   await sleep(remainingLockup * 1_000 + SLEEP_BUFFER);
 
-  const isV6 =
-    signedOffer.contractAddress === process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ||
-    !('source' in loan);
+  const renegotiationChanges =
+    'source' in loan ? { targetPrincipal: loan.source.map((_) => 0n) } : { trancheIndex: [0n] };
   const renegotiationOffer = await users[0].makeRefinanceOffer({
     renegotiation: {
       loanId: loan.id,
@@ -45,9 +44,7 @@ const emitRenegotiateAndRepayLoan = async (lender: Gondi, borrower: Gondi, contr
       principalAmount: signedOffer.principalAmount,
       strictImprovement: false,
       requiresLiquidation: signedOffer.requiresLiquidation,
-      ...(isV6
-        ? { trancheIndex: [0n], targetPrincipal: undefined }
-        : { trancheIndex: undefined, targetPrincipal: loan.source.map((_) => 0n) }),
+      ...renegotiationChanges,
     },
     contractAddress: signedOffer.contractAddress,
     skipSignature: false,
@@ -83,13 +80,13 @@ const emitRenegotiateAndRepayLoan = async (lender: Gondi, borrower: Gondi, contr
 async function main() {
   try {
     await setAllowances();
-    await emitRenegotiateAndRepayLoan(users[0], users[1]);
 
-    const oldContracts = [
+    const contracts = [
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ?? '',
       process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? '',
       process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? '',
     ];
-    for (const contract of oldContracts) {
+    for (const contract of contracts) {
       if (isAddress(contract)) {
         await emitRenegotiateAndRepayLoan(users[0], users[1], contract);
       }

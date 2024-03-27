@@ -32,9 +32,7 @@ const emitRefinacePartialAndRepayLoan = async (contract?: Address) => {
   console.log(`remaining lockup: ${remainingLockup}`);
   await sleep(remainingLockup * 1_000 + SLEEP_BUFFER);
 
-  const isV6 =
-    signedOffer.contractAddress === process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ||
-    !('source' in loan);
+  const isV6 = !('source' in loan);
   const renegotiationOffer = await users[0].makeRefinanceOffer({
     renegotiation: {
       loanId: loan.id,
@@ -87,13 +85,13 @@ const emitRefinacePartialAndRepayLoan = async (contract?: Address) => {
 async function main() {
   try {
     await setAllowances();
-    await emitRefinacePartialAndRepayLoan();
 
-    const oldContracts = [
+    const contracts = [
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ?? '',
       process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? '',
       process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? '',
     ];
-    for (const contract of oldContracts) {
+    for (const contract of contracts) {
       if (isAddress(contract)) {
         await emitRefinacePartialAndRepayLoan(contract);
       }

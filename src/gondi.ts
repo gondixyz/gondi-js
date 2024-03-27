@@ -10,15 +10,16 @@ import {
 } from 'viem';
 
 import { Api, Props as ApiProps } from '@/api';
-import { filterLogs, Loan, LoanV5, OfferV5, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
+import { filterLogs, LoanV5, OfferV5, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Contracts, Wallet } from '@/contracts';
 import { getCurrencies } from '@/deploys';
 import { MarketplaceEnum, OffersSortField, Ordering } from '@/generated/graphql';
 import * as model from '@/model';
 import { Reservoir } from '@/reservoir/Reservoir';
 import { isNative, SeaportOrder } from '@/reservoir/utils';
-import { loanToMslLoan, renegotiationToMslRenegotiation } from '@/utils/loan';
+import { loanToMslLoan, LoanToMslLoanType, renegotiationToMslRenegotiation } from '@/utils/loan';
 import { NATIVE_MARKETPLACE } from '@/utils/string';
+import { OptionalNullable } from '@/utils/types';
 
 export class Gondi {
   contracts: Contracts;
@@ -313,17 +314,28 @@ export class Gondi {
   }
 
   offerExecutionFromOffers(
-    offers: Awaited<ReturnType<Gondi['makeSingleNftOffer']>>[],
+    offers: OfferFromExecutionOffer[],
     amounts?: bigint[],
-  ) {
-    return offers.map((offer, idx) => ({
-      offer: {
-        ...offer,
-        maxSeniorRepayment: offer.maxSeniorRepayment ?? 0n,
-      },
-      amount: amounts?.[idx] ?? offer.principalAmount,
-      lenderOfferSignature: offer.signature,
-    }));
+  ): EmitLoanArgs['offerExecution'] {
+    return offers.map((offer, idx) => {
+      const { signature, lenderAddress, borrowerAddress, offerHash } = offer;
+      if (!(signature && lenderAddress && borrowerAddress && offerHash))
+        throw new Error('Misisng required field for offer');
+      return {
+        offer: {
+          ...offer,
+          offerHash,
+          lenderAddress,
+          lender: lenderAddress,
+          borrowerAddress,
+          borrower: borrowerAddress,
+          signature,
+          maxSeniorRepayment: offer.maxSeniorRepayment ?? 0n,
+        },
+        amount: amounts?.[idx] ?? offer.principalAmount,
+        lenderOfferSignature: signature,
+      };
+    });
   }
 
   async emitLoan(args: EmitLoanArgs) {
@@ -336,7 +348,7 @@ export class Gondi {
     loanId,
     nftReceiver,
   }: {
-    loan: Loan;
+    loan: LoanToMslLoanType;
     loanId: bigint;
     nftReceiver?: Address;
   }) {
@@ -455,7 +467,7 @@ export class Gondi {
     return { ownedNfts: ownedNfts.map((edge) => edge.node), pageInfo };
   }
 
-  async getRemainingLockupSeconds({ loan }: { loan: Loan }) {
+  async getRemainingLockupSeconds({ loan }: { loan: LoanToMslLoanType }) {
     return this.contracts.Msl(loan.contractAddress).getRemainingLockupSeconds({
       loan: loanToMslLoan(loan),
     });
@@ -485,7 +497,7 @@ export class Gondi {
     loanId,
   }: {
     offer: model.RenegotiationOffer;
-    loan: Loan;
+    loan: LoanToMslLoanType;
     loanId: bigint;
   }) {
     return this.contracts.Msl(loan.contractAddress).refinanceFullLoan({
@@ -501,7 +513,7 @@ export class Gondi {
     loanId,
   }: {
     offer: model.RenegotiationOffer;
-    loan: Loan;
+    loan: LoanToMslLoanType;
     loanId: bigint;
   }) {
     return this.contracts.Msl(loan.contractAddress).refinancePartialLoan({
@@ -515,7 +527,7 @@ export class Gondi {
     newDuration,
     loanId,
   }: {
-    loan: Loan;
+    loan: LoanToMslLoanType;
     newDuration: bigint;
     loanId: bigint;
   }) {
@@ -548,7 +560,7 @@ export class Gondi {
     enable,
     rights,
   }: {
-    loan: Loan;
+    loan: LoanToMslLoanType;
     loanId: bigint;
     to: Address;
     enable: boolean;
@@ -593,7 +605,7 @@ export class Gondi {
     return this.contracts.Msl(contractAddress).revokeDelegationsAndEmitLoan({ delegations, emit });
   }
 
-  async liquidateLoan({ loan, loanId }: { loan: Loan; loanId: bigint }) {
+  async liquidateLoan({ loan, loanId }: { loan: LoanToMslLoanType; loanId: bigint }) {
     return this.contracts
       .Msl(loan.contractAddress)
       .liquidateLoan({ loanId, loan: loanToMslLoan(loan) });
@@ -615,7 +627,7 @@ export class Gondi {
       .placeBid({ collectionContractAddress, tokenId, bid, auction });
   }
 
-  async settleAuction({ loan, auction }: { loan: Loan; auction: model.Auction }) {
+  async settleAuction({ loan, auction }: { loan: LoanToMslLoanType; auction: model.Auction }) {
     return this.contracts
       .All(auction.loanAddress)
       .settleAuction({ auction, loan: loanToMslLoan(loan) });
@@ -852,9 +864,18 @@ interface GondiProps {
   reservoirBaseApiUrl?: string;
 }
 
+type MakeOfferType =
+  | Omit<Awaited<ReturnType<Gondi['makeSingleNftOffer']>>, 'nftId'>
+  | Omit<Awaited<ReturnType<Gondi['makeCollectionOffer']>>, 'collectionId'>;
+
+type OfferFromExecutionOffer = OptionalNullable<
+  MakeOfferType,
+  'borrowerAddress' | 'lenderAddress' | 'offerHash' | 'signature'
+>;
+
 export interface EmitLoanArgs {
   offerExecution: {
-    offer: model.SingleNftOffer | model.CollectionOffer;
+    offer: Omit<model.SingleNftOffer | model.CollectionOffer, 'nftId'>;
     amount?: bigint;
     lenderOfferSignature: Hash;
   }[];

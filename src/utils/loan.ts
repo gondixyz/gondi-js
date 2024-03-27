@@ -1,5 +1,9 @@
-import { Loan, zeroAddress } from '@/blockchain';
+import { isAddress } from 'viem';
+
+import { LoanV4, LoanV5, LoanV6, zeroAddress } from '@/blockchain';
 import * as model from '@/model';
+import { areSameAddress } from '@/utils/string';
+import { Optional } from '@/utils/types';
 
 export const renegotiationToMslRenegotiation = (
   renegotiation: model.RenegotiationOffer,
@@ -15,7 +19,15 @@ export const renegotiationToMslRenegotiation = (
   targetPrincipal: renegotiation.targetPrincipal ?? [],
 });
 
-export const loanToMslLoan = (loan: Loan) => {
+export type LoanToMslLoanType =
+  | Optional<LoanV4, 'nftCollateralAddress'>
+  | Optional<LoanV5, 'nftCollateralAddress'>
+  | Optional<LoanV6, 'nftCollateralAddress'>;
+export const loanToMslLoan = (loan: LoanToMslLoanType) => {
+  const nftCollateralAddress = loan.nftCollateralAddress ?? zeroAddress;
+  if (areSameAddress(zeroAddress, nftCollateralAddress) || !isAddress(nftCollateralAddress)) {
+    throw new Error('nftCollateralAddress is required');
+  }
   let source;
   if ('source' in loan) {
     // Filling floor in sources to match types, but it's unused by V1/V2
@@ -35,6 +47,7 @@ export const loanToMslLoan = (loan: Loan) => {
   }
   return {
     ...loan,
+    nftCollateralAddress,
     source,
     tranche: source,
     protocolFee,

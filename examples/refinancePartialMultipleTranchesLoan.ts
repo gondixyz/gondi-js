@@ -1,4 +1,4 @@
-import { Address } from 'viem';
+import { Address, isAddress } from 'viem';
 
 import {
   generateBlock,
@@ -39,9 +39,10 @@ const emitRefinacePartialAndRepayLoan = async (contract?: Address) => {
   console.log(`remaining lockup: ${remainingLockup}`);
   await sleep(remainingLockup * 1_000 + SLEEP_BUFFER);
 
-  const isV6 =
-    signedOffer.contractAddress === process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ||
-    !('source' in loan);
+  const renegotiationChanges =
+    'source' in loan
+      ? { targetPrincipal: loan.source.map((s) => s.principalAmount / 2n) }
+      : { trancheIndex: [2n] };
   const renegotiationOffer = await users[0].makeRefinanceOffer({
     renegotiation: {
       loanId: loan.id,
@@ -52,12 +53,7 @@ const emitRefinacePartialAndRepayLoan = async (contract?: Address) => {
       principalAmount: amount * 2n,
       strictImprovement: true,
       requiresLiquidation: signedOffer.requiresLiquidation,
-      ...(isV6
-        ? { trancheIndex: [2n], targetPrincipal: undefined }
-        : {
-            trancheIndex: undefined,
-            targetPrincipal: loan.source.map((s) => s.principalAmount / 2n),
-          }),
+      ...renegotiationChanges,
     },
     contractAddress: signedOffer.contractAddress,
     skipSignature: true,
@@ -95,6 +91,13 @@ async function main() {
   try {
     await setAllowances();
     await emitRefinacePartialAndRepayLoan();
+
+    const contracts = [process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ?? ''];
+    for (const contract of contracts) {
+      if (isAddress(contract)) {
+        await emitRefinacePartialAndRepayLoan(contract);
+      }
+    }
   } catch (e) {
     console.log('Error:');
     console.log(e);

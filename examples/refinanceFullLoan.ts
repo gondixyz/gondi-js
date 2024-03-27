@@ -32,9 +32,8 @@ const emitRefinaceFullAndRepayLoan = async (contract?: Address) => {
   console.log(`remaining lockup: ${remainingLockup}`);
   await sleep(remainingLockup * 1_000 + SLEEP_BUFFER);
 
-  const isV6 =
-    signedOffer.contractAddress === process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ||
-    !('source' in loan);
+  const renegotiationChanges =
+    'source' in loan ? { targetPrincipal: loan.source.map((_) => 0n) } : { trancheIndex: [0n] };
   const renegotiationOffer = await users[0].makeRefinanceOffer({
     renegotiation: {
       loanId: loan.id,
@@ -45,9 +44,7 @@ const emitRefinaceFullAndRepayLoan = async (contract?: Address) => {
       principalAmount: signedOffer.principalAmount,
       strictImprovement: true,
       requiresLiquidation: signedOffer.requiresLiquidation,
-      ...(isV6
-        ? { trancheIndex: [0n], targetPrincipal: undefined }
-        : { trancheIndex: undefined, targetPrincipal: loan.source.map((_) => 0n) }),
+      ...renegotiationChanges,
     },
     contractAddress: signedOffer.contractAddress,
     skipSignature: true,
@@ -84,13 +81,13 @@ const emitRefinaceFullAndRepayLoan = async (contract?: Address) => {
 async function main() {
   try {
     await setAllowances();
-    await emitRefinaceFullAndRepayLoan();
 
-    const oldContracts = [
+    const contracts = [
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ?? '',
       process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? '',
       process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? '',
     ];
-    for (const contract of oldContracts) {
+    for (const contract of contracts) {
       if (isAddress(contract)) {
         await emitRefinaceFullAndRepayLoan(contract);
       }

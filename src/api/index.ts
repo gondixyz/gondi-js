@@ -1,4 +1,5 @@
 import { ApolloClient, NormalizedCacheObject } from '@apollo/client';
+import { getAddress } from 'viem';
 
 import { apolloClient } from '@/api/client';
 import { getSdkApollo } from '@/api/sdk';
@@ -161,12 +162,12 @@ export class Api {
         nftCollateralTokenId: node.nft.tokenId,
         nftCollateralAddress: node.nft.collection?.contractData?.contractAddress,
         borrower: node.borrowerAddress,
-        startTime: BigInt(node.startTime.getTime() / 1_000),
+        startTime: BigInt(Math.floor(node.startTime.getTime() / 1_000)),
         source: node.sources.map((source) => ({
           ...source,
-          lender: source.lenderAddress,
+          lender: getAddress(source.lenderAddress),
           loanId: BigInt(source.loanId),
-          startTime: BigInt(source.startTime.getTime() / 1_000),
+          startTime: BigInt(Math.floor(source.startTime.getTime() / 1_000)),
         })),
       };
     });

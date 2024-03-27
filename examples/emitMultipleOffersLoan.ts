@@ -1,4 +1,4 @@
-import { Address } from 'viem';
+import { Address, isAddress } from 'viem';
 
 import { setAllowances, sleep, testSingleNftOfferInput, testTokenId, users } from './common';
 
@@ -33,8 +33,11 @@ const emitAndRepayLoan = async (contract?: Address) => {
 
 async function main() {
   try {
-    await setAllowances();
-    await emitAndRepayLoan();
+    const contract = process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ?? '';
+    if (isAddress(contract)) {
+      await setAllowances();
+      await emitAndRepayLoan(contract);
+    }
   } catch (e) {
     console.log('Error:');
     console.log(e);

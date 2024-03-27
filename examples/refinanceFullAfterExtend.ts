@@ -50,9 +50,8 @@ const emitExtendRefinaceFullAndRepayLoan = async (contract?: Address) => {
     repayLoan = receipt.loan;
     repayLoanId = receipt.newLoanId;
 
-    const isV6 =
-      signedOffer.contractAddress === process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ||
-      !('source' in loan);
+    const renegotiationChanges =
+      'source' in loan ? { targetPrincipal: loan.source.map((_) => 0n) } : { trancheIndex: [0n] };
     const renegotiationOffer = await users[2].makeRefinanceOffer({
       renegotiation: {
         loanId: loan.id,
@@ -63,9 +62,7 @@ const emitExtendRefinaceFullAndRepayLoan = async (contract?: Address) => {
         principalAmount: signedOffer.principalAmount,
         strictImprovement: true,
         requiresLiquidation: signedOffer.requiresLiquidation,
-        ...(isV6
-          ? { trancheIndex: [0n], targetPrincipal: undefined }
-          : { trancheIndex: undefined, targetPrincipal: loan.source.map((_) => 0n) }),
+        ...renegotiationChanges,
       },
       contractAddress: signedOffer.contractAddress,
       skipSignature: true,
@@ -105,8 +102,8 @@ async function main() {
   try {
     await setAllowances();
     // v5 has extend loan feature only
-    const oldContracts = [process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? ''];
-    for (const contract of oldContracts) {
+    const contracts = [process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? ''];
+    for (const contract of contracts) {
       if (isAddress(contract)) {
         await emitExtendRefinaceFullAndRepayLoan(contract);
       }
