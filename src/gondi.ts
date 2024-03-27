@@ -52,7 +52,9 @@ export class Gondi {
   async _makeSingleNftOffer(offer: model.SingleNftOfferInput, mslContractAddress?: Address) {
     const contract = mslContractAddress
       ? this.contracts.Msl(mslContractAddress)
-      : this.contracts.MultiSourceLoanV6;
+      : this.contracts.MultiSourceLoanV5;
+    // TODO: Uncomment me when v3 is released
+    // : this.contracts.MultiSourceLoanV6;
     const contractAddress = contract.address;
 
     const offerInput = {
@@ -108,7 +110,9 @@ export class Gondi {
   async _makeCollectionOffer(offer: model.CollectionOfferInput, mslContractAddress?: Address) {
     const contract = mslContractAddress
       ? this.contracts.Msl(mslContractAddress)
-      : this.contracts.MultiSourceLoanV6;
+      : this.contracts.MultiSourceLoanV5;
+    // TODO: Uncomment me when v3 is released
+    // : this.contracts.MultiSourceLoanV6;
     const contractAddress = contract.address;
 
     const offerInput = {
@@ -580,7 +584,9 @@ export class Gondi {
     to,
     collection,
     tokenId,
-    contract = this.contracts.MultiSourceLoanV6.address,
+    contract = this.contracts.MultiSourceLoanV5.address,
+    // TODO: Uncomment me when v3 is released
+    // contract = this.contracts.MultiSourceLoanV6.address,
   }: {
     to: Address;
     collection: Address;
@@ -756,7 +762,9 @@ export class Gondi {
 
   async isApprovedNFTForAll({
     nftAddress,
-    to = this.contracts.MultiSourceLoanV6.address,
+    to = this.contracts.MultiSourceLoanV5.address,
+    // TODO: Uncomment me when v3 is released
+    // to = this.contracts.MultiSourceLoanV6.address,
   }: {
     nftAddress: Address;
     to?: Address;
@@ -767,7 +775,9 @@ export class Gondi {
 
   async approveNFTForAll({
     nftAddress,
-    to = this.contracts.MultiSourceLoanV6.address,
+    to = this.contracts.MultiSourceLoanV5.address,
+    // TODO: Uncomment me when v3 is released
+    // to = this.contracts.MultiSourceLoanV6.address,
   }: {
     nftAddress: Address;
     to?: Address;
@@ -793,7 +803,9 @@ export class Gondi {
   async isApprovedToken({
     tokenAddress,
     amount,
-    to = this.contracts.MultiSourceLoanV6.address,
+    to = this.contracts.MultiSourceLoanV5.address,
+    // TODO: Uncomment me when v3 is released
+    // to = this.contracts.MultiSourceLoanV6.address,
   }: {
     tokenAddress: Address;
     amount: bigint;
@@ -806,7 +818,9 @@ export class Gondi {
   async approveToken({
     tokenAddress,
     amount = model.MAX_NUMBER,
-    to = this.contracts.MultiSourceLoanV6.address,
+    to = this.contracts.MultiSourceLoanV5.address,
+    // TODO: Uncomment me when v3 is released
+    // to = this.contracts.MultiSourceLoanV6.address,
   }: {
     tokenAddress: Address;
     amount?: bigint;
