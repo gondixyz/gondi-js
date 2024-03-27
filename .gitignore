@@ -2,6 +2,7 @@ node_modules
 dist
 *.log
 .env
-.vscode
+.vscode/*
+!.vscode/launch.json
 .DS_Store
 *.lock

@@ -12,7 +12,8 @@ import {
 } from 'viem';
 import { mainnet } from 'viem/chains';
 
-import { Wallet, zeroHash } from '@/blockchain';
+import { zeroHash } from '@/blockchain';
+import { Wallet } from '@/contracts';
 import { CryptoPunks } from '@/contracts/CryptoPunks';
 import { Seaport } from '@/contracts/Seaport';
 import { getApiKeys, getContracts, getCurrencies } from '@/deploys';

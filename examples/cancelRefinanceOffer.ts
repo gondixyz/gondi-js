@@ -8,54 +8,63 @@ const emitCancelRefiOfferAndRepayLoan = async (contract?: Address) => {
   console.log(`offer placed successfully: ${contractVersionString}`);
 
   const emitLoan = await users[1].emitLoan({
-    offer: signedOffer,
+    offerExecution: users[1].offerExecutionFromOffers([signedOffer]),
+    duration: signedOffer.duration,
     tokenId: testTokenId,
   });
-  const { loan } = await emitLoan.waitTxInBlock();
+  const { loan, loanId } = await emitLoan.waitTxInBlock();
   console.log(`loan emitted: ${contractVersionString}`);
 
   await new Promise((resolve) => setTimeout(resolve, 3000));
 
-  const refinanceOffer = await users[0].makeRefinanceOffer({
-    renegotiation: {
-      loanId: loan.id,
-      feeAmount: 0n,
-      aprBps: signedOffer.aprBps,
-      duration: signedOffer.duration,
-      expirationTime: signedOffer.expirationTime,
-      principalAmount: signedOffer.principalAmount,
-      strictImprovement: false,
-      requiresLiquidation: signedOffer.requiresLiquidation,
-      targetPrincipal: loan.source.map((_) => 0n),
-    },
-    contractAddress: signedOffer.contractAddress,
-  });
+  try {
+    const renegotiationChanges =
+      'source' in loan ? { targetPrincipal: loan.source.map((_) => 0n) } : { trancheIndex: [0n] };
+    const refinanceOffer = await users[0].makeRefinanceOffer({
+      contractAddress: signedOffer.contractAddress,
+      renegotiation: {
+        loanId: loan.id,
+        feeAmount: 0n,
+        aprBps: signedOffer.aprBps,
+        duration: signedOffer.duration,
+        expirationTime: signedOffer.expirationTime,
+        principalAmount: signedOffer.principalAmount,
+        strictImprovement: false,
+        requiresLiquidation: signedOffer.requiresLiquidation,
+        ...renegotiationChanges,
+      },
+    });
 
-  const { waitTxInBlock } = await users[0].cancelRefinanceOffer({
-    id: refinanceOffer.renegotiationId,
-    contractAddress: signedOffer.contractAddress,
-  });
+    const { waitTxInBlock } = await users[0].cancelRefinanceOffer({
+      id: refinanceOffer.renegotiationId,
+      contractAddress: signedOffer.contractAddress,
+    });
 
-  await waitTxInBlock();
-  console.log(`renegotiation offer cancelled: ${contractVersionString}`);
-
-  const repayLoan = await users[1].repayLoan({
-    loan,
-    loanId: loan.source[0].loanId,
-  });
-  await repayLoan.waitTxInBlock();
-  console.log(`loan repaid: ${contractVersionString}`);
+    await waitTxInBlock();
+    console.log(`renegotiation offer cancelled: ${contractVersionString}`);
+  } catch (e) {
+    console.log('Error while placing and cancelling renegotiation offer:');
+    console.log(e);
+  } finally {
+    const repayLoan = await users[1].repayLoan({ loan, loanId });
+    await repayLoan.waitTxInBlock();
+    console.log(`loan repaid: ${contractVersionString}`);
+  }
 };
 
 async function main() {
   try {
     await setAllowances();
-    await emitCancelRefiOfferAndRepayLoan();
 
-    const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? '';
-
-    if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
-      await emitCancelRefiOfferAndRepayLoan(MULTI_SOURCE_LOAN_CONTRACT_V4);
+    const contracts = [
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ?? '',
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? '',
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? '',
+    ];
+    for (const contract of contracts) {
+      if (isAddress(contract)) {
+        await emitCancelRefiOfferAndRepayLoan(contract);
+      }
     }
   } catch (e) {
     console.log('Error:');

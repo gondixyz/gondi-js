@@ -1,6 +1,6 @@
 import { Address, isAddress } from 'viem';
 
-import { approveNFT, testCollection, testTokenId, users } from './common';
+import { approveNFT, setAllowances, testCollection, testTokenId, users } from './common';
 
 const USER_VAULT_CONTRACT_V5 = process.env.USER_VAULT_CONTRACT_V5 ?? '';
 const ANOTHER_COLLECTION = process.env.TEST_COLLECTION_2 as Address;
@@ -61,6 +61,7 @@ const userVaults = async () => {
 
 async function main() {
   try {
+    await setAllowances();
     await userVaults();
   } catch (e) {
     console.log('Error:');

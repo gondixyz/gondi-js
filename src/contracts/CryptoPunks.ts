@@ -1,13 +1,12 @@
-import { Account, Chain, encodeFunctionData, Transport, WalletClient } from 'viem';
+import { encodeFunctionData } from 'viem';
 
+import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { cryptopunksABI } from '@/generated/blockchain/cryptopunks';
 
-import { Contract } from './Contract';
+import { BaseContract } from './BaseContract';
 
-export type Wallet = WalletClient<Transport, Chain, Account>;
-
-export class CryptoPunks extends Contract<typeof cryptopunksABI> {
+export class CryptoPunks extends BaseContract<typeof cryptopunksABI> {
   constructor({ walletClient }: { walletClient: Wallet }) {
     const { CryptoPunksAddress } = getContracts(walletClient.chain);
 

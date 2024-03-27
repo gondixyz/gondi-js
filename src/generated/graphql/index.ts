@@ -234,6 +234,11 @@ export type CollectionOffer = Node & Offer & {
   id: Scalars['String'];
   lenderAddress?: Maybe<Scalars['Address']>;
   maxPrincipal: Scalars['BigInt'];
+  maxSeniorRepayment: Scalars['BigInt'];
+  /**
+   * Deprecated field: use maxSeniorRepayment instead.
+   * @deprecated Use maxSeniorRepayment instead.
+   */
   maxTrancheFloor: Scalars['BigInt'];
   netPrincipal: Scalars['BigInt'];
   offerHash?: Maybe<Scalars['Hash']>;
@@ -259,6 +264,7 @@ export type CollectionOfferInput = {
   expirationTime: Scalars['BigInt'];
   fee: Scalars['BigInt'];
   lenderAddress: Scalars['Address'];
+  maxSeniorRepayment?: InputMaybe<Scalars['BigInt']>;
   maxTrancheFloor?: InputMaybe<Scalars['BigInt']>;
   offerValidators: Array<OfferValidatorInput>;
   principalAddress: Scalars['Address'];
@@ -307,6 +313,7 @@ export type CollectionSignedOfferInput = {
   expirationTime: Scalars['BigInt'];
   fee: Scalars['BigInt'];
   lenderAddress: Scalars['Address'];
+  maxSeniorRepayment?: InputMaybe<Scalars['BigInt']>;
   maxTrancheFloor?: InputMaybe<Scalars['BigInt']>;
   offerHash: Scalars['Hash'];
   offerId: Scalars['BigInt'];
@@ -1128,6 +1135,11 @@ export type Offer = {
   id: Scalars['String'];
   lenderAddress?: Maybe<Scalars['Address']>;
   maxPrincipal: Scalars['BigInt'];
+  maxSeniorRepayment: Scalars['BigInt'];
+  /**
+   * Deprecated field: use maxSeniorRepayment instead.
+   * @deprecated Use maxSeniorRepayment instead.
+   */
   maxTrancheFloor: Scalars['BigInt'];
   netPrincipal: Scalars['BigInt'];
   offerHash?: Maybe<Scalars['Hash']>;
@@ -1732,6 +1744,11 @@ export type SingleNftOffer = Node & Offer & {
   id: Scalars['String'];
   lenderAddress?: Maybe<Scalars['Address']>;
   maxPrincipal: Scalars['BigInt'];
+  maxSeniorRepayment: Scalars['BigInt'];
+  /**
+   * Deprecated field: use maxSeniorRepayment instead.
+   * @deprecated Use maxSeniorRepayment instead.
+   */
   maxTrancheFloor: Scalars['BigInt'];
   netPrincipal: Scalars['BigInt'];
   nft: Nft;
@@ -1757,6 +1774,7 @@ export type SingleNftOfferInput = {
   expirationTime: Scalars['BigInt'];
   fee: Scalars['BigInt'];
   lenderAddress: Scalars['Address'];
+  maxSeniorRepayment?: InputMaybe<Scalars['BigInt']>;
   maxTrancheFloor?: InputMaybe<Scalars['BigInt']>;
   nftId: Scalars['Int'];
   offerValidators: Array<OfferValidatorInput>;
@@ -1814,6 +1832,7 @@ export type SingleNftSignedOfferInput = {
   expirationTime: Scalars['BigInt'];
   fee: Scalars['BigInt'];
   lenderAddress: Scalars['Address'];
+  maxSeniorRepayment?: InputMaybe<Scalars['BigInt']>;
   maxTrancheFloor?: InputMaybe<Scalars['BigInt']>;
   nftId: Scalars['Int'];
   offerHash: Scalars['Hash'];
@@ -2266,7 +2285,7 @@ export type ListOffersQueryVariables = Exact<{
 }>;
 
 
-export type ListOffersQuery = { __typename?: 'Query', result: { __typename?: 'OfferConnection', pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'OfferEdge', node: { __typename?: 'CollectionOffer', id: string, offerId: bigint, lenderAddress?: Address | null, borrowerAddress?: Address | null, signerAddress?: Address | null, contractAddress: Address, requiresLiquidation?: boolean | null, principalAddress: Address, principalAmount: bigint, aprBps: bigint, fee: bigint, capacity: bigint, expirationTime: bigint, duration: bigint, status: string, offerHash?: Hash | null, signature?: Hex | null, createdDate?: Date | null, repayment: bigint, hidden?: boolean | null, collection: { __typename?: 'Collection', id: string, slug?: string | null, contractData?: { __typename?: 'ContractData', contractAddress: Address } | null }, currency?: { __typename?: 'Currency', symbol: string, decimals: number, address: Address } | null, validators: Array<{ __typename?: 'OfferValidator', arguments: Hex, validator: Address }> } | { __typename?: 'SingleNFTOffer', id: string, offerId: bigint, lenderAddress?: Address | null, borrowerAddress?: Address | null, signerAddress?: Address | null, contractAddress: Address, requiresLiquidation?: boolean | null, principalAddress: Address, principalAmount: bigint, aprBps: bigint, fee: bigint, capacity: bigint, expirationTime: bigint, duration: bigint, status: string, offerHash?: Hash | null, signature?: Hex | null, createdDate?: Date | null, repayment: bigint, hidden?: boolean | null, nft: { __typename?: 'NFT', id: string, tokenId: bigint, collection?: { __typename?: 'Collection', id: string, slug?: string | null, contractData?: { __typename?: 'ContractData', contractAddress: Address } | null } | null }, currency?: { __typename?: 'Currency', symbol: string, decimals: number, address: Address } | null, validators: Array<{ __typename?: 'OfferValidator', arguments: Hex, validator: Address }> } }> } };
+export type ListOffersQuery = { __typename?: 'Query', result: { __typename?: 'OfferConnection', pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'OfferEdge', node: { __typename?: 'CollectionOffer', id: string, offerId: bigint, lenderAddress?: Address | null, borrowerAddress?: Address | null, signerAddress?: Address | null, contractAddress: Address, requiresLiquidation?: boolean | null, principalAddress: Address, principalAmount: bigint, aprBps: bigint, fee: bigint, capacity: bigint, expirationTime: bigint, duration: bigint, status: string, offerHash?: Hash | null, signature?: Hex | null, createdDate?: Date | null, repayment: bigint, hidden?: boolean | null, maxSeniorRepayment: bigint, collection: { __typename?: 'Collection', id: string, slug?: string | null, contractData?: { __typename?: 'ContractData', contractAddress: Address } | null }, currency?: { __typename?: 'Currency', symbol: string, decimals: number, address: Address } | null, validators: Array<{ __typename?: 'OfferValidator', arguments: Hex, validator: Address }> } | { __typename?: 'SingleNFTOffer', id: string, offerId: bigint, lenderAddress?: Address | null, borrowerAddress?: Address | null, signerAddress?: Address | null, contractAddress: Address, requiresLiquidation?: boolean | null, principalAddress: Address, principalAmount: bigint, aprBps: bigint, fee: bigint, capacity: bigint, expirationTime: bigint, duration: bigint, status: string, offerHash?: Hash | null, signature?: Hex | null, createdDate?: Date | null, repayment: bigint, hidden?: boolean | null, maxSeniorRepayment: bigint, nft: { __typename?: 'NFT', id: string, tokenId: bigint, collection?: { __typename?: 'Collection', id: string, slug?: string | null, contractData?: { __typename?: 'ContractData', contractAddress: Address } | null } | null }, currency?: { __typename?: 'Currency', symbol: string, decimals: number, address: Address } | null, validators: Array<{ __typename?: 'OfferValidator', arguments: Hex, validator: Address }> } }> } };
 
 export type ActiveOfferNotificationKeySpecifier = ('createdOn' | 'id' | 'notificationType' | 'offer' | 'readOn' | 'user' | ActiveOfferNotificationKeySpecifier)[];
 export type ActiveOfferNotificationFieldPolicy = {
@@ -2411,7 +2430,7 @@ export type CollectionEdgeFieldPolicy = {
 	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
 	node?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type CollectionOfferKeySpecifier = ('aprBps' | 'borrowerAddress' | 'capacity' | 'collection' | 'consumedCapacity' | 'contractAddress' | 'createdDate' | 'currency' | 'duration' | 'expirationTime' | 'fee' | 'hidden' | 'id' | 'lenderAddress' | 'maxPrincipal' | 'maxTrancheFloor' | 'netPrincipal' | 'offerHash' | 'offerId' | 'principalAddress' | 'principalAmount' | 'repayment' | 'requiresLiquidation' | 'signature' | 'signerAddress' | 'statistics' | 'status' | 'validators' | CollectionOfferKeySpecifier)[];
+export type CollectionOfferKeySpecifier = ('aprBps' | 'borrowerAddress' | 'capacity' | 'collection' | 'consumedCapacity' | 'contractAddress' | 'createdDate' | 'currency' | 'duration' | 'expirationTime' | 'fee' | 'hidden' | 'id' | 'lenderAddress' | 'maxPrincipal' | 'maxSeniorRepayment' | 'maxTrancheFloor' | 'netPrincipal' | 'offerHash' | 'offerId' | 'principalAddress' | 'principalAmount' | 'repayment' | 'requiresLiquidation' | 'signature' | 'signerAddress' | 'statistics' | 'status' | 'validators' | CollectionOfferKeySpecifier)[];
 export type CollectionOfferFieldPolicy = {
 	aprBps?: FieldPolicy<any> | FieldReadFunction<any>,
 	borrowerAddress?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -2428,6 +2447,7 @@ export type CollectionOfferFieldPolicy = {
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	lenderAddress?: FieldPolicy<any> | FieldReadFunction<any>,
 	maxPrincipal?: FieldPolicy<any> | FieldReadFunction<any>,
+	maxSeniorRepayment?: FieldPolicy<any> | FieldReadFunction<any>,
 	maxTrancheFloor?: FieldPolicy<any> | FieldReadFunction<any>,
 	netPrincipal?: FieldPolicy<any> | FieldReadFunction<any>,
 	offerHash?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -2944,7 +2964,7 @@ export type NotificationEdgeFieldPolicy = {
 	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
 	node?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type OfferKeySpecifier = ('aprBps' | 'borrowerAddress' | 'capacity' | 'consumedCapacity' | 'contractAddress' | 'createdDate' | 'currency' | 'duration' | 'expirationTime' | 'fee' | 'hidden' | 'id' | 'lenderAddress' | 'maxPrincipal' | 'maxTrancheFloor' | 'netPrincipal' | 'offerHash' | 'offerId' | 'principalAddress' | 'principalAmount' | 'repayment' | 'requiresLiquidation' | 'signature' | 'signerAddress' | 'status' | 'validators' | OfferKeySpecifier)[];
+export type OfferKeySpecifier = ('aprBps' | 'borrowerAddress' | 'capacity' | 'consumedCapacity' | 'contractAddress' | 'createdDate' | 'currency' | 'duration' | 'expirationTime' | 'fee' | 'hidden' | 'id' | 'lenderAddress' | 'maxPrincipal' | 'maxSeniorRepayment' | 'maxTrancheFloor' | 'netPrincipal' | 'offerHash' | 'offerId' | 'principalAddress' | 'principalAmount' | 'repayment' | 'requiresLiquidation' | 'signature' | 'signerAddress' | 'status' | 'validators' | OfferKeySpecifier)[];
 export type OfferFieldPolicy = {
 	aprBps?: FieldPolicy<any> | FieldReadFunction<any>,
 	borrowerAddress?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -2960,6 +2980,7 @@ export type OfferFieldPolicy = {
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	lenderAddress?: FieldPolicy<any> | FieldReadFunction<any>,
 	maxPrincipal?: FieldPolicy<any> | FieldReadFunction<any>,
+	maxSeniorRepayment?: FieldPolicy<any> | FieldReadFunction<any>,
 	maxTrancheFloor?: FieldPolicy<any> | FieldReadFunction<any>,
 	netPrincipal?: FieldPolicy<any> | FieldReadFunction<any>,
 	offerHash?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3181,7 +3202,7 @@ export type SaleFieldPolicy = {
 	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
 	txHash?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type SingleNFTOfferKeySpecifier = ('aprBps' | 'borrowerAddress' | 'capacity' | 'consumedCapacity' | 'contractAddress' | 'createdDate' | 'currency' | 'duration' | 'expirationTime' | 'fee' | 'hidden' | 'id' | 'lenderAddress' | 'maxPrincipal' | 'maxTrancheFloor' | 'netPrincipal' | 'nft' | 'offerHash' | 'offerId' | 'principalAddress' | 'principalAmount' | 'repayment' | 'requiresLiquidation' | 'signature' | 'signerAddress' | 'statistics' | 'status' | 'validators' | SingleNFTOfferKeySpecifier)[];
+export type SingleNFTOfferKeySpecifier = ('aprBps' | 'borrowerAddress' | 'capacity' | 'consumedCapacity' | 'contractAddress' | 'createdDate' | 'currency' | 'duration' | 'expirationTime' | 'fee' | 'hidden' | 'id' | 'lenderAddress' | 'maxPrincipal' | 'maxSeniorRepayment' | 'maxTrancheFloor' | 'netPrincipal' | 'nft' | 'offerHash' | 'offerId' | 'principalAddress' | 'principalAmount' | 'repayment' | 'requiresLiquidation' | 'signature' | 'signerAddress' | 'statistics' | 'status' | 'validators' | SingleNFTOfferKeySpecifier)[];
 export type SingleNFTOfferFieldPolicy = {
 	aprBps?: FieldPolicy<any> | FieldReadFunction<any>,
 	borrowerAddress?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3197,6 +3218,7 @@ export type SingleNFTOfferFieldPolicy = {
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	lenderAddress?: FieldPolicy<any> | FieldReadFunction<any>,
 	maxPrincipal?: FieldPolicy<any> | FieldReadFunction<any>,
+	maxSeniorRepayment?: FieldPolicy<any> | FieldReadFunction<any>,
 	maxTrancheFloor?: FieldPolicy<any> | FieldReadFunction<any>,
 	netPrincipal?: FieldPolicy<any> | FieldReadFunction<any>,
 	nft?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -4270,6 +4292,7 @@ export const ListOffersDocument = gql`
         createdDate
         repayment
         hidden
+        maxSeniorRepayment
         validators {
           arguments
           validator

@@ -1,21 +1,22 @@
-import { Account, Address, Chain, Transport, WalletClient } from 'viem';
+import { Address } from 'viem';
 
 import { filterLogs, LoanV5 } from '@/blockchain';
+import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { auctionLoanLiquidatorABI as auctionLoanLiquidatorABIV5 } from '@/generated/blockchain/v5';
 import * as model from '@/model';
 
-import { Contract } from './Contract';
+import { BaseContract } from './BaseContract';
 
-export type Wallet = WalletClient<Transport, Chain, Account>;
-
-export class AllV5 extends Contract<typeof auctionLoanLiquidatorABIV5> {
+export class AllV5 extends BaseContract<typeof auctionLoanLiquidatorABIV5> {
   constructor({ walletClient }: { walletClient: Wallet }) {
-    const { AuctionLoanLiquidatorV5Address } = getContracts(walletClient.chain);
+    const {
+      AuctionLoanLiquidator: { v5 },
+    } = getContracts(walletClient.chain);
 
     super({
       walletClient,
-      address: AuctionLoanLiquidatorV5Address,
+      address: v5,
       abi: auctionLoanLiquidatorABIV5,
     });
   }

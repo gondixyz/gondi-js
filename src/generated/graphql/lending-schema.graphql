@@ -188,7 +188,10 @@ type CollectionOffer implements Node & Offer {
   id: String!
   lenderAddress: Address
   maxPrincipal: BigInt!
-  maxTrancheFloor: BigInt!
+  maxSeniorRepayment: BigInt!
+
+  """Deprecated field: use maxSeniorRepayment instead."""
+  maxTrancheFloor: BigInt! @deprecated(reason: "Use maxSeniorRepayment instead.")
   netPrincipal: BigInt!
   offerHash: Hash
   offerId: BigInt!
@@ -213,6 +216,7 @@ input CollectionOfferInput {
   expirationTime: BigInt!
   fee: BigInt!
   lenderAddress: Address!
+  maxSeniorRepayment: BigInt = null
   maxTrancheFloor: BigInt = null
   offerValidators: [OfferValidatorInput!]!
   principalAddress: Address!
@@ -259,6 +263,7 @@ input CollectionSignedOfferInput {
   expirationTime: BigInt!
   fee: BigInt!
   lenderAddress: Address!
+  maxSeniorRepayment: BigInt = null
   maxTrancheFloor: BigInt = null
   offerHash: Hash!
   offerId: BigInt!
@@ -716,7 +721,7 @@ type Mutation {
   generateSingleNftOfferToBeSigned(offerInput: SingleNFTOfferInput!): SingleNFTOffer!
   hideAllOffers(contractAddress: Address!, minOfferId: String!): [Offer!]!
   hideOffer(contractAddress: Address!, offerId: String!): Offer!
-  hideRenegotiation(contractAddress: Address = "0xCa5a494Ca20483e21ec1E41FE1D9461Da77595Bd", renegotiationId: String!): Renegotiation!
+  hideRenegotiation(contractAddress: Address = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9", renegotiationId: String!): Renegotiation!
   hideSaleOffer(saleOfferId: String!): SingleNFTOrder!
   markNotificationIdsAsRead(ids: [Int!]): Void
   markNotificationsAsRead: Void
@@ -729,7 +734,7 @@ type Mutation {
   saveSignedSingleNftOffer(signedOfferInput: SingleNFTSignedOfferInput!): SingleNFTOffer!
   setReferral(referrerId: Int!): Void
   showOffer(contractAddress: Address!, offerId: String!): Offer!
-  showRenegotiation(contractAddress: Address = "0xCa5a494Ca20483e21ec1E41FE1D9461Da77595Bd", renegotiationId: String!): Renegotiation!
+  showRenegotiation(contractAddress: Address = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9", renegotiationId: String!): Renegotiation!
   showSaleOffer(saleOfferId: String!): SingleNFTOrder!
 }
 
@@ -870,7 +875,10 @@ interface Offer implements Node {
   id: String!
   lenderAddress: Address
   maxPrincipal: BigInt!
-  maxTrancheFloor: BigInt!
+  maxSeniorRepayment: BigInt!
+
+  """Deprecated field: use maxSeniorRepayment instead."""
+  maxTrancheFloor: BigInt! @deprecated(reason: "Use maxSeniorRepayment instead.")
   netPrincipal: BigInt!
   offerHash: Hash
   offerId: BigInt!
@@ -1220,7 +1228,10 @@ type SingleNFTOffer implements Node & Offer {
   id: String!
   lenderAddress: Address
   maxPrincipal: BigInt!
-  maxTrancheFloor: BigInt!
+  maxSeniorRepayment: BigInt!
+
+  """Deprecated field: use maxSeniorRepayment instead."""
+  maxTrancheFloor: BigInt! @deprecated(reason: "Use maxSeniorRepayment instead.")
   netPrincipal: BigInt!
   nft: NFT!
   offerHash: Hash
@@ -1245,6 +1256,7 @@ input SingleNFTOfferInput {
   expirationTime: BigInt!
   fee: BigInt!
   lenderAddress: Address!
+  maxSeniorRepayment: BigInt = null
   maxTrancheFloor: BigInt = null
   nftId: Int!
   offerValidators: [OfferValidatorInput!]!
@@ -1299,6 +1311,7 @@ input SingleNFTSignedOfferInput {
   expirationTime: BigInt!
   fee: BigInt!
   lenderAddress: Address!
+  maxSeniorRepayment: BigInt = null
   maxTrancheFloor: BigInt = null
   nftId: Int!
   offerHash: Hash!

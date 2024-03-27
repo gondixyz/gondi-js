@@ -1,10 +1,101 @@
+# Breaking Changes 0.6.0
+
+### Important
+
+---
+
+This document outlines the breaking changes introduced in our codebase for version 0.6.0. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [Emit Loan](#emit-loan)
+- [Revoke Delegate](#revoke-delegate)
+- [Make Offer](#make-offer)
+- [Make Refinance Offer](#make-refinance-offer)
+
+---
+
+## Emit Loan
+
+**Description:**
+
+`emitLoan` method argument has been updated to:
+
+```ts
+interface EmitLoanArgs {
+  offerExecution: {
+    offer: Omit<model.SingleNftOffer | model.CollectionOffer, 'nftId'>;
+    amount?: bigint;
+    lenderOfferSignature: Hash;
+  }[];
+  tokenId: bigint;
+  duration: bigint;
+  principalReceiver?: Address;
+  expirationTime?: bigint;
+}
+```
+
+**Reason:**
+
+This allows us to introduce further customization of this method in the future for new versions of the contracts.
+
+**Migration Steps:**
+
+See `offerExecutionFromOffers` helper. `amounts` is optional and should specify the amount to be taken from each offer. If index of offer not found in amounts, will default to offer principal ammount.
+
+```ts
+offerExecutionFromOffers(offers: OfferFromExecutionOffer[], amounts?: bigint[])
+```
+
+---
+
+## Revoke Delegate
+
+**Description:**
+
+As `emitLoan` arguments have been updated, argument `emit` from `revokeDelegate` has to be updated.
+
+**Reason:**
+
+`emitLoan` arguments have been updated and that impacts this method.
+
+**Migration Steps:**
+
+Build `emit` argument the same way it's explained in `emitLoan` migrations steps.
+
+---
+
+## Make Offer
+
+**Description:**
+
+`maxSeniorRepayment` it's been added to object received in `makeCollectionOffer` and `makeSingleNftOffer`.
+
+**Reason:**
+
+This allows us to set a floor when using the current offer with other offer when creating loans.
+
+---
+
+## Make Refinance Offer
+
+**Description:**
+
+`targetPrincipal` it's still required for versions 1 and 2 of Gondi. In future versions, `trancheIndex` will be required in its place.
+
+**Reason:**
+
+Next versions of Gondi will change the way in which sources (future tranches) from loan are refinanced.
+
+---
+
 # Breaking Changes 0.5.0
 
 ### Important
 
 ---
 
-This document outlines the breaking changes introduced in our codebase for version 0.3.0b4. Please review these changes carefully to ensure a smooth migration.
+This document outlines the breaking changes introduced in our codebase for version 0.5.0. Please review these changes carefully to ensure a smooth migration.
 
 ## Table of Contents
 
@@ -32,11 +123,11 @@ This document outlines the breaking changes introduced in our codebase for versi
 
 ## Table of Contents
 
-- [Repay Loan](#repayLoan)
-- [Refinance Full Loan](#refinanceFullLoan)
-- [Refinance Partial Loan](#refinancePartialLoan)
-- [Liquidate Loan](#liquidateLoan)
-- [Leverage Sell](#leverageSell)
+- [Repay Loan](#repay-loan)
+- [Refinance Full Loan](#refinance-full-loan)
+- [Refinance Partial Loan](#refinance-partial-loan)
+- [Liquidate Loan](#liquidate-loan)
+- [Leverage Sell](#leverage-sell)
 
 ---
 
@@ -133,7 +224,7 @@ This document outlines the breaking changes introduced in our codebase for versi
 
 ## Table of Contents
 
-- [Settle Auction](#settleAuction)
+- [Settle Auction](#settle-auction)
 
 ---
 
@@ -165,8 +256,8 @@ This document outlines the breaking changes introduced in our codebase for versi
 
 ## Table of Contents
 
-- [Approve NFT For All](#approveNFTForAll)
-- [Approve Token](#approveToken)
+- [Approve NFT For All](#approve-nft-for-all)
+- [Approve Token](#approve-token)
 
 ---
 
@@ -221,10 +312,10 @@ This document outlines the breaking changes introduced in our codebase for versi
 
 ## Hide Offer
 
-**Description:**  
+**Description:**
 `hideOffer` method now expects an object with an id and contract address inside. This id should be the `offerId` of the offer you want to hide, not the full id.
 
-**Reason:**  
+**Reason:**
 Consistency accross other methods.
 
 **Migration Steps:**
@@ -235,10 +326,10 @@ Change the argument sent to `hideOffer` to an object containing the `offerId` of
 
 ## Hide Renegotiation Offer
 
-**Description:**  
+**Description:**
 `hideRenegotiationOffer` method now expects an object with an id and contract address inside. This id should be the `renegotiationId` of the renegotiation you want to hide, not the full id.
 
-**Reason:**  
+**Reason:**
 Consistency accross other methods.
 
 **Migration Steps:**
@@ -257,19 +348,19 @@ This document outlines the breaking changes introduced in our codebase for versi
 - [Cancel Refinance Offer](#cancel-refinance-offer)
 - [Cancel All Offers](#cancel-all-offers)
 - [Cancel All Renegotiations](#cancel-all-renegotiations)
-- [Repay Loan](#repay-loan)
-- [Refinance Full Loan](#refinance-full-loan)
-- [Emit Loan](#emit-loan)
-- [Make Refinance Offer](#make-refinance-offer)
+- [Repay Loan](#repay-loan-1)
+- [Refinance Full Loan](#refinance-full-loan-1)
+- [Emit Loan](#emit-loan-1)
+- [Make Refinance Offer](#make-refinance-offer-1)
 
 ---
 
 ## Cancel Offer
 
-**Description:**  
+**Description:**
 `cancelOffer` method now expects an object as an argument, with the id and contractAddress inside
 
-**Reason:**  
+**Reason:**
 This allows us to introduce further customization of this method in the future.
 
 **Migration Steps:**
@@ -280,10 +371,10 @@ Change the argument sent to `cancelOffer` to an object containing the id of the 
 
 ## Cancel Refinance Offer
 
-**Description:**  
+**Description:**
 `cancelRefinanceOffer` method now expects an object as an argument, with the id and contractAddress inside
 
-**Reason:**  
+**Reason:**
 This allows us to introduce further customization of this method in the future.
 
 **Migration Steps:**
@@ -294,10 +385,10 @@ Change the argument sent to `cancelRefinanceOffer` to an object containing the i
 
 ## Cancel All Offers
 
-**Description:**  
+**Description:**
 `cancelOffers` method now expects the key `contractAddress` instead of `contract` in the argument
 
-**Reason:**  
+**Reason:**
 Consistency accross other methods
 
 **Migration Steps:**
@@ -308,10 +399,10 @@ Change the key from `contract` to `contractAddress`
 
 ## Cancel All Renegotiations
 
-**Description:**  
+**Description:**
 `cancelAllRenegotiations` method now expects the key `contractAddress` instead of `contract` in the argument
 
-**Reason:**  
+**Reason:**
 Consistency accross other methods
 
 **Migration Steps:**
@@ -322,10 +413,10 @@ Change the key from `contract` to `contractAddress`
 
 ## Repay Loan
 
-**Description:**  
+**Description:**
 `repayLoan` method now expects an object as an argument, with the loan and nftReceiver
 
-**Reason:**  
+**Reason:**
 This allows us to introduce further customization of this method in the future.
 
 **Migration Steps:**
@@ -336,10 +427,10 @@ Change the argument sent to `repayLoan` to an object containing the loan you wan
 
 ## Refinance Full Loan
 
-**Description:**  
+**Description:**
 `refinanceFullLoan` method now expects an object as an argument, with the loan and the refinance offer
 
-**Reason:**  
+**Reason:**
 This allows us to introduce further customization of this method in the future.
 
 **Migration Steps:**
@@ -350,10 +441,10 @@ Change the argument sent to `refinanceFullLoan` to an object containing the loan
 
 ## Emit Loan
 
-**Description:**  
+**Description:**
 `emitLoan` method now expects an object as an argument, with the offer and tokenId
 
-**Reason:**  
+**Reason:**
 This allows us to introduce further customization of this method in the future.
 
 **Migration Steps:**
@@ -364,10 +455,10 @@ Change the argument sent to `emitLoan` to an object containing the offer you wan
 
 ## Make Refinance Offer
 
-**Description:**  
+**Description:**
 `makeRefinanceOffer` method now expects an object as an argument, with the renegotiation, the contract address and the skipSignature boolean
 
-**Reason:**  
+**Reason:**
 This allows us to introduce further customization of this method in the future.
 
 **Migration Steps:**

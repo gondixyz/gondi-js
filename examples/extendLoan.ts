@@ -1,4 +1,4 @@
-import { Address } from 'viem';
+import { Address, isAddress } from 'viem';
 
 import {
   generateBlock,
@@ -11,7 +11,7 @@ import {
 
 const SLEEP_BUFFER = 3000;
 
-const emitRefinaceFullAndRepayLoan = async (contract?: Address) => {
+const emitExtendAndRepayLoan = async (contract?: Address) => {
   const offer = {
     ...testSingleNftOfferInput,
     duration: 30n,
@@ -21,10 +21,11 @@ const emitRefinaceFullAndRepayLoan = async (contract?: Address) => {
   console.log(`offer placed successfully: ${contractVersionString}`);
 
   const emitLoan = await users[1].emitLoan({
-    offer: signedOffer,
+    offerExecution: users[1].offerExecutionFromOffers([signedOffer]),
+    duration: signedOffer.duration,
     tokenId: testTokenId,
   });
-  const { loan } = await emitLoan.waitTxInBlock();
+  const { loan, loanId } = await emitLoan.waitTxInBlock();
   console.log(`loan emitted: ${contractVersionString}`);
 
   const remainingLockup = await users[0].getRemainingLockupSeconds({ loan });
@@ -39,7 +40,7 @@ const emitRefinaceFullAndRepayLoan = async (contract?: Address) => {
     const { waitTxInBlock } = await users[0].extendLoan({
       loan,
       newDuration: 120n,
-      loanId: loan.source[0].loanId,
+      loanId,
     });
 
     const receipt = await waitTxInBlock();
@@ -63,7 +64,13 @@ const emitRefinaceFullAndRepayLoan = async (contract?: Address) => {
 async function main() {
   try {
     await setAllowances();
-    await emitRefinaceFullAndRepayLoan();
+    // v5 has extend loan feature only
+    const contracts = [process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? ''];
+    for (const contract of contracts) {
+      if (isAddress(contract)) {
+        await emitExtendAndRepayLoan(contract);
+      }
+    }
   } catch (e) {
     console.log('Error:');
     console.log(e);

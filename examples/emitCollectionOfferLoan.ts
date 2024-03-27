@@ -8,21 +8,17 @@ const emitAndRepayLoan = async (contract?: Address) => {
   console.log(`offer placed successfully: ${contractVersionString}`);
 
   const emitLoan = await users[1].emitLoan({
-    offer: {
-      ...signedOffer,
-      nftId: Number(signedOffer.nftCollateralTokenId.valueOf()),
-    },
+    offerExecution: users[1].offerExecutionFromOffers([signedOffer]),
+    duration: signedOffer.duration,
     tokenId: testTokenId,
   });
-  const { loan } = await emitLoan.waitTxInBlock();
+
+  const { loan, loanId } = await emitLoan.waitTxInBlock();
   console.log(`loan emitted: ${contractVersionString}`);
 
   await sleep(3000);
 
-  const repayLoan = await users[1].repayLoan({
-    loan,
-    loanId: loan.source[0].loanId,
-  });
+  const repayLoan = await users[1].repayLoan({ loan, loanId });
   await repayLoan.waitTxInBlock();
   console.log(`loan repaid: ${contractVersionString}`);
 };
@@ -30,12 +26,16 @@ const emitAndRepayLoan = async (contract?: Address) => {
 async function main() {
   try {
     await setAllowances();
-    await emitAndRepayLoan();
 
-    const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? '';
-
-    if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
-      await emitAndRepayLoan(MULTI_SOURCE_LOAN_CONTRACT_V4);
+    const contracts = [
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ?? '',
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? '',
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? '',
+    ];
+    for (const contract of contracts) {
+      if (isAddress(contract)) {
+        await emitAndRepayLoan(contract);
+      }
     }
   } catch (e) {
     console.log('Error:');

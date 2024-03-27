@@ -1,4 +1,4 @@
-import { Address } from 'viem';
+import { Address, isAddress } from 'viem';
 
 import { setAllowances, testSingleNftOfferInput, testTokenId, users } from './common';
 
@@ -8,7 +8,8 @@ const delegateAndRevoke = async (contract?: Address) => {
   console.log(`offer placed successfully: ${contractVersionString}`);
 
   const emitLoan = await users[1].emitLoan({
-    offer: signedOffer,
+    offerExecution: users[1].offerExecutionFromOffers([signedOffer]),
+    duration: signedOffer.duration,
     tokenId: testTokenId,
   });
   const { loan, loanId } = await emitLoan.waitTxInBlock();
@@ -56,7 +57,17 @@ const delegateAndRevoke = async (contract?: Address) => {
 async function main() {
   try {
     await setAllowances();
-    await delegateAndRevoke();
+
+    const contracts = [
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ?? '',
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? '',
+    ];
+
+    for (const contract of contracts) {
+      if (isAddress(contract)) {
+        await delegateAndRevoke(contract);
+      }
+    }
   } catch (e) {
     console.log('Error:');
     console.log(e);
