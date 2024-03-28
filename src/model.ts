@@ -16,13 +16,17 @@ import {
   TermsFilter,
   UserFilter,
 } from '@/generated/graphql';
+import { Optional } from '@/utils/types';
 
-type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
+type MaxSeniorRepaymentArg = {
+  maxSeniorRepayment: Exclude<ApiSingleNftOfferInput['maxSeniorRepayment'], null | undefined>;
+};
 
 export type SingleNftOfferInput = Optional<
   ApiSingleNftOfferInput,
   'borrowerAddress' | 'lenderAddress' | 'signerAddress' | 'offerValidators' | 'contractAddress'
->;
+> &
+  MaxSeniorRepaymentArg;
 
 export type UnsignedSingleNftOffer = Omit<SingleNftSignedOfferInput, 'signature'> & {
   nftCollateralAddress: Address;
@@ -32,12 +36,13 @@ export type UnsignedSingleNftOffer = Omit<SingleNftSignedOfferInput, 'signature'
 export type SingleNftOffer = UnsignedSingleNftOffer &
   SingleNftSignedOfferInput & {
     signature: Hash;
-  };
+  } & MaxSeniorRepaymentArg;
 
 export type CollectionOfferInput = Optional<
   ApiCollectionOfferInput,
   'borrowerAddress' | 'lenderAddress' | 'signerAddress' | 'offerValidators' | 'contractAddress'
->;
+> &
+  MaxSeniorRepaymentArg;
 
 export type UnsignedCollectionOffer = Omit<
   CollectionSignedOfferInput,
@@ -49,9 +54,22 @@ export type UnsignedCollectionOffer = Omit<
 export type CollectionOffer = UnsignedCollectionOffer & {
   signature: Hash;
   nftCollateralTokenId: 0n;
-};
+} & MaxSeniorRepaymentArg;
 
-export type RenegotiationInput = Optional<ApiRenegotiationInput, 'lenderAddress' | 'signerAddress'>;
+export type RenegotiationInput = Optional<
+  ApiRenegotiationInput,
+  'lenderAddress' | 'signerAddress'
+> &
+  (
+    | {
+        trancheIndex: Exclude<ApiRenegotiationInput['trancheIndex'], null | undefined>;
+        targetPrincipal?: undefined;
+      }
+    | {
+        trancheIndex?: undefined;
+        targetPrincipal: Exclude<ApiRenegotiationInput['targetPrincipal'], null | undefined>;
+      }
+  );
 
 export type UnsignedRenegotiationOffer = Omit<SignedRenegotiationOfferInput, 'signature'>;
 

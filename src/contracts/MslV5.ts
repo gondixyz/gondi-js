@@ -1,32 +1,40 @@
 import { Address, encodeFunctionData, Hash } from 'viem';
 
-import { filterLogs, LoanV5, OfferV5, RenegotiationV5, Wallet, zeroHash } from '@/blockchain';
+import { filterLogs, LoanV5, OfferV5, RenegotiationV5, zeroHash } from '@/blockchain';
+import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { multiSourceLoanABI as multiSourceLoanABIV5 } from '@/generated/blockchain/v5';
-import { bpsToPercentage, getDomain, millisToSeconds } from '@/utils';
+import { EmitLoanArgs } from '@/gondi';
+import { bpsToPercentage, millisToSeconds, SECONDS_IN_DAY } from '@/utils/number';
+import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 
-import { Contract } from './Contract';
+import { BaseContract } from './BaseContract';
 
-export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
+export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
   constructor({ walletClient }: { walletClient: Wallet }) {
-    const { MultiSourceLoanV5Address } = getContracts(walletClient.chain);
+    const {
+      MultiSourceLoan: { v5 },
+    } = getContracts(walletClient.chain);
 
     super({
       walletClient,
-      address: MultiSourceLoanV5Address,
+      address: v5,
       abi: multiSourceLoanABIV5,
     });
   }
 
-  async signOffer({
-    verifyingContract,
-    structToSign,
-  }: {
-    verifyingContract: Address;
-    structToSign: OfferV5;
-  }) {
+  private getDomain() {
+    return {
+      name: CONTRACT_DOMAIN_NAME,
+      version: '2',
+      chainId: this.wallet.chain.id,
+      verifyingContract: this.address,
+    };
+  }
+
+  async signOffer({ structToSign }: { structToSign: OfferV5 }) {
     return this.wallet.signTypedData({
-      domain: getDomain(this.wallet.chain.id, verifyingContract),
+      domain: this.getDomain(),
       primaryType: 'LoanOffer',
       types: {
         LoanOffer: [
@@ -53,15 +61,9 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     });
   }
 
-  async signRenegotiationOffer({
-    verifyingContract,
-    structToSign,
-  }: {
-    verifyingContract: Address;
-    structToSign: RenegotiationV5;
-  }) {
+  async signRenegotiationOffer({ structToSign }: { structToSign: RenegotiationV5 }) {
     return this.wallet.signTypedData({
-      domain: getDomain(this.wallet.chain.id, verifyingContract),
+      domain: this.getDomain(),
       primaryType: 'RenegotiationOffer',
       types: {
         RenegotiationOffer: [
@@ -146,39 +148,33 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     };
   }
 
-  private mapEmitLoanToMslArgs({
-    offer,
-    tokenId,
-    amount,
-    expirationTime,
-    signature,
-  }: Parameters<MslV5['emitLoan']>[0]) {
+  private mapEmitLoanToMslEmitLoanArgs({ offerExecution, tokenId, expirationTime }: EmitLoanArgs) {
+    const { offer, amount, lenderOfferSignature } = offerExecution[0];
     const executionData = {
-      offer,
+      offer: {
+        ...offer,
+        lender: offer.lenderAddress,
+        borrower: offer.borrowerAddress,
+        validators: offer.offerValidators,
+      },
       tokenId,
-      amount,
-      expirationTime,
+      amount: amount ?? offer.principalAmount,
+      expirationTime: expirationTime ?? BigInt(millisToSeconds(Date.now()) + SECONDS_IN_DAY),
       callbackData: '0x' as Hash, // No callback data is expected here, only for BNPL [Levearage call]
     };
 
     return {
       executionData,
-      lender: offer.lender,
+      lender: offer.lenderAddress,
       borrower: this.wallet.account.address,
-      lenderOfferSignature: signature,
+      lenderOfferSignature,
       borrowerOfferSignature: '0x' as Hash, // No signature data is expected here, only for BNPL [Levearage call]
     };
   }
 
-  async emitLoan(emitArgs: {
-    offer: OfferV5;
-    signature: Hash;
-    tokenId: bigint;
-    amount: bigint;
-    expirationTime: bigint;
-  }) {
-    const emitLoanMslArgs = this.mapEmitLoanToMslArgs(emitArgs);
-    const txHash = await this.safeContractWrite.emitLoan([emitLoanMslArgs]);
+  async emitLoan(emitArgs: EmitLoanArgs) {
+    const mslEmitArgs = this.mapEmitLoanToMslEmitLoanArgs(emitArgs);
+    const txHash = await this.safeContractWrite.emitLoan([mslEmitArgs]);
 
     return {
       txHash,
@@ -197,7 +193,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
             contractAddress: this.contract.address,
           },
           loanId: args.loanId,
-          offerId: `${this.contract.address.toLowerCase()}.${emitArgs.offer.lender.toLowerCase()}.${
+          offerId: `${this.contract.address.toLowerCase()}.${mslEmitArgs.lender.toLowerCase()}.${
             args.offerId
           }`,
           ...receipt,
@@ -211,23 +207,24 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
     emit,
   }: {
     delegations: Address[];
-    emit: Parameters<MslV5['emitLoan']>[0];
+    emit: EmitLoanArgs;
   }) {
     if (delegations.length === 0) throw new Error('At least one delegation must be revoked');
 
+    const mslEmitArgs = this.mapEmitLoanToMslEmitLoanArgs(emit);
+    const { tokenId, offer } = mslEmitArgs.executionData;
     const encodedRevokeDelegations = delegations.map((delegation) =>
       encodeFunctionData({
         abi: multiSourceLoanABIV5,
         functionName: 'revokeDelegate',
-        args: [delegation, emit.offer.nftCollateralAddress, emit.tokenId],
+        args: [delegation, offer.nftCollateralAddress, tokenId],
       }),
     );
 
-    const emitLoanMslArgs = this.mapEmitLoanToMslArgs(emit);
     const encodedEmitLoan = encodeFunctionData({
       abi: multiSourceLoanABIV5,
       functionName: 'emitLoan',
-      args: [emitLoanMslArgs],
+      args: [mslEmitArgs],
     });
 
     const txHash = await this.safeContractWrite.multicall([
@@ -339,6 +336,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
             ...args.loan,
             contractAddress: this.contract.address,
           },
+          loanId: args.newLoanId,
           renegotiationId: `${this.contract.address.toLowerCase()}.${offer.lender.toLowerCase()}.${
             args.renegotiationId
           }`,
@@ -366,6 +364,7 @@ export class MslV5 extends Contract<typeof multiSourceLoanABIV5> {
             ...args.loan,
             contractAddress: this.contract.address,
           },
+          loanId: args.newLoanId,
           renegotiationId: `${this.contract.address.toLowerCase()}.${offer.lender.toLowerCase()}.${
             args.renegotiationId
           }`,

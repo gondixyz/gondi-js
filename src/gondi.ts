@@ -10,30 +10,16 @@ import {
 } from 'viem';
 
 import { Api, Props as ApiProps } from '@/api';
-import {
-  Contracts,
-  filterLogs,
-  LoanV4V5,
-  LoanV5,
-  OfferV5,
-  Wallet,
-  zeroAddress,
-  zeroHash,
-  zeroHex,
-} from '@/blockchain';
+import { filterLogs, LoanV5, OfferV5, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
+import { Contracts, Wallet } from '@/contracts';
 import { getCurrencies } from '@/deploys';
 import { MarketplaceEnum, OffersSortField, Ordering } from '@/generated/graphql';
 import * as model from '@/model';
 import { Reservoir } from '@/reservoir/Reservoir';
 import { isNative, SeaportOrder } from '@/reservoir/utils';
-import { emitLoanArgsToMslArgs, NATIVE_MARKETPLACE } from '@/utils';
-import { loanToMslLoan, renegotiationToMslRenegotiation } from '@/utils/loan';
-
-type GondiProps = {
-  wallet: Wallet;
-  apiClient?: ApiProps['apiClient'];
-  reservoirBaseApiUrl?: string;
-};
+import { loanToMslLoan, LoanToMslLoanType, renegotiationToMslRenegotiation } from '@/utils/loan';
+import { NATIVE_MARKETPLACE } from '@/utils/string';
+import { OptionalNullable } from '@/utils/types';
 
 export class Gondi {
   contracts: Contracts;
@@ -67,6 +53,8 @@ export class Gondi {
     const contract = mslContractAddress
       ? this.contracts.Msl(mslContractAddress)
       : this.contracts.MultiSourceLoanV5;
+    // TODO: Uncomment me when v3 is released
+    // : this.contracts.MultiSourceLoanV6;
     const contractAddress = contract.address;
 
     const offerInput = {
@@ -98,10 +86,7 @@ export class Gondi {
       offerId,
     };
 
-    const signature = await contract.signOffer({
-      verifyingContract: offerInput.contractAddress,
-      structToSign,
-    });
+    const signature = await contract.signOffer({ structToSign });
 
     const signedOffer = {
       ...offerInput,
@@ -126,6 +111,8 @@ export class Gondi {
     const contract = mslContractAddress
       ? this.contracts.Msl(mslContractAddress)
       : this.contracts.MultiSourceLoanV5;
+    // TODO: Uncomment me when v3 is released
+    // : this.contracts.MultiSourceLoanV6;
     const contractAddress = contract.address;
 
     const offerInput = {
@@ -161,10 +148,7 @@ export class Gondi {
       offerId,
     };
 
-    const signature = await contract.signOffer({
-      verifyingContract: offerInput.contractAddress,
-      structToSign,
-    });
+    const signature = await contract.signOffer({ structToSign });
 
     const signedOffer = {
       ...offerInput,
@@ -255,15 +239,6 @@ export class Gondi {
     });
 
     const { renegotiationId, offerHash, loanId, lenderAddress, signerAddress } = response.offer;
-    const structToSign = {
-      ...renegotiationInput,
-      fee: renegotiationInput.feeAmount,
-      lender: lenderAddress ?? renegotiationInput.lenderAddress,
-      signer: signerAddress ?? renegotiationInput.signerAddress ?? zeroAddress,
-      strictImprovement: false,
-      loanId,
-      renegotiationId,
-    };
 
     if (skipSignature) {
       return {
@@ -274,11 +249,18 @@ export class Gondi {
       };
     }
 
+    const structToSign = {
+      ...renegotiationInput,
+      fee: renegotiationInput.feeAmount,
+      lender: lenderAddress ?? renegotiationInput.lenderAddress,
+      signer: signerAddress ?? renegotiationInput.signerAddress ?? zeroAddress,
+      strictImprovement: false,
+      loanId,
+      renegotiationId,
+    };
+
     const contract = this.contracts.Msl(contractAddress);
-    const signature = await contract.signRenegotiationOffer({
-      verifyingContract: contractAddress,
-      structToSign,
-    });
+    const signature = await contract.signRenegotiationOffer({ structToSign });
 
     const renegotiationOffer = {
       ...renegotiationInput,
@@ -335,17 +317,34 @@ export class Gondi {
     });
   }
 
-  async emitLoan({
-    offer,
-    ...rest
-  }: {
-    offer: model.SingleNftOffer | model.CollectionOffer;
-    tokenId: bigint;
-    amount?: bigint;
-    expirationTime?: bigint;
-  }) {
-    const emitLoanMslArgs = emitLoanArgsToMslArgs({ offer, ...rest });
-    return this.contracts.Msl(offer.contractAddress).emitLoan(emitLoanMslArgs);
+  offerExecutionFromOffers(
+    offers: OfferFromExecutionOffer[],
+    amounts?: bigint[],
+  ): EmitLoanArgs['offerExecution'] {
+    return offers.map((offer, idx) => {
+      const { signature, lenderAddress, borrowerAddress, offerHash } = offer;
+      if (!(signature && lenderAddress && borrowerAddress && offerHash))
+        throw new Error('Misisng required field for offer');
+      return {
+        offer: {
+          ...offer,
+          offerHash,
+          lenderAddress,
+          lender: lenderAddress,
+          borrowerAddress,
+          borrower: borrowerAddress,
+          signature,
+          maxSeniorRepayment: offer.maxSeniorRepayment ?? 0n,
+        },
+        amount: amounts?.[idx] ?? offer.principalAmount,
+        lenderOfferSignature: signature,
+      };
+    });
+  }
+
+  async emitLoan(args: EmitLoanArgs) {
+    const contractAddress = args.offerExecution[0].offer.contractAddress;
+    return this.contracts.Msl(contractAddress).emitLoan(args);
   }
 
   async repayLoan({
@@ -353,12 +352,12 @@ export class Gondi {
     loanId,
     nftReceiver,
   }: {
-    loan: LoanV4V5;
+    loan: LoanToMslLoanType;
     loanId: bigint;
     nftReceiver?: Address;
   }) {
     return this.contracts.Msl(loan.contractAddress).repayLoan({
-      loan,
+      loan: loanToMslLoan(loan),
       nftReceiver,
       loanId,
     });
@@ -435,6 +434,7 @@ export class Gondi {
     const { edges: collections, pageInfo } = result.collections;
     return { collections: collections.map((edge) => edge.node), pageInfo };
   }
+
   async collectionId(props: { slug: string; contractAddress?: never }): Promise<number>;
   async collectionId(props: { slug?: never; contractAddress: Address }): Promise<number[]>;
   async collectionId(
@@ -471,9 +471,9 @@ export class Gondi {
     return { ownedNfts: ownedNfts.map((edge) => edge.node), pageInfo };
   }
 
-  async getRemainingLockupSeconds({ loan }: { loan: LoanV4V5 }) {
+  async getRemainingLockupSeconds({ loan }: { loan: LoanToMslLoanType }) {
     return this.contracts.Msl(loan.contractAddress).getRemainingLockupSeconds({
-      loan,
+      loan: loanToMslLoan(loan),
     });
   }
 
@@ -501,7 +501,7 @@ export class Gondi {
     loanId,
   }: {
     offer: model.RenegotiationOffer;
-    loan: LoanV4V5;
+    loan: LoanToMslLoanType;
     loanId: bigint;
   }) {
     return this.contracts.Msl(loan.contractAddress).refinanceFullLoan({
@@ -517,7 +517,7 @@ export class Gondi {
     loanId,
   }: {
     offer: model.RenegotiationOffer;
-    loan: LoanV4V5;
+    loan: LoanToMslLoanType;
     loanId: bigint;
   }) {
     return this.contracts.Msl(loan.contractAddress).refinancePartialLoan({
@@ -531,11 +531,15 @@ export class Gondi {
     newDuration,
     loanId,
   }: {
-    loan: LoanV5;
+    loan: LoanToMslLoanType;
     newDuration: bigint;
     loanId: bigint;
   }) {
-    return this.contracts.Msl(loan.contractAddress).extendLoan({ loan, newDuration, loanId });
+    return this.contracts.Msl(loan.contractAddress).extendLoan({
+      loan: loanToMslLoan(loan),
+      newDuration,
+      loanId,
+    });
   }
 
   /**
@@ -544,7 +548,12 @@ export class Gondi {
    */
   async delegateMulticall(delegations: Parameters<Gondi['delegate']>[0][]) {
     const contractAddress = delegations[0].loan.contractAddress;
-    return this.contracts.Msl(contractAddress).delegateMulticall(delegations);
+    return this.contracts.Msl(contractAddress).delegateMulticall(
+      delegations.map((delegation) => ({
+        ...delegation,
+        loan: loanToMslLoan(delegation.loan),
+      })),
+    );
   }
 
   /** Delegate should be used when token is used as collateral for an active loan. */
@@ -555,13 +564,19 @@ export class Gondi {
     enable,
     rights,
   }: {
-    loan: LoanV5;
+    loan: LoanToMslLoanType;
     loanId: bigint;
     to: Address;
     enable: boolean;
     rights?: Hash;
   }) {
-    return this.contracts.Msl(loan.contractAddress).delegate({ loan, loanId, to, rights, enable });
+    return this.contracts.Msl(loan.contractAddress).delegate({
+      loan: loanToMslLoan(loan),
+      loanId,
+      to,
+      rights,
+      enable,
+    });
   }
 
   /** RevokeDelegate should be used when token is not being used as collateral. */
@@ -570,6 +585,8 @@ export class Gondi {
     collection,
     tokenId,
     contract = this.contracts.MultiSourceLoanV5.address,
+    // TODO: Uncomment me when v3 is released
+    // contract = this.contracts.MultiSourceLoanV6.address,
   }: {
     to: Address;
     collection: Address;
@@ -590,18 +607,14 @@ export class Gondi {
     delegations: Address[];
     emit: Parameters<Gondi['emitLoan']>[0];
   }) {
-    const emitLoanMslArgs = emitLoanArgsToMslArgs(emit);
-
-    return this.contracts
-      .Msl(emit.offer.contractAddress)
-      .revokeDelegationsAndEmitLoan({ delegations, emit: emitLoanMslArgs });
+    const contractAddress = emit.offerExecution[0].offer.contractAddress;
+    return this.contracts.Msl(contractAddress).revokeDelegationsAndEmitLoan({ delegations, emit });
   }
 
-  async liquidateLoan({ loan, loanId }: { loan: LoanV4V5; loanId: bigint }) {
-    return this.contracts.Msl(loan.contractAddress).liquidateLoan({
-      loan,
-      loanId,
-    });
+  async liquidateLoan({ loan, loanId }: { loan: LoanToMslLoanType; loanId: bigint }) {
+    return this.contracts
+      .Msl(loan.contractAddress)
+      .liquidateLoan({ loanId, loan: loanToMslLoan(loan) });
   }
 
   async placeBid({
@@ -620,8 +633,10 @@ export class Gondi {
       .placeBid({ collectionContractAddress, tokenId, bid, auction });
   }
 
-  async settleAuction({ loan, auction }: { loan: LoanV4V5; auction: model.Auction }) {
-    return this.contracts.All(auction.loanAddress).settleAuction({ loan, auction });
+  async settleAuction({ loan, auction }: { loan: LoanToMslLoanType; auction: model.Auction }) {
+    return this.contracts
+      .All(auction.loanAddress)
+      .settleAuction({ auction, loan: loanToMslLoan(loan) });
   }
 
   async buy(
@@ -748,6 +763,8 @@ export class Gondi {
   async isApprovedNFTForAll({
     nftAddress,
     to = this.contracts.MultiSourceLoanV5.address,
+    // TODO: Uncomment me when v3 is released
+    // to = this.contracts.MultiSourceLoanV6.address,
   }: {
     nftAddress: Address;
     to?: Address;
@@ -759,6 +776,8 @@ export class Gondi {
   async approveNFTForAll({
     nftAddress,
     to = this.contracts.MultiSourceLoanV5.address,
+    // TODO: Uncomment me when v3 is released
+    // to = this.contracts.MultiSourceLoanV6.address,
   }: {
     nftAddress: Address;
     to?: Address;
@@ -785,6 +804,8 @@ export class Gondi {
     tokenAddress,
     amount,
     to = this.contracts.MultiSourceLoanV5.address,
+    // TODO: Uncomment me when v3 is released
+    // to = this.contracts.MultiSourceLoanV6.address,
   }: {
     tokenAddress: Address;
     amount: bigint;
@@ -798,6 +819,8 @@ export class Gondi {
     tokenAddress,
     amount = model.MAX_NUMBER,
     to = this.contracts.MultiSourceLoanV5.address,
+    // TODO: Uncomment me when v3 is released
+    // to = this.contracts.MultiSourceLoanV6.address,
   }: {
     tokenAddress: Address;
     amount?: bigint;
@@ -847,4 +870,31 @@ export class Gondi {
   } & Parameters<Contracts['UserVaultV5']['burnAndWithdraw']>[0]) {
     return this.contracts.UserVault(userVaultAddress).burnAndWithdraw(data);
   }
+}
+
+interface GondiProps {
+  wallet: Wallet;
+  apiClient?: ApiProps['apiClient'];
+  reservoirBaseApiUrl?: string;
+}
+
+type MakeOfferType =
+  | Omit<Awaited<ReturnType<Gondi['makeSingleNftOffer']>>, 'nftId'>
+  | Omit<Awaited<ReturnType<Gondi['makeCollectionOffer']>>, 'collectionId'>;
+
+type OfferFromExecutionOffer = OptionalNullable<
+  MakeOfferType,
+  'borrowerAddress' | 'lenderAddress' | 'offerHash' | 'signature'
+>;
+
+export interface EmitLoanArgs {
+  offerExecution: {
+    offer: Omit<model.SingleNftOffer | model.CollectionOffer, 'nftId'>;
+    amount?: bigint;
+    lenderOfferSignature: Hash;
+  }[];
+  tokenId: bigint;
+  duration: bigint;
+  principalReceiver?: Address;
+  expirationTime?: bigint;
 }

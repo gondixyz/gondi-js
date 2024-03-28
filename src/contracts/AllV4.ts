@@ -1,14 +1,13 @@
-import { Account, Address, Chain, encodeAbiParameters, Transport, WalletClient } from 'viem';
+import { Address, encodeAbiParameters } from 'viem';
 
 import { filterLogs, LoanV4 } from '@/blockchain';
+import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { auctionLoanLiquidatorABI as auctionLoanLiquidatorABIV4 } from '@/generated/blockchain/v4';
 
-import { Contract } from './Contract';
+import { BaseContract } from './BaseContract';
 
-export type Wallet = WalletClient<Transport, Chain, Account>;
-
-export class AllV4 extends Contract<typeof auctionLoanLiquidatorABIV4> {
+export class AllV4 extends BaseContract<typeof auctionLoanLiquidatorABIV4> {
   static LOAN_SETTLEMENT_ENCODE_TYPES = [
     {
       name: '',
@@ -46,11 +45,13 @@ export class AllV4 extends Contract<typeof auctionLoanLiquidatorABIV4> {
   ];
 
   constructor({ walletClient }: { walletClient: Wallet }) {
-    const { AuctionLoanLiquidatorV4Address } = getContracts(walletClient.chain);
+    const {
+      AuctionLoanLiquidator: { v4 },
+    } = getContracts(walletClient.chain);
 
     super({
       walletClient,
-      address: AuctionLoanLiquidatorV4Address,
+      address: v4,
       abi: auctionLoanLiquidatorABIV4,
     });
   }

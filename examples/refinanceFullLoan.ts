@@ -1,6 +1,13 @@
 import { Address, isAddress } from 'viem';
 
-import { generateBlock, sleep, testSingleNftOfferInput, testTokenId, users } from './common';
+import {
+  generateBlock,
+  setAllowances,
+  sleep,
+  testSingleNftOfferInput,
+  testTokenId,
+  users,
+} from './common';
 
 const SLEEP_BUFFER = 3000;
 
@@ -14,16 +21,19 @@ const emitRefinaceFullAndRepayLoan = async (contract?: Address) => {
   console.log(`offer placed successfully: ${contractVersionString}`);
 
   const emitLoan = await users[1].emitLoan({
-    offer: signedOffer,
+    offerExecution: users[1].offerExecutionFromOffers([signedOffer]),
+    duration: signedOffer.duration,
     tokenId: testTokenId,
   });
-  const { loan } = await emitLoan.waitTxInBlock();
+  const { loan, loanId } = await emitLoan.waitTxInBlock();
   console.log(`loan emitted: ${contractVersionString}`);
 
   const remainingLockup = await users[0].getRemainingLockupSeconds({ loan });
   console.log(`remaining lockup: ${remainingLockup}`);
   await sleep(remainingLockup * 1_000 + SLEEP_BUFFER);
 
+  const renegotiationChanges =
+    'source' in loan ? { targetPrincipal: loan.source.map((_) => 0n) } : { trancheIndex: [0n] };
   const renegotiationOffer = await users[0].makeRefinanceOffer({
     renegotiation: {
       loanId: loan.id,
@@ -34,45 +44,53 @@ const emitRefinaceFullAndRepayLoan = async (contract?: Address) => {
       principalAmount: signedOffer.principalAmount,
       strictImprovement: true,
       requiresLiquidation: signedOffer.requiresLiquidation,
-      targetPrincipal: loan.source.map((_) => 0n),
+      ...renegotiationChanges,
     },
     contractAddress: signedOffer.contractAddress,
     skipSignature: true,
   });
   console.log(`refinance offer placed successfully: ${contractVersionString}`);
 
-  let refinancedLoan = loan;
+  let repayLoan = loan;
+  let repayLoanId = loanId;
   try {
     await generateBlock(); // We need to push a new block into the blockchain [anvil issue]
     const refinanceFullLoan = await users[0].refinanceFullLoan({
       offer: renegotiationOffer,
       loan,
-      loanId: loan.source[0].loanId,
+      loanId,
     });
-    const { loan: refinancedLoanResult } = await refinanceFullLoan.waitTxInBlock();
-    refinancedLoan = refinancedLoanResult;
+    const { loan: refinancedLoanResult, loanId: newLoanId } =
+      await refinanceFullLoan.waitTxInBlock();
+    repayLoan = refinancedLoanResult;
+    repayLoanId = newLoanId;
     console.log(`loan fully refinanced: ${contractVersionString}`);
   } catch (e) {
     console.log('Error while refinancing loan:');
     console.log(e);
   } finally {
-    const repayLoan = await users[1].repayLoan({
-      loan: refinancedLoan,
-      loanId: refinancedLoan.source[0].loanId,
+    const repaidLoan = await users[1].repayLoan({
+      loan: repayLoan,
+      loanId: repayLoanId,
     });
-    await repayLoan.waitTxInBlock();
+    await repaidLoan.waitTxInBlock();
     console.log(`loan repaid: ${contractVersionString}`);
   }
 };
 
 async function main() {
   try {
-    await emitRefinaceFullAndRepayLoan();
+    await setAllowances();
 
-    const MULTI_SOURCE_LOAN_CONTRACT_V4 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? '';
-
-    if (isAddress(MULTI_SOURCE_LOAN_CONTRACT_V4)) {
-      await emitRefinaceFullAndRepayLoan(MULTI_SOURCE_LOAN_CONTRACT_V4);
+    const contracts = [
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ?? '',
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? '',
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? '',
+    ];
+    for (const contract of contracts) {
+      if (isAddress(contract)) {
+        await emitRefinaceFullAndRepayLoan(contract);
+      }
     }
   } catch (e) {
     console.log('Error:');

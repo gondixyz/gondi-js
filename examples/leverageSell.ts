@@ -17,17 +17,13 @@ async function main() {
     loan: {
       ...loanToRepay,
       borrower: getAddress(loanToRepay.borrowerAddress),
-
       nftCollateralAddress: getAddress(
         loanToRepay.nft.collection?.contractData?.contractAddress ?? '',
       ),
       nftCollateralTokenId: loanToRepay.nft.tokenId,
-      startTime: BigInt(Math.floor(loanToRepay.startTime.getTime() / 1000)),
-      source: loanToRepay.sources.map((source) => ({
+      source: loanToRepay.source.map((source) => ({
         ...source,
-        startTime: BigInt(Math.floor(source.startTime.getTime() / 1000)),
         lender: getAddress(source.lenderAddress),
-        loanId: BigInt(source.loanId),
       })),
       contractAddress: loanToRepay.address,
     },

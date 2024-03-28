@@ -4,11 +4,17 @@ import { goerli } from 'viem/chains';
 const ANVIL_CHAIN_ID = 31337;
 
 interface Contracts {
-  MultiSourceLoanV4Address: Address;
-  MultiSourceLoanV5Address: Address;
-  AuctionLoanLiquidatorV4Address: Address;
-  AuctionLoanLiquidatorV5Address: Address;
-  UserVaultV5Address: Address;
+  MultiSourceLoan: {
+    v4: Address;
+    v5: Address;
+    v6: Address;
+  };
+  AuctionLoanLiquidator: {
+    v4: Address;
+    v5: Address;
+    v6: Address;
+  };
+  UserVault: Address;
   LeverageAddress: Address;
   SeaportAddress: Address;
   CryptoPunksAddress: Address;
@@ -38,19 +44,29 @@ export const MSL_V5_TX_HASH =
 export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
   if (chain?.id === ANVIL_CHAIN_ID) {
     return {
-      MultiSourceLoanV4Address:
-        ensureAddress(process.env.GONDI_MULTI_SOURCE_LOAN_V4) ??
-        '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
-      MultiSourceLoanV5Address:
-        ensureAddress(process.env.GONDI_MULTI_SOURCE_LOAN_V5) ??
-        '0x610178dA211FEF7D417bC0e6FeD39F05609AD788',
-      AuctionLoanLiquidatorV4Address:
-        ensureAddress(process.env.GONDI_AUCTION_LOAN_LIQUIDATOR_V4) ??
-        '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
-      AuctionLoanLiquidatorV5Address:
-        ensureAddress(process.env.GONDI_AUCTION_LOAN_LIQUIDATOR_V5) ??
-        '0x8A791620dd6260079BF849Dc5567aDC3F2FdC318',
-      UserVaultV5Address:
+      MultiSourceLoan: {
+        v4:
+          ensureAddress(process.env.GONDI_MULTI_SOURCE_LOAN_V4) ??
+          '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
+        v5:
+          ensureAddress(process.env.GONDI_MULTI_SOURCE_LOAN_V5) ??
+          '0x610178dA211FEF7D417bC0e6FeD39F05609AD788',
+        v6:
+          ensureAddress(process.env.GONDI_MULTI_SOURCE_LOAN_V6) ??
+          '0x59b670e9fA9D0A427751Af201D676719a970857b',
+      },
+      AuctionLoanLiquidator: {
+        v4:
+          ensureAddress(process.env.GONDI_AUCTION_LOAN_LIQUIDATOR_V4) ??
+          '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
+        v5:
+          ensureAddress(process.env.GONDI_AUCTION_LOAN_LIQUIDATOR_V5) ??
+          '0x8A791620dd6260079BF849Dc5567aDC3F2FdC318',
+        v6:
+          ensureAddress(process.env.GONDI_AUCTION_LOAN_LIQUIDATOR_V6) ??
+          '0xc6e7DF5E7b4f2A278906862b61205850344D4e7d',
+      },
+      UserVault:
         ensureAddress(process.env.GONDI_USER_VAULT_V5) ??
         '0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82',
       LeverageAddress:
@@ -64,11 +80,17 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
 
   if (chain?.id === goerli.id) {
     return {
-      MultiSourceLoanV4Address: '0x60C20627429668F267b5cF55c6605c665C69887D',
-      MultiSourceLoanV5Address: '0xTODO', // TODO: deploy
-      AuctionLoanLiquidatorV4Address: '0x29C73faa2f9180ea5a7B0bEC243ebc63a5B4f280',
-      AuctionLoanLiquidatorV5Address: '0xTODO', // TODO: deploy
-      UserVaultV5Address: '0xTODO', // TODO: deploy
+      MultiSourceLoan: {
+        v4: '0x60C20627429668F267b5cF55c6605c665C69887D',
+        v5: '0xTODO', // TODO: deploy
+        v6: '0xTODO', // TODO: deploy
+      },
+      AuctionLoanLiquidator: {
+        v4: '0x29C73faa2f9180ea5a7B0bEC243ebc63a5B4f280',
+        v5: '0xTODO', // TODO: deploy
+        v6: '0xTODO', // TODO: deploy
+      },
+      UserVault: '0xTODO', // TODO: deploy
       LeverageAddress: '0xTODO', // TODO: deploy
       SeaportAddress: '0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC',
       CryptoPunksAddress: '0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb',
@@ -76,11 +98,17 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
   }
 
   return {
-    MultiSourceLoanV4Address: '0xCa5a494Ca20483e21ec1E41FE1D9461Da77595Bd',
-    MultiSourceLoanV5Address: '0x478f6F994C6fb3cf3e444a489b3AD9edB8cCaE16',
-    AuctionLoanLiquidatorV4Address: '0x237e4421C742d843Fdd96D22294D338507e17091',
-    AuctionLoanLiquidatorV5Address: '0x97d34635b605c2f1630d6b4c6c5d222b8a2ca47d',
-    UserVaultV5Address: '0x14a6Dcebb2Bb73aae1b199CCAadA75247b81976D',
+    MultiSourceLoan: {
+      v4: '0xCa5a494Ca20483e21ec1E41FE1D9461Da77595Bd',
+      v5: '0x478f6F994C6fb3cf3e444a489b3AD9edB8cCaE16',
+      v6: '0xTODO', // TODO: deploy
+    },
+    AuctionLoanLiquidator: {
+      v4: '0x237e4421C742d843Fdd96D22294D338507e17091',
+      v5: '0x97d34635b605c2f1630d6b4c6c5d222b8a2ca47d',
+      v6: '0xTODO', // TODO: deploy
+    },
+    UserVault: '0x14a6Dcebb2Bb73aae1b199CCAadA75247b81976D',
     LeverageAddress: '0x87Ce6e8124fFd68fa721FcC7f35fdA14A11E233e',
     SeaportAddress: '0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC',
     CryptoPunksAddress: '0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb',

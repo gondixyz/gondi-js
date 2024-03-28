@@ -58,6 +58,7 @@ async function makeOffers(gondi: Gondi, collections: Collection[]) {
           fee: BigInt(Math.floor((Number(principalAmount) * Math.random()) / 1_00)),
           principalAddress: testCurrency,
           principalAmount: principalAmount,
+          maxSeniorRepayment: 0n,
         });
       }
     }
@@ -87,7 +88,11 @@ async function lend(gondi: Gondi, collections: Collection[]) {
       console.log('emitting loan ', nft.collection?.id, nft.tokenId);
       await approveNFT(gondi, offer.contractAddress, offer.nftCollateralAddress);
       await approveToken(gondi, offer.contractAddress);
-      await gondi.emitLoan({ offer, tokenId: nft.tokenId, amount: offer.principalAmount });
+      await users[1].emitLoan({
+        offerExecution: users[1].offerExecutionFromOffers([offer]),
+        duration: offer.duration,
+        tokenId: nft.tokenId,
+      });
       break;
     }
   }
