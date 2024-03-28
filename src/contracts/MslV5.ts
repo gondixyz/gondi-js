@@ -9,6 +9,7 @@ import { bpsToPercentage, millisToSeconds, SECONDS_IN_DAY } from '@/utils/number
 import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 
 import { BaseContract } from './BaseContract';
+import { MslV6 } from './MslV6';
 
 export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
   constructor({ walletClient }: { walletClient: Wallet }) {
@@ -410,6 +411,10 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
         };
       },
     };
+  }
+
+  async mergeTranches(): ReturnType<MslV6['mergeTranches']> {
+    throw new Error('Not implemented for V2');
   }
 
   async delegateMulticall(delegations: Parameters<MslV5['delegate']>[0][]) {

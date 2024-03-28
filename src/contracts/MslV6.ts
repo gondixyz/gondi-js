@@ -24,11 +24,6 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     });
   }
 
-  // TODO: Add new methods: Merge tranches and Add tranche
-  async extendLoan(): ReturnType<MslV5['extendLoan']> {
-    throw new Error('Not implemented for V6');
-  }
-
   private getDomain() {
     return {
       name: CONTRACT_DOMAIN_NAME,
@@ -139,7 +134,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
   }
 
   async cancelAllRenegotiations(_: { minId: bigint }) {
-    throw new Error('Not implemented for V6');
+    throw new Error('Not implemented for V3');
   }
 
   private mapEmitLoanToMslEmitLoanArgs({
@@ -198,6 +193,57 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
             ({ offer }) =>
               `${this.contract.address.toLowerCase()}.${offer.lender.toLowerCase()}.${offer.offerId}`,
           ),
+          ...receipt,
+        };
+      },
+    };
+  }
+
+  // TODO: Add new methods: Add tranche
+  async extendLoan(): ReturnType<MslV5['extendLoan']> {
+    throw new Error('Not implemented for V3');
+  }
+
+  async mergeTranches({
+    loan,
+    loanId,
+    minTranche,
+    maxTranche,
+  }: {
+    loan: LoanV6;
+    loanId: bigint;
+    minTranche: bigint;
+    maxTranche: bigint;
+  }) {
+    const txHash = await this.safeContractWrite.mergeTranches([
+      loanId,
+      loan,
+      minTranche,
+      maxTranche,
+    ]);
+
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        const filter = await this.contract.createEventFilter.TranchesMerged();
+        const events = filterLogs(receipt, filter);
+        if (events.length === 0) throw new Error('Loan tranches not merged');
+        const args = events[0].args;
+        const newLoanId = args.loan.tranche.reduce(
+          (newestLoanId, { loanId: trancheLoanId }) =>
+            trancheLoanId > newestLoanId ? trancheLoanId : newestLoanId,
+          loanId,
+        );
+        return {
+          loan: {
+            id: `${this.contract.address.toLowerCase()}.${newLoanId}`,
+            ...args.loan,
+            contractAddress: this.contract.address,
+          },
+          newLoanId,
           ...receipt,
         };
       },
