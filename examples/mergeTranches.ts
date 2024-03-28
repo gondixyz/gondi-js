@@ -11,7 +11,7 @@ import {
 
 const SLEEP_BUFFER = 3000;
 
-const emitRefinacePartialAndRepayLoan = async (contract?: Address) => {
+const emitMergeTranchesAndRepay = async (contract?: Address) => {
   const offer = {
     ...testSingleNftOfferInput,
     duration: 30n,
@@ -23,12 +23,10 @@ const emitRefinacePartialAndRepayLoan = async (contract?: Address) => {
   const contractVersionString = `msl: ${signedOffer.contractAddress}`;
   console.log(`offers placed successfully: ${contractVersionString}`);
 
+  const offers = [signedOffer, secondSignedOffer, thirdSignedOffer];
   const amount = signedOffer.principalAmount / 4n;
   const emitLoan = await users[1].emitLoan({
-    offerExecution: users[1].offerExecutionFromOffers(
-      [signedOffer, secondSignedOffer, thirdSignedOffer],
-      [amount, amount, amount],
-    ),
+    offerExecution: users[1].offerExecutionFromOffers(offers, [amount, amount, amount]),
     duration: signedOffer.duration,
     tokenId: testTokenId,
   });
@@ -39,43 +37,22 @@ const emitRefinacePartialAndRepayLoan = async (contract?: Address) => {
   console.log(`remaining lockup: ${remainingLockup}`);
   await sleep(remainingLockup * 1_000 + SLEEP_BUFFER);
 
-  const renegotiationChanges =
-    'source' in loan
-      ? { targetPrincipal: loan.source.map((s) => s.principalAmount / 2n) }
-      : { trancheIndex: [2n] };
-  const renegotiationOffer = await users[0].makeRefinanceOffer({
-    renegotiation: {
-      loanId: loan.id,
-      feeAmount: 0n,
-      aprBps: signedOffer.aprBps - signedOffer.aprBps / 2n,
-      duration: 0n,
-      expirationTime: signedOffer.expirationTime,
-      principalAmount: amount * 2n,
-      strictImprovement: true,
-      requiresLiquidation: signedOffer.requiresLiquidation,
-      ...renegotiationChanges,
-    },
-    contractAddress: signedOffer.contractAddress,
-    skipSignature: true,
-  });
-  console.log(`refinance offer placed successfully: ${contractVersionString}`);
-
   let repayLoan = loan;
   let repayLoanId = loanId;
   try {
     await generateBlock(); // We need to push a new block into the blockchain [anvil issue]
-    const refinancePartialLoan = await users[0].refinancePartialLoan({
-      offer: renegotiationOffer,
+    const mergeTranchesLoan = await users[0].mergeTranches({
       loan,
       loanId,
+      minTranche: 0n,
+      maxTranche: BigInt(offers.length),
     });
-    const { loan: refinancedLoanResult, loanId: newLoanId } =
-      await refinancePartialLoan.waitTxInBlock();
-    repayLoan = refinancedLoanResult;
+    const { loan: newLoan, newLoanId } = await mergeTranchesLoan.waitTxInBlock();
+    repayLoan = newLoan;
     repayLoanId = newLoanId;
-    console.log(`loan partially refinanced: ${contractVersionString}`);
+    console.log(`loan tranches have been merged: ${contractVersionString}`);
   } catch (e) {
-    console.log('Error while refinancing loan:');
+    console.log('Error while merging tranches:');
     console.log(e);
   } finally {
     const repaidLoan = await users[1].repayLoan({
@@ -94,7 +71,7 @@ async function main() {
     const contracts = [process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ?? ''];
     for (const contract of contracts) {
       if (isAddress(contract)) {
-        await emitRefinacePartialAndRepayLoan(contract);
+        await emitMergeTranchesAndRepay(contract);
       }
     }
   } catch (e) {

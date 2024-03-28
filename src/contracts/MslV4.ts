@@ -9,6 +9,7 @@ import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 
 import { BaseContract } from './BaseContract';
 import { MslV5 } from './MslV5';
+import { MslV6 } from './MslV6';
 
 export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
   constructor({ walletClient }: { walletClient: Wallet }) {
@@ -302,6 +303,10 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
   }
 
   async extendLoan(): ReturnType<MslV5['extendLoan']> {
+    throw new Error('Not implemented for V1');
+  }
+
+  async mergeTranches(): ReturnType<MslV6['mergeTranches']> {
     throw new Error('Not implemented for V1');
   }
 

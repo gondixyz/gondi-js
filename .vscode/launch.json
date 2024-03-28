@@ -87,13 +87,6 @@
       "type": "node-terminal"
     },
     {
-      "name": "list offers",
-      "request": "launch",
-      "cwd": "${workspaceFolder}/examples",
-      "command": "yarn run-test listOffers.ts",
-      "type": "node-terminal"
-    },
-    {
       "name": "list listings",
       "request": "launch",
       "cwd": "${workspaceFolder}/examples",
@@ -101,10 +94,31 @@
       "type": "node-terminal"
     },
     {
+      "name": "list loans",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test listLoans.ts",
+      "type": "node-terminal"
+    },
+    {
+      "name": "list offers",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test listOffers.ts",
+      "type": "node-terminal"
+    },
+    {
       "name": "make offer",
       "request": "launch",
       "cwd": "${workspaceFolder}/examples",
       "command": "yarn run-test makeOffers.ts",
+      "type": "node-terminal"
+    },
+    {
+      "name": "merge tranches",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test mergeTranches.ts",
       "type": "node-terminal"
     },
     {
