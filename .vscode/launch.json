@@ -17,6 +17,13 @@
       ]
     },
     {
+      "name": "add new tranche",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test addTranche.ts",
+      "type": "node-terminal"
+    },
+    {
       "name": "cancel all offers",
       "request": "launch",
       "cwd": "${workspaceFolder}/examples",
