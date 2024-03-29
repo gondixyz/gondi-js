@@ -393,6 +393,49 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     });
   }
 
+  async refinanceFromOffers({
+    loan,
+    loanId,
+    executionData,
+  }: {
+    loan: LoanV6;
+    loanId: bigint;
+    executionData: EmitLoanArgs;
+  }) {
+    const mslEmitArgs = this.mapEmitLoanToMslEmitLoanArgs(executionData);
+    const txHash = await this.safeContractWrite.refinanceFromLoanExecutionData([
+      loanId,
+      loan,
+      mslEmitArgs,
+    ]);
+
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        const filter = await this.contract.createEventFilter.LoanRefinancedFromNewOffers();
+        const events = filterLogs(receipt, filter);
+        if (events.length === 0) throw new Error('LoanRefinancedFromNewOffers not emitted');
+        const args = events[0].args;
+        return {
+          loan: {
+            id: `${this.contract.address.toLowerCase()}.${args.newLoanId}`,
+            ...args.loan,
+            contractAddress: this.contract.address,
+          },
+          loanId: args.newLoanId,
+          offerIds: mslEmitArgs.executionData.offerExecution.map(
+            ({ offer }) =>
+              `${this.contract.address.toLowerCase()}.${offer.lender.toLowerCase()}.${offer.offerId}`,
+          ),
+          ...receipt,
+        };
+      },
+    };
+  }
+
   private async executeRenegotiation({
     offer,
     executeRenegotiationTxn,

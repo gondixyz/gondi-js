@@ -347,6 +347,22 @@ export class Gondi {
     return this.contracts.Msl(contractAddress).emitLoan(args);
   }
 
+  async refinanceFromOffers({
+    loan,
+    loanId,
+    executionData,
+  }: {
+    loan: LoanToMslLoanType;
+    loanId: bigint;
+    executionData: EmitLoanArgs;
+  }) {
+    return this.contracts.Msl(loan.contractAddress).refinanceFromOffers({
+      loan: loanToMslLoan(loan),
+      loanId,
+      executionData,
+    });
+  }
+
   async repayLoan({
     loan,
     loanId,
