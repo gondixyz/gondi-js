@@ -561,6 +561,22 @@ export class Gondi {
     });
   }
 
+  async addTranche({
+    offer,
+    loan,
+    loanId,
+  }: {
+    offer: model.RenegotiationOffer;
+    loan: LoanToMslLoanType;
+    loanId: bigint;
+  }) {
+    return this.contracts.Msl(loan.contractAddress).addTranche({
+      offer: renegotiationToMslRenegotiation(offer, loanId),
+      loan: loanToMslLoan(loan),
+      signature: offer.signature,
+    });
+  }
+
   /**
    * Delegate Multicall should be used when token is used as collateral for an active loan.
    * Multicall will be performed to the contract address of the first delegation.

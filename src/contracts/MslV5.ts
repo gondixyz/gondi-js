@@ -417,6 +417,10 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
     throw new Error('Not implemented for V2');
   }
 
+  async addTranche(): ReturnType<MslV6['addTranche']> {
+    throw new Error('Not implemented for V2');
+  }
+
   async delegateMulticall(delegations: Parameters<MslV5['delegate']>[0][]) {
     if (delegations.length === 0) throw new Error('At least one delegation must be revoked');
 

@@ -199,7 +199,6 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     };
   }
 
-  // TODO: Add new methods: Add tranche
   async extendLoan(): ReturnType<MslV5['extendLoan']> {
     throw new Error('Not implemented for V3');
   }
@@ -366,36 +365,42 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     signature: Hash;
     loan: LoanV6;
   }) {
-    const txHash = await this.safeContractWrite.refinanceFull([offer, loan, signature]);
-
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const filter = await this.contract.createEventFilter.LoanRefinanced();
-        const events = filterLogs(receipt, filter);
-        if (events.length === 0) throw new Error('Loan not refinanced');
-        const args = events[0].args;
-        return {
-          loan: {
-            id: `${this.contract.address.toLowerCase()}.${args.newLoanId}`,
-            ...args.loan,
-            contractAddress: this.contract.address,
-          },
-          loanId: args.newLoanId,
-          renegotiationId: `${this.contract.address.toLowerCase()}.${offer.lender.toLowerCase()}.${
-            args.renegotiationId
-          }`,
-          ...receipt,
-        };
-      },
-    };
+    return this.executeRenegotiation({
+      offer,
+      executeRenegotiationTxn: () => this.safeContractWrite.refinanceFull([offer, loan, signature]),
+    });
   }
 
   async refinancePartialLoan({ offer, loan }: { offer: RenegotiationV6; loan: LoanV6 }) {
-    const txHash = await this.safeContractWrite.refinancePartial([offer, loan]);
+    return this.executeRenegotiation({
+      offer,
+      executeRenegotiationTxn: () => this.safeContractWrite.refinancePartial([offer, loan]),
+    });
+  }
+
+  async addTranche({
+    offer,
+    signature,
+    loan,
+  }: {
+    offer: RenegotiationV6;
+    signature: Hash;
+    loan: LoanV6;
+  }) {
+    return this.executeRenegotiation({
+      offer,
+      executeRenegotiationTxn: () => this.safeContractWrite.addNewTranche([offer, loan, signature]),
+    });
+  }
+
+  private async executeRenegotiation({
+    offer,
+    executeRenegotiationTxn,
+  }: {
+    offer: RenegotiationV6;
+    executeRenegotiationTxn: () => Promise<Hash>;
+  }) {
+    const txHash = await executeRenegotiationTxn();
     return {
       txHash,
       waitTxInBlock: async () => {
