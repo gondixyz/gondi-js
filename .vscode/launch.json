@@ -136,6 +136,13 @@
       "type": "node-terminal"
     },
     {
+      "name": "refinance from offer",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test refinanceFromOffer.ts",
+      "type": "node-terminal"
+    },
+    {
       "name": "refinance full loan",
       "request": "launch",
       "cwd": "${workspaceFolder}/examples",
