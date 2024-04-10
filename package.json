@@ -60,10 +60,10 @@
   },
   "dependencies": {
     "@apollo/client": "^3.7.16",
-    "@reservoir0x/reservoir-sdk": "^1.5.1",
+    "@reservoir0x/reservoir-sdk": "^1.12.14",
     "apollo-link-scalars": "^4.0.2",
     "ethers": "^6.0.8",
-    "graphql": "^16.7.1",
+    "graphql": "^16.8.1",
     "graphql-tag": "^2.12.6",
     "siwe": "^2.1.4",
     "viem": "^1.13.1"
