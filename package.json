@@ -60,7 +60,7 @@
   },
   "dependencies": {
     "@apollo/client": "^3.7.16",
-    "@reservoir0x/reservoir-sdk": "^1.5.1",
+    "@reservoir0x/reservoir-sdk": "^1.12.14",
     "apollo-link-scalars": "^4.0.2",
     "ethers": "^6.0.8",
     "graphql": "^16.7.1",
