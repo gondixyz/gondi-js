@@ -317,33 +317,38 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
     renegotiationId: number;
     refinancings: {
       loan: LoanV5;
-      source: LoanV5['source'][number];
       newAprBps: bigint;
-      refinancingPrincipal: bigint;
+      sources: {
+        source: LoanV5['source'][number];
+        refinancingPrincipal: bigint;
+      }[];
     }[];
   }) {
-    // TODO: Handle multiple sources from loan
     // Generate multicall encoded function data for (renegotiation offer, loan) pairs
-    const data = refinancings.map(({ loan, source, newAprBps, refinancingPrincipal }, index) => {
-      const isFullRefinance = refinancingPrincipal === loan.principalAmount;
-      const targetPrincipal = isFullRefinance
-        ? loan.source.map((_) => 0n)
-        : loan.source.map(
-            ({ principalAmount, loanId }) =>
-              principalAmount - (loanId === source.loanId ? refinancingPrincipal : 0n),
-          );
+    const data = refinancings.map(({ loan, sources, newAprBps }, index) => {
+      const targetPrincipal = loan.source.map(({ principalAmount, loanId }) => {
+        const refinancingSource = sources.find(({ source }) => source.loanId === loanId);
+        return refinancingSource ? principalAmount - refinancingSource.refinancingPrincipal : 0n;
+      });
+
+      const refinancingPrincipalAmount = sources.reduce(
+        (acc, { refinancingPrincipal }) => acc + refinancingPrincipal,
+        0n,
+      );
+
       const offer = {
         renegotiationId: BigInt(renegotiationId + index),
         loanId: loan.source[0].loanId,
         lender: this.wallet.account.address,
         fee: 0n,
         targetPrincipal,
-        principalAmount: refinancingPrincipal,
+        principalAmount: refinancingPrincipalAmount,
         aprBps: newAprBps,
         expirationTime: 0n,
         duration: 0n,
       };
 
+      const isFullRefinance = refinancingPrincipalAmount === loan.principalAmount;
       if (isFullRefinance) {
         return encodeFunctionData({
           abi: multiSourceLoanABIV5,

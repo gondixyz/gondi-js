@@ -243,21 +243,27 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
     renegotiationId: number;
     refinancings: {
       loan: LoanV4;
-      source: LoanV4['source'][number];
       newAprBps: bigint;
-      refinancingPrincipal: bigint;
+      sources: {
+        source: LoanV4['source'][number];
+        refinancingPrincipal: bigint;
+      }[];
     }[];
   }) {
-    // TODO: Handle multiple sources from loan
     const offers: RenegotiationV4[] = [];
     const loans: LoanV4[] = [];
 
     // Generate (renegotiation offer, loan) pairs
-    refinancings.forEach(({ loan, source, newAprBps, refinancingPrincipal }, index) => {
-      const targetPrincipal = loan.source.map(
-        ({ principalAmount, loanId }) =>
-          principalAmount - (loanId === source.loanId ? refinancingPrincipal : 0n),
+    refinancings.forEach(({ loan, sources, newAprBps }, index) => {
+      const targetPrincipal = loan.source.map(({ principalAmount, loanId }) => {
+        const refinancingSource = sources.find(({ source }) => source.loanId === loanId);
+        return refinancingSource ? principalAmount - refinancingSource.refinancingPrincipal : 0n;
+      });
+      const refinancingPrincipalAmount = sources.reduce(
+        (acc, { refinancingPrincipal }) => acc + refinancingPrincipal,
+        0n,
       );
+
       offers.push({
         renegotiationId: BigInt(renegotiationId + index),
         loanId: loan.source[0].loanId,
@@ -265,7 +271,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
         fee: 0n,
         signer: this.wallet.account.address,
         targetPrincipal,
-        principalAmount: refinancingPrincipal,
+        principalAmount: refinancingPrincipalAmount,
         aprBps: newAprBps,
         expirationTime: 0n,
         duration: 0n,

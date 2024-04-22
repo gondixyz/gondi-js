@@ -363,42 +363,48 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     renegotiationId: number;
     refinancings: {
       loan: LoanV6;
-      source: LoanV6['tranche'][number] & { loanIndex: number };
       newAprBps: bigint;
-      refinancingPrincipal: bigint;
+      sources: {
+        source: LoanV6['tranche'][number] & { loanIndex: number };
+        refinancingPrincipal: bigint;
+      }[];
     }[];
   }) {
-    // TODO: Handle multiple tranches from loan
     // Generate multicall encoded function data for (renegotiation offer, loan) pairs
-    const data = refinancings.map(
-      ({ loan, source: tranche, newAprBps, refinancingPrincipal }, index) => {
-        const trancheIndex = loan.tranche.findIndex((_, index) => index === tranche.loanIndex);
-        const offer = {
-          renegotiationId: BigInt(renegotiationId + index),
-          loanId: loan.tranche[0].loanId,
-          lender: this.wallet.account.address,
-          fee: 0n,
-          trancheIndex: [BigInt(trancheIndex)],
-          principalAmount: refinancingPrincipal,
-          aprBps: newAprBps,
-          expirationTime: 0n,
-          duration: 0n,
-        };
+    const data = refinancings.map(({ loan, sources, newAprBps }, index) => {
+      const trancheIndex = sources.map(({ source }) => BigInt(source.loanIndex));
 
-        if (refinancingPrincipal === loan.principalAmount) {
-          return encodeFunctionData({
-            abi: multiSourceLoanAbiV6,
-            functionName: 'refinanceFull',
-            args: [offer, loan, zeroHash],
-          });
-        }
+      const refinancingPrincipalAmount = sources.reduce(
+        (acc, { refinancingPrincipal }) => acc + refinancingPrincipal,
+        0n,
+      );
+
+      const offer = {
+        renegotiationId: BigInt(renegotiationId + index),
+        loanId: BigInt(Math.max(...loan.tranche.map(({ loanId }) => Number(loanId)))),
+        lender: this.wallet.account.address,
+        fee: 0n,
+        trancheIndex,
+        principalAmount: refinancingPrincipalAmount,
+        aprBps: newAprBps,
+        expirationTime: 0n,
+        duration: 0n,
+      };
+
+      const isFullRefinance = refinancingPrincipalAmount === loan.principalAmount;
+      if (isFullRefinance) {
         return encodeFunctionData({
           abi: multiSourceLoanAbiV6,
-          functionName: 'refinancePartial',
-          args: [offer, loan],
+          functionName: 'refinanceFull',
+          args: [offer, loan, zeroHash],
         });
-      },
-    );
+      }
+      return encodeFunctionData({
+        abi: multiSourceLoanAbiV6,
+        functionName: 'refinancePartial',
+        args: [offer, loan],
+      });
+    });
 
     const txHash = await this.safeContractWrite.multicall([data]);
     return {
