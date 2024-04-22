@@ -245,37 +245,27 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
     signature: Hash;
     loan: LoanV4;
   }) {
-    const txHash = await this.safeContractWrite.refinanceFull([offer, loan, signature]);
-
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const filter = await this.contract.createEventFilter.LoanRefinanced();
-        const events = filterLogs(receipt, filter);
-        if (events.length === 0) throw new Error('Loan not refinanced');
-        const args = events[0].args;
-        return {
-          loan: {
-            id: `${this.contract.address.toLowerCase()}.${args.newLoanId}`,
-            ...args.loan,
-            contractAddress: this.address,
-          },
-          loanId: args.newLoanId,
-          renegotiationId: `${this.contract.address.toLowerCase()}.${offer.lender.toLowerCase()}.${
-            args.renegotiationId
-          }`,
-          ...receipt,
-        };
-      },
-    };
+    return this.executeRenegotiation({
+      offer,
+      executeRenegotiationTxn: () => this.safeContractWrite.refinanceFull([offer, loan, signature]),
+    });
   }
 
   async refinancePartialLoan({ offer, loan }: { offer: RenegotiationV4; loan: LoanV4 }) {
-    const txHash = await this.safeContractWrite.refinancePartial([offer, loan]);
+    return this.executeRenegotiation({
+      offer,
+      executeRenegotiationTxn: () => this.safeContractWrite.refinancePartial([offer, loan]),
+    });
+  }
 
+  private async executeRenegotiation({
+    offer,
+    executeRenegotiationTxn,
+  }: {
+    offer: RenegotiationV4;
+    executeRenegotiationTxn: () => Promise<Hash>;
+  }) {
+    const txHash = await executeRenegotiationTxn();
     return {
       txHash,
       waitTxInBlock: async () => {
