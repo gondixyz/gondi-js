@@ -236,6 +236,60 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
     return 0;
   }
 
+  async refinancePartialBatch({
+    renegotiationId,
+    refinancings,
+  }: {
+    renegotiationId: number;
+    refinancings: {
+      loan: LoanV4;
+      source: LoanV4['source'][number];
+      newAprBps: bigint;
+      refinancingPrincipal: bigint;
+    }[];
+  }) {
+    const offers: RenegotiationV4[] = [];
+    const loans: LoanV4[] = [];
+
+    // Generate (renegotiation offer, loan) pairs
+    refinancings.forEach(({ loan, source, newAprBps, refinancingPrincipal }, index) => {
+      const targetPrincipal = loan.source.map(
+        ({ principalAmount, loanId }) =>
+          principalAmount - (loanId === source.loanId ? refinancingPrincipal : 0n),
+      );
+      offers.push({
+        renegotiationId: BigInt(renegotiationId + index),
+        loanId: loan.source[0].loanId,
+        lender: this.wallet.account.address,
+        fee: 0n,
+        signer: this.wallet.account.address,
+        targetPrincipal,
+        principalAmount: refinancingPrincipal,
+        aprBps: newAprBps,
+        expirationTime: 0n,
+        duration: 0n,
+        strictImprovement: true,
+      });
+      loans.push(loan);
+    });
+
+    const txHash = await this.safeContractWrite.refinancePartialBatch([offers, loans]);
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        const filter = await this.contract.createEventFilter.LoanRefinanced();
+        const events = filterLogs(receipt, filter);
+        if (events.length !== refinancings.length) throw new Error('Loan not refinanced');
+
+        const results = events.map(({ args }) => args);
+        return { results, ...receipt };
+      },
+    };
+  }
+
   async refinanceFullLoan({
     offer,
     signature,
