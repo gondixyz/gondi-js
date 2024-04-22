@@ -356,6 +356,67 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     return lockupTimeSeconds - ellapsedSeconds;
   }
 
+  async refinanceBatch({
+    renegotiationId,
+    refinancings,
+  }: {
+    renegotiationId: number;
+    refinancings: {
+      loan: LoanV6;
+      source: LoanV6['tranche'][number] & { loanIndex: number };
+      newAprBps: bigint;
+      refinancingPrincipal: bigint;
+    }[];
+  }) {
+    // TODO: Handle multiple tranches from loan
+    // Generate multicall encoded function data for (renegotiation offer, loan) pairs
+    const data = refinancings.map(
+      ({ loan, source: tranche, newAprBps, refinancingPrincipal }, index) => {
+        const trancheIndex = loan.tranche.findIndex((_, index) => index === tranche.loanIndex);
+        const offer = {
+          renegotiationId: BigInt(renegotiationId + index),
+          loanId: loan.tranche[0].loanId,
+          lender: this.wallet.account.address,
+          fee: 0n,
+          trancheIndex: [BigInt(trancheIndex)],
+          principalAmount: refinancingPrincipal,
+          aprBps: newAprBps,
+          expirationTime: 0n,
+          duration: 0n,
+        };
+
+        if (refinancingPrincipal === loan.principalAmount) {
+          return encodeFunctionData({
+            abi: multiSourceLoanAbiV6,
+            functionName: 'refinanceFull',
+            args: [offer, loan, zeroHash],
+          });
+        }
+        return encodeFunctionData({
+          abi: multiSourceLoanAbiV6,
+          functionName: 'refinancePartial',
+          args: [offer, loan],
+        });
+      },
+    );
+
+    const txHash = await this.safeContractWrite.multicall([data]);
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        const filter = await this.contract.createEventFilter.LoanRefinanced();
+        const events = filterLogs(receipt, filter);
+        if (events.length !== refinancings.length) throw new Error('Loan not refinanced');
+
+        const results = events.map(({ args }) => args);
+        return { results, ...receipt };
+      },
+    };
+  }
+
   async refinanceFullLoan({
     offer,
     signature,

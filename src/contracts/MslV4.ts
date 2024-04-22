@@ -236,7 +236,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
     return 0;
   }
 
-  async refinancePartialBatch({
+  async refinanceBatch({
     renegotiationId,
     refinancings,
   }: {
@@ -248,6 +248,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
       refinancingPrincipal: bigint;
     }[];
   }) {
+    // TODO: Handle multiple sources from loan
     const offers: RenegotiationV4[] = [];
     const loans: LoanV4[] = [];
 

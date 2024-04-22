@@ -322,6 +322,7 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
       refinancingPrincipal: bigint;
     }[];
   }) {
+    // TODO: Handle multiple sources from loan
     // Generate multicall encoded function data for (renegotiation offer, loan) pairs
     const data = refinancings.map(({ loan, source, newAprBps, refinancingPrincipal }, index) => {
       const isFullRefinance = refinancingPrincipal === loan.principalAmount;
