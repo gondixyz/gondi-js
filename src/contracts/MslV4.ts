@@ -5,6 +5,7 @@ import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { multiSourceLoanABI as multiSourceLoanABIV4 } from '@/generated/blockchain/v4';
 import { EmitLoanArgs } from '@/gondi';
+import { getMslLoanId } from '@/utils/loan';
 import { sumBy } from '@/utils/number';
 import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 
@@ -264,7 +265,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
 
       offers.push({
         renegotiationId: renegotiationId + BigInt(index),
-        loanId: loan.source[0].loanId,
+        loanId: getMslLoanId(loan),
         lender: this.wallet.account.address,
         fee: 0n,
         signer: this.wallet.account.address,
