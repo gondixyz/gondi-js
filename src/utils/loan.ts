@@ -23,6 +23,7 @@ export type LoanToMslLoanType =
   | Optional<LoanV4, 'nftCollateralAddress'>
   | Optional<LoanV5, 'nftCollateralAddress'>
   | Optional<LoanV6, 'nftCollateralAddress'>;
+
 export const loanToMslLoan = (loan: LoanToMslLoanType) => {
   const nftCollateralAddress = loan.nftCollateralAddress ?? zeroAddress;
   if (areSameAddress(zeroAddress, nftCollateralAddress) || !isAddress(nftCollateralAddress)) {

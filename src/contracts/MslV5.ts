@@ -328,9 +328,10 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
     const data = refinancings.map(({ loan, sources, newAprBps }, index) => {
       const targetPrincipal = loan.source.map(({ principalAmount, loanId }) => {
         const refinancingSource = sources.find(({ source }) => source.loanId === loanId);
-        return refinancingSource ? principalAmount - refinancingSource.refinancingPrincipal : 0n;
+        return refinancingSource
+          ? principalAmount - refinancingSource.refinancingPrincipal
+          : principalAmount;
       });
-
       const refinancingPrincipalAmount = sources.reduce(
         (acc, { refinancingPrincipal }) => acc + refinancingPrincipal,
         0n,
