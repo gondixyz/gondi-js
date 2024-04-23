@@ -34,3 +34,14 @@ export const maxBy = <T extends string, O extends ObjectT<T>>(
     0,
   ) as ObjectValue<T, O>;
 };
+
+type MinFunction = {
+  <T extends number | bigint>(a: T, b: T): T;
+  <T extends number | bigint>(a: T, b?: T): T;
+  <T extends number | bigint>(a?: T, b?: T): T | undefined;
+};
+export const min: MinFunction = <T extends number | bigint>(a?: T, b?: T) => {
+  if (a === undefined) return b;
+  if (b === undefined) return a;
+  return a < b ? a : b;
+};

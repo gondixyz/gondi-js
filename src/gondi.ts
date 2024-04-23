@@ -23,6 +23,7 @@ import {
   LoanToMslLoanType,
   renegotiationToMslRenegotiation,
 } from '@/utils/loan';
+import { min } from '@/utils/number';
 import { areSameAddress, NATIVE_MARKETPLACE } from '@/utils/string';
 import { OptionalNullable } from '@/utils/types';
 
@@ -577,11 +578,7 @@ export class Gondi {
       const currentSourceNewAprBps = BigInt(
         Math.floor(Number(source.aprBps) * (1 - aprBpsImprovementPercentage)),
       );
-      const newAprBps =
-        currentLoanRefinancings?.newAprBps &&
-        currentLoanRefinancings?.newAprBps < currentSourceNewAprBps
-          ? currentLoanRefinancings.newAprBps
-          : currentSourceNewAprBps;
+      const newAprBps = min(currentLoanRefinancings?.newAprBps, currentSourceNewAprBps);
 
       refisByContract[version][tokenLoanId] = {
         loan: loanToMslLoan(loan),
