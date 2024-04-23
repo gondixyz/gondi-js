@@ -5,7 +5,7 @@ import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { multiSourceLoanAbi as multiSourceLoanAbiV6 } from '@/generated/blockchain/v6';
 import { EmitLoanArgs } from '@/gondi';
-import { bpsToPercentage, millisToSeconds, SECONDS_IN_DAY, sumBy } from '@/utils/number';
+import { bpsToPercentage, maxBy, millisToSeconds, SECONDS_IN_DAY, sumBy } from '@/utils/number';
 import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 
 import { BaseContract } from './BaseContract';
@@ -377,7 +377,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
 
       const offer = {
         renegotiationId: renegotiationId + BigInt(index),
-        loanId: BigInt(Math.max(...loan.tranche.map(({ loanId }) => Number(loanId)))),
+        loanId: maxBy(loan.tranche, 'loanId') ?? 0n,
         lender: this.wallet.account.address,
         fee: 0n,
         trancheIndex,
