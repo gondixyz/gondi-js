@@ -314,7 +314,7 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
     renegotiationId,
     refinancings,
   }: {
-    renegotiationId: number;
+    renegotiationId: bigint;
     refinancings: {
       loan: LoanV5;
       newAprBps: bigint;
@@ -338,7 +338,7 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
       );
 
       const offer = {
-        renegotiationId: BigInt(renegotiationId + index),
+        renegotiationId: renegotiationId + BigInt(index),
         loanId: loan.source[0].loanId,
         lender: this.wallet.account.address,
         fee: 0n,

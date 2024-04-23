@@ -17,8 +17,13 @@ import { MarketplaceEnum, OffersSortField, Ordering } from '@/generated/graphql'
 import * as model from '@/model';
 import { Reservoir } from '@/reservoir/Reservoir';
 import { isNative, SeaportOrder } from '@/reservoir/utils';
-import { loanToMslLoan, LoanToMslLoanType, renegotiationToMslRenegotiation } from '@/utils/loan';
-import { NATIVE_MARKETPLACE } from '@/utils/string';
+import {
+  generateFakeRenegotiationInput,
+  loanToMslLoan,
+  LoanToMslLoanType,
+  renegotiationToMslRenegotiation,
+} from '@/utils/loan';
+import { areSameAddress, NATIVE_MARKETPLACE } from '@/utils/string';
 import { OptionalNullable } from '@/utils/types';
 
 export class Gondi {
@@ -509,6 +514,102 @@ export class Gondi {
     const nativeBid = bids.find((bid) => bid.marketPlace === NATIVE_MARKETPLACE);
 
     return nativeBid ?? null;
+  }
+
+  private contractToVersion(contract: Address) {
+    if (areSameAddress(contract, this.contracts.MultiSourceLoanV4.address)) return 'v4';
+    if (areSameAddress(contract, this.contracts.MultiSourceLoanV5.address)) return 'v5';
+    return 'v6';
+  }
+
+  private async generateRenegotiationId({
+    loanId,
+    loan,
+  }: {
+    loanId: string;
+    loan: LoanToMslLoanType;
+  }) {
+    const renegotiationInput = generateFakeRenegotiationInput({
+      loanId,
+      loan,
+      trancheIndex: areSameAddress(loan.contractAddress, this.contracts.MultiSourceLoanV6.address),
+      address: this.wallet.account?.address,
+    });
+    const { offer } = await this.api.generateRenegotiationOfferHash({ renegotiationInput });
+    return offer.renegotiationId;
+  }
+
+  async refinanceBatch({
+    aprBpsImprovementPercentage,
+    refinancings,
+  }: {
+    aprBpsImprovementPercentage: number; // e.g. 0.05
+    refinancings: {
+      loan: LoanToMslLoanType & { loanReferenceId: string };
+      source: ReturnType<typeof loanToMslLoan>['source'][number] & { loanIndex: number };
+      refinancingPrincipal: bigint;
+    }[];
+  }) {
+    const refisByContract: {
+      v4: {
+        [tokenLoanId: string]: Parameters<
+          Contracts['MultiSourceLoanV4']['refinanceBatch']
+        >[0]['refinancings'][number] & { loanReferenceId: string };
+      };
+      v5: {
+        [tokenLoanId: string]: Parameters<
+          Contracts['MultiSourceLoanV5']['refinanceBatch']
+        >[0]['refinancings'][number] & { loanReferenceId: string };
+      };
+      v6: {
+        [tokenLoanId: string]: Parameters<
+          Contracts['MultiSourceLoanV6']['refinanceBatch']
+        >[0]['refinancings'][number] & { loanReferenceId: string };
+      };
+    } = { v4: {}, v5: {}, v6: {} };
+
+    // Group sources by contract and loanId, so that we only have one refinance per loan.
+    refinancings.forEach(({ loan, source, refinancingPrincipal }) => {
+      const tokenLoanId = `${loan.nftCollateralAddress}-${loan.nftCollateralTokenId}`;
+      const version = this.contractToVersion(loan.contractAddress);
+      const currentLoanRefinancings = refisByContract[version][tokenLoanId];
+
+      const currentSourceNewAprBps = BigInt(
+        Math.floor(Number(source.aprBps) * (1 - aprBpsImprovementPercentage)),
+      );
+      const newAprBps =
+        currentLoanRefinancings?.newAprBps &&
+        currentLoanRefinancings?.newAprBps < currentSourceNewAprBps
+          ? currentLoanRefinancings.newAprBps
+          : currentSourceNewAprBps;
+
+      refisByContract[version][tokenLoanId] = {
+        loan: loanToMslLoan(loan),
+        loanReferenceId: loan.loanReferenceId,
+        newAprBps,
+        sources: [...(currentLoanRefinancings?.sources ?? []), { source, refinancingPrincipal }],
+      };
+    });
+
+    const versions = [
+      ['v4', this.contracts.MultiSourceLoanV4],
+      ['v5', this.contracts.MultiSourceLoanV5],
+      ['v6', this.contracts.MultiSourceLoanV6],
+    ] as const;
+    // Generate renegotiationId for each contract version and call the refinanceBatch implementations.
+    for (const [version, contract] of versions) {
+      const refinancings = Object.values(refisByContract[version]);
+      if (refinancings.length > 0) {
+        const renegotiationId = await this.generateRenegotiationId({
+          loan: refinancings[0].loan,
+          loanId: refinancings[0].loanReferenceId,
+        });
+        await contract.refinanceBatch({
+          refinancings,
+          renegotiationId,
+        });
+      }
+    }
   }
 
   async refinanceFullLoan({

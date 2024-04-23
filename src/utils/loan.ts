@@ -1,7 +1,8 @@
-import { isAddress } from 'viem';
+import { Address, isAddress } from 'viem';
 
 import { LoanV4, LoanV5, LoanV6, zeroAddress } from '@/blockchain';
 import * as model from '@/model';
+import { millisToSeconds } from '@/utils/number';
 import { areSameAddress } from '@/utils/string';
 import { Optional } from '@/utils/types';
 
@@ -52,5 +53,39 @@ export const loanToMslLoan = (loan: LoanToMslLoanType) => {
     source,
     tranche: source,
     protocolFee,
+  };
+};
+
+export const generateFakeRenegotiationInput = ({
+  loanId,
+  loan,
+  trancheIndex,
+  address,
+}: {
+  loanId: string;
+  loan: LoanToMslLoanType;
+  trancheIndex: boolean;
+  address: Address;
+}) => {
+  const mslLoan = loanToMslLoan(loan);
+  const options = trancheIndex
+    ? {
+        trancheIndex: mslLoan.source.map((_, i) => BigInt(i)),
+        targetPrincipal: [],
+      }
+    : {
+        trancheIndex: [],
+        targetPrincipal: mslLoan.source.map(() => 0n),
+      };
+  return {
+    loanId,
+    lenderAddress: address,
+    signerAddress: address,
+    expirationTime: BigInt(millisToSeconds(Date.now())),
+    aprBps: 0n,
+    feeAmount: 0n,
+    duration: mslLoan.duration,
+    principalAmount: mslLoan.principalAmount,
+    ...options,
   };
 };

@@ -360,7 +360,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     renegotiationId,
     refinancings,
   }: {
-    renegotiationId: number;
+    renegotiationId: bigint;
     refinancings: {
       loan: LoanV6;
       newAprBps: bigint;
@@ -380,7 +380,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
       );
 
       const offer = {
-        renegotiationId: BigInt(renegotiationId + index),
+        renegotiationId: renegotiationId + BigInt(index),
         loanId: BigInt(Math.max(...loan.tranche.map(({ loanId }) => Number(loanId)))),
         lender: this.wallet.account.address,
         fee: 0n,
