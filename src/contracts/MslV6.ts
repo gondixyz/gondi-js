@@ -5,7 +5,7 @@ import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { multiSourceLoanAbi as multiSourceLoanAbiV6 } from '@/generated/blockchain/v6';
 import { EmitLoanArgs } from '@/gondi';
-import { bpsToPercentage, millisToSeconds, SECONDS_IN_DAY } from '@/utils/number';
+import { bpsToPercentage, millisToSeconds, SECONDS_IN_DAY, sumBy } from '@/utils/number';
 import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 
 import { BaseContract } from './BaseContract';
@@ -373,11 +373,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     // Generate multicall encoded function data for (renegotiation offer, loan) pairs
     const data = refinancings.map(({ loan, sources, newAprBps }, index) => {
       const trancheIndex = sources.map(({ source }) => BigInt(source.loanIndex));
-
-      const refinancingPrincipalAmount = sources.reduce(
-        (acc, { refinancingPrincipal }) => acc + refinancingPrincipal,
-        0n,
-      );
+      const refinancingPrincipalAmount = sumBy(sources, 'refinancingPrincipal') ?? 0n;
 
       const offer = {
         renegotiationId: renegotiationId + BigInt(index),

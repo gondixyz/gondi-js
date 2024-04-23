@@ -5,7 +5,7 @@ import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { multiSourceLoanABI as multiSourceLoanABIV5 } from '@/generated/blockchain/v5';
 import { EmitLoanArgs } from '@/gondi';
-import { bpsToPercentage, millisToSeconds, SECONDS_IN_DAY } from '@/utils/number';
+import { bpsToPercentage, millisToSeconds, SECONDS_IN_DAY, sumBy } from '@/utils/number';
 import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 
 import { BaseContract } from './BaseContract';
@@ -332,10 +332,7 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
           ? principalAmount - refinancingSource.refinancingPrincipal
           : principalAmount;
       });
-      const refinancingPrincipalAmount = sources.reduce(
-        (acc, { refinancingPrincipal }) => acc + refinancingPrincipal,
-        0n,
-      );
+      const refinancingPrincipalAmount = sumBy(sources, 'refinancingPrincipal') ?? 0n;
 
       const offer = {
         renegotiationId: renegotiationId + BigInt(index),
