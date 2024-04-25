@@ -636,9 +636,9 @@ export class Gondi {
     collection,
     tokenId,
     contract = this.contracts.MultiSourceLoanV5.address,
-    // TODO: Uncomment me when v3 is released
-    // contract = this.contracts.MultiSourceLoanV6.address,
-  }: {
+  }: // TODO: Uncomment me when v3 is released
+  // contract = this.contracts.MultiSourceLoanV6.address,
+  {
     to: Address;
     collection: Address;
     tokenId: bigint;
@@ -814,9 +814,9 @@ export class Gondi {
   async isApprovedNFTForAll({
     nftAddress,
     to = this.contracts.MultiSourceLoanV5.address,
-    // TODO: Uncomment me when v3 is released
-    // to = this.contracts.MultiSourceLoanV6.address,
-  }: {
+  }: // TODO: Uncomment me when v3 is released
+  // to = this.contracts.MultiSourceLoanV6.address,
+  {
     nftAddress: Address;
     to?: Address;
   }) {
@@ -827,9 +827,9 @@ export class Gondi {
   async approveNFTForAll({
     nftAddress,
     to = this.contracts.MultiSourceLoanV5.address,
-    // TODO: Uncomment me when v3 is released
-    // to = this.contracts.MultiSourceLoanV6.address,
-  }: {
+  }: // TODO: Uncomment me when v3 is released
+  // to = this.contracts.MultiSourceLoanV6.address,
+  {
     nftAddress: Address;
     to?: Address;
   }) {
@@ -855,9 +855,9 @@ export class Gondi {
     tokenAddress,
     amount,
     to = this.contracts.MultiSourceLoanV5.address,
-    // TODO: Uncomment me when v3 is released
-    // to = this.contracts.MultiSourceLoanV6.address,
-  }: {
+  }: // TODO: Uncomment me when v3 is released
+  // to = this.contracts.MultiSourceLoanV6.address,
+  {
     tokenAddress: Address;
     amount: bigint;
     to?: Address;
@@ -870,9 +870,9 @@ export class Gondi {
     tokenAddress,
     amount = model.MAX_NUMBER,
     to = this.contracts.MultiSourceLoanV5.address,
-    // TODO: Uncomment me when v3 is released
-    // to = this.contracts.MultiSourceLoanV6.address,
-  }: {
+  }: // TODO: Uncomment me when v3 is released
+  // to = this.contracts.MultiSourceLoanV6.address,
+  {
     tokenAddress: Address;
     amount?: bigint;
     to?: Address;

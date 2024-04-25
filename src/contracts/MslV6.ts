@@ -191,7 +191,9 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
           loanId: args.loanId,
           offerIds: mslEmitArgs.executionData.offerExecution.map(
             ({ offer }) =>
-              `${this.contract.address.toLowerCase()}.${offer.lender.toLowerCase()}.${offer.offerId}`,
+              `${this.contract.address.toLowerCase()}.${offer.lender.toLowerCase()}.${
+                offer.offerId
+              }`,
           ),
           ...receipt,
         };
@@ -428,7 +430,9 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
           loanId: args.newLoanId,
           offerIds: mslEmitArgs.executionData.offerExecution.map(
             ({ offer }) =>
-              `${this.contract.address.toLowerCase()}.${offer.lender.toLowerCase()}.${offer.offerId}`,
+              `${this.contract.address.toLowerCase()}.${offer.lender.toLowerCase()}.${
+                offer.offerId
+              }`,
           ),
           ...receipt,
         };

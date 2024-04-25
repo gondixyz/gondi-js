@@ -97,8 +97,8 @@ export const adaptWalletToCaptureTxData = (wallet: Wallet, exactOrderSource: str
         const signature = Array.isArray(firstArg)
           ? (firstArg[0] as { signature: Hash }).signature
           : typeof firstArg === 'object'
-            ? (firstArg as { signature: Hash }).signature
-            : zeroAddress;
+          ? (firstArg as { signature: Hash }).signature
+          : zeroAddress;
 
         throw new InterruptedSeaportSendTransactionStepError({
           orderId,
