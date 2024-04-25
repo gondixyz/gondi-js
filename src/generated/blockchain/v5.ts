@@ -5035,7 +5035,10 @@ export const multiSourceLoanABI = [
   },
   {
     type: 'error',
-    inputs: [{ name: 'i', internalType: 'uint256', type: 'uint256' }],
+    inputs: [
+      { name: 'i', internalType: 'uint256', type: 'uint256' },
+      { name: 'returndata', internalType: 'bytes', type: 'bytes' },
+    ],
     name: 'MulticallFailed',
   },
   { type: 'error', inputs: [], name: 'NFTNotReturnedError' },
@@ -6433,7 +6436,10 @@ export const nftBitVectorValidatorABI = [
 export const iMulticallABI = [
   {
     type: 'error',
-    inputs: [{ name: 'i', internalType: 'uint256', type: 'uint256' }],
+    inputs: [
+      { name: 'i', internalType: 'uint256', type: 'uint256' },
+      { name: 'returndata', internalType: 'bytes', type: 'bytes' },
+    ],
     name: 'MulticallFailed',
   },
   {
@@ -6505,10 +6511,13 @@ export const nftPackedListValidatorABI = [
 // Multicall
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-export const multicallABI = [
+export const multicallAbi = [
   {
     type: 'error',
-    inputs: [{ name: 'i', internalType: 'uint256', type: 'uint256' }],
+    inputs: [
+      { name: 'i', internalType: 'uint256', type: 'uint256' },
+      { name: 'returndata', internalType: 'bytes', type: 'bytes' },
+    ],
     name: 'MulticallFailed',
   },
   {

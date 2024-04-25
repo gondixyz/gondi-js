@@ -82,6 +82,8 @@ export const zeroAddress: Address = zeroAddressViem;
 export const zeroHash: Hash = `0x${'0'.repeat(64)}`;
 export const zeroHex: HexString = `0x0`;
 
+export const BLOCK_SECONDS = 6n;
+
 export function filterLogs<TAbi extends Abi, TEventName extends ExtractAbiEventNames<TAbi>>(
   receipt: TransactionReceipt,
   filter: EncodeEventTopicsParameters<TAbi, TEventName>,

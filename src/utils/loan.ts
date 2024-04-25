@@ -2,7 +2,8 @@ import { Address, isAddress } from 'viem';
 
 import { LoanV4, LoanV5, LoanV6, zeroAddress } from '@/blockchain';
 import * as model from '@/model';
-import { maxBy, millisToSeconds } from '@/utils/number';
+import { millisToSeconds, secondsToMillis } from '@/utils/dates';
+import { maxBy } from '@/utils/number';
 import { areSameAddress } from '@/utils/string';
 import { Optional } from '@/utils/types';
 
@@ -93,4 +94,11 @@ export const generateFakeRenegotiationInput = ({
 export const getMslLoanId = (loan: LoanToMslLoanType) => {
   const mslLoan = loanToMslLoan(loan);
   return maxBy(mslLoan.source, 'loanId') ?? 0n;
+};
+
+export const getRemainingSeconds = (loan: Pick<LoanToMslLoanType, 'startTime' | 'duration'>) => {
+  const now = new Date();
+  const finishDate = new Date(secondsToMillis(loan.startTime) + secondsToMillis(loan.duration));
+  if (finishDate.getTime() < now.getTime()) return 0;
+  return millisToSeconds(finishDate.getTime() - now.getTime());
 };

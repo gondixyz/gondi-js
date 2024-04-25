@@ -594,6 +594,7 @@ export class Gondi {
       ['v6', this.contracts.MultiSourceLoanV6],
     ] as const;
     // Generate renegotiationId for each contract version and call the refinanceBatch implementations.
+    const results = [];
     for (const [version, contract] of versions) {
       const refinancings = Object.values(refisByContract[version]);
       if (refinancings.length > 0) {
@@ -601,12 +602,14 @@ export class Gondi {
           loan: refinancings[0].loan,
           loanId: refinancings[0].loanReferenceId,
         });
-        await contract.refinanceBatch({
+        const refinanceBatch = await contract.refinanceBatch({
           refinancings,
           renegotiationId,
         });
+        results.push(refinanceBatch);
       }
     }
+    return results;
   }
 
   async refinanceFullLoan({

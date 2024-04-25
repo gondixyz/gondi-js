@@ -1,12 +1,20 @@
 import { Address, encodeFunctionData, Hash } from 'viem';
 
-import { filterLogs, LoanV6, OfferV6, RenegotiationV6, zeroHash } from '@/blockchain';
+import {
+  BLOCK_SECONDS,
+  filterLogs,
+  LoanV6,
+  OfferV6,
+  RenegotiationV6,
+  zeroHash,
+} from '@/blockchain';
 import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { multiSourceLoanAbi as multiSourceLoanAbiV6 } from '@/generated/blockchain/v6';
 import { EmitLoanArgs } from '@/gondi';
-import { getMslLoanId } from '@/utils/loan';
-import { bpsToPercentage, millisToSeconds, SECONDS_IN_DAY, sumBy } from '@/utils/number';
+import { millisToSeconds, SECONDS_IN_DAY, SECONDS_IN_MIN } from '@/utils/dates';
+import { getMslLoanId, getRemainingSeconds } from '@/utils/loan';
+import { bpsToPercentage, sumBy } from '@/utils/number';
 import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 
 import { BaseContract } from './BaseContract';
@@ -384,8 +392,8 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
         trancheIndex,
         principalAmount: refinancingPrincipalAmount,
         aprBps: newAprBps,
-        expirationTime: 0n,
-        duration: 0n,
+        expirationTime: BigInt(millisToSeconds(Date.now()) + SECONDS_IN_MIN),
+        duration: BigInt(getRemainingSeconds(loan)) + BLOCK_SECONDS,
       };
 
       const isFullRefinance = refinancingPrincipalAmount === loan.principalAmount;
