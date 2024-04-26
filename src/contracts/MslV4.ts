@@ -1,12 +1,12 @@
 import { Address, Hash, zeroAddress } from 'viem';
 
-import { BLOCK_SECONDS, filterLogs, LoanV4, OfferV4, RenegotiationV4 } from '@/blockchain';
+import { filterLogs, LoanV4, OfferV4, RenegotiationV4 } from '@/blockchain';
 import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { multiSourceLoanABI as multiSourceLoanABIV4 } from '@/generated/blockchain/v4';
 import { EmitLoanArgs } from '@/gondi';
 import { millisToSeconds, SECONDS_IN_MIN } from '@/utils/dates';
-import { getMslLoanId, getRemainingSeconds } from '@/utils/loan';
+import { getMslLoanId } from '@/utils/loan';
 import { sumBy } from '@/utils/number';
 import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 
@@ -274,7 +274,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
         principalAmount: refinancingPrincipalAmount,
         aprBps: newAprBps,
         expirationTime: BigInt(millisToSeconds(Date.now()) + SECONDS_IN_MIN),
-        duration: BigInt(getRemainingSeconds(loan)) + BLOCK_SECONDS,
+        duration: 0n,
         strictImprovement: true,
       });
       loans.push(loan);

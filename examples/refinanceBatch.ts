@@ -52,6 +52,7 @@ const emitLoansRefinanceBatchAndRepay = async (contract?: Address) => {
 
   let repayLoans: RepayLoanType[] = [loan];
   let repayLoanIds = [loanId];
+  let loanReferenceIds = [loan.id];
 
   try {
     const emitLoanTwo = await borrower.emitLoan({
@@ -64,7 +65,7 @@ const emitLoansRefinanceBatchAndRepay = async (contract?: Address) => {
 
     repayLoans = [loan, loanTwo];
     repayLoanIds = [loanId, loanIdTwo];
-    const loanReferenceIds = [loan.id, loanTwo.id];
+    loanReferenceIds = [loan.id, loanTwo.id];
 
     const remainingLockup = await borrower.getRemainingLockupSeconds({ loan: loanTwo });
     console.log(`remaining lockup: ${remainingLockup}`);
