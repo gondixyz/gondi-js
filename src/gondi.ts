@@ -27,6 +27,8 @@ import { min } from '@/utils/number';
 import { areSameAddress, NATIVE_MARKETPLACE } from '@/utils/string';
 import { OptionalNullable } from '@/utils/types';
 
+import { FULFILLED, REJECTED } from './utils/promises';
+
 export class Gondi {
   contracts: Contracts;
   wallet: Wallet;
@@ -602,11 +604,15 @@ export class Gondi {
           loan: refinancings[0].loan,
           loanId: refinancings[0].loanReferenceId,
         });
-        const refinanceBatch = await contract.refinanceBatch({
-          refinancings,
-          renegotiationId,
-        });
-        results.push(refinanceBatch);
+        try {
+          const refinanceBatch = await contract.refinanceBatch({
+            refinancings,
+            renegotiationId,
+          });
+          results.push({ status: FULFILLED, value: refinanceBatch });
+        } catch (reason) {
+          results.push({ status: REJECTED, reason });
+        }
       }
     }
     return results;
