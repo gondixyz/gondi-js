@@ -1,11 +1,20 @@
 import { Address, encodeFunctionData, Hash } from 'viem';
 
-import { filterLogs, LoanV5, OfferV5, RenegotiationV5, zeroHash } from '@/blockchain';
+import {
+  filterLogs,
+  LoanV5,
+  OfferV5,
+  RenegotiationV5,
+  REORG_SAFETY_BUFFER,
+  zeroHash,
+} from '@/blockchain';
 import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { multiSourceLoanABI as multiSourceLoanABIV5 } from '@/generated/blockchain/v5';
 import { EmitLoanArgs } from '@/gondi';
-import { bpsToPercentage, millisToSeconds, SECONDS_IN_DAY } from '@/utils/number';
+import { millisToSeconds, SECONDS_IN_DAY } from '@/utils/dates';
+import { getMslLoanId, getRemainingSeconds } from '@/utils/loan';
+import { bpsToPercentage, sumBy } from '@/utils/number';
 import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 
 import { BaseContract } from './BaseContract';
@@ -310,6 +319,72 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
     return lockupTimeSeconds - ellapsedSeconds;
   }
 
+  async refinanceBatch({
+    renegotiationId,
+    refinancings,
+  }: {
+    renegotiationId: bigint;
+    refinancings: {
+      loan: LoanV5;
+      newAprBps: bigint;
+      sources: {
+        source: LoanV5['source'][number];
+        refinancingPrincipal: bigint;
+      }[];
+    }[];
+  }) {
+    // Generate multicall encoded function data for (renegotiation offer, loan) pairs
+    const data = refinancings.map(({ loan, sources, newAprBps }, index) => {
+      const targetPrincipal = loan.source.map(({ principalAmount, loanId }) => {
+        const refinancingSource = sources.find(({ source }) => source.loanId === loanId);
+        return principalAmount - (refinancingSource?.refinancingPrincipal ?? 0n);
+      });
+      const refinancingPrincipalAmount = sumBy(sources, 'refinancingPrincipal') ?? 0n;
+
+      const offer = {
+        renegotiationId: renegotiationId + BigInt(index),
+        loanId: getMslLoanId(loan),
+        lender: this.wallet.account.address,
+        fee: 0n,
+        targetPrincipal,
+        principalAmount: refinancingPrincipalAmount,
+        aprBps: newAprBps,
+        expirationTime: BigInt(millisToSeconds(Date.now())) + REORG_SAFETY_BUFFER,
+        duration: BigInt(getRemainingSeconds(loan)) + REORG_SAFETY_BUFFER,
+      };
+
+      const isFullRefinance = refinancingPrincipalAmount === loan.principalAmount;
+      if (isFullRefinance) {
+        return encodeFunctionData({
+          abi: multiSourceLoanABIV5,
+          functionName: 'refinanceFull',
+          args: [offer, loan, zeroHash],
+        });
+      }
+      return encodeFunctionData({
+        abi: multiSourceLoanABIV5,
+        functionName: 'refinancePartial',
+        args: [{ ...offer, duration: 0n }, loan],
+      });
+    });
+
+    const txHash = await this.safeContractWrite.multicall([data]);
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        const filter = await this.contract.createEventFilter.LoanRefinanced();
+        const events = filterLogs(receipt, filter);
+        if (events.length !== refinancings.length) throw new Error('Loan not refinanced');
+
+        const results = events.map(({ args }) => args);
+        return { results, ...receipt };
+      },
+    };
+  }
+
   async refinanceFullLoan({
     offer,
     signature,
@@ -319,36 +394,27 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
     signature: Hash;
     loan: LoanV5;
   }) {
-    const txHash = await this.safeContractWrite.refinanceFull([offer, loan, signature]);
-
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const filter = await this.contract.createEventFilter.LoanRefinanced();
-        const events = filterLogs(receipt, filter);
-        if (events.length === 0) throw new Error('Loan not refinanced');
-        const args = events[0].args;
-        return {
-          loan: {
-            id: `${this.contract.address.toLowerCase()}.${args.newLoanId}`,
-            ...args.loan,
-            contractAddress: this.contract.address,
-          },
-          loanId: args.newLoanId,
-          renegotiationId: `${this.contract.address.toLowerCase()}.${offer.lender.toLowerCase()}.${
-            args.renegotiationId
-          }`,
-          ...receipt,
-        };
-      },
-    };
+    return this.executeRenegotiation({
+      offer,
+      executeRenegotiationTxn: () => this.safeContractWrite.refinanceFull([offer, loan, signature]),
+    });
   }
 
   async refinancePartialLoan({ offer, loan }: { offer: RenegotiationV5; loan: LoanV5 }) {
-    const txHash = await this.safeContractWrite.refinancePartial([offer, loan]);
+    return this.executeRenegotiation({
+      offer,
+      executeRenegotiationTxn: () => this.safeContractWrite.refinancePartial([offer, loan]),
+    });
+  }
+
+  private async executeRenegotiation({
+    offer,
+    executeRenegotiationTxn,
+  }: {
+    offer: RenegotiationV5;
+    executeRenegotiationTxn: () => Promise<Hash>;
+  }) {
+    const txHash = await executeRenegotiationTxn();
     return {
       txHash,
       waitTxInBlock: async () => {

@@ -1,11 +1,20 @@
 import { Address, encodeFunctionData, Hash } from 'viem';
 
-import { filterLogs, LoanV6, OfferV6, RenegotiationV6, zeroHash } from '@/blockchain';
+import {
+  filterLogs,
+  LoanV6,
+  OfferV6,
+  RenegotiationV6,
+  REORG_SAFETY_BUFFER,
+  zeroHash,
+} from '@/blockchain';
 import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { multiSourceLoanAbi as multiSourceLoanAbiV6 } from '@/generated/blockchain/v6';
 import { EmitLoanArgs } from '@/gondi';
-import { bpsToPercentage, millisToSeconds, SECONDS_IN_DAY } from '@/utils/number';
+import { millisToSeconds, SECONDS_IN_DAY } from '@/utils/dates';
+import { getMslLoanId, getRemainingSeconds } from '@/utils/loan';
+import { bpsToPercentage, sumBy } from '@/utils/number';
 import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 
 import { BaseContract } from './BaseContract';
@@ -354,6 +363,69 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
 
     if (ellapsedSeconds >= lockupTimeSeconds) return 0;
     return lockupTimeSeconds - ellapsedSeconds;
+  }
+
+  async refinanceBatch({
+    renegotiationId,
+    refinancings,
+  }: {
+    renegotiationId: bigint;
+    refinancings: {
+      loan: LoanV6;
+      newAprBps: bigint;
+      sources: {
+        source: LoanV6['tranche'][number] & { loanIndex: number };
+        refinancingPrincipal: bigint;
+      }[];
+    }[];
+  }) {
+    // Generate multicall encoded function data for (renegotiation offer, loan) pairs
+    const data = refinancings.map(({ loan, sources, newAprBps }, index) => {
+      const trancheIndex = sources.map(({ source }) => BigInt(source.loanIndex));
+      const refinancingPrincipalAmount = sumBy(sources, 'refinancingPrincipal') ?? 0n;
+
+      const offer = {
+        renegotiationId: renegotiationId + BigInt(index),
+        loanId: getMslLoanId(loan),
+        lender: this.wallet.account.address,
+        fee: 0n,
+        trancheIndex,
+        principalAmount: refinancingPrincipalAmount,
+        aprBps: newAprBps,
+        expirationTime: BigInt(millisToSeconds(Date.now())) + REORG_SAFETY_BUFFER,
+        duration: BigInt(getRemainingSeconds(loan)) + REORG_SAFETY_BUFFER,
+      };
+
+      const isFullRefinance = refinancingPrincipalAmount === loan.principalAmount;
+      if (isFullRefinance) {
+        return encodeFunctionData({
+          abi: multiSourceLoanAbiV6,
+          functionName: 'refinanceFull',
+          args: [offer, loan, zeroHash],
+        });
+      }
+      return encodeFunctionData({
+        abi: multiSourceLoanAbiV6,
+        functionName: 'refinancePartial',
+        args: [offer, loan],
+      });
+    });
+
+    const txHash = await this.safeContractWrite.multicall([data]);
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        const filter = await this.contract.createEventFilter.LoanRefinanced();
+        const events = filterLogs(receipt, filter);
+        if (events.length !== refinancings.length) throw new Error('Loan not refinanced');
+
+        const results = events.map(({ args }) => args);
+        return { results, ...receipt };
+      },
+    };
   }
 
   async refinanceFullLoan({

@@ -1,6 +1,6 @@
 import { Address } from 'abitype';
 
-import { isDefined } from './types';
+import { isDefined } from '@/utils/types';
 
 export const NATIVE_MARKETPLACE = 'MarketPlace.Native';
 export const CONTRACT_DOMAIN_NAME = 'GONDI_MULTI_SOURCE_LOAN';

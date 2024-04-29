@@ -6,7 +6,7 @@ import { getContracts, getCurrencies } from '@/deploys';
 import { seaportABI } from '@/generated/blockchain/seaport';
 import { SaleOfferInfoFragment } from '@/generated/graphql';
 import { Fulfillment, SeaportOrder, SeaportOrderParameter } from '@/reservoir/utils';
-import { millisToSeconds } from '@/utils/number';
+import { millisToSeconds } from '@/utils/dates';
 
 import { BaseContract } from './BaseContract';
 
