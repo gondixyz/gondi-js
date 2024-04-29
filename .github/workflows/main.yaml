@@ -48,6 +48,7 @@ jobs:
           tag: v${{ env.PACKAGE_VERSION }}
           name: v${{ env.PACKAGE_VERSION }}
           body: ${{ github.sha }}
+          generateReleaseNotes: true
 
       # Publish to NPM if version is not published
       - name: NPM Publish
