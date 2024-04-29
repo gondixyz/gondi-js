@@ -24,10 +24,9 @@ import {
   renegotiationToMslRenegotiation,
 } from '@/utils/loan';
 import { min } from '@/utils/number';
+import { FULFILLED, REJECTED } from '@/utils/promises';
 import { areSameAddress, NATIVE_MARKETPLACE } from '@/utils/string';
 import { OptionalNullable } from '@/utils/types';
-
-import { FULFILLED, REJECTED } from './utils/promises';
 
 export class Gondi {
   contracts: Contracts;
