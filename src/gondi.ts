@@ -589,42 +589,20 @@ export class Gondi {
       };
     });
 
-    // TODO: improve this
-    // const versions = [
-    //   ['v4', this.contracts.MultiSourceLoanV4],
-    //   ['v5', this.contracts.MultiSourceLoanV5],
-    //   ['v6', this.contracts.MultiSourceLoanV6],
-    // ] as const;
     // Generate renegotiationId for each contract version and call the refinanceBatch implementations.
     const versions = ['v4', 'v5', 'v6'] as const;
     const results = [];
     for (const version of versions) {
-      const pair =
-        version === 'v4'
-          ? ({
-              contract: this.contracts.MultiSourceLoanV4,
-              refinancings: Object.values(refisByContract.v4),
-            } as const)
-          : version === 'v5'
-            ? ({
-                contract: this.contracts.MultiSourceLoanV5,
-                refinancings: Object.values(refisByContract.v5),
-              } as const)
-            : ({
-                contract: this.contracts.MultiSourceLoanV6,
-                refinancings: Object.values(refisByContract.v6),
-              } as const);
+      const refinancings = Object.values(refisByContract[version]);
 
-      if (pair.refinancings.length > 0) {
+      if (refinancings.length > 0) {
         const renegotiationId = await this.generateRenegotiationId({
-          loan: pair.refinancings[0].loan,
-          loanId: pair.refinancings[0].loanReferenceId,
+          loan: refinancings[0].loan,
+          loanId: refinancings[0].loanReferenceId,
         });
 
-        const refinancings = Object.values<(typeof refisByContract)[typeof version][string]>(
-          refisByContract[version],
-        );
         try {
+          // TODO: improve this
           const refinanceBatch =
             version === 'v4'
               ? await this.contracts.MultiSourceLoanV4.refinanceBatch({
