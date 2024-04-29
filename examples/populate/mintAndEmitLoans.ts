@@ -63,25 +63,22 @@ const mintNftsFromCollection = async (collection: SomeCollection) => {
     address: collection,
   });
 
-  const tokensToMint = (
-    await Promise.all(
-      new Array(CURRENCIES.length * CONTRACTS.length * NFT_AMOUNT)
-        .fill(0)
-        .map((_, i) => BigInt(COLLECTION_TOKEN_ID_BASE[collection] + TOKEN_ID_TO_MINT_FROM + i))
-        .map(async (tokenIdToMint) => {
-          try {
-            await erc721.read.ownerOf([tokenIdToMint]);
-          } catch {
-            return [tokenIdToMint, true] as const;
-          }
-          return [tokenIdToMint, false] as const;
-        }),
-    )
-  )
-    .filter(([, isMinted]) => isMinted)
-    .map(([tokenIdToMint]) => tokenIdToMint);
+  const tokensToMint = await Promise.all(
+    new Array(CURRENCIES.length * CONTRACTS.length * NFT_AMOUNT).fill(0).map(async (_, i) => {
+      const tokenIdToMint = BigInt(
+        COLLECTION_TOKEN_ID_BASE[collection] + TOKEN_ID_TO_MINT_FROM + i,
+      );
+      try {
+        await erc721.read.ownerOf([tokenIdToMint]);
+      } catch {
+        return [tokenIdToMint, true] as const;
+      }
+      return [tokenIdToMint, false] as const;
+    }),
+  );
 
-  for (const tokenIdToMint of tokensToMint) {
+  for (const [tokenIdToMint, toMint] of tokensToMint) {
+    if (!toMint) continue;
     try {
       const txhash = await erc721.write.mint([adminUser.wallet.account.address, tokenIdToMint]);
       await publicClient.waitForTransactionReceipt({ hash: txhash });
