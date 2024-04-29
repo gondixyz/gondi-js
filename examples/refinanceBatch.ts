@@ -84,21 +84,26 @@ const emitLoansRefinanceBatchAndRepay = async (contract?: Address) => {
       })),
     });
     const contractBatchCalls = await Promise.all(
-      batchRefinance.map(({ waitTxInBlock }) => waitTxInBlock()),
+      batchRefinance.map(async (result) =>
+        result.status === 'fulfilled'
+          ? { status: 'fulfilled' as const, value: await result.value.waitTxInBlock() }
+          : result,
+      ),
     );
     repayLoans = [];
     repayLoanIds = [];
     contractBatchCalls.forEach((contractBatchCall) => {
+      if (contractBatchCall.status !== 'fulfilled') return;
       repayLoans = [
         ...repayLoans,
-        ...contractBatchCall.results.map(({ loan }) => ({
+        ...contractBatchCall.value.results.map(({ loan }) => ({
           ...loan,
           contractAddress: signedOffer.contractAddress,
         })),
       ];
       repayLoanIds = [
         ...repayLoanIds,
-        ...contractBatchCall.results.map(({ newLoanId }) => newLoanId),
+        ...contractBatchCall.value.results.map(({ newLoanId }) => newLoanId),
       ];
     });
     console.log(`loans batch refinanced: ${contractVersionString}`);

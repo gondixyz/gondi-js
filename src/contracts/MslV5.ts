@@ -1,18 +1,18 @@
 import { Address, encodeFunctionData, Hash } from 'viem';
 
 import {
-  BLOCK_SECONDS,
   filterLogs,
   LoanV5,
   OfferV5,
   RenegotiationV5,
+  REORG_SAFETY_BUFFER,
   zeroHash,
 } from '@/blockchain';
 import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { multiSourceLoanABI as multiSourceLoanABIV5 } from '@/generated/blockchain/v5';
 import { EmitLoanArgs } from '@/gondi';
-import { millisToSeconds, SECONDS_IN_DAY, SECONDS_IN_MIN } from '@/utils/dates';
+import { millisToSeconds, SECONDS_IN_DAY } from '@/utils/dates';
 import { getMslLoanId, getRemainingSeconds } from '@/utils/loan';
 import { bpsToPercentage, sumBy } from '@/utils/number';
 import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
@@ -349,8 +349,8 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
         targetPrincipal,
         principalAmount: refinancingPrincipalAmount,
         aprBps: newAprBps,
-        expirationTime: BigInt(millisToSeconds(Date.now()) + SECONDS_IN_MIN),
-        duration: BigInt(getRemainingSeconds(loan)) + BLOCK_SECONDS,
+        expirationTime: BigInt(millisToSeconds(Date.now())) + REORG_SAFETY_BUFFER,
+        duration: BigInt(getRemainingSeconds(loan)) + REORG_SAFETY_BUFFER,
       };
 
       const isFullRefinance = refinancingPrincipalAmount === loan.principalAmount;
@@ -364,7 +364,7 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
       return encodeFunctionData({
         abi: multiSourceLoanABIV5,
         functionName: 'refinancePartial',
-        args: [offer, loan],
+        args: [{ ...offer, duration: 0n }, loan],
       });
     });
 
