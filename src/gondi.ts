@@ -589,28 +589,38 @@ export class Gondi {
       };
     });
 
-    const versions = [
-      ['v4', this.contracts.MultiSourceLoanV4],
-      ['v5', this.contracts.MultiSourceLoanV5],
-      ['v6', this.contracts.MultiSourceLoanV6],
-    ] as const;
     // Generate renegotiationId for each contract version and call the refinanceBatch implementations.
+    const versions = ['v4', 'v5', 'v6'] as const;
     const results = [];
-    for (const [version, contract] of versions) {
+    for (const version of versions) {
       const refinancings = Object.values(refisByContract[version]);
+
       if (refinancings.length > 0) {
         const renegotiationId = await this.generateRenegotiationId({
           loan: refinancings[0].loan,
           loanId: refinancings[0].loanReferenceId,
         });
+
         try {
-          const refinanceBatch = await contract.refinanceBatch({
-            refinancings,
-            renegotiationId,
-          });
+          // TODO: improve this
+          const refinanceBatch =
+            version === 'v4'
+              ? await this.contracts.MultiSourceLoanV4.refinanceBatch({
+                  refinancings: Object.values(refisByContract.v4),
+                  renegotiationId,
+                })
+              : version === 'v5'
+                ? await this.contracts.MultiSourceLoanV5.refinanceBatch({
+                    refinancings: Object.values(refisByContract.v5),
+                    renegotiationId,
+                  })
+                : await this.contracts.MultiSourceLoanV6.refinanceBatch({
+                    refinancings: Object.values(refisByContract.v6),
+                    renegotiationId,
+                  });
           results.push({ status: FULFILLED, value: refinanceBatch });
         } catch (reason) {
-          results.push({ status: REJECTED, reason });
+          results.push({ status: REJECTED, reason, value: refinancings });
         }
       }
     }
