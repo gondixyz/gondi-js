@@ -7,7 +7,7 @@ A JavaScript library for crypto-native lending: borrow, lend & refinance NFTs (n
 - [Installation](#installation)
 - [Getting Started](#getting-started)
 - [Examples](#examples)
-- [Migrating from X <= 0.0.1b9 to 0.1.0](./CHANGELOG.md)
+- [Need help migrating between versions? Check our Changelog!](./CHANGELOG.md)
 
 ## Installation
 
