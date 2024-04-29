@@ -103,15 +103,19 @@ export const testSingleNftOfferInput = {
   nftId: testNftId,
 };
 
-export const approveToken = async (user: Gondi, to: Address) => {
+export const approveToken = async (
+  user: Gondi,
+  to: Address,
+  currency: Address | undefined = testCurrency,
+) => {
   const isEnoughApproved = await user.isApprovedToken({
-    tokenAddress: testCurrency,
+    tokenAddress: currency,
     amount: MAX_NUMBER / 2n,
     to,
   });
   if (!isEnoughApproved) {
     const approveToken = await user.approveToken({
-      tokenAddress: testCurrency,
+      tokenAddress: currency,
       to,
     });
     await approveToken.waitTxInBlock();
