@@ -392,7 +392,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
         trancheIndex,
         principalAmount: refinancingPrincipalAmount,
         aprBps: newAprBps,
-        expirationTime: BigInt(millisToSeconds(Date.now()) + Number(REORG_SAFETY_BUFFER)),
+        expirationTime: BigInt(millisToSeconds(Date.now())) + REORG_SAFETY_BUFFER,
         duration: BigInt(getRemainingSeconds(loan)) + REORG_SAFETY_BUFFER,
       };
 
