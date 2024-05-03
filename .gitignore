@@ -1,7 +1,25 @@
-node_modules
-dist
-*.log
-.env
+# editor config
 .vscode/*
 !.vscode/launch.json
+
+# builds
+dist
+.env
+
+# misc
 .DS_Store
+
+# dependencies
+node_modules
+/.pnp
+.pnp.js
+.pnp.*
+.yarn/*
+!.yarn/releases
+
+# debug
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*

@@ -1,13 +1,23 @@
-node_modules
+.vscode/*
+!.vscode/launch.json
 
 dist
+.env
 
-docs
+.DS_Store
 
-src/generated
+node_modules
+/.pnp
+.pnp.js
+.pnp.*
+.yarn/*
+!.yarn/releases
 
 *.log
-.env
-.vscode
-.DS_Store
-*.lock
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+docs
+src/generated

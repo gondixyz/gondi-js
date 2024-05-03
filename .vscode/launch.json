@@ -8,13 +8,9 @@
       "type": "node",
       "request": "launch",
       "name": "Launch Program",
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
+      "skipFiles": ["<node_internals>/**"],
       "program": "${workspaceFolder}/dist/index.mjs",
-      "outFiles": [
-        "${workspaceFolder}/**/*.js"
-      ]
+      "outFiles": ["${workspaceFolder}/**/*.js"]
     },
     {
       "name": "add new tranche",
@@ -204,6 +200,6 @@
       "cwd": "${workspaceFolder}/examples",
       "command": "yarn run-test userVaults.ts",
       "type": "node-terminal"
-    },
+    }
   ]
 }

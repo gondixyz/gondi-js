@@ -67,5 +67,6 @@
     "graphql-tag": "^2.12.6",
     "siwe": "^2.1.4",
     "viem": "^1.13.1"
-  }
+  },
+  "packageManager": "yarn@4.2.1"
 }
