@@ -5,6 +5,7 @@ import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { auctionLoanLiquidatorABI as auctionLoanLiquidatorABIV4 } from '@/generated/blockchain/v4';
 
+import { AllV6 } from './AllV6';
 import { BaseContract } from './BaseContract';
 
 export class AllV4 extends BaseContract<typeof auctionLoanLiquidatorABIV4> {
@@ -79,6 +80,10 @@ export class AllV4 extends BaseContract<typeof auctionLoanLiquidatorABIV4> {
         return { ...events[0].args, ...receipt };
       },
     };
+  }
+
+  async settleAuctionWithBuyout(): ReturnType<AllV6['settleAuctionWithBuyout']> {
+    throw new Error('Not implemented for V1');
   }
 
   async settleAuction({ loan }: { loan: LoanV4 }) {

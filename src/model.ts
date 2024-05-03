@@ -1,6 +1,6 @@
 import { Address, Hash } from 'viem';
 
-import { Auction as BlockchainAuction, Signature } from '@/blockchain';
+import { Signature } from '@/blockchain';
 import {
   CollectionOfferInput as ApiCollectionOfferInput,
   CollectionSignedOfferInput,
@@ -80,8 +80,6 @@ export type RenegotiationOffer = UnsignedRenegotiationOffer & {
 /** @ignore */
 export const MAX_NUMBER =
   115792089237316195423570985008687907853269984665640564039457584007913129639935n;
-
-export type Auction = BlockchainAuction;
 
 export type ListOffersProps = {
   limit?: number;
