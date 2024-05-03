@@ -5,4 +5,3 @@ dist
 .vscode/*
 !.vscode/launch.json
 .DS_Store
-*.lock
