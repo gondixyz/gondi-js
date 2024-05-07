@@ -14,7 +14,6 @@
     "viem": "^1.16.6"
   },
   "dependencies": {
-    "gondi": "portal:.."
-  },
-  "packageManager": "yarn@4.2.1"
+    "gondi": "workspace:*"
+  }
 }

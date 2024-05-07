@@ -9,6 +9,10 @@
   "files": [
     "dist"
   ],
+  "workspaces": [
+    ".",
+    "examples"
+  ],
   "scripts": {
     "docs": "typedoc --options ./typedocconfig.ts --out docs/$npm_package_version && rm -rf docs/lts && cp -r docs/$npm_package_version/ docs/lts/",
     "build": "node esbuild.js && tsc && tsc-alias",
