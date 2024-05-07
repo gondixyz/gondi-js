@@ -11,7 +11,7 @@ import {
   users,
 } from './common';
 
-const emitLoanThenAuctionAndBid = async (
+const settleAuctionWithBuyout = async (
   owner: Gondi,
   lender: Gondi,
   mslContract?: Address,
@@ -23,7 +23,7 @@ const emitLoanThenAuctionAndBid = async (
   const signableOffer = {
     ...offer,
     maxSeniorRepayment: offer.principalAmount,
-    duration: 15n,
+    duration: 30n,
   };
   const signedOffer = await lender._makeSingleNftOffer(signableOffer, mslContract);
   const secondSignedOffer = await lender._makeSingleNftOffer(signableOffer, mslContract);
@@ -63,16 +63,10 @@ const emitLoanThenAuctionAndBid = async (
   await approveToken.waitTxInBlock();
   console.log(`approved liquidator to move erc20: ${contractVersionString}`);
 
-  // In oroder to place bid to work, principal lender buyout time must have finished.
-  // Not adding that sleep in this example as it will take long, but it's important
-  // to be considered.
-
   const MIN_BID_LIQUIDATION = 50n;
   const BPS = 10000n;
-  const placeBid = await lender.placeBid({
-    collectionContractAddress: signedOffer.nftCollateralAddress,
-    tokenId: signedOffer.nftCollateralTokenId,
-    bid: signedOffer.principalAmount,
+  const settleAuctionWithBuyout = await lender.settleAuctionWithBuyout({
+    loan,
     auction: {
       loanAddress: loan.contractAddress,
       loanId: liquidatedLoanId,
@@ -87,14 +81,14 @@ const emitLoanThenAuctionAndBid = async (
       minBid: (loan.principalAmount * MIN_BID_LIQUIDATION) / BPS, // This value should be taken from event
     },
   });
-  await placeBid.waitTxInBlock();
-  console.log(`bid placed successfully: ${contractVersionString}`);
+  await settleAuctionWithBuyout.waitTxInBlock();
+  console.log(`settled auction with buyout successfully: ${contractVersionString}`);
 };
 
 async function main() {
   try {
     await setAllowances();
-    await emitLoanThenAuctionAndBid(
+    await settleAuctionWithBuyout(
       users[1],
       users[0],
       process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 as Address,

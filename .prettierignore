@@ -12,6 +12,7 @@ node_modules
 .pnp.*
 .yarn/*
 !.yarn/releases
+examples/.yarn
 
 *.log
 npm-debug.log*

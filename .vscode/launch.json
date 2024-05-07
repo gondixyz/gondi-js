@@ -200,6 +200,13 @@
       "cwd": "${workspaceFolder}/examples",
       "command": "yarn run-test userVaults.ts",
       "type": "node-terminal"
+    },
+    {
+      "name": "settle auction with buyout",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test settleAuctionWithBuyout.ts",
+      "type": "node-terminal"
     }
   ]
 }
