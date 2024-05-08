@@ -57,7 +57,7 @@ jobs:
       # Publish to NPM if version is not published
       - name: NPM Publish
         run: |
-          npx can-npm-publish --verbose && npm publish || echo "Does not publish"
+          npx can-npm-publish --verbose && yarn npm publish || echo "Does not publish"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_SECRET }}
 
