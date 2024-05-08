@@ -1,14 +1,13 @@
 import { Address } from 'viem';
 
-import { filterLogs, LoanV6 } from '@/blockchain';
+import { Auction, filterLogs, LoanV6 } from '@/blockchain';
 import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
-import { auctionLoanLiquidatorAbi as auctionLoanLiquidatorABIV6 } from '@/generated/blockchain/v6';
-import * as model from '@/model';
+import { auctionWithBuyoutLoanLiquidatorAbi as auctionWithBuyoutLoanLiquidatorABIV6 } from '@/generated/blockchain/v6';
 
 import { BaseContract } from './BaseContract';
 
-export class AllV6 extends BaseContract<typeof auctionLoanLiquidatorABIV6> {
+export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorABIV6> {
   constructor({ walletClient }: { walletClient: Wallet }) {
     const {
       AuctionLoanLiquidator: { v6 },
@@ -17,7 +16,7 @@ export class AllV6 extends BaseContract<typeof auctionLoanLiquidatorABIV6> {
     super({
       walletClient,
       address: v6,
-      abi: auctionLoanLiquidatorABIV6,
+      abi: auctionWithBuyoutLoanLiquidatorABIV6,
     });
   }
 
@@ -30,12 +29,12 @@ export class AllV6 extends BaseContract<typeof auctionLoanLiquidatorABIV6> {
     collectionContractAddress: Address;
     tokenId: bigint;
     bid: bigint;
-    auction: model.Auction;
+    auction: Auction;
   }) {
     const txHash = await this.safeContractWrite.placeBid([
       collectionContractAddress,
       tokenId,
-      auction,
+      this.mapAuctionToAuctionArgs(auction),
       bid,
     ]);
     return {
@@ -53,8 +52,34 @@ export class AllV6 extends BaseContract<typeof auctionLoanLiquidatorABIV6> {
     };
   }
 
-  async settleAuction({ auction, loan }: { auction: model.Auction; loan: LoanV6 }) {
-    const txHash = await this.safeContractWrite.settleAuction([auction, loan]);
+  async settleAuctionWithBuyout({ auction, loan }: { auction: Auction; loan: LoanV6 }) {
+    const txHash = await this.safeContractWrite.settleWithBuyout([
+      loan.nftCollateralAddress,
+      loan.nftCollateralTokenId,
+      this.mapAuctionToAuctionArgs(auction),
+      loan,
+    ]);
+
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+
+        const filter = await this.contract.createEventFilter.AuctionSettledWithBuyout();
+        const events = filterLogs(receipt, filter);
+        if (events.length === 0) throw new Error('Auction not settled');
+        return { ...events[0].args, ...receipt };
+      },
+    };
+  }
+
+  async settleAuction({ auction, loan }: { auction: Auction; loan: LoanV6 }) {
+    const txHash = await this.safeContractWrite.settleAuction([
+      this.mapAuctionToAuctionArgs(auction),
+      loan,
+    ]);
 
     return {
       txHash,
@@ -69,5 +94,12 @@ export class AllV6 extends BaseContract<typeof auctionLoanLiquidatorABIV6> {
         return { ...events[0].args, ...receipt };
       },
     };
+  }
+
+  private mapAuctionToAuctionArgs(auction: Auction) {
+    if ('minBid' in auction) {
+      return auction;
+    }
+    throw new Error('minBid is required for v6 auctions');
   }
 }

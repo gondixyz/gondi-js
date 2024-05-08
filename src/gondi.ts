@@ -10,7 +10,7 @@ import {
 } from 'viem';
 
 import { Api, Props as ApiProps } from '@/api';
-import { filterLogs, LoanV5, OfferV5, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
+import { Auction, filterLogs, LoanV5, OfferV5, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Contracts, Wallet } from '@/contracts';
 import { getCurrencies } from '@/deploys';
 import { MarketplaceEnum, OffersSortField, Ordering } from '@/generated/graphql';
@@ -793,17 +793,23 @@ export class Gondi {
     collectionContractAddress: Address;
     tokenId: bigint;
     bid: bigint;
-    auction: model.Auction;
+    auction: Auction;
   }) {
     return this.contracts
       .All(auction.loanAddress)
       .placeBid({ collectionContractAddress, tokenId, bid, auction });
   }
 
-  async settleAuction({ loan, auction }: { loan: LoanToMslLoanType; auction: model.Auction }) {
+  async settleAuction({ loan, auction }: { loan: LoanToMslLoanType; auction: Auction }) {
     return this.contracts
       .All(auction.loanAddress)
       .settleAuction({ auction, loan: loanToMslLoan(loan) });
+  }
+
+  async settleAuctionWithBuyout({ loan, auction }: { loan: LoanToMslLoanType; auction: Auction }) {
+    return this.contracts
+      .All(auction.loanAddress)
+      .settleAuctionWithBuyout({ auction, loan: loanToMslLoan(loan) });
   }
 
   async buy(

@@ -1,11 +1,11 @@
 import { Address } from 'viem';
 
-import { filterLogs, LoanV5 } from '@/blockchain';
+import { Auction, filterLogs, LoanV5 } from '@/blockchain';
 import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { auctionLoanLiquidatorABI as auctionLoanLiquidatorABIV5 } from '@/generated/blockchain/v5';
-import * as model from '@/model';
 
+import { AllV6 } from './AllV6';
 import { BaseContract } from './BaseContract';
 
 export class AllV5 extends BaseContract<typeof auctionLoanLiquidatorABIV5> {
@@ -30,7 +30,7 @@ export class AllV5 extends BaseContract<typeof auctionLoanLiquidatorABIV5> {
     collectionContractAddress: Address;
     tokenId: bigint;
     bid: bigint;
-    auction: model.Auction;
+    auction: Auction;
   }) {
     const txHash = await this.safeContractWrite.placeBid([
       collectionContractAddress,
@@ -53,7 +53,11 @@ export class AllV5 extends BaseContract<typeof auctionLoanLiquidatorABIV5> {
     };
   }
 
-  async settleAuction({ auction, loan }: { auction: model.Auction; loan: LoanV5 }) {
+  async settleAuctionWithBuyout(): ReturnType<AllV6['settleAuctionWithBuyout']> {
+    throw new Error('Not implemented for V2');
+  }
+
+  async settleAuction({ auction, loan }: { auction: Auction; loan: LoanV5 }) {
     const txHash = await this.safeContractWrite.settleAuction([auction, loan]);
 
     return {

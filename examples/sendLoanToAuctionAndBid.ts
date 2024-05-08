@@ -63,6 +63,12 @@ const emitLoanThenAuctionAndBid = async (
   await approveToken.waitTxInBlock();
   console.log(`approved liquidator to move erc20: ${contractVersionString}`);
 
+  // In oroder to place bid to work, principal lender buyout time must have finished.
+  // Not adding that sleep in this example as it will take long, but it's important
+  // to be considered.
+
+  const MIN_BID_LIQUIDATION = 50n;
+  const BPS = 10000n;
   const placeBid = await lender.placeBid({
     collectionContractAddress: signedOffer.nftCollateralAddress,
     tokenId: signedOffer.nftCollateralTokenId,
@@ -78,6 +84,7 @@ const emitLoanThenAuctionAndBid = async (
       startTime: block.timestamp,
       originator: originator,
       lastBidTime: block.timestamp, // Auction has just started
+      minBid: (loan.principalAmount * MIN_BID_LIQUIDATION) / BPS, // This value should be taken from event
     },
   });
   await placeBid.waitTxInBlock();

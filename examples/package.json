@@ -14,6 +14,6 @@
     "viem": "^1.16.6"
   },
   "dependencies": {
-    "gondi": "link:.."
+    "gondi": "workspace:*"
   }
 }

@@ -8,13 +8,9 @@
       "type": "node",
       "request": "launch",
       "name": "Launch Program",
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
+      "skipFiles": ["<node_internals>/**"],
       "program": "${workspaceFolder}/dist/index.mjs",
-      "outFiles": [
-        "${workspaceFolder}/**/*.js"
-      ]
+      "outFiles": ["${workspaceFolder}/**/*.js"]
     },
     {
       "name": "add new tranche",
@@ -205,5 +201,12 @@
       "command": "yarn run-test userVaults.ts",
       "type": "node-terminal"
     },
+    {
+      "name": "settle auction with buyout",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples",
+      "command": "yarn run-test settleAuctionWithBuyout.ts",
+      "type": "node-terminal"
+    }
   ]
 }

@@ -1,6 +1,6 @@
 {
   "name": "gondi",
-  "version": "0.8.2",
+  "version": "0.9.0",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.mjs",
@@ -8,6 +8,10 @@
   "types": "dist/src/index.d.ts",
   "files": [
     "dist"
+  ],
+  "workspaces": [
+    ".",
+    "examples"
   ],
   "scripts": {
     "docs": "typedoc --options ./typedocconfig.ts --out docs/$npm_package_version && rm -rf docs/lts && cp -r docs/$npm_package_version/ docs/lts/",
@@ -67,5 +71,6 @@
     "graphql-tag": "^2.12.6",
     "siwe": "^2.1.4",
     "viem": "^1.13.1"
-  }
+  },
+  "packageManager": "yarn@4.2.1"
 }
