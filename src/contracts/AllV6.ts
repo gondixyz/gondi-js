@@ -67,7 +67,7 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
           hash: txHash,
         });
 
-        const filter = await this.contract.createEventFilter.AuctionSettled();
+        const filter = await this.contract.createEventFilter.AuctionSettledWithBuyout();
         const events = filterLogs(receipt, filter);
         if (events.length === 0) throw new Error('Auction not settled');
         return { ...events[0].args, ...receipt };
