@@ -812,6 +812,10 @@ export class Gondi {
       .settleAuctionWithBuyout({ auction, loan: loanToMslLoan(loan) });
   }
 
+  async getAuctionRemainingLockupSeconds({ auction }: { auction: Auction }) {
+    return this.contracts.All(auction.loanAddress).getRemainingLockupSeconds({ auction });
+  }
+
   async buy(
     tokensToBuy: {
       collectionContractAddress: Address;

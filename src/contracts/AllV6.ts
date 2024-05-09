@@ -4,6 +4,7 @@ import { Auction, filterLogs, LoanV6 } from '@/blockchain';
 import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { auctionWithBuyoutLoanLiquidatorAbi as auctionWithBuyoutLoanLiquidatorABIV6 } from '@/generated/blockchain/v6';
+import { millisToSeconds } from '@/utils/dates';
 
 import { BaseContract } from './BaseContract';
 
@@ -50,6 +51,15 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
         return { ...events[0].args, ...receipt };
       },
     };
+  }
+
+  async getRemainingLockupSeconds({ auction }: { auction: Auction }) {
+    const lockupTimeSeconds = await this.contract.read.getTimeForMainLenderToBuy();
+    const lockupSeconds = Number(lockupTimeSeconds);
+    const ellapsedSeconds = Math.ceil(millisToSeconds(Date.now()) - Number(auction.startTime));
+
+    if (ellapsedSeconds >= lockupSeconds) return 0;
+    return lockupSeconds - ellapsedSeconds;
   }
 
   async settleAuctionWithBuyout({ auction, loan }: { auction: Auction; loan: LoanV6 }) {
