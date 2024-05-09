@@ -53,6 +53,10 @@ export class AllV5 extends BaseContract<typeof auctionLoanLiquidatorABIV5> {
     };
   }
 
+  getRemainingLockupSeconds() {
+    return 0;
+  }
+
   async settleAuctionWithBuyout(): ReturnType<AllV6['settleAuctionWithBuyout']> {
     throw new Error('Not implemented for V2');
   }

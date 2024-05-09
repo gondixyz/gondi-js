@@ -82,6 +82,10 @@ export class AllV4 extends BaseContract<typeof auctionLoanLiquidatorABIV4> {
     };
   }
 
+  getRemainingLockupSeconds() {
+    return 0;
+  }
+
   async settleAuctionWithBuyout(): ReturnType<AllV6['settleAuctionWithBuyout']> {
     throw new Error('Not implemented for V1');
   }
