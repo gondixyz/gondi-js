@@ -3000,16 +3000,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"abitype@npm:^0.8.7":
-  version: 0.8.11
-  resolution: "abitype@npm:0.8.11"
+"abitype@npm:^1.0.0":
+  version: 1.0.2
+  resolution: "abitype@npm:1.0.2"
   peerDependencies:
     typescript: ">=5.0.4"
-    zod: ^3 >=3.19.1
+    zod: ^3 >=3.22.0
   peerDependenciesMeta:
+    typescript:
+      optional: true
     zod:
       optional: true
-  checksum: 10/b648c1e2c892e204552a5641f6ab8d475fa8ef6209d4d4fb6e196140b3744df5371d62092fb952dbf019466de1fd2fd76e0e3ff39baba1b70207958b717c4021
+  checksum: 10/d80d10521e42732df96c6ba42d42dbfe6214d3328990a618195d9986a42584040eaa54fb861adce5ccd50df0ffdfbb4928505ed7d6468893cf64509bf4138a0a
   languageName: node
   linkType: hard
 
@@ -5478,7 +5480,7 @@ __metadata:
     "@types/node": "npm:^20.4.6"
     "@typescript-eslint/eslint-plugin": "npm:^5.49.0"
     "@typescript-eslint/parser": "npm:^5.49.0"
-    abitype: "npm:^0.8.7"
+    abitype: "npm:^1.0.0"
     apollo-link-scalars: "npm:^4.0.2"
     esbuild: "npm:^0.17.19"
     eslint: "npm:^8.34.0"
