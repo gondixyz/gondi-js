@@ -71,7 +71,7 @@ export class Pool extends BaseContract<typeof poolABI> {
 
     const results = [];
 
-    for await (const queue of queues) {
+    for (const queue of queues) {
       const withdrawalQueueContract = new WithdrawalQueue({
         walletClient: this.wallet,
         address: queue.contractAddress,
