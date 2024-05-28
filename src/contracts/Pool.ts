@@ -61,26 +61,35 @@ export class Pool extends BaseContract<typeof poolABI> {
 
   async claim({ receiver, tokenId }: { receiver: Address; tokenId: bigint }) {
     const maxQueues = Number(await this.contract.read.getMaxTotalWithdrawalQueues());
-    const queues = (
+    const queueContracts = (
       await Promise.all(
         new Array(maxQueues)
           .fill(0)
           .map(async (_, i) => await this.contract.read.getDeployedQueue([BigInt(i)])),
       )
-    ).filter((queue) => queue.contractAddress !== zeroAddress);
+    )
+      .filter((queue) => queue.contractAddress !== zeroAddress) // TODO: check this
+      .map(
+        (queue) =>
+          new WithdrawalQueue({
+            walletClient: this.wallet,
+            address: queue.contractAddress,
+          }),
+      )
+      .filter(async (queue) => {
+        const owner = await queue.ownerOf(tokenId);
+        return owner === this.wallet.account.address;
+      })
+      .filter(async (queue) => {
+        const available = await queue.getAvailable(tokenId);
+        return available > 0n;
+      });
 
     const results = [];
 
-    for (const queue of queues) {
-      const withdrawalQueueContract = new WithdrawalQueue({
-        walletClient: this.wallet,
-        address: queue.contractAddress,
-      });
+    for (const queueContract of queueContracts) {
       try {
-        const owner = await withdrawalQueueContract.ownerOf(tokenId);
-        const available = await withdrawalQueueContract.getAvailable(tokenId);
-        if (owner !== this.wallet.account.address || !available) continue;
-        const claim = await withdrawalQueueContract.withdraw({ to: receiver, tokenId });
+        const claim = await queueContract.withdraw({ to: receiver, tokenId });
         results.push({ status: FULFILLED, value: claim });
       } catch (reason) {
         results.push({ status: REJECTED, reason });
