@@ -12,6 +12,7 @@ import {
 import { Api, Props as ApiProps } from '@/api';
 import { Auction, filterLogs, LoanV5, OfferV5, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Contracts, Wallet } from '@/contracts';
+import { Pool } from '@/contracts/Pool';
 import { getCurrencies } from '@/deploys';
 import { MarketplaceEnum, OffersSortField, Ordering } from '@/generated/graphql';
 import * as model from '@/model';
@@ -1046,6 +1047,51 @@ export class Gondi {
     userVaultAddress?: Address;
   } & Parameters<Contracts['UserVaultV5']['burnAndWithdraw']>[0]) {
     return this.contracts.UserVault(userVaultAddress).burnAndWithdraw(data);
+  }
+
+  async poolDeposit({
+    address,
+    amount,
+    receiver,
+  }: {
+    address: Address;
+    amount: bigint;
+    receiver?: Address;
+  }) {
+    const poolContract = new Pool({ walletClient: this.wallet, address });
+    return poolContract.deposit({ amount, receiver: receiver ?? this.wallet.account.address });
+  }
+
+  async poolWithdraw({
+    address,
+    assets,
+    receiver,
+    owner,
+  }: {
+    address: Address;
+    assets: bigint;
+    receiver?: Address;
+    owner?: Address;
+  }) {
+    const poolContract = new Pool({ walletClient: this.wallet, address });
+    return poolContract.withdraw({
+      assets,
+      receiver: receiver ?? this.wallet.account.address,
+      owner: owner ?? this.wallet.account.address,
+    });
+  }
+
+  async poolClaim({
+    address,
+    tokenId,
+    receiver,
+  }: {
+    address: Address;
+    tokenId: bigint;
+    receiver?: Address;
+  }) {
+    const poolContract = new Pool({ walletClient: this.wallet, address });
+    return poolContract.claim({ tokenId, receiver: receiver ?? this.wallet.account.address });
   }
 }
 
