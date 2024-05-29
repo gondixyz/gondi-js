@@ -51,6 +51,14 @@ export class Pool extends BaseContract<typeof poolABI> {
     };
   }
 
+  async previewDeposit({ amount }: { amount: bigint }) {
+    return this.contract.read.previewDeposit([amount]);
+  }
+
+  async previewMint({ amount }: { amount: bigint }) {
+    return this.contract.read.previewMint([amount]);
+  }
+
   async withdraw({
     assets,
     receiver,

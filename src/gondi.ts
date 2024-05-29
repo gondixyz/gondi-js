@@ -1082,6 +1082,14 @@ export class Gondi {
     throw new Error('Invalid pool deposit');
   }
 
+  async poolPreviewDeposit({ address, amount }: { address: Address; amount: bigint }) {
+    return new Pool({ walletClient: this.wallet, address }).previewDeposit({ amount });
+  }
+
+  async poolPreviewMint({ address, amount }: { address: Address; amount: bigint }) {
+    return new Pool({ walletClient: this.wallet, address }).previewMint({ amount });
+  }
+
   async poolWithdraw({
     address,
     assets,
