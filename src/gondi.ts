@@ -1090,23 +1090,42 @@ export class Gondi {
     return new Pool({ walletClient: this.wallet, address }).previewMint({ amount });
   }
 
-  async poolWithdraw({
+  async poolWithdrawOrRedeem({
     address,
-    assets,
+    assetAmount,
+    shareAmount,
     receiver,
     owner,
   }: {
     address: Address;
-    assets: bigint;
     receiver?: Address;
     owner?: Address;
-  }) {
+  } & (
+    | {
+        assetAmount: bigint;
+        shareAmount?: never;
+      }
+    | {
+        assetAmount?: never;
+        shareAmount: bigint;
+      }
+  )) {
     const poolContract = new Pool({ walletClient: this.wallet, address });
-    return poolContract.withdraw({
-      assets,
+
+    const receiverOwnerConfig = {
       receiver: receiver ?? this.wallet.account.address,
       owner: owner ?? this.wallet.account.address,
-    });
+    };
+
+    if (isDefined(assetAmount)) {
+      return poolContract.withdraw({ amount: assetAmount, ...receiverOwnerConfig });
+    }
+
+    if (isDefined(shareAmount)) {
+      return poolContract.redeem({ amount: shareAmount, ...receiverOwnerConfig });
+    }
+
+    throw new Error('Invalid pool withdraw');
   }
 
   async poolClaim({

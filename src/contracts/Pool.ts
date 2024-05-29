@@ -59,16 +59,25 @@ export class Pool extends BaseContract<typeof poolABI> {
     return this.contract.read.previewMint([amount]);
   }
 
-  async withdraw({
-    assets,
-    receiver,
-    owner,
-  }: {
-    assets: bigint;
-    receiver: Address;
-    owner: Address;
-  }) {
-    const txHash = await this.safeContractWrite.withdraw([assets, receiver, owner]);
+  async withdraw({ amount, receiver, owner }: { amount: bigint; receiver: Address; owner: Address }) {
+    const txHash = await this.safeContractWrite.withdraw([amount, receiver, owner]);
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+
+        const filter = await this.contract.createEventFilter.Withdraw({});
+        const events = filterLogs(receipt, filter);
+        if (events.length === 0) throw new Error('Withdraw did not go through');
+        return { ...events[0].args, ...receipt };
+      },
+    };
+  }
+
+  async redeem({ amount, receiver, owner }: { amount: bigint; receiver: Address; owner: Address }) {
+    const txHash = await this.safeContractWrite.redeem([amount, receiver, owner]);
     return {
       txHash,
       waitTxInBlock: async () => {
