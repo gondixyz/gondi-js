@@ -34,6 +34,23 @@ export class Pool extends BaseContract<typeof poolABI> {
     };
   }
 
+  async mint({ amount, receiver }: { amount: bigint; receiver: Address }) {
+    const txHash = await this.safeContractWrite.mint([amount, receiver]);
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+
+        const filter = await this.contract.createEventFilter.Deposit({});
+        const events = filterLogs(receipt, filter);
+        if (events.length === 0) throw new Error('Mint did not go through');
+        return { ...events[0].args, ...receipt };
+      },
+    };
+  }
+
   async withdraw({
     assets,
     receiver,

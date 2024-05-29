@@ -1062,6 +1062,19 @@ export class Gondi {
     return poolContract.deposit({ amount, receiver: receiver ?? this.wallet.account.address });
   }
 
+  async poolMint({
+    address,
+    amount,
+    receiver,
+  }: {
+    address: Address;
+    amount: bigint;
+    receiver?: Address;
+  }) {
+    const poolContract = new Pool({ walletClient: this.wallet, address });
+    return poolContract.mint({ amount, receiver: receiver ?? this.wallet.account.address });
+  }
+
   async poolWithdraw({
     address,
     assets,
