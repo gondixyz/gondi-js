@@ -1051,7 +1051,7 @@ export class Gondi {
 
   async poolMintOrDeposit({
     address,
-    amount,
+    assetAmount,
     shareAmount,
     receiver,
   }: {
@@ -1059,11 +1059,11 @@ export class Gondi {
     receiver?: Address;
   } & (
     | {
-        amount: bigint;
+        assetAmount: bigint;
         shareAmount?: never;
       }
     | {
-        amount?: never;
+        assetAmount?: never;
         shareAmount: bigint;
       }
   )) {
@@ -1071,8 +1071,8 @@ export class Gondi {
 
     const finalReceiver = receiver ?? this.wallet.account.address;
 
-    if (isDefined(amount)) {
-      return poolContract.deposit({ amount, receiver: finalReceiver });
+    if (isDefined(assetAmount)) {
+      return poolContract.deposit({ amount: assetAmount, receiver: finalReceiver });
     }
 
     if (isDefined(shareAmount)) {
