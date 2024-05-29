@@ -27,7 +27,7 @@ import {
 import { min } from '@/utils/number';
 import { FULFILLED, REJECTED } from '@/utils/promises';
 import { areSameAddress, NATIVE_MARKETPLACE } from '@/utils/string';
-import { OptionalNullable } from '@/utils/types';
+import { isDefined, OptionalNullable } from '@/utils/types';
 
 export class Gondi {
   contracts: Contracts;
@@ -1049,30 +1049,37 @@ export class Gondi {
     return this.contracts.UserVault(userVaultAddress).burnAndWithdraw(data);
   }
 
-  async poolDeposit({
+  async poolMintOrDeposit({
     address,
     amount,
+    shareAmount,
     receiver,
   }: {
     address: Address;
-    amount: bigint;
     receiver?: Address;
-  }) {
+  } & (
+    | {
+        amount: bigint;
+        shareAmount?: never;
+      }
+    | {
+        amount?: never;
+        shareAmount: bigint;
+      }
+  )) {
     const poolContract = new Pool({ walletClient: this.wallet, address });
-    return poolContract.deposit({ amount, receiver: receiver ?? this.wallet.account.address });
-  }
 
-  async poolMint({
-    address,
-    amount,
-    receiver,
-  }: {
-    address: Address;
-    amount: bigint;
-    receiver?: Address;
-  }) {
-    const poolContract = new Pool({ walletClient: this.wallet, address });
-    return poolContract.mint({ amount, receiver: receiver ?? this.wallet.account.address });
+    const finalReceiver = receiver ?? this.wallet.account.address;
+
+    if (isDefined(amount)) {
+      return poolContract.deposit({ amount, receiver: finalReceiver });
+    }
+
+    if (isDefined(shareAmount)) {
+      return poolContract.mint({ amount: shareAmount, receiver: finalReceiver });
+    }
+
+    throw new Error('Invalid pool deposit');
   }
 
   async poolWithdraw({
