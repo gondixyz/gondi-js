@@ -1130,15 +1130,18 @@ export class Gondi {
 
   async poolClaim({
     address,
-    tokenId,
+    tokenIdsForEachQueue,
     receiver,
   }: {
     address: Address;
-    tokenId: bigint;
+    tokenIdsForEachQueue: Record<Address, bigint[]>;
     receiver?: Address;
   }) {
     const poolContract = new Pool({ walletClient: this.wallet, address });
-    return poolContract.claim({ tokenId, receiver: receiver ?? this.wallet.account.address });
+    return poolContract.claim({
+      tokenIdsForEachQueue,
+      receiver: receiver ?? this.wallet.account.address,
+    });
   }
 }
 

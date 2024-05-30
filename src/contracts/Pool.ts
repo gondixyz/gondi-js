@@ -1,4 +1,4 @@
-import { Address, zeroAddress } from 'viem';
+import { Address } from 'viem';
 
 import { filterLogs } from '@/blockchain';
 import { Wallet } from '@/contracts';
@@ -59,7 +59,15 @@ export class Pool extends BaseContract<typeof poolABI> {
     return this.contract.read.previewMint([amount]);
   }
 
-  async withdraw({ amount, receiver, owner }: { amount: bigint; receiver: Address; owner: Address }) {
+  async withdraw({
+    amount,
+    receiver,
+    owner,
+  }: {
+    amount: bigint;
+    receiver: Address;
+    owner: Address;
+  }) {
     const txHash = await this.safeContractWrite.withdraw([amount, receiver, owner]);
     return {
       txHash,
@@ -93,7 +101,13 @@ export class Pool extends BaseContract<typeof poolABI> {
     };
   }
 
-  async claim({ receiver, tokenId }: { receiver: Address; tokenId: bigint }) {
+  async claim({
+    receiver,
+    tokenIdsForEachQueue,
+  }: {
+    receiver: Address;
+    tokenIdsForEachQueue: Record<Address, bigint[]>;
+  }) {
     const maxQueues = Number(await this.contract.read.getMaxTotalWithdrawalQueues());
     const queueContracts = (
       await Promise.all(
@@ -102,28 +116,32 @@ export class Pool extends BaseContract<typeof poolABI> {
           .map(async (_, i) => await this.contract.read.getDeployedQueue([BigInt(i)])),
       )
     )
-      .filter((queue) => queue.contractAddress !== zeroAddress) // TODO: check this
+      .filter((queue) => queue.contractAddress in tokenIdsForEachQueue)
       .map(
         (queue) =>
           new WithdrawalQueue({
             walletClient: this.wallet,
             address: queue.contractAddress,
           }),
-      )
-      .filter(async (queue) => {
-        const owner = await queue.ownerOf(tokenId);
-        return owner === this.wallet.account.address;
-      })
-      .filter(async (queue) => {
-        const available = await queue.getAvailable(tokenId);
-        return available > 0n;
-      });
+      );
 
     const results = [];
 
     for (const queueContract of queueContracts) {
+      const nfts = (tokenIdsForEachQueue[queueContract.address] ?? [])
+        .filter(async (tokenId) => {
+          const owner = await queueContract.ownerOf(tokenId);
+          return owner == this.wallet.account.address;
+        })
+        .filter(async (tokenId) => {
+          const available = await queueContract.getAvailable(tokenId);
+          return available > 0n;
+        });
+
+      if (nfts.length === 0) continue;
+
       try {
-        const claim = await queueContract.withdraw({ to: receiver, tokenId });
+        const claim = await queueContract.withdrawMany({ to: receiver, tokenIds: nfts });
         results.push({ status: FULFILLED, value: claim });
       } catch (reason) {
         results.push({ status: REJECTED, reason });
