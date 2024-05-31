@@ -19,6 +19,7 @@ const userVaults = async () => {
 
   console.log('Creating vault with nfts...');
   const { vaultId, receipts } = await gondi.createUserVault({
+    userVaultAddress: USER_VAULT_CONTRACT_V5,
     nfts: [
       // Assuming user has same tokenId for collections
       { collection: ANOTHER_COLLECTION, tokenIds: [testTokenId] },
@@ -41,6 +42,7 @@ const userVaults = async () => {
   console.log('Burning and withdrawing nfts...');
 
   const burnTxn = await gondi.burnUserVaultAndWithdraw({
+    userVaultAddress: USER_VAULT_CONTRACT_V5,
     vaultId,
     collections: [ANOTHER_COLLECTION, testCollection.contractAddress],
     tokenIds: [testTokenId, testTokenId],
