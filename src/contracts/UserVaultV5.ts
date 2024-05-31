@@ -2,6 +2,7 @@ import { Address } from 'viem';
 
 import { filterLogs } from '@/blockchain';
 import { Wallet } from '@/contracts';
+import { UserVaultV6 } from '@/contracts/UserVaultV6';
 import { getContracts } from '@/deploys';
 import { userVaultABI as userVaultABIV5 } from '@/generated/blockchain/v5';
 
@@ -30,7 +31,7 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
     oldTokenIds?: bigint[];
     tokenIds: bigint[];
     tokens?: Address[]; // erc20 tokens
-  }) {
+  }): ReturnType<UserVaultV6['burnAndWithdraw']> {
     if (collections.length != tokenIds.length) {
       throw new Error('collections and tokenIds must have the same length');
     }
@@ -53,6 +54,7 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
         if (events.length !== tokenIds.length) throw new Error('Withdrawn count mismatch');
         return {
           events: events.map((event) => event.args),
+          oldEvents: [],
           ...receipt,
         };
       },
