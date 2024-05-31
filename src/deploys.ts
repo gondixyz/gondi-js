@@ -73,7 +73,7 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
         v5:
           ensureAddress(process.env.GONDI_USER_VAULT_V5) ??
           '0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82',
-        v6: '0xTODO',
+        v6: '0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f',
       },
       LeverageAddress:
         ensureAddress(process.env.GONDI_LEVERAGE) ?? '0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0',
