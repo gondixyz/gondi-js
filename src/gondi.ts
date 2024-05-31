@@ -1022,7 +1022,7 @@ export class Gondi {
 
   async createUserVault({
     nfts,
-    userVaultAddress = this.contracts.UserVaultV5.address,
+    userVaultAddress = this.contracts.UserVaultV6.address,
   }: {
     nfts: Parameters<Contracts['UserVaultV5']['createVault']>[0];
     userVaultAddress?: Address;
@@ -1031,7 +1031,7 @@ export class Gondi {
   }
 
   async depositUserVaultERC721s({
-    userVaultAddress = this.contracts.UserVaultV5.address,
+    userVaultAddress = this.contracts.UserVaultV6.address,
     ...data
   }: {
     userVaultAddress?: Address;
@@ -1039,8 +1039,17 @@ export class Gondi {
     return this.contracts.UserVault(userVaultAddress).depositERC721s(data);
   }
 
+  async depositUserVaultOldERC721s({
+    userVaultAddress = this.contracts.UserVaultV6.address,
+    ...data
+  }: {
+    userVaultAddress?: Address;
+  } & Parameters<Contracts['UserVaultV6']['depositERC721s']>[0]) {
+    return this.contracts.UserVault(userVaultAddress).depositOldERC721s(data);
+  }
+
   async burnUserVaultAndWithdraw({
-    userVaultAddress = this.contracts.UserVaultV5.address,
+    userVaultAddress = this.contracts.UserVaultV6.address,
     ...data
   }: {
     userVaultAddress?: Address;

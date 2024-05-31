@@ -22,15 +22,15 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
     vaultId,
     collections,
     tokenIds,
-    oldCollections,
-    oldTokenIds,
+    oldCollections = [],
+    oldTokenIds = [],
     tokens = [],
   }: {
     vaultId: bigint;
     collections: Address[];
     tokenIds: bigint[];
-    oldCollections: Address[];
-    oldTokenIds: bigint[];
+    oldCollections?: Address[];
+    oldTokenIds?: bigint[];
     tokens?: Address[]; // erc20 tokens
   }) {
     if (collections.length != tokenIds.length) {
@@ -70,7 +70,7 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
     };
   }
 
-  async createVault(nfts: { collection: Address; tokenIds: bigint[]; isOldErc721: boolean }[]) {
+  async createVault(nfts: { collection: Address; tokenIds: bigint[]; isOldErc721?: boolean }[]) {
     const { id: vaultId } = await this.#mintVault();
     const receipts = [];
 

@@ -26,6 +26,8 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
   }: {
     vaultId: bigint;
     collections: Address[];
+    oldCollections?: Address[];
+    oldTokenIds?: bigint[];
     tokenIds: bigint[];
     tokens?: Address[]; // erc20 tokens
   }) {
@@ -57,7 +59,7 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
     };
   }
 
-  async createVault(nfts: { collection: Address; tokenIds: bigint[] }[]) {
+  async createVault(nfts: { collection: Address; tokenIds: bigint[]; isOldErc721?: boolean }[]) {
     const { id: vaultId } = await this.#mintVault();
     const receipts = [];
 
@@ -110,6 +112,10 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
         return { ...events[0].args, ...receipt };
       },
     };
+  }
+
+  async depositOldERC721s() {
+    throw new Error('Not implemented');
   }
 
   async #mintVault() {
