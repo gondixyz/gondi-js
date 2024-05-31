@@ -950,6 +950,33 @@ export class Gondi {
     return erc721.read.isApprovedForAll([this.wallet.account?.address, to]);
   }
 
+  async isApprovedNFT({
+    nftAddress,
+    isOldErc721,
+    tokenId,
+    to = this.contracts.MultiSourceLoanV5.address,
+  }: // TODO: Uncomment me when v3 is released
+  // to = this.contracts.MultiSourceLoanV6.address,
+  {
+    nftAddress: Address;
+    to?: Address;
+  } & (
+    | {
+        isOldErc721: true;
+        tokenId: bigint;
+      }
+    | {
+        isOldErc721?: never;
+        tokenId?: never;
+      }
+  )) {
+    if (isOldErc721) {
+      const erc721 = this.contracts.OldERC721(nftAddress);
+      return erc721.read.approvedFor([tokenId]);
+    }
+    return this.isApprovedNFTForAll({ nftAddress, to });
+  }
+
   async approveNFTForAll({
     nftAddress,
     to = this.contracts.MultiSourceLoanV5.address,
@@ -975,6 +1002,46 @@ export class Gondi {
         return { ...events[0].args, ...receipt };
       },
     };
+  }
+
+  async approveNFT({
+    nftAddress,
+    isOldErc721,
+    tokenId,
+    to = this.contracts.MultiSourceLoanV5.address,
+  }: // TODO: Uncomment me when v3 is released
+  // to = this.contracts.MultiSourceLoanV6.address,
+  {
+    nftAddress: Address;
+    to?: Address;
+  } & (
+    | {
+        isOldErc721: true;
+        tokenId: bigint;
+      }
+    | {
+        isOldErc721?: never;
+        tokenId?: never;
+      }
+  )) {
+    if (isOldErc721) {
+      const erc721 = this.contracts.OldERC721(nftAddress);
+      const txHash = await erc721.write.approve([to, tokenId]);
+
+      return {
+        txHash,
+        waitTxInBlock: async () => {
+          const receipt = await this.bcClient.waitForTransactionReceipt({
+            hash: txHash,
+          });
+          const filter = await erc721.createEventFilter.Approval({});
+          const events = filterLogs(receipt, filter);
+          if (events.length === 0) throw new Error('ERC721 approval not set');
+          return { ...events[0].args, ...receipt };
+        },
+      };
+    }
+    return this.approveNFTForAll({ nftAddress, to });
   }
 
   async isApprovedToken({

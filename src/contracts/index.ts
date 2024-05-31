@@ -9,6 +9,7 @@ import {
   WalletClient,
 } from 'viem';
 
+import { oldErc721Abi } from '@/generated/blockchain/oldErc721';
 import { erc20ABI, erc721ABI } from '@/generated/blockchain/v5';
 import { areSameAddress } from '@/utils/string';
 
@@ -110,6 +111,17 @@ export class Contracts {
     return getContract({
       address: nftAddress,
       abi: erc721ABI,
+      walletClient: this.walletClient,
+      publicClient: this.publicClient,
+    });
+  }
+
+  OldERC721(
+    nftAddress: Address,
+  ): GetContractReturnType<typeof oldErc721Abi, PublicClient, Wallet, Address> {
+    return getContract({
+      address: nftAddress,
+      abi: oldErc721Abi,
       walletClient: this.walletClient,
       publicClient: this.publicClient,
     });
