@@ -972,7 +972,7 @@ export class Gondi {
   )) {
     if (isOldErc721) {
       const erc721 = this.contracts.OldERC721(nftAddress);
-      return erc721.read.approvedFor([tokenId]);
+      return areSameAddress(await erc721.read.approvedFor([tokenId]), to);
     }
     return this.isApprovedNFTForAll({ nftAddress, to });
   }
