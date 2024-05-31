@@ -7,13 +7,13 @@ import { userVaultABI as userVaultABIV5 } from '@/generated/blockchain/v5';
 
 import { BaseContract } from './BaseContract';
 
-export class UserVault extends BaseContract<typeof userVaultABIV5> {
+export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
   constructor({ walletClient }: { walletClient: Wallet }) {
     const { UserVault } = getContracts(walletClient.chain);
 
     super({
       walletClient,
-      address: UserVault,
+      address: UserVault.v5,
       abi: userVaultABIV5,
     });
   }
