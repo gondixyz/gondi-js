@@ -128,15 +128,17 @@ export class Pool extends BaseContract<typeof poolABI> {
     const results = [];
 
     for (const queueContract of queueContracts) {
-      const nfts = (tokenIdsForEachQueue[queueContract.address] ?? [])
-        .filter(async (tokenId) => {
-          const owner = await queueContract.ownerOf(tokenId);
-          return owner == this.wallet.account.address;
-        })
-        .filter(async (tokenId) => {
-          const available = await queueContract.getAvailable(tokenId);
-          return available > 0n;
-        });
+      const nfts = (
+        await Promise.all(
+          (tokenIdsForEachQueue[queueContract.address] ?? []).map(async (tokenId) => {
+            const owner = await queueContract.ownerOf(tokenId);
+            const available = await queueContract.getAvailable(tokenId);
+            return [tokenId, owner == this.wallet.account.address && available > 0n] as const;
+          }),
+        )
+      )
+        .filter(([, isOwnerAndAvailable]) => isOwnerAndAvailable)
+        .map(([tokenId]) => tokenId);
 
       if (nfts.length === 0) continue;
 
