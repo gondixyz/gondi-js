@@ -2,16 +2,16 @@ import { Address, encodeFunctionData } from 'viem';
 
 import { filterLogs } from '@/blockchain';
 import { Wallet } from '@/contracts';
-import { withdrawalQueueABI } from '@/generated/blockchain/withdrawal_queue';
+import { withdrawalQueueAbi } from '@/generated/blockchain/v6';
 
 import { BaseContract } from './BaseContract';
 
-export class WithdrawalQueue extends BaseContract<typeof withdrawalQueueABI> {
+export class WithdrawalQueue extends BaseContract<typeof withdrawalQueueAbi> {
   constructor({ walletClient, address }: { walletClient: Wallet; address: Address }) {
     super({
       walletClient,
       address,
-      abi: withdrawalQueueABI,
+      abi: withdrawalQueueAbi,
     });
   }
 
@@ -49,7 +49,7 @@ export class WithdrawalQueue extends BaseContract<typeof withdrawalQueueABI> {
     const txHash = await this.safeContractWrite.multicall([
       tokenIds.map((tokenId) =>
         encodeFunctionData({
-          abi: withdrawalQueueABI,
+          abi: withdrawalQueueAbi,
           functionName: 'withdraw',
           args: [to, tokenId],
         }),

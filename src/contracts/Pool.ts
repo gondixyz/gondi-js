@@ -3,17 +3,17 @@ import { Address } from 'viem';
 import { filterLogs } from '@/blockchain';
 import { Wallet } from '@/contracts';
 import { WithdrawalQueue } from '@/contracts/WithdrawalQueue';
-import { poolABI } from '@/generated/blockchain/pool';
+import { poolAbi } from '@/generated/blockchain/v6';
 import { FULFILLED, REJECTED } from '@/utils/promises';
 
 import { BaseContract } from './BaseContract';
 
-export class Pool extends BaseContract<typeof poolABI> {
+export class Pool extends BaseContract<typeof poolAbi> {
   constructor({ walletClient, address }: { walletClient: Wallet; address: Address }) {
     super({
       walletClient,
       address,
-      abi: poolABI,
+      abi: poolAbi,
     });
   }
 
