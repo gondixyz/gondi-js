@@ -9,6 +9,7 @@ import {
   WalletClient,
 } from 'viem';
 
+import { oldErc721Abi } from '@/generated/blockchain/oldErc721';
 import { erc20ABI, erc721ABI } from '@/generated/blockchain/v5';
 import { areSameAddress } from '@/utils/string';
 
@@ -21,7 +22,8 @@ import { MslV4 } from './MslV4';
 import { MslV5 } from './MslV5';
 import { MslV6 } from './MslV6';
 import { Seaport } from './Seaport';
-import { UserVault } from './UserVault';
+import { UserVaultV5 } from './UserVaultV5';
+import { UserVaultV6 } from './UserVaultV6';
 
 export type Wallet = WalletClient<Transport, Chain, Account>;
 
@@ -35,7 +37,8 @@ export class Contracts {
   AuctionLoanLiquidatorV4: AllV4;
   AuctionLoanLiquidatorV5: AllV5;
   AuctionLoanLiquidatorV6: AllV6;
-  UserVaultV5: UserVault;
+  UserVaultV5: UserVaultV5;
+  UserVaultV6: UserVaultV6;
   Leverage: LeverageV5;
   Seaport: Seaport;
   CryptoPunks: CryptoPunks;
@@ -50,7 +53,8 @@ export class Contracts {
     this.AuctionLoanLiquidatorV4 = new AllV4({ walletClient });
     this.AuctionLoanLiquidatorV5 = new AllV5({ walletClient });
     this.AuctionLoanLiquidatorV6 = new AllV6({ walletClient });
-    this.UserVaultV5 = new UserVault({ walletClient });
+    this.UserVaultV5 = new UserVaultV5({ walletClient });
+    this.UserVaultV6 = new UserVaultV6({ walletClient });
     this.Leverage = new LeverageV5({
       walletClient,
       mslAddress: this.MultiSourceLoanV5.address,
@@ -94,6 +98,10 @@ export class Contracts {
     if (areSameAddress(contractAddress, this.UserVaultV5.address)) {
       return this.UserVaultV5;
     }
+    if (areSameAddress(contractAddress, this.UserVaultV6.address)) {
+      return this.UserVaultV6;
+    }
+
     throw new Error(`Invalid Contract Address ${contractAddress}`);
   }
 
@@ -103,6 +111,17 @@ export class Contracts {
     return getContract({
       address: nftAddress,
       abi: erc721ABI,
+      walletClient: this.walletClient,
+      publicClient: this.publicClient,
+    });
+  }
+
+  OldERC721(
+    nftAddress: Address,
+  ): GetContractReturnType<typeof oldErc721Abi, PublicClient, Wallet, Address> {
+    return getContract({
+      address: nftAddress,
+      abi: oldErc721Abi,
       walletClient: this.walletClient,
       publicClient: this.publicClient,
     });

@@ -14,7 +14,10 @@ interface Contracts {
     v5: Address;
     v6: Address;
   };
-  UserVault: Address;
+  UserVault: {
+    v5: Address;
+    v6: Address;
+  };
   LeverageAddress: Address;
   SeaportAddress: Address;
   CryptoPunksAddress: Address;
@@ -66,9 +69,14 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
           ensureAddress(process.env.GONDI_AUCTION_LOAN_LIQUIDATOR_V6) ??
           '0xc6e7DF5E7b4f2A278906862b61205850344D4e7d',
       },
-      UserVault:
-        ensureAddress(process.env.GONDI_USER_VAULT_V5) ??
-        '0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82',
+      UserVault: {
+        v5:
+          ensureAddress(process.env.GONDI_USER_VAULT_V5) ??
+          '0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82',
+        v6:
+          ensureAddress(process.env.GONDI_USER_VAULT_V6) ??
+          '0x4A679253410272dd5232B3Ff7cF5dbB88f295319',
+      },
       LeverageAddress:
         ensureAddress(process.env.GONDI_LEVERAGE) ?? '0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0',
       SeaportAddress:
@@ -90,7 +98,10 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
         v5: '0xTODO', // TODO: deploy
         v6: '0xTODO', // TODO: deploy
       },
-      UserVault: '0xTODO', // TODO: deploy
+      UserVault: {
+        v5: '0xTODO',
+        v6: '0xTODO',
+      },
       LeverageAddress: '0xTODO', // TODO: deploy
       SeaportAddress: '0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC',
       CryptoPunksAddress: '0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb',
@@ -108,7 +119,10 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
       v5: '0x97d34635b605c2f1630d6b4c6c5d222b8a2ca47d',
       v6: '0xTODO', // TODO: deploy
     },
-    UserVault: '0x14a6Dcebb2Bb73aae1b199CCAadA75247b81976D',
+    UserVault: {
+      v5: '0x14a6Dcebb2Bb73aae1b199CCAadA75247b81976D',
+      v6: '0xC9f152168BC7b75F76b74e1f382F90bC2FeDd15f',
+    },
     LeverageAddress: '0x87Ce6e8124fFd68fa721FcC7f35fdA14A11E233e',
     SeaportAddress: '0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC',
     CryptoPunksAddress: '0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb',
