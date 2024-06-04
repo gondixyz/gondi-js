@@ -5,6 +5,7 @@ import { Wallet } from '@/contracts';
 import { WithdrawalQueue } from '@/contracts/WithdrawalQueue';
 import { poolAbi } from '@/generated/blockchain/v6';
 import { FULFILLED, REJECTED } from '@/utils/promises';
+import { areSameAddress } from '@/utils/string';
 
 import { BaseContract } from './BaseContract';
 
@@ -108,47 +109,48 @@ export class Pool extends BaseContract<typeof poolAbi> {
     receiver: Address;
     tokenIdsForEachQueue: Record<Address, bigint[]>;
   }) {
-    const maxQueues = Number(await this.contract.read.getMaxTotalWithdrawalQueues());
-    const queueContracts = (
-      await Promise.all(
-        new Array(maxQueues)
-          .fill(0)
-          .map(async (_, i) => await this.contract.read.getDeployedQueue([BigInt(i)])),
-      )
-    )
-      .filter((queue) => queue.contractAddress in tokenIdsForEachQueue)
-      .map(
-        (queue) =>
-          new WithdrawalQueue({
-            walletClient: this.wallet,
-            address: queue.contractAddress,
-          }),
-      );
-
+    const queueContracts = (await this.getDeployedQueues()).filter(
+      (queue) => queue.address in tokenIdsForEachQueue,
+    );
     const results = [];
 
     for (const queueContract of queueContracts) {
-      const nfts = (
-        await Promise.all(
-          (tokenIdsForEachQueue[queueContract.address] ?? []).map(async (tokenId) => {
-            const owner = await queueContract.ownerOf(tokenId);
-            const available = await queueContract.getAvailable(tokenId);
-            return [tokenId, owner == this.wallet.account.address && available > 0n] as const;
-          }),
-        )
-      )
-        .filter(([, isOwnerAndAvailable]) => isOwnerAndAvailable)
-        .map(([tokenId]) => tokenId);
+      const tokenIds: bigint[] = [];
 
-      if (nfts.length === 0) continue;
+      for (const tokenId of tokenIdsForEachQueue[queueContract.address] ?? []) {
+        const owner = await queueContract.ownerOf(tokenId);
+        const available = await queueContract.getAvailable(tokenId);
+        if (areSameAddress(owner, this.wallet.account.address) && available > 0n) {
+          tokenIds.push(tokenId);
+        }
+      }
+
+      if (tokenIds.length === 0) continue;
 
       try {
-        const claim = await queueContract.withdrawMany({ to: receiver, tokenIds: nfts });
+        const claim = await queueContract.withdrawMany({ to: receiver, tokenIds });
         results.push({ status: FULFILLED, value: claim });
       } catch (reason) {
         results.push({ status: REJECTED, reason });
       }
     }
     return results;
+  }
+
+  async getDeployedQueues() {
+    const maxQueues = Number(await this.contract.read.getMaxTotalWithdrawalQueues());
+    return (
+      await Promise.all(
+        new Array(maxQueues)
+          .fill(0)
+          .map(async (_, i) => await this.contract.read.getDeployedQueue([BigInt(i)])),
+      )
+    ).map(
+      (queue) =>
+        new WithdrawalQueue({
+          walletClient: this.wallet,
+          address: queue.contractAddress,
+        }),
+    );
   }
 }
