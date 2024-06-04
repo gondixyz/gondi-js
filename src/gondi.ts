@@ -972,7 +972,8 @@ export class Gondi {
   )) {
     if (isOldErc721) {
       const erc721 = this.contracts.OldERC721(nftAddress);
-      return areSameAddress(await erc721.read.approvedFor([tokenId]), to);
+      const tokenApprovedFor = await erc721.read.approvedFor([tokenId]);
+      return areSameAddress(tokenApprovedFor, to);
     }
     return this.isApprovedNFTForAll({ nftAddress, to });
   }
@@ -1089,7 +1090,9 @@ export class Gondi {
 
   async createUserVault({
     nfts,
-    userVaultAddress = this.contracts.UserVaultV6.address,
+    userVaultAddress = this.contracts.UserVaultV5.address,
+    // TODO: uncomment when we realease v6
+    // userVaultAddress = this.contracts.UserVaultV6.address,
   }: {
     nfts: Parameters<Contracts['UserVaultV5']['createVault']>[0];
     userVaultAddress?: Address;
@@ -1098,7 +1101,9 @@ export class Gondi {
   }
 
   async depositUserVaultERC721s({
-    userVaultAddress = this.contracts.UserVaultV6.address,
+    userVaultAddress = this.contracts.UserVaultV5.address,
+    // TODO: uncomment when we realease v6
+    // userVaultAddress = this.contracts.UserVaultV6.address,
     ...data
   }: {
     userVaultAddress?: Address;
@@ -1107,7 +1112,9 @@ export class Gondi {
   }
 
   async depositUserVaultOldERC721s({
-    userVaultAddress = this.contracts.UserVaultV6.address,
+    userVaultAddress = this.contracts.UserVaultV5.address,
+    // TODO: uncomment when we realease v6
+    // userVaultAddress = this.contracts.UserVaultV6.address,
     ...data
   }: {
     userVaultAddress?: Address;
@@ -1116,7 +1123,9 @@ export class Gondi {
   }
 
   async burnUserVaultAndWithdraw({
-    userVaultAddress = this.contracts.UserVaultV6.address,
+    userVaultAddress = this.contracts.UserVaultV5.address,
+    // TODO: uncomment when we realease v6
+    // userVaultAddress = this.contracts.UserVaultV6.address,
     ...data
   }: {
     userVaultAddress?: Address;

@@ -24,14 +24,7 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
     collections,
     tokenIds,
     tokens = [],
-  }: {
-    vaultId: bigint;
-    collections: Address[];
-    oldCollections?: Address[];
-    oldTokenIds?: bigint[];
-    tokenIds: bigint[];
-    tokens?: Address[]; // erc20 tokens
-  }): ReturnType<UserVaultV6['burnAndWithdraw']> {
+  }: Parameters<UserVaultV6['burnAndWithdraw']>[0]): ReturnType<UserVaultV6['burnAndWithdraw']> {
     if (collections.length != tokenIds.length) {
       throw new Error('collections and tokenIds must have the same length');
     }
@@ -60,28 +53,24 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
       },
     };
   }
-
-  async createVault(nfts: { collection: Address; tokenIds: bigint[]; isOldErc721?: boolean }[]) {
+  async createVault(nfts: Parameters<UserVaultV6['createVault']>[0]) {
     const { id: vaultId } = await this.#mintVault();
     const receipts = [];
 
     // Regroup all elements in the same collection in case users send tokenIds as separate elements of the array
     const groupedNfts = nfts.reduce(
-      (acc, curr) => {
-        const { collection, tokenIds } = curr;
-        const index = acc.findIndex((element) => element.collection === collection);
-        if (index === -1) {
-          acc.push({ collection, tokenIds });
+      (acc, { collection, tokenIds }) => {
+        if (acc[collection]) {
+          acc[collection].tokenIds = [...acc[collection].tokenIds, ...tokenIds];
         } else {
-          acc[index].tokenIds = [...acc[index].tokenIds, ...tokenIds];
+          acc[collection] = { collection, tokenIds };
         }
         return acc;
       },
-      [] as typeof nfts,
+      {} as Record<Address, (typeof nfts)[number]>,
     );
 
-    for (let i = 0; i < groupedNfts.length; i++) {
-      const { collection, tokenIds } = groupedNfts[i];
+    for (const { collection, tokenIds } of Object.values(groupedNfts)) {
       const deposit = await this.depositERC721s({ vaultId, collection, tokenIds });
       const receipt = await deposit.waitTxInBlock();
       receipts.push(receipt);
@@ -94,11 +83,7 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
     vaultId,
     collection,
     tokenIds,
-  }: {
-    vaultId: bigint;
-    collection: Address;
-    tokenIds: bigint[];
-  }) {
+  }: Parameters<UserVaultV6['depositERC721s']>[0]) {
     const txHash = await this.safeContractWrite.depositERC721s([vaultId, collection, tokenIds]);
 
     return {
