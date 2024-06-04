@@ -91,9 +91,8 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
 
     for (let i = 0; i < groupedNfts.length; i++) {
       const { collection, tokenIds, isOldErc721 } = groupedNfts[i];
-      const deposit = isOldErc721
-        ? await this.depositOldERC721s({ vaultId, collection, tokenIds })
-        : await this.depositERC721s({ vaultId, collection, tokenIds });
+      const depositMethod = isOldErc721 ? this.depositOldERC721s : this.depositERC721s;
+      const deposit = await depositMethod({ vaultId, collection, tokenIds });
       const receipt = await deposit.waitTxInBlock();
       receipts.push(receipt);
     }
