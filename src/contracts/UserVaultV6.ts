@@ -76,21 +76,18 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
 
     // Regroup all elements in the same collection in case users send tokenIds as separate elements of the array
     const groupedNfts = nfts.reduce(
-      (acc, curr) => {
-        const { collection, tokenIds, isOldErc721 } = curr;
-        const index = acc.findIndex((element) => element.collection === collection);
-        if (index === -1) {
-          acc.push({ collection, tokenIds, isOldErc721 });
+      (acc, { collection, tokenIds, isOldErc721 }) => {
+        if (acc[collection]) {
+          acc[collection].tokenIds = [...acc[collection].tokenIds, ...tokenIds];
         } else {
-          acc[index].tokenIds = [...acc[index].tokenIds, ...tokenIds];
+          acc[collection] = { collection, tokenIds, isOldErc721 };
         }
         return acc;
       },
-      [] as typeof nfts,
+      {} as Record<Address, (typeof nfts)[number]>,
     );
 
-    for (let i = 0; i < groupedNfts.length; i++) {
-      const { collection, tokenIds, isOldErc721 } = groupedNfts[i];
+    for (const { collection, tokenIds, isOldErc721 } of Object.values(groupedNfts)) {
       const depositMethod = isOldErc721 ? this.depositOldERC721s : this.depositERC721s;
       const deposit = await depositMethod({ vaultId, collection, tokenIds });
       const receipt = await deposit.waitTxInBlock();
