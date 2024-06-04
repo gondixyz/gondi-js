@@ -75,21 +75,19 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
     const receipts = [];
 
     // Regroup all elements in the same collection in case users send tokenIds as separate elements of the array
-    const groupedNfts = nfts.reduce(
-      (acc, { collection, tokenIds, isOldErc721 }) => {
-        if (acc[collection]) {
-          acc[collection].tokenIds = [...acc[collection].tokenIds, ...tokenIds];
-        } else {
-          acc[collection] = { collection, tokenIds, isOldErc721 };
-        }
-        return acc;
-      },
-      {} as Record<Address, (typeof nfts)[number]>,
-    );
+    const groupedNfts: Record<Address, (typeof nfts)[number]> = {};
+    for (const { collection, tokenIds, isOldErc721 } of nfts) {
+      if (groupedNfts[collection]) {
+        groupedNfts[collection].tokenIds.push(...tokenIds);
+      } else {
+        groupedNfts[collection] = { collection, tokenIds: [...tokenIds], isOldErc721 };
+      }
+    }
 
     for (const { collection, tokenIds, isOldErc721 } of Object.values(groupedNfts)) {
-      const depositMethod = isOldErc721 ? this.depositOldERC721s : this.depositERC721s;
-      const deposit = await depositMethod({ vaultId, collection, tokenIds });
+      const deposit = isOldErc721
+        ? await this.depositOldERC721s({ vaultId, collection, tokenIds })
+        : await this.depositERC721s({ vaultId, collection, tokenIds });
       const receipt = await deposit.waitTxInBlock();
       receipts.push(receipt);
     }
