@@ -319,6 +319,10 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
     return lockupTimeSeconds - ellapsedSeconds;
   }
 
+  isEndLockedUp() {
+    return false;
+  }
+
   async refinanceBatch({
     renegotiationId,
     refinancings,
