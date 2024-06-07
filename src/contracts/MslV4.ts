@@ -239,6 +239,10 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
     return 0;
   }
 
+  isEndLockedUp() {
+    return false;
+  }
+
   async refinanceBatch({
     renegotiationId,
     refinancings,
