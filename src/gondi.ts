@@ -680,25 +680,6 @@ export class Gondi {
     });
   }
 
-  async mergeTranches({
-    loan,
-    loanId,
-    minTranche,
-    maxTranche,
-  }: {
-    loan: LoanToMslLoanType;
-    loanId: bigint;
-    minTranche: bigint;
-    maxTranche: bigint;
-  }) {
-    return this.contracts.Msl(loan.contractAddress).mergeTranches({
-      loan: loanToMslLoan(loan),
-      loanId,
-      minTranche,
-      maxTranche,
-    });
-  }
-
   async addTranche({
     offer,
     loan,

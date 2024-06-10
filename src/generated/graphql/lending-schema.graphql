@@ -494,7 +494,6 @@ enum LoanActivityType {
   LOAN_REFINANCED_FROM_OFFERS
   LOAN_REPAID
   LOAN_SENT_TO_AUCTION
-  LOAN_TRANCHES_MERGED
 }
 
 type LoanAuctioned implements LoanActivity & Node {
@@ -688,18 +687,6 @@ enum LoanStatusType {
   LOAN_INITIATED
   LOAN_REPAID
   LOAN_SENT_TO_AUCTION
-}
-
-type LoanTranchesMerged implements LoanActivity & Node {
-  id: String!
-  indexInBlock: Int!
-  loan: Loan!
-  loanId: String!
-  maxTrancheIndex: Int!
-  minTrancheIndex: Int!
-  multiSourceLoanHistory: MultiSourceLoanHistory
-  timestamp: DateTime!
-  txHash: Hash!
 }
 
 type LoansData {
