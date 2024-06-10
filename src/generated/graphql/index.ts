@@ -602,8 +602,7 @@ export enum LoanActivityType {
   LoanRefinanced = 'LOAN_REFINANCED',
   LoanRefinancedFromOffers = 'LOAN_REFINANCED_FROM_OFFERS',
   LoanRepaid = 'LOAN_REPAID',
-  LoanSentToAuction = 'LOAN_SENT_TO_AUCTION',
-  LoanTranchesMerged = 'LOAN_TRANCHES_MERGED'
+  LoanSentToAuction = 'LOAN_SENT_TO_AUCTION'
 }
 
 export type LoanAuctioned = LoanActivity & Node & {
@@ -813,19 +812,6 @@ export enum LoanStatusType {
   LoanRepaid = 'LOAN_REPAID',
   LoanSentToAuction = 'LOAN_SENT_TO_AUCTION'
 }
-
-export type LoanTranchesMerged = LoanActivity & Node & {
-  __typename?: 'LoanTranchesMerged';
-  id: Scalars['String'];
-  indexInBlock: Scalars['Int'];
-  loan: Loan;
-  loanId: Scalars['String'];
-  maxTrancheIndex: Scalars['Int'];
-  minTrancheIndex: Scalars['Int'];
-  multiSourceLoanHistory?: Maybe<MultiSourceLoanHistory>;
-  timestamp: Scalars['DateTime'];
-  txHash: Scalars['Hash'];
-};
 
 export type LoansData = {
   __typename?: 'LoansData';
@@ -3010,18 +2996,6 @@ export type LoanSentToAuctionFieldPolicy = {
 	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
 	txHash?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type LoanTranchesMergedKeySpecifier = ('id' | 'indexInBlock' | 'loan' | 'loanId' | 'maxTrancheIndex' | 'minTrancheIndex' | 'multiSourceLoanHistory' | 'timestamp' | 'txHash' | LoanTranchesMergedKeySpecifier)[];
-export type LoanTranchesMergedFieldPolicy = {
-	id?: FieldPolicy<any> | FieldReadFunction<any>,
-	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
-	loan?: FieldPolicy<any> | FieldReadFunction<any>,
-	loanId?: FieldPolicy<any> | FieldReadFunction<any>,
-	maxTrancheIndex?: FieldPolicy<any> | FieldReadFunction<any>,
-	minTrancheIndex?: FieldPolicy<any> | FieldReadFunction<any>,
-	multiSourceLoanHistory?: FieldPolicy<any> | FieldReadFunction<any>,
-	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
-	txHash?: FieldPolicy<any> | FieldReadFunction<any>
-};
 export type LoansDataKeySpecifier = ('maxAprBps' | 'maxPrincipalAmount' | 'maxRemainingTime' | 'minAprBps' | 'minPrincipalAmount' | 'minRemainingTime' | LoansDataKeySpecifier)[];
 export type LoansDataFieldPolicy = {
 	maxAprBps?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3881,10 +3855,6 @@ export type StrictTypedTypePolicies = {
 	LoanSentToAuction?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | LoanSentToAuctionKeySpecifier | (() => undefined | LoanSentToAuctionKeySpecifier),
 		fields?: LoanSentToAuctionFieldPolicy,
-	},
-	LoanTranchesMerged?: Omit<TypePolicy, "fields" | "keyFields"> & {
-		keyFields?: false | LoanTranchesMergedKeySpecifier | (() => undefined | LoanTranchesMergedKeySpecifier),
-		fields?: LoanTranchesMergedFieldPolicy,
 	},
 	LoansData?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | LoansDataKeySpecifier | (() => undefined | LoansDataKeySpecifier),

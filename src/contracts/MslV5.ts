@@ -483,10 +483,6 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
     };
   }
 
-  async mergeTranches(): ReturnType<MslV6['mergeTranches']> {
-    throw new Error('Not implemented for V2');
-  }
-
   async addTranche(): ReturnType<MslV6['addTranche']> {
     throw new Error('Not implemented for V2');
   }

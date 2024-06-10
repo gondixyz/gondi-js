@@ -118,13 +118,6 @@
       "type": "node-terminal"
     },
     {
-      "name": "merge tranches",
-      "request": "launch",
-      "cwd": "${workspaceFolder}/examples",
-      "command": "yarn run-test mergeTranches.ts",
-      "type": "node-terminal"
-    },
-    {
       "name": "refinance batch",
       "request": "launch",
       "cwd": "${workspaceFolder}/examples",
