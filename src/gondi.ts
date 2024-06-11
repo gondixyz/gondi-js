@@ -12,6 +12,7 @@ import {
 import { Api, Props as ApiProps } from '@/api';
 import { Auction, filterLogs, LoanV5, OfferV5, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Contracts, Wallet } from '@/contracts';
+import { Pool } from '@/contracts/Pool';
 import { getCurrencies } from '@/deploys';
 import { MarketplaceEnum, OffersSortField, Ordering } from '@/generated/graphql';
 import * as model from '@/model';
@@ -26,7 +27,7 @@ import {
 import { min } from '@/utils/number';
 import { FULFILLED, REJECTED } from '@/utils/promises';
 import { areSameAddress, NATIVE_MARKETPLACE } from '@/utils/string';
-import { OptionalNullable } from '@/utils/types';
+import { isDefined, OptionalNullable } from '@/utils/types';
 
 export class Gondi {
   contracts: Contracts;
@@ -1118,6 +1119,101 @@ export class Gondi {
     userVaultAddress?: Address;
   } & Parameters<Contracts['UserVaultV5']['burnAndWithdraw']>[0]) {
     return this.contracts.UserVault(userVaultAddress).burnAndWithdraw(data);
+  }
+
+  async poolMintOrDeposit({
+    address,
+    assetAmount,
+    shareAmount,
+    receiver,
+  }: {
+    address: Address;
+    receiver?: Address;
+  } & (
+    | {
+        assetAmount: bigint;
+        shareAmount?: never;
+      }
+    | {
+        assetAmount?: never;
+        shareAmount: bigint;
+      }
+  )) {
+    const poolContract = new Pool({ walletClient: this.wallet, address });
+
+    const finalReceiver = receiver ?? this.wallet.account.address;
+
+    if (isDefined(assetAmount)) {
+      return poolContract.deposit({ amount: assetAmount, receiver: finalReceiver });
+    }
+
+    if (isDefined(shareAmount)) {
+      return poolContract.mint({ amount: shareAmount, receiver: finalReceiver });
+    }
+
+    throw new Error('Invalid pool deposit');
+  }
+
+  async poolPreviewDeposit({ address, amount }: { address: Address; amount: bigint }) {
+    return new Pool({ walletClient: this.wallet, address }).previewDeposit({ amount });
+  }
+
+  async poolPreviewMint({ address, amount }: { address: Address; amount: bigint }) {
+    return new Pool({ walletClient: this.wallet, address }).previewMint({ amount });
+  }
+
+  async poolWithdrawOrRedeem({
+    address,
+    assetAmount,
+    shareAmount,
+    receiver,
+    owner,
+  }: {
+    address: Address;
+    receiver?: Address;
+    owner?: Address;
+  } & (
+    | {
+        assetAmount: bigint;
+        shareAmount?: never;
+      }
+    | {
+        assetAmount?: never;
+        shareAmount: bigint;
+      }
+  )) {
+    const poolContract = new Pool({ walletClient: this.wallet, address });
+
+    const receiverOwnerConfig = {
+      receiver: receiver ?? this.wallet.account.address,
+      owner: owner ?? this.wallet.account.address,
+    };
+
+    if (isDefined(assetAmount)) {
+      return poolContract.withdraw({ amount: assetAmount, ...receiverOwnerConfig });
+    }
+
+    if (isDefined(shareAmount)) {
+      return poolContract.redeem({ amount: shareAmount, ...receiverOwnerConfig });
+    }
+
+    throw new Error('Invalid pool withdraw');
+  }
+
+  async poolClaim({
+    address,
+    tokenIdsForEachQueue,
+    receiver,
+  }: {
+    address: Address;
+    tokenIdsForEachQueue: Record<Address, bigint[]>;
+    receiver?: Address;
+  }) {
+    const poolContract = new Pool({ walletClient: this.wallet, address });
+    return poolContract.claim({
+      tokenIdsForEachQueue,
+      receiver: receiver ?? this.wallet.account.address,
+    });
   }
 }
 
