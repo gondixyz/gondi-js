@@ -104,20 +104,20 @@ export class Pool extends BaseContract<typeof poolAbi> {
 
   async claim({
     receiver,
-    tokenIdsForEachQueue,
+    queueTokenIds,
   }: {
     receiver: Address;
-    tokenIdsForEachQueue: Record<Address, bigint[]>;
+    queueTokenIds: Record<Address, bigint[]>;
   }) {
     const queueContracts = (await this.getDeployedQueues()).filter(
-      (queue) => queue.address in tokenIdsForEachQueue,
+      (queue) => queue.address in queueTokenIds,
     );
     const results = [];
 
     for (const queueContract of queueContracts) {
       const tokenIds: bigint[] = [];
 
-      for (const tokenId of tokenIdsForEachQueue[queueContract.address] ?? []) {
+      for (const tokenId of queueTokenIds[queueContract.address] ?? []) {
         const owner = await queueContract.ownerOf(tokenId);
         const available = await queueContract.getAvailable(tokenId);
         if (areSameAddress(owner, this.wallet.account.address) && available > 0n) {
