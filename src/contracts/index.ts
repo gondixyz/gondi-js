@@ -9,6 +9,8 @@ import {
   WalletClient,
 } from 'viem';
 
+import { Pool } from '@/contracts/Pool';
+import { getContracts } from '@/deploys';
 import { erc20ABI, erc721ABI } from '@/generated/blockchain/v5';
 import { areSameAddress } from '@/utils/string';
 
@@ -35,6 +37,8 @@ export class Contracts {
   AuctionLoanLiquidatorV4: AllV4;
   AuctionLoanLiquidatorV5: AllV5;
   AuctionLoanLiquidatorV6: AllV6;
+  PoolWeth: Pool;
+  PoolUsdc: Pool;
   UserVaultV5: UserVault;
   Leverage: LeverageV5;
   Seaport: Seaport;
@@ -44,12 +48,16 @@ export class Contracts {
     this.walletClient = walletClient;
     this.publicClient = publicClient;
 
+    const contracts = getContracts(walletClient.chain);
+
     this.MultiSourceLoanV4 = new MslV4({ walletClient });
     this.MultiSourceLoanV5 = new MslV5({ walletClient });
     this.MultiSourceLoanV6 = new MslV6({ walletClient });
     this.AuctionLoanLiquidatorV4 = new AllV4({ walletClient });
     this.AuctionLoanLiquidatorV5 = new AllV5({ walletClient });
     this.AuctionLoanLiquidatorV6 = new AllV6({ walletClient });
+    this.PoolWeth = new Pool({ walletClient, address: contracts.Pool.WETH });
+    this.PoolUsdc = new Pool({ walletClient, address: contracts.Pool.USDC });
     this.UserVaultV5 = new UserVault({ walletClient });
     this.Leverage = new LeverageV5({
       walletClient,
@@ -86,6 +94,16 @@ export class Contracts {
     }
     if (areSameAddress(contractAddress, this.MultiSourceLoanV6.address)) {
       return this.AuctionLoanLiquidatorV6;
+    }
+    throw new Error(`Invalid Contract Address ${contractAddress}`);
+  }
+
+  Pool(contractAddress: Address) {
+    if (areSameAddress(contractAddress, this.PoolWeth.address)) {
+      return this.PoolWeth;
+    }
+    if (areSameAddress(contractAddress, this.PoolUsdc.address)) {
+      return this.PoolUsdc;
     }
     throw new Error(`Invalid Contract Address ${contractAddress}`);
   }
