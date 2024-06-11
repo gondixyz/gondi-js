@@ -19,6 +19,8 @@ export class Pool extends BaseContract<typeof poolAbi> {
     });
   }
 
+  static LOAN_BUFFER_TIME = BigInt(daysToSeconds(7));
+
   async deposit({ amount, receiver }: { amount: bigint; receiver: Address }) {
     const txHash = await this.safeContractWrite.deposit([amount, receiver]);
     return {
@@ -160,7 +162,7 @@ export class Pool extends BaseContract<typeof poolAbi> {
     const getMinTimeBetweenWithdrawalQueues =
       await this.contract.read.getMinTimeBetweenWithdrawalQueues();
     const maxOfferDurationSeconds =
-      maxQueues * getMinTimeBetweenWithdrawalQueues - BigInt(daysToSeconds(7));
+      maxQueues * getMinTimeBetweenWithdrawalQueues - Pool.LOAN_BUFFER_TIME;
     return maxOfferDurationSeconds;
   }
 }
