@@ -1142,6 +1142,10 @@ export class Gondi {
       receiver: receiver ?? this.wallet.account.address,
     });
   }
+
+  async getPoolMaxOfferDuration({ address }: { address: Address }) {
+    return this.contracts.Pool(address).getMaxOfferDuration();
+  }
 }
 
 interface GondiProps {

@@ -4,6 +4,7 @@ import { filterLogs } from '@/blockchain';
 import { Wallet } from '@/contracts';
 import { WithdrawalQueue } from '@/contracts/WithdrawalQueue';
 import { poolAbi } from '@/generated/blockchain/v6';
+import { daysToSeconds } from '@/utils/dates';
 import { FULFILLED, REJECTED } from '@/utils/promises';
 import { areSameAddress } from '@/utils/string';
 
@@ -152,5 +153,14 @@ export class Pool extends BaseContract<typeof poolAbi> {
           address: queue.contractAddress,
         }),
     );
+  }
+
+  async getMaxOfferDuration() {
+    const maxQueues = await this.contract.read.getMaxTotalWithdrawalQueues();
+    const getMinTimeBetweenWithdrawalQueues =
+      await this.contract.read.getMinTimeBetweenWithdrawalQueues();
+    const maxOfferDurationSeconds =
+      maxQueues * getMinTimeBetweenWithdrawalQueues - BigInt(daysToSeconds(7));
+    return maxOfferDurationSeconds;
   }
 }
