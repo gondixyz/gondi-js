@@ -12,7 +12,6 @@ import {
 import { Api, Props as ApiProps } from '@/api';
 import { Auction, filterLogs, LoanV5, OfferV5, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Contracts, Wallet } from '@/contracts';
-import { Pool } from '@/contracts/Pool';
 import { getCurrencies } from '@/deploys';
 import { MarketplaceEnum, OffersSortField, Ordering } from '@/generated/graphql';
 import * as model from '@/model';
@@ -1067,7 +1066,7 @@ export class Gondi {
         shareAmount: bigint;
       }
   )) {
-    const poolContract = new Pool({ walletClient: this.wallet, address });
+    const poolContract = this.contracts.Pool(address);
 
     const finalReceiver = receiver ?? this.wallet.account.address;
 
@@ -1083,11 +1082,11 @@ export class Gondi {
   }
 
   async poolPreviewDeposit({ address, amount }: { address: Address; amount: bigint }) {
-    return new Pool({ walletClient: this.wallet, address }).previewDeposit({ amount });
+    return this.contracts.Pool(address).previewDeposit({ amount });
   }
 
   async poolPreviewMint({ address, amount }: { address: Address; amount: bigint }) {
-    return new Pool({ walletClient: this.wallet, address }).previewMint({ amount });
+    return this.contracts.Pool(address).previewMint({ amount });
   }
 
   async poolWithdrawOrRedeem({
@@ -1110,7 +1109,7 @@ export class Gondi {
         shareAmount: bigint;
       }
   )) {
-    const poolContract = new Pool({ walletClient: this.wallet, address });
+    const poolContract = this.contracts.Pool(address);
 
     const receiverOwnerConfig = {
       receiver: receiver ?? this.wallet.account.address,
@@ -1137,7 +1136,7 @@ export class Gondi {
     queueTokenIds: Record<Address, bigint[]>;
     receiver?: Address;
   }) {
-    const poolContract = new Pool({ walletClient: this.wallet, address });
+    const poolContract = this.contracts.Pool(address);
     return poolContract.claim({
       queueTokenIds,
       receiver: receiver ?? this.wallet.account.address,
