@@ -1146,6 +1146,10 @@ export class Gondi {
   async getPoolMaxOfferDuration({ address }: { address: Address }) {
     return this.contracts.Pool(address).getMaxOfferDuration();
   }
+
+  async getMinTimeBetweenWithdrawalQueues({ address }: { address: Address }) {
+    return this.contracts.Pool(address).getMinTimeBetweenWithdrawalQueues();
+  }
 }
 
 interface GondiProps {

@@ -157,10 +157,13 @@ export class Pool extends BaseContract<typeof poolAbi> {
     );
   }
 
+  async getMinTimeBetweenWithdrawalQueues() {
+    return this.contract.read.getMinTimeBetweenWithdrawalQueues();
+  }
+
   async getMaxOfferDuration() {
     const maxQueues = await this.contract.read.getMaxTotalWithdrawalQueues();
-    const getMinTimeBetweenWithdrawalQueues =
-      await this.contract.read.getMinTimeBetweenWithdrawalQueues();
+    const getMinTimeBetweenWithdrawalQueues = await this.getMinTimeBetweenWithdrawalQueues();
     const maxOfferDurationSeconds =
       maxQueues * getMinTimeBetweenWithdrawalQueues - Pool.LOAN_BUFFER_TIME;
     return maxOfferDurationSeconds;
