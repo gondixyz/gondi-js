@@ -1,7 +1,7 @@
 import { isAddress } from 'viem';
 
 import {
-  POOL_ADDRESS,
+  POOL_WETH,
   setAllowances,
   sleep,
   testCollectionOfferInput,
@@ -10,26 +10,26 @@ import {
 } from './common';
 
 const emitAndRepayLoan = async (contract: string) => {
-  if (!isAddress(POOL_ADDRESS)) {
-    throw new Error(`Invalid pool address: ${POOL_ADDRESS}`);
+  if (!isAddress(POOL_WETH)) {
+    throw new Error(`Invalid pool address: ${POOL_WETH}`);
   }
 
   const deposit = await users[0].poolMintOrDeposit({
-    address: POOL_ADDRESS,
+    address: POOL_WETH,
     assetAmount: testCollectionOfferInput.principalAmount,
   });
 
   await deposit.waitTxInBlock();
 
-  const contractVersionString = `pool: ${POOL_ADDRESS}, msl: ${contract}`;
+  const contractVersionString = `pool: ${POOL_WETH}, msl: ${contract}`;
   console.log(`successfull deposit: ${contractVersionString}`);
 
   const { offers } = await users[1].offers({
-    filterBy: { collection: testCollectionOfferInput.collectionId, lenders: [POOL_ADDRESS] },
+    filterBy: { collection: testCollectionOfferInput.collectionId, lenders: [POOL_WETH] },
   });
 
   if (offers.length === 0) {
-    throw new Error(`No offers from ${POOL_ADDRESS} found`);
+    throw new Error(`No offers from ${POOL_WETH} found`);
   }
 
   const offer = offers[0];
