@@ -413,6 +413,14 @@ export class Gondi {
     });
   }
 
+  async withdrawalPositions({ limit = 20, cursor, ...rest }: model.ListWithdrawalPositionsProps) {
+    return await this.api.listWithdrawalPositions({
+      first: limit,
+      after: cursor,
+      ...rest,
+    });
+  }
+
   async list({ nft }: { nft: number }) {
     return await this.api.listNft({ nftId: nft });
   }

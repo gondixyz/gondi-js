@@ -1331,7 +1331,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@graphql-codegen/plugin-helpers@npm:^3.0.0":
+"@graphql-codegen/plugin-helpers@npm:^3.0.0, @graphql-codegen/plugin-helpers@npm:^3.1.2":
   version: 3.1.2
   resolution: "@graphql-codegen/plugin-helpers@npm:3.1.2"
   dependencies:
@@ -1376,6 +1376,19 @@ __metadata:
   peerDependencies:
     graphql: ^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
   checksum: 10/15e9962aff75cb9886e65b6c4d062543d29b9d6b7b728ea85d0a5f704b426eddee0207cca2cb18144040cead67a40815f09d9da9e1ba01c69a9e70bd467c9872
+  languageName: node
+  linkType: hard
+
+"@graphql-codegen/schema-ast@npm:^2.6.1":
+  version: 2.6.1
+  resolution: "@graphql-codegen/schema-ast@npm:2.6.1"
+  dependencies:
+    "@graphql-codegen/plugin-helpers": "npm:^3.1.2"
+    "@graphql-tools/utils": "npm:^9.0.0"
+    tslib: "npm:~2.4.0"
+  peerDependencies:
+    graphql: ^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
+  checksum: 10/f44338ac66e6a1f6238c33cdf65778bb467fe5a93767988135cb4e112d3be4d3c7e8aeeffe323754e8d6b0cbc5a52cb71452bfc42a15bc7031ebaa9b3d5da676
   languageName: node
   linkType: hard
 
@@ -5472,6 +5485,7 @@ __metadata:
     "@apollo/client": "npm:^3.7.16"
     "@graphql-codegen/add": "npm:^5.0.0"
     "@graphql-codegen/cli": "npm:^3.3.1"
+    "@graphql-codegen/schema-ast": "npm:^2.6.1"
     "@graphql-codegen/typescript": "npm:^3.0.4"
     "@graphql-codegen/typescript-apollo-client-helpers": "npm:^2.2.6"
     "@graphql-codegen/typescript-generic-sdk": "npm:^3.1.0"
