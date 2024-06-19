@@ -12065,895 +12065,1737 @@ export const ownedAbi = [
 
 export const poolAbi = [
   {
-    type: 'constructor',
-    inputs: [
-      { name: '_feeManager', internalType: 'address', type: 'address' },
-      { name: '_offerHandler', internalType: 'address', type: 'address' },
-      { name: '_waitingTimeBetweenUpdates', internalType: 'uint256', type: 'uint256' },
+    "type": "constructor",
+    "inputs": [
       {
-        name: '_optimalIdleRange',
-        internalType: 'struct IPool.OptimalIdleRange',
-        type: 'tuple',
-        components: [
-          { name: 'min', internalType: 'uint80', type: 'uint80' },
-          { name: 'max', internalType: 'uint80', type: 'uint80' },
-          { name: 'mid', internalType: 'uint80', type: 'uint80' },
-        ],
+        "name": "_feeManager",
+        "type": "address",
+        "internalType": "address"
       },
-      { name: '_maxTotalWithdrawalQueues', internalType: 'uint256', type: 'uint256' },
-      { name: '_reallocationBonus', internalType: 'uint256', type: 'uint256' },
-      { name: '_asset', internalType: 'contract ERC20', type: 'address' },
-      { name: '_name', internalType: 'string', type: 'string' },
-      { name: '_symbol', internalType: 'string', type: 'string' },
-    ],
-    stateMutability: 'nonpayable',
-  },
-  { type: 'error', inputs: [], name: 'AddressZeroError' },
-  { type: 'error', inputs: [], name: 'AllocationAlreadyOptimalError' },
-  { type: 'error', inputs: [], name: 'CallerNotAccepted' },
-  { type: 'error', inputs: [], name: 'InsufficientAssetsError' },
-  { type: 'error', inputs: [], name: 'InvalidInputError' },
-  { type: 'error', inputs: [], name: 'NoSharesPendingWithdrawalError' },
-  { type: 'error', inputs: [], name: 'PoolStatusError' },
-  { type: 'error', inputs: [], name: 'TooSoonError' },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      { name: 'owner', internalType: 'address', type: 'address', indexed: true },
-      { name: 'spender', internalType: 'address', type: 'address', indexed: true },
-      { name: 'amount', internalType: 'uint256', type: 'uint256', indexed: false },
-    ],
-    name: 'Approval',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
       {
-        name: 'newBaseInterestAllocator',
-        internalType: 'address',
-        type: 'address',
-        indexed: false,
+        "name": "_offerHandlerSetter",
+        "type": "address",
+        "internalType": "address"
       },
-    ],
-    name: 'BaseInterestAllocatorSet',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
       {
-        name: 'callers',
-        internalType: 'struct LoanManager.ProposedCaller[]',
-        type: 'tuple[]',
-        components: [
-          { name: 'caller', internalType: 'address', type: 'address' },
-          { name: 'isLoanContract', internalType: 'bool', type: 'bool' },
-        ],
-        indexed: false,
+        "name": "_waitingTimeBetweenUpdates",
+        "type": "uint256",
+        "internalType": "uint256"
       },
-    ],
-    name: 'CallersAdded',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      { name: 'caller', internalType: 'address', type: 'address', indexed: true },
-      { name: 'owner', internalType: 'address', type: 'address', indexed: true },
-      { name: 'assets', internalType: 'uint256', type: 'uint256', indexed: false },
-      { name: 'shares', internalType: 'uint256', type: 'uint256', indexed: false },
-    ],
-    name: 'Deposit',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [{ name: 'offerHandler', internalType: 'address', type: 'address', indexed: false }],
-    name: 'OfferHandlerSet',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
       {
-        name: 'optimalIdleRange',
-        internalType: 'struct IPool.OptimalIdleRange',
-        type: 'tuple',
-        components: [
-          { name: 'min', internalType: 'uint80', type: 'uint80' },
-          { name: 'max', internalType: 'uint80', type: 'uint80' },
-          { name: 'mid', internalType: 'uint80', type: 'uint80' },
-        ],
-        indexed: false,
+        "name": "_optimalIdleRange",
+        "type": "tuple",
+        "internalType": "struct IPool.OptimalIdleRange",
+        "components": [
+          {
+            "name": "min",
+            "type": "uint80",
+            "internalType": "uint80"
+          },
+          {
+            "name": "max",
+            "type": "uint80",
+            "internalType": "uint80"
+          },
+          {
+            "name": "mid",
+            "type": "uint80",
+            "internalType": "uint80"
+          }
+        ]
       },
-    ],
-    name: 'OptimalIdleRangeSet',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      { name: 'user', internalType: 'address', type: 'address', indexed: true },
-      { name: 'newOwner', internalType: 'address', type: 'address', indexed: true },
-    ],
-    name: 'OwnershipTransferred',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
       {
-        name: 'newBaseInterestAllocator',
-        internalType: 'address',
-        type: 'address',
-        indexed: false,
+        "name": "_maxTotalWithdrawalQueues",
+        "type": "uint256",
+        "internalType": "uint256"
       },
-    ],
-    name: 'PendingBaseInterestAllocatorSet',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [{ name: 'status', internalType: 'bool', type: 'bool', indexed: false }],
-    name: 'PoolPaused',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [{ name: 'offerHandler', internalType: 'address', type: 'address', indexed: false }],
-    name: 'ProposedOfferHandlerSet',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      { name: 'queue', internalType: 'address', type: 'address', indexed: false },
-      { name: 'amount', internalType: 'uint256', type: 'uint256', indexed: false },
-    ],
-    name: 'QueueClaimed',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      { name: 'delta', internalType: 'uint256', type: 'uint256', indexed: false },
-      { name: 'bonusShares', internalType: 'uint256', type: 'uint256', indexed: false },
-    ],
-    name: 'Reallocated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      { name: 'newReallocationBonus', internalType: 'uint256', type: 'uint256', indexed: false },
-    ],
-    name: 'ReallocationBonusUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
       {
-        name: 'callers',
-        internalType: 'struct LoanManager.ProposedCaller[]',
-        type: 'tuple[]',
-        components: [
-          { name: 'caller', internalType: 'address', type: 'address' },
-          { name: 'isLoanContract', internalType: 'bool', type: 'bool' },
-        ],
-        indexed: false,
+        "name": "_asset",
+        "type": "address",
+        "internalType": "contract ERC20"
       },
-    ],
-    name: 'RequestCallersAdded',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      { name: 'from', internalType: 'address', type: 'address', indexed: true },
-      { name: 'to', internalType: 'address', type: 'address', indexed: true },
-      { name: 'amount', internalType: 'uint256', type: 'uint256', indexed: false },
-    ],
-    name: 'Transfer',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address', indexed: false }],
-    name: 'TransferOwnerRequested',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      { name: 'caller', internalType: 'address', type: 'address', indexed: true },
-      { name: 'receiver', internalType: 'address', type: 'address', indexed: true },
-      { name: 'owner', internalType: 'address', type: 'address', indexed: true },
-      { name: 'assets', internalType: 'uint256', type: 'uint256', indexed: false },
-      { name: 'shares', internalType: 'uint256', type: 'uint256', indexed: false },
-    ],
-    name: 'Withdraw',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'DOMAIN_SEPARATOR',
-    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'MIN_WAIT_TIME',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'PRINCIPAL_PRECISION',
-    outputs: [{ name: '', internalType: 'uint80', type: 'uint80' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'UPDATE_WAITING_TIME',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
       {
-        name: '_callers',
-        internalType: 'struct LoanManager.ProposedCaller[]',
-        type: 'tuple[]',
-        components: [
-          { name: 'caller', internalType: 'address', type: 'address' },
-          { name: 'isLoanContract', internalType: 'bool', type: 'bool' },
-        ],
+        "name": "_name",
+        "type": "string",
+        "internalType": "string"
       },
-    ],
-    name: 'addCallers',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: '', internalType: 'address', type: 'address' },
-      { name: '', internalType: 'address', type: 'address' },
-    ],
-    name: 'allowance',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spender', internalType: 'address', type: 'address' },
-      { name: 'amount', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'approve',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'asset',
-    outputs: [{ name: '', internalType: 'contract ERC20', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'address', type: 'address' }],
-    name: 'balanceOf',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '_recipient', internalType: 'address', type: 'address' }],
-    name: 'collectFees',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '_newBaseInterestAllocator', internalType: 'address', type: 'address' }],
-    name: 'confirmBaseInterestAllocator',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '__offerHandler', internalType: 'address', type: 'address' }],
-    name: 'confirmOfferHandler',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'shares', internalType: 'uint256', type: 'uint256' }],
-    name: 'convertToAssets',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'assets', internalType: 'uint256', type: 'uint256' }],
-    name: 'convertToShares',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'decimals',
-    outputs: [{ name: '', internalType: 'uint8', type: 'uint8' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'deployWithdrawalQueue',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'assets', internalType: 'uint256', type: 'uint256' },
-      { name: 'receiver', internalType: 'address', type: 'address' },
-    ],
-    name: 'deposit',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '_idx', internalType: 'uint256', type: 'uint256' }],
-    name: 'getAccountingValuesForQueue',
-    outputs: [
       {
-        name: '',
-        internalType: 'struct Pool.QueueAccounting',
-        type: 'tuple',
-        components: [
-          { name: 'thisQueueFraction', internalType: 'uint128', type: 'uint128' },
-          { name: 'netPoolFraction', internalType: 'uint128', type: 'uint128' },
-        ],
+        "name": "_symbol",
+        "type": "string",
+        "internalType": "string"
       },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getAvailableToWithdraw',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getBaseInterestAllocator',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getCollectedFees',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '_idx', internalType: 'uint256', type: 'uint256' }],
-    name: 'getDeployedQueue',
-    outputs: [
       {
-        name: '',
-        internalType: 'struct IPoolWithWithdrawalQueues.DeployedQueue',
-        type: 'tuple',
-        components: [
-          { name: 'contractAddress', internalType: 'address', type: 'address' },
-          { name: 'deployedTime', internalType: 'uint96', type: 'uint96' },
-        ],
-      },
+        "name": "_decimalsOffset",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
     ],
-    stateMutability: 'view',
+    "stateMutability": "nonpayable"
   },
   {
-    type: 'function',
-    inputs: [],
-    name: 'getFeeManager',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'queueIndex', internalType: 'uint256', type: 'uint256' },
-      { name: 'loanContract', internalType: 'address', type: 'address' },
-    ],
-    name: 'getLastLoanId',
-    outputs: [{ name: 'loanId', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getMaxTotalWithdrawalQueues',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getMinTimeBetweenWithdrawalQueues',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getOfferHandler',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getOptimalIdleRange',
-    outputs: [
-      { name: 'min', internalType: 'uint80', type: 'uint80' },
-      { name: 'max', internalType: 'uint80', type: 'uint80' },
-      { name: 'mid', internalType: 'uint80', type: 'uint80' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getOutstandingValues',
-    outputs: [
+    "type": "function",
+    "name": "DOMAIN_SEPARATOR",
+    "inputs": [],
+    "outputs": [
       {
-        name: '',
-        internalType: 'struct Pool.OutstandingValues',
-        type: 'tuple',
-        components: [
-          { name: 'principalAmount', internalType: 'uint128', type: 'uint128' },
-          { name: 'accruedInterest', internalType: 'uint128', type: 'uint128' },
-          { name: 'sumApr', internalType: 'uint128', type: 'uint128' },
-          { name: 'lastTs', internalType: 'uint128', type: 'uint128' },
-        ],
-      },
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
     ],
-    stateMutability: 'view',
+    "stateMutability": "view"
   },
   {
-    type: 'function',
-    inputs: [{ name: '_idx', internalType: 'uint256', type: 'uint256' }],
-    name: 'getOutstandingValuesForQueue',
-    outputs: [
+    "type": "function",
+    "name": "MIN_WAIT_TIME",
+    "inputs": [],
+    "outputs": [
       {
-        name: '',
-        internalType: 'struct Pool.OutstandingValues',
-        type: 'tuple',
-        components: [
-          { name: 'principalAmount', internalType: 'uint128', type: 'uint128' },
-          { name: 'accruedInterest', internalType: 'uint128', type: 'uint128' },
-          { name: 'sumApr', internalType: 'uint128', type: 'uint128' },
-          { name: 'lastTs', internalType: 'uint128', type: 'uint128' },
-        ],
-      },
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
     ],
-    stateMutability: 'view',
+    "stateMutability": "view"
   },
   {
-    type: 'function',
-    inputs: [],
-    name: 'getPendingQueueIndex',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    name: 'getProposedAcceptedCallers',
-    outputs: [
-      { name: 'caller', internalType: 'address', type: 'address' },
-      { name: 'isLoanContract', internalType: 'bool', type: 'bool' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getProposedAcceptedCallersSetTime',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getProposedBaseInterestAllocator',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getProposedBaseInterestAllocatorSetTime',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getProposedOfferHandler',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getProposedOfferHandlerSetTime',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getReallocationBonus',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getTotalOutstandingValue',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'queueIndex', internalType: 'uint256', type: 'uint256' }],
-    name: 'getTotalReceived',
-    outputs: [{ name: 'totalReceived', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getUndeployedAssets',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'isActive',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '_caller', internalType: 'address', type: 'address' }],
-    name: 'isCallerAccepted',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: '_loanId', internalType: 'uint256', type: 'uint256' },
-      { name: '_principalAmount', internalType: 'uint256', type: 'uint256' },
-      { name: '_apr', internalType: 'uint256', type: 'uint256' },
-      { name: '', internalType: 'uint256', type: 'uint256' },
-      { name: '_protocolFee', internalType: 'uint256', type: 'uint256' },
-      { name: '_received', internalType: 'uint256', type: 'uint256' },
-      { name: '_startTime', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'loanLiquidation',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: '_loanId', internalType: 'uint256', type: 'uint256' },
-      { name: '_principalAmount', internalType: 'uint256', type: 'uint256' },
-      { name: '_apr', internalType: 'uint256', type: 'uint256' },
-      { name: '', internalType: 'uint256', type: 'uint256' },
-      { name: '_protocolFee', internalType: 'uint256', type: 'uint256' },
-      { name: '_startTime', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'loanRepayment',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'address', type: 'address' }],
-    name: 'maxDeposit',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'address', type: 'address' }],
-    name: 'maxMint',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
-    name: 'maxRedeem',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
-    name: 'maxWithdraw',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'shares', internalType: 'uint256', type: 'uint256' },
-      { name: 'receiver', internalType: 'address', type: 'address' },
-    ],
-    name: 'mint',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'name',
-    outputs: [{ name: '', internalType: 'string', type: 'string' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'address', type: 'address' }],
-    name: 'nonces',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'owner',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  { type: 'function', inputs: [], name: 'pausePool', outputs: [], stateMutability: 'nonpayable' },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'pendingOwner',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'pendingOwnerTime',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'owner', internalType: 'address', type: 'address' },
-      { name: 'spender', internalType: 'address', type: 'address' },
-      { name: 'value', internalType: 'uint256', type: 'uint256' },
-      { name: 'deadline', internalType: 'uint256', type: 'uint256' },
-      { name: 'v', internalType: 'uint8', type: 'uint8' },
-      { name: 'r', internalType: 'bytes32', type: 'bytes32' },
-      { name: 's', internalType: 'bytes32', type: 'bytes32' },
-    ],
-    name: 'permit',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'assets', internalType: 'uint256', type: 'uint256' }],
-    name: 'previewDeposit',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'shares', internalType: 'uint256', type: 'uint256' }],
-    name: 'previewMint',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'shares', internalType: 'uint256', type: 'uint256' }],
-    name: 'previewRedeem',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'assets', internalType: 'uint256', type: 'uint256' }],
-    name: 'previewWithdraw',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'queueClaimAll',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'reallocate',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'shares', internalType: 'uint256', type: 'uint256' },
-      { name: 'receiver', internalType: 'address', type: 'address' },
-      { name: 'owner', internalType: 'address', type: 'address' },
-    ],
-    name: 'redeem',
-    outputs: [{ name: 'assets', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
+    "type": "function",
+    "name": "PRINCIPAL_PRECISION",
+    "inputs": [],
+    "outputs": [
       {
-        name: '_callers',
-        internalType: 'struct LoanManager.ProposedCaller[]',
-        type: 'tuple[]',
-        components: [
-          { name: 'caller', internalType: 'address', type: 'address' },
-          { name: 'isLoanContract', internalType: 'bool', type: 'bool' },
-        ],
-      },
+        "name": "",
+        "type": "uint80",
+        "internalType": "uint80"
+      }
     ],
-    name: 'requestAddCallers',
-    outputs: [],
-    stateMutability: 'nonpayable',
+    "stateMutability": "view"
   },
   {
-    type: 'function',
-    inputs: [{ name: '_newOwner', internalType: 'address', type: 'address' }],
-    name: 'requestTransferOwner',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '_newBaseInterestAllocator', internalType: 'address', type: 'address' }],
-    name: 'setBaseInterestAllocator',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '__offerHandler', internalType: 'address', type: 'address' }],
-    name: 'setOfferHandler',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
+    "type": "function",
+    "name": "UPDATE_WAITING_TIME",
+    "inputs": [],
+    "outputs": [
       {
-        name: '_optimalIdleRange',
-        internalType: 'struct IPool.OptimalIdleRange',
-        type: 'tuple',
-        components: [
-          { name: 'min', internalType: 'uint80', type: 'uint80' },
-          { name: 'max', internalType: 'uint80', type: 'uint80' },
-          { name: 'mid', internalType: 'uint80', type: 'uint80' },
-        ],
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "addCallers",
+    "inputs": [
+      {
+        "name": "_callers",
+        "type": "tuple[]",
+        "internalType": "struct ILoanManager.ProposedCaller[]",
+        "components": [
+          {
+            "name": "caller",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "isLoanContract",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "allowance",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
       },
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
     ],
-    name: 'setOptimalIdleRange',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '_newReallocationBonus', internalType: 'uint256', type: 'uint256' }],
-    name: 'setReallocationBonus',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'symbol',
-    outputs: [{ name: '', internalType: 'string', type: 'string' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'totalAssets',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'totalSupply',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'to', internalType: 'address', type: 'address' },
-      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
     ],
-    name: 'transfer',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'nonpayable',
+    "stateMutability": "view"
   },
   {
-    type: 'function',
-    inputs: [
-      { name: 'from', internalType: 'address', type: 'address' },
-      { name: 'to', internalType: 'address', type: 'address' },
-      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+    "type": "function",
+    "name": "approve",
+    "inputs": [
+      {
+        "name": "spender",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
     ],
-    name: 'transferFrom',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
-    name: 'transferOwnership',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: '_offer', internalType: 'bytes', type: 'bytes' },
-      { name: '_protocolFee', internalType: 'uint256', type: 'uint256' },
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
     ],
-    name: 'validateOffer',
-    outputs: [],
-    stateMutability: 'nonpayable',
+    "stateMutability": "nonpayable"
   },
   {
-    type: 'function',
-    inputs: [
-      { name: 'assets', internalType: 'uint256', type: 'uint256' },
-      { name: 'receiver', internalType: 'address', type: 'address' },
-      { name: 'owner', internalType: 'address', type: 'address' },
+    "type": "function",
+    "name": "asset",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract ERC20"
+      }
     ],
-    name: 'withdraw',
-    outputs: [{ name: 'shares', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'nonpayable',
+    "stateMutability": "view"
   },
+  {
+    "type": "function",
+    "name": "balanceOf",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "collectFees",
+    "inputs": [
+      {
+        "name": "_recipient",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "confirmBaseInterestAllocator",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "convertToAssets",
+    "inputs": [
+      {
+        "name": "shares",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "convertToShares",
+    "inputs": [
+      {
+        "name": "assets",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "decimals",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "decimalsOffset",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "deployWithdrawalQueue",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "deposit",
+    "inputs": [
+      {
+        "name": "assets",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "receiver",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "getAccountingValuesForQueue",
+    "inputs": [
+      {
+        "name": "_idx",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct Pool.QueueAccounting",
+        "components": [
+          {
+            "name": "thisQueueFraction",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "netPoolFraction",
+            "type": "uint128",
+            "internalType": "uint128"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getAvailableToWithdraw",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getBaseInterestAllocator",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getCollectedFees",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getDeployedQueue",
+    "inputs": [
+      {
+        "name": "_idx",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct IPoolWithWithdrawalQueues.DeployedQueue",
+        "components": [
+          {
+            "name": "contractAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "deployedTime",
+            "type": "uint96",
+            "internalType": "uint96"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getFeeManager",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getLastLoanId",
+    "inputs": [
+      {
+        "name": "queueIndex",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "loanContract",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "loanId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getMaxTotalWithdrawalQueues",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getMinTimeBetweenWithdrawalQueues",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getOfferHandler",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getOptimalIdleRange",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "min",
+        "type": "uint80",
+        "internalType": "uint80"
+      },
+      {
+        "name": "max",
+        "type": "uint80",
+        "internalType": "uint80"
+      },
+      {
+        "name": "mid",
+        "type": "uint80",
+        "internalType": "uint80"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getOutstandingValues",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct Pool.OutstandingValues",
+        "components": [
+          {
+            "name": "principalAmount",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "accruedInterest",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "sumApr",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "lastTs",
+            "type": "uint128",
+            "internalType": "uint128"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getOutstandingValuesForQueue",
+    "inputs": [
+      {
+        "name": "_idx",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct Pool.OutstandingValues",
+        "components": [
+          {
+            "name": "principalAmount",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "accruedInterest",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "sumApr",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "lastTs",
+            "type": "uint128",
+            "internalType": "uint128"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getParameterSetter",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getPendingQueueIndex",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getProposedBaseInterestAllocator",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getProposedBaseInterestAllocatorSetTime",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getTotalReceived",
+    "inputs": [
+      {
+        "name": "queueIndex",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "totalReceived",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getUndeployedAssets",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isActive",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isCallerAccepted",
+    "inputs": [
+      {
+        "name": "_caller",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "loanLiquidation",
+    "inputs": [
+      {
+        "name": "_loanAddress",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_loanId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_principalAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_apr",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_protocolFee",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_received",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_startTime",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "loanRepayment",
+    "inputs": [
+      {
+        "name": "_loanId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_principalAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_apr",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_protocolFee",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_startTime",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "maxDeposit",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "maxMint",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "maxRedeem",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "maxWithdraw",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "mint",
+    "inputs": [
+      {
+        "name": "shares",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "receiver",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "name",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "nonces",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "owner",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "pausePool",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "pendingOwner",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "pendingOwnerTime",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "permit",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "spender",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "value",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "deadline",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "v",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "r",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "s",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "previewDeposit",
+    "inputs": [
+      {
+        "name": "assets",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "previewMint",
+    "inputs": [
+      {
+        "name": "shares",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "previewRedeem",
+    "inputs": [
+      {
+        "name": "shares",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "previewWithdraw",
+    "inputs": [
+      {
+        "name": "assets",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "queueClaimAll",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "reallocate",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "redeem",
+    "inputs": [
+      {
+        "name": "shares",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "receiver",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "assets",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "requestTransferOwner",
+    "inputs": [
+      {
+        "name": "_newOwner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setBaseInterestAllocator",
+    "inputs": [
+      {
+        "name": "_newBaseInterestAllocator",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setOptimalIdleRange",
+    "inputs": [
+      {
+        "name": "_optimalIdleRange",
+        "type": "tuple",
+        "internalType": "struct IPool.OptimalIdleRange",
+        "components": [
+          {
+            "name": "min",
+            "type": "uint80",
+            "internalType": "uint80"
+          },
+          {
+            "name": "max",
+            "type": "uint80",
+            "internalType": "uint80"
+          },
+          {
+            "name": "mid",
+            "type": "uint80",
+            "internalType": "uint80"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "symbol",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "totalAssets",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "totalSupply",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "transfer",
+    "inputs": [
+      {
+        "name": "to",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "transferFrom",
+    "inputs": [
+      {
+        "name": "from",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "transferOwnership",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "transferOwnership",
+    "inputs": [
+      {
+        "name": "newOwner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "updateOfferHandler",
+    "inputs": [
+      {
+        "name": "_offerHandler",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "validateOffer",
+    "inputs": [
+      {
+        "name": "_offer",
+        "type": "bytes",
+        "internalType": "bytes"
+      },
+      {
+        "name": "_protocolFee",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "withdraw",
+    "inputs": [
+      {
+        "name": "assets",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "receiver",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "shares",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "Approval",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "spender",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "BaseInterestAllocatorSet",
+    "inputs": [
+      {
+        "name": "newBaseInterestAllocator",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "CallersAdded",
+    "inputs": [
+      {
+        "name": "callers",
+        "type": "tuple[]",
+        "indexed": false,
+        "internalType": "struct ILoanManager.ProposedCaller[]",
+        "components": [
+          {
+            "name": "caller",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "isLoanContract",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Deposit",
+    "inputs": [
+      {
+        "name": "caller",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "owner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "assets",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "shares",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OptimalIdleRangeSet",
+    "inputs": [
+      {
+        "name": "optimalIdleRange",
+        "type": "tuple",
+        "indexed": false,
+        "internalType": "struct IPool.OptimalIdleRange",
+        "components": [
+          {
+            "name": "min",
+            "type": "uint80",
+            "internalType": "uint80"
+          },
+          {
+            "name": "max",
+            "type": "uint80",
+            "internalType": "uint80"
+          },
+          {
+            "name": "mid",
+            "type": "uint80",
+            "internalType": "uint80"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OwnershipTransferred",
+    "inputs": [
+      {
+        "name": "user",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "PendingBaseInterestAllocatorSet",
+    "inputs": [
+      {
+        "name": "newBaseInterestAllocator",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "PoolPaused",
+    "inputs": [
+      {
+        "name": "status",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "QueueClaimed",
+    "inputs": [
+      {
+        "name": "queue",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "QueueDeployed",
+    "inputs": [
+      {
+        "name": "index",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "queueAddress",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Reallocated",
+    "inputs": [
+      {
+        "name": "delta",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Transfer",
+    "inputs": [
+      {
+        "name": "from",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TransferOwnerRequested",
+    "inputs": [
+      {
+        "name": "newOwner",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Withdraw",
+    "inputs": [
+      {
+        "name": "caller",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "receiver",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "owner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "assets",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "shares",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "AddressZeroError",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AllocationAlreadyOptimalError",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "CallerNotAccepted",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InsufficientAssetsError",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidCallerError",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidInputError",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NoSharesPendingWithdrawalError",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "PoolStatusError",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "TooSoonError",
+    "inputs": []
+  }
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

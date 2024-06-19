@@ -1143,6 +1143,10 @@ export class Gondi {
     });
   }
 
+  async _poolDeployWithdrawalQueue({ address }: { address: Address }) {
+    return this.contracts.Pool(address).deployWithdrawalQueue();
+  }
+
   async getPoolMaxOfferDuration({ address }: { address: Address }) {
     return this.contracts.Pool(address).getMaxOfferDuration();
   }

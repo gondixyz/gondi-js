@@ -168,4 +168,21 @@ export class Pool extends BaseContract<typeof poolAbi> {
       maxQueues * getMinTimeBetweenWithdrawalQueues - Pool.LOAN_BUFFER_TIME;
     return maxOfferDurationSeconds;
   }
+
+  async deployWithdrawalQueue() {
+    const txHash = await this.safeContractWrite.deployWithdrawalQueue(undefined);
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+
+        const filter = await this.contract.createEventFilter.QueueDeployed();
+        const events = filterLogs(receipt, filter);
+        if (events.length === 0) throw new Error('Withdrawal queue did not deploy');
+        return { ...events[0].args, ...receipt };
+      },
+    };
+  }
 }
