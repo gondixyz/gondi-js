@@ -73,10 +73,10 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
       Pool: {
         WETH:
           ensureAddress(process.env.GONDI_POOL_WETH) ??
-          '0x618aB3160c5bbBc5bFa034ACa8e37dF3Eea0316D',
+          '0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E',
         USDC:
           ensureAddress(process.env.GONDI_POOL_USDC) ??
-          '0x984f797d26d3da2E9b9f8Ae4eeFEACC60fCAA90C',
+          '0x851356ae760d987E095750cCeb3bC6014560891C',
       },
       UserVault:
         ensureAddress(process.env.GONDI_USER_VAULT_V5) ??
