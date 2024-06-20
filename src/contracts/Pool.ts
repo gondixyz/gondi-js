@@ -144,7 +144,7 @@ export class Pool extends BaseContract<typeof poolAbi> {
     const maxQueues = Number(await this.contract.read.getMaxTotalWithdrawalQueues());
     return (
       await Promise.all(
-        new Array(maxQueues)
+        new Array(maxQueues + 1)
           .fill(0)
           .map(async (_, i) => await this.contract.read.getDeployedQueue([BigInt(i)])),
       )
@@ -152,7 +152,7 @@ export class Pool extends BaseContract<typeof poolAbi> {
       (queue) =>
         new WithdrawalQueue({
           walletClient: this.wallet,
-          address: queue.contractAddress,
+          address: queue.contractAddress.toLowerCase() as Address,
         }),
     );
   }
