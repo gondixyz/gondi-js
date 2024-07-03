@@ -14,6 +14,10 @@ interface Contracts {
     v5: Address;
     v6: Address;
   };
+  Pool: {
+    WETH: Address;
+    USDC: Address;
+  };
   UserVault: {
     v5: Address;
     v6: Address;
@@ -69,6 +73,14 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
           ensureAddress(process.env.GONDI_AUCTION_LOAN_LIQUIDATOR_V6) ??
           '0x59b670e9fA9D0A427751Af201D676719a970857b',
       },
+      Pool: {
+        WETH:
+          ensureAddress(process.env.GONDI_POOL_WETH) ??
+          '0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E',
+        USDC:
+          ensureAddress(process.env.GONDI_POOL_USDC) ??
+          '0x851356ae760d987E095750cCeb3bC6014560891C',
+      },
       UserVault: {
         v5:
           ensureAddress(process.env.GONDI_USER_VAULT_V5) ??
@@ -98,6 +110,10 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
         v5: '0xTODO', // TODO: deploy
         v6: '0xTODO', // TODO: deploy
       },
+      Pool: {
+        WETH: ensureAddress(process.env.GONDI_POOL_WETH) ?? '0xTODO', // TODO: deploy
+        USDC: ensureAddress(process.env.GONDI_POOL_USDC) ?? '0xTODO', // TODO: deploy
+      },
       UserVault: {
         v5: '0xTODO',
         v6: '0xTODO',
@@ -118,6 +134,10 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
       v4: '0x237e4421C742d843Fdd96D22294D338507e17091',
       v5: '0x97d34635b605c2f1630d6b4c6c5d222b8a2ca47d',
       v6: '0xTODO', // TODO: deploy
+    },
+    Pool: {
+      WETH: '0xTODO', // TODO: deploy
+      USDC: '0xTODO', // TODO: deploy
     },
     UserVault: {
       v5: '0x14a6Dcebb2Bb73aae1b199CCAadA75247b81976D',

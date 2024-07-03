@@ -1,0 +1,22 @@
+fragment WithdrawalPositionInfo on WithdrawalPosition {
+  id: nftId
+  withdrawalQueue {
+    collectionId
+    status
+    startTime
+    collection {
+      ...CollectionInfoWithContract
+    }
+  }
+  nft {
+    id
+    tokenId
+    createdDate
+  }
+  shares
+  withdrawn
+  unlockTime
+  requested
+  available
+  pending
+}

@@ -1,0 +1,11 @@
+fragment CollectionInfo on Collection {
+  id
+  name
+  slug
+  image {
+    data
+    cacheUrl
+    contentTypeMime
+  }
+  collectionUrl
+}

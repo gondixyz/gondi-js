@@ -7,12 +7,23 @@ dotenv.config();
 
 const RPC = process.env.RPC_URL;
 const MULTI_SOURCE_LOAN_CONTRACT_V6 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ?? '';
+const POOL_WETH_ADDRESS = process.env.POOL_WETH ?? '';
+const POOL_USDC_ADDRESS = process.env.POOL_USDC ?? '';
+const WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
+const USDC = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
 
 export const MAX_NUMBER =
   115792089237316195423570985008687907853269984665640564039457584007913129639935n;
 
 if (!isAddress(MULTI_SOURCE_LOAN_CONTRACT_V6)) {
   throw new Error('invalid MULTI_SOURCE_LOAN_CONTRACT_V6 address');
+}
+
+if (!isAddress(POOL_WETH_ADDRESS)) {
+  throw new Error('invalid POOL_WETH address');
+}
+if (!isAddress(POOL_USDC_ADDRESS)) {
+  throw new Error('invalid POOL_USDC address');
 }
 
 if (!RPC) throw new Error('RPC_URL is not set');
@@ -141,7 +152,8 @@ export const approveNFT = async (
 };
 
 const approveForUser = async (user: Gondi, to: Address) => {
-  await approveToken(user, to);
+  await approveToken(user, to, WETH);
+  await approveToken(user, to, USDC);
   await approveNFT(user, to);
 };
 
@@ -152,6 +164,8 @@ const CONTRACTS = [
   process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? '',
   process.env.LEVERAGE_ADDRESS ?? '',
   SEAPORT_CONTRACT_ADDRESS,
+  POOL_WETH_ADDRESS,
+  POOL_USDC_ADDRESS,
 ];
 
 export const setAllowances = async () => {
@@ -172,3 +186,8 @@ export const AUCTION_DEFAULT_DURATION = 3n * 24n * 60n * 60n;
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const generateBlock = async () => await sleep(6000);
+
+const POOL_WETH = POOL_WETH_ADDRESS;
+const POOL_USDC = POOL_USDC_ADDRESS;
+
+export { POOL_WETH, POOL_USDC };

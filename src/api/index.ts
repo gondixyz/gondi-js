@@ -10,6 +10,7 @@ import {
   ListListingsQueryVariables,
   ListLoansQueryVariables,
   ListOffersQueryVariables,
+  ListWithdrawalPositionsQueryVariables,
   SingleNftSignedOfferInput,
 } from '@/generated/graphql';
 import { RenegotiationOffer } from '@/model';
@@ -185,6 +186,17 @@ export class Api {
     return {
       ...mapPageInfo(pageInfo),
       listings,
+    };
+  }
+
+  async listWithdrawalPositions(props: ListWithdrawalPositionsQueryVariables) {
+    const {
+      positions: { edges, pageInfo },
+    } = await this.api.listWithdrawalPositions(props);
+    const positions = edges.map((edge) => edge.node);
+    return {
+      ...mapPageInfo(pageInfo),
+      positions,
     };
   }
 }
