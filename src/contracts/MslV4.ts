@@ -239,6 +239,10 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
     return 0;
   }
 
+  isEndLockedUp() {
+    return false;
+  }
+
   async refinanceBatch({
     renegotiationId,
     refinancings,
@@ -354,10 +358,6 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
   }
 
   async extendLoan(): ReturnType<MslV5['extendLoan']> {
-    throw new Error('Not implemented for V1');
-  }
-
-  async mergeTranches(): ReturnType<MslV6['mergeTranches']> {
     throw new Error('Not implemented for V1');
   }
 

@@ -508,6 +508,12 @@ export class Gondi {
     });
   }
 
+  async isEndLockedUp({ loan }: { loan: LoanToMslLoanType }) {
+    return this.contracts.Msl(loan.contractAddress).isEndLockedUp({
+      loan: loanToMslLoan(loan),
+    });
+  }
+
   async getBestNativeSaleOffer({
     contractAddress,
     tokenId,
@@ -679,25 +685,6 @@ export class Gondi {
       loan: loanToMslLoan(loan),
       newDuration,
       loanId,
-    });
-  }
-
-  async mergeTranches({
-    loan,
-    loanId,
-    minTranche,
-    maxTranche,
-  }: {
-    loan: LoanToMslLoanType;
-    loanId: bigint;
-    minTranche: bigint;
-    maxTranche: bigint;
-  }) {
-    return this.contracts.Msl(loan.contractAddress).mergeTranches({
-      loan: loanToMslLoan(loan),
-      loanId,
-      minTranche,
-      maxTranche,
     });
   }
 
@@ -958,6 +945,34 @@ export class Gondi {
     return erc721.read.isApprovedForAll([this.wallet.account?.address, to]);
   }
 
+  async isApprovedNFT({
+    nftAddress,
+    isOldErc721,
+    tokenId,
+    to = this.contracts.MultiSourceLoanV5.address,
+  }: // TODO: Uncomment me when v3 is released
+  // to = this.contracts.MultiSourceLoanV6.address,
+  {
+    nftAddress: Address;
+    to?: Address;
+  } & (
+    | {
+        isOldErc721: true;
+        tokenId: bigint;
+      }
+    | {
+        isOldErc721?: never;
+        tokenId?: never;
+      }
+  )) {
+    if (isOldErc721) {
+      const erc721 = this.contracts.OldERC721(nftAddress);
+      const tokenApprovedFor = await erc721.read.approvedFor([tokenId]);
+      return areSameAddress(tokenApprovedFor, to);
+    }
+    return this.isApprovedNFTForAll({ nftAddress, to });
+  }
+
   async approveNFTForAll({
     nftAddress,
     to = this.contracts.MultiSourceLoanV5.address,
@@ -983,6 +998,46 @@ export class Gondi {
         return { ...events[0].args, ...receipt };
       },
     };
+  }
+
+  async approveNFT({
+    nftAddress,
+    isOldErc721,
+    tokenId,
+    to = this.contracts.MultiSourceLoanV5.address,
+  }: // TODO: Uncomment me when v3 is released
+  // to = this.contracts.MultiSourceLoanV6.address,
+  {
+    nftAddress: Address;
+    to?: Address;
+  } & (
+    | {
+        isOldErc721: true;
+        tokenId: bigint;
+      }
+    | {
+        isOldErc721?: never;
+        tokenId?: never;
+      }
+  )) {
+    if (isOldErc721) {
+      const erc721 = this.contracts.OldERC721(nftAddress);
+      const txHash = await erc721.write.approve([to, tokenId]);
+
+      return {
+        txHash,
+        waitTxInBlock: async () => {
+          const receipt = await this.bcClient.waitForTransactionReceipt({
+            hash: txHash,
+          });
+          const filter = await erc721.createEventFilter.Approval({});
+          const events = filterLogs(receipt, filter);
+          if (events.length === 0) throw new Error('ERC721 approval not set');
+          return { ...events[0].args, ...receipt };
+        },
+      };
+    }
+    return this.approveNFTForAll({ nftAddress, to });
   }
 
   async isApprovedToken({
@@ -1031,6 +1086,8 @@ export class Gondi {
   async createUserVault({
     nfts,
     userVaultAddress = this.contracts.UserVaultV5.address,
+    // TODO: uncomment when we realease v6
+    // userVaultAddress = this.contracts.UserVaultV6.address,
   }: {
     nfts: Parameters<Contracts['UserVaultV5']['createVault']>[0];
     userVaultAddress?: Address;
@@ -1040,6 +1097,8 @@ export class Gondi {
 
   async depositUserVaultERC721s({
     userVaultAddress = this.contracts.UserVaultV5.address,
+    // TODO: uncomment when we realease v6
+    // userVaultAddress = this.contracts.UserVaultV6.address,
     ...data
   }: {
     userVaultAddress?: Address;
@@ -1047,8 +1106,21 @@ export class Gondi {
     return this.contracts.UserVault(userVaultAddress).depositERC721s(data);
   }
 
+  async depositUserVaultOldERC721s({
+    userVaultAddress = this.contracts.UserVaultV5.address,
+    // TODO: uncomment when we realease v6
+    // userVaultAddress = this.contracts.UserVaultV6.address,
+    ...data
+  }: {
+    userVaultAddress?: Address;
+  } & Parameters<Contracts['UserVaultV6']['depositERC721s']>[0]) {
+    return this.contracts.UserVault(userVaultAddress).depositOldERC721s(data);
+  }
+
   async burnUserVaultAndWithdraw({
     userVaultAddress = this.contracts.UserVaultV5.address,
+    // TODO: uncomment when we realease v6
+    // userVaultAddress = this.contracts.UserVaultV6.address,
     ...data
   }: {
     userVaultAddress?: Address;

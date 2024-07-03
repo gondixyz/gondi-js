@@ -12,7 +12,7 @@ import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { multiSourceLoanAbi as multiSourceLoanAbiV6 } from '@/generated/blockchain/v6';
 import { EmitLoanArgs } from '@/gondi';
-import { millisToSeconds, SECONDS_IN_DAY } from '@/utils/dates';
+import { millisToSeconds, SECONDS_IN_DAY, secondsToMillis } from '@/utils/dates';
 import { getMslLoanId, getRemainingSeconds } from '@/utils/loan';
 import { bpsToPercentage, sumBy } from '@/utils/number';
 import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
@@ -214,52 +214,6 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     throw new Error('Not implemented for V3');
   }
 
-  async mergeTranches({
-    loan,
-    loanId,
-    minTranche,
-    maxTranche,
-  }: {
-    loan: LoanV6;
-    loanId: bigint;
-    minTranche: bigint;
-    maxTranche: bigint;
-  }) {
-    const txHash = await this.safeContractWrite.mergeTranches([
-      loanId,
-      loan,
-      minTranche,
-      maxTranche,
-    ]);
-
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const filter = await this.contract.createEventFilter.TranchesMerged();
-        const events = filterLogs(receipt, filter);
-        if (events.length === 0) throw new Error('Loan tranches not merged');
-        const args = events[0].args;
-        const newLoanId = args.loan.tranche.reduce(
-          (newestLoanId, { loanId: trancheLoanId }) =>
-            trancheLoanId > newestLoanId ? trancheLoanId : newestLoanId,
-          loanId,
-        );
-        return {
-          loan: {
-            id: `${this.contract.address.toLowerCase()}.${newLoanId}`,
-            ...args.loan,
-            contractAddress: this.contract.address,
-          },
-          newLoanId,
-          ...receipt,
-        };
-      },
-    };
-  }
-
   async revokeDelegationsAndEmitLoan({
     delegations,
     emit,
@@ -365,6 +319,16 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
 
     if (ellapsedSeconds >= lockupTimeSeconds) return 0;
     return lockupTimeSeconds - ellapsedSeconds;
+  }
+
+  async isEndLockedUp({ loan }: { loan: LoanV6 }) {
+    const lockPeriodBps = await this.contract.read.getMinLockPeriod();
+    const lockPercentage = bpsToPercentage(lockPeriodBps);
+
+    const loanEndDate = Number(loan.startTime + loan.duration);
+    const endLockupSeconds = Math.ceil(Number(loan.duration) * lockPercentage);
+
+    return Date.now() > secondsToMillis(loanEndDate - endLockupSeconds);
   }
 
   async refinanceBatch({

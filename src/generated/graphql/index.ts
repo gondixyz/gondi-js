@@ -1548,6 +1548,7 @@ export type PoolBaseRateAllocator = Node & {
   currency: Currency;
   description: Scalars['String'];
   id: Scalars['String'];
+  stakeCurrency: Currency;
 };
 
 export type PoolCollectionFactors = Node & {
@@ -3788,12 +3789,13 @@ export type PoolBaseInterestAllocatorSetFieldPolicy = {
 	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
 	txHash?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type PoolBaseRateAllocatorKeySpecifier = ('address' | 'currency' | 'description' | 'id' | PoolBaseRateAllocatorKeySpecifier)[];
+export type PoolBaseRateAllocatorKeySpecifier = ('address' | 'currency' | 'description' | 'id' | 'stakeCurrency' | PoolBaseRateAllocatorKeySpecifier)[];
 export type PoolBaseRateAllocatorFieldPolicy = {
 	address?: FieldPolicy<any> | FieldReadFunction<any>,
 	currency?: FieldPolicy<any> | FieldReadFunction<any>,
 	description?: FieldPolicy<any> | FieldReadFunction<any>,
-	id?: FieldPolicy<any> | FieldReadFunction<any>
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	stakeCurrency?: FieldPolicy<any> | FieldReadFunction<any>
 };
 export type PoolCollectionFactorsKeySpecifier = ('collection' | 'collectionId' | 'duration' | 'id' | 'offerId' | 'pool' | 'poolAddress' | 'principalCurrentFactor' | 'principalHistoricalFactor' | PoolCollectionFactorsKeySpecifier)[];
 export type PoolCollectionFactorsFieldPolicy = {

@@ -1234,6 +1234,7 @@ type PoolBaseRateAllocator implements Node {
   currency: Currency!
   description: String!
   id: String!
+  stakeCurrency: Currency!
 }
 
 type PoolCollectionFactors implements Node {

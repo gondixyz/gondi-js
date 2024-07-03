@@ -2,23 +2,17 @@ import { Address, isAddress } from 'viem';
 
 import { approveNFT, setAllowances, testCollection, testTokenId, users } from './common';
 
-const USER_VAULT_CONTRACT_V5 = process.env.USER_VAULT_CONTRACT_V5 ?? '';
 const ANOTHER_COLLECTION = process.env.TEST_COLLECTION_2 as Address;
 
-const userVaults = async () => {
+const userVaults = async (contract: Address) => {
   const gondi = users[1];
 
-  if (!isAddress(ANOTHER_COLLECTION) || !isAddress(USER_VAULT_CONTRACT_V5)) {
-    throw new Error(`
-      TEST_COLLECTION_2 OR USER_VAULT_CONTRACT_5 were not correctly provided.
-      Please, provide addresses to run user vaults example.
-    `);
-  }
-  await approveNFT(gondi, USER_VAULT_CONTRACT_V5, testCollection.contractAddress);
-  await approveNFT(gondi, USER_VAULT_CONTRACT_V5, ANOTHER_COLLECTION);
+  await approveNFT(gondi, contract, testCollection.contractAddress);
+  await approveNFT(gondi, contract, ANOTHER_COLLECTION);
 
   console.log('Creating vault with nfts...');
   const { vaultId, receipts } = await gondi.createUserVault({
+    userVaultAddress: contract,
     nfts: [
       // Assuming user has same tokenId for collections
       { collection: ANOTHER_COLLECTION, tokenIds: [testTokenId] },
@@ -41,6 +35,7 @@ const userVaults = async () => {
   console.log('Burning and withdrawing nfts...');
 
   const burnTxn = await gondi.burnUserVaultAndWithdraw({
+    userVaultAddress: contract,
     vaultId,
     collections: [ANOTHER_COLLECTION, testCollection.contractAddress],
     tokenIds: [testTokenId, testTokenId],
@@ -62,7 +57,21 @@ const userVaults = async () => {
 async function main() {
   try {
     await setAllowances();
-    await userVaults();
+    if (!isAddress(ANOTHER_COLLECTION)) {
+      throw new Error(`
+        TEST_COLLECTION_2 was not correctly provided.
+        Please, provide address to run user vaults example.
+      `);
+    }
+    const contracts = [
+      process.env.USER_VAULT_CONTRACT_V5 ?? '',
+      process.env.USER_VAULT_CONTRACT_V6 ?? '',
+    ];
+    for (const contract of contracts) {
+      if (isAddress(contract)) {
+        await userVaults(contract);
+      }
+    }
   } catch (e) {
     console.log('Error:');
     console.log(e);
