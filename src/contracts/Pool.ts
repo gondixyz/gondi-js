@@ -1,4 +1,4 @@
-import { Address } from 'viem';
+import { Address, getAddress } from 'viem';
 
 import { filterLogs } from '@/blockchain';
 import { Wallet } from '@/contracts';
@@ -112,8 +112,10 @@ export class Pool extends BaseContract<typeof poolAbi> {
     receiver: Address;
     queueTokenIds: Record<Address, bigint[]>;
   }) {
-    const queueContracts = (await this.getDeployedQueues()).filter(
-      (queue) => queue.address in queueTokenIds,
+    const checksumAddressesSet = new Set(Object.keys(queueTokenIds).map(getAddress));
+
+    const queueContracts = (await this.getDeployedQueues()).filter((queue) =>
+      checksumAddressesSet.has(queue.address),
     );
     const results = [];
 
@@ -152,7 +154,7 @@ export class Pool extends BaseContract<typeof poolAbi> {
       (queue) =>
         new WithdrawalQueue({
           walletClient: this.wallet,
-          address: queue.contractAddress.toLowerCase() as Address,
+          address: getAddress(queue.contractAddress),
         }),
     );
   }
