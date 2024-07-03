@@ -413,6 +413,7 @@ export class Gondi {
     });
   }
 
+  /** @internal */
   async withdrawalPositions({ limit = 20, cursor, ...rest }: model.ListWithdrawalPositionsProps) {
     return await this.api.listWithdrawalPositions({
       first: limit,
@@ -1128,6 +1129,7 @@ export class Gondi {
     return this.contracts.UserVault(userVaultAddress).burnAndWithdraw(data);
   }
 
+  /** @internal */
   async poolMintOrDeposit({
     address,
     assetAmount,
@@ -1161,14 +1163,17 @@ export class Gondi {
     throw new Error('Invalid pool deposit');
   }
 
+  /** @internal */
   async poolPreviewDeposit({ address, amount }: { address: Address; amount: bigint }) {
     return this.contracts.Pool(address).previewDeposit({ amount });
   }
 
+  /** @internal */
   async poolPreviewMint({ address, amount }: { address: Address; amount: bigint }) {
     return this.contracts.Pool(address).previewMint({ amount });
   }
 
+  /** @internal */
   async poolWithdrawOrRedeem({
     address,
     assetAmount,
@@ -1207,6 +1212,7 @@ export class Gondi {
     throw new Error('Invalid pool withdraw');
   }
 
+  /** @internal */
   async poolClaim({
     address,
     queueTokenIds,
@@ -1223,14 +1229,17 @@ export class Gondi {
     });
   }
 
+  /** @internal */
   async _poolDeployWithdrawalQueue({ address }: { address: Address }) {
     return this.contracts.Pool(address).deployWithdrawalQueue();
   }
 
+  /** @internal */
   async getPoolMaxOfferDuration({ address }: { address: Address }) {
     return this.contracts.Pool(address).getMaxOfferDuration();
   }
 
+  /** @internal */
   async getMinTimeBetweenWithdrawalQueues({ address }: { address: Address }) {
     return this.contracts.Pool(address).getMinTimeBetweenWithdrawalQueues();
   }
