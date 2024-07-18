@@ -8,3 +8,8 @@ export const secondsToMillis = (seconds: number | bigint) => toInteger(seconds) 
 export const daysToSeconds = (days: number | bigint) => toInteger(days) * SECONDS_IN_DAY;
 export const secondsToDays = (seconds: number | bigint) =>
   toInteger(Number(seconds) / SECONDS_IN_DAY);
+
+export const toDate = (secondsOrDate: bigint | Date) =>
+  typeof secondsOrDate === 'bigint'
+    ? new Date(secondsToMillis(secondsOrDate))
+    : new Date(secondsOrDate);

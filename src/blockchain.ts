@@ -70,6 +70,7 @@ export type LoanV5 = RepayAbiTypeV5[0]['loan'] & {
 export type LoanV6 = RepayAbiTypeV6[0]['loan'] & {
   contractAddress: Address;
   startTime: Date | bigint;
+  contractStartTime: Date | bigint;
 };
 export type Loan = LoanV4 | LoanV5 | LoanV6;
 

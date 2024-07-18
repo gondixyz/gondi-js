@@ -2,7 +2,7 @@ import { Address, isAddress } from 'viem';
 
 import { LoanV4, LoanV5, LoanV6, zeroAddress } from '@/blockchain';
 import * as model from '@/model';
-import { millisToSeconds, secondsToMillis } from '@/utils/dates';
+import { millisToSeconds, secondsToMillis, toDate } from '@/utils/dates';
 import { maxBy } from '@/utils/number';
 import { areSameAddress } from '@/utils/string';
 import { Optional } from '@/utils/types';
@@ -48,8 +48,20 @@ export const loanToMslLoan = (loan: LoanToMslLoanType) => {
   } else {
     protocolFee = 0n;
   }
+
+  // Patch start and duration to match contract values
+  const dateStartTime = toDate(loan.startTime);
+  const dateContractStartTime =
+    'contractStartTime' in loan ? toDate(loan.contractStartTime) : dateStartTime;
+  const millisDelta = dateContractStartTime.getTime() - dateStartTime.getTime();
+  const duration = loan.duration - BigInt(millisToSeconds(millisDelta));
+  const startTime = BigInt(millisToSeconds(dateContractStartTime.getTime()));
+
   return {
     ...loan,
+    startTime,
+    contractStartTime: startTime,
+    duration,
     nftCollateralAddress,
     source,
     tranche: source,
