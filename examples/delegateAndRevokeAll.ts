@@ -17,14 +17,30 @@ const delegateAndRevokeAll = async (contract?: Address) => {
 
   try {
     const delegationsTo = [users[0].wallet.account.address, users[2].wallet.account.address];
-    const delegations = delegationsTo.map((to) => ({ loan, loanId, to, enable: true }));
+    const delegations = delegationsTo.map((to) => ({
+      loanId,
+      to,
+      enable: true,
+      loan: {
+        ...loan,
+        contractStartTime: loan.startTime,
+      },
+    }));
     const delegationsResult = await users[1].delegateMulticall(delegations);
     await delegationsResult.waitTxInBlock();
     console.log(
       `nft from loanId ${loanId} successfully delegated to multiple addresses: ${contractVersionString}`,
     );
 
-    const revokings = delegationsTo.map((to) => ({ loan, loanId, to, enable: false }));
+    const revokings = delegationsTo.map((to) => ({
+      loanId,
+      to,
+      enable: false,
+      loan: {
+        ...loan,
+        contractStartTime: loan.startTime,
+      },
+    }));
     const revokingsResult = await users[1].delegateMulticall(revokings);
     await revokingsResult.waitTxInBlock();
     console.log(
@@ -35,7 +51,13 @@ const delegateAndRevokeAll = async (contract?: Address) => {
     console.log(e);
   }
 
-  const repayLoan = await users[1].repayLoan({ loan, loanId });
+  const repayLoan = await users[1].repayLoan({
+    loanId,
+    loan: {
+      ...loan,
+      contractStartTime: loan.startTime,
+    },
+  });
   await repayLoan.waitTxInBlock();
   console.log(`loan repaid: ${contractVersionString}`);
 };

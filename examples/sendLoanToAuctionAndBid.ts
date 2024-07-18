@@ -49,7 +49,13 @@ const emitLoanThenAuctionAndBid = async (
 
   await sleep(3000);
 
-  const sendLoanToAuction = await lender.liquidateLoan({ loan, loanId });
+  const sendLoanToAuction = await lender.liquidateLoan({
+    loanId,
+    loan: {
+      ...loan,
+      contractStartTime: loan.startTime,
+    },
+  });
   const { blockNumber, loanId: liquidatedLoanId } = await sendLoanToAuction.waitTxInBlock();
   console.log(`loan sent to auction: ${contractVersionString}`);
 

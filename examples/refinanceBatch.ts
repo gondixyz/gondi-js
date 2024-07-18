@@ -50,7 +50,12 @@ const emitLoansRefinanceBatchAndRepay = async (contract?: Address) => {
   });
   const { loan, loanId } = await emitLoan.waitTxInBlock();
 
-  let repayLoans: RepayLoanType[] = [loan];
+  let repayLoans: RepayLoanType[] = [
+    {
+      ...loan,
+      contractStartTime: loan.startTime,
+    },
+  ];
   let repayLoanIds = [loanId];
   let loanReferenceIds = [loan.id];
 
@@ -63,11 +68,22 @@ const emitLoansRefinanceBatchAndRepay = async (contract?: Address) => {
     const { loan: loanTwo, loanId: loanIdTwo } = await emitLoanTwo.waitTxInBlock();
     console.log(`both loans emitted: ${contractVersionString}`);
 
-    repayLoans = [loan, loanTwo];
-    repayLoanIds = [loanId, loanIdTwo];
-    loanReferenceIds = [loan.id, loanTwo.id];
+    repayLoans = [
+      ...repayLoans,
+      {
+        ...loanTwo,
+        contractStartTime: loanTwo.startTime,
+      },
+    ];
+    repayLoanIds = [...repayLoanIds, loanIdTwo];
+    loanReferenceIds = [...loanReferenceIds, loanTwo.id];
 
-    const remainingLockup = await borrower.getRemainingLockupSeconds({ loan: loanTwo });
+    const remainingLockup = await borrower.getRemainingLockupSeconds({
+      loan: {
+        ...loanTwo,
+        contractStartTime: loanTwo.startTime,
+      },
+    });
     console.log(`remaining lockup: ${remainingLockup}`);
     await sleep(remainingLockup * 1_000 + SLEEP_BUFFER);
     await generateBlock(); // We need to push a new block into the blockchain [anvil issue]
@@ -98,6 +114,7 @@ const emitLoansRefinanceBatchAndRepay = async (contract?: Address) => {
         ...repayLoans,
         ...contractBatchCall.value.results.map(({ loan }) => ({
           ...loan,
+          contractStartTime: loan.startTime,
           contractAddress: signedOffer.contractAddress,
         })),
       ];

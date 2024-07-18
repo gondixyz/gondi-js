@@ -30,7 +30,13 @@ const emitAndLiquidateLoan = async (owner: Gondi, lender: Gondi, contract?: Addr
 
   await sleep(3000);
 
-  const liquidatedLoan = await lender.liquidateLoan({ loan, loanId });
+  const liquidatedLoan = await lender.liquidateLoan({
+    loanId,
+    loan: {
+      ...loan,
+      contractStartTime: loan.startTime,
+    },
+  });
   await liquidatedLoan.waitTxInBlock();
   console.log(`loan liquidated: ${contractVersionString}`);
 };

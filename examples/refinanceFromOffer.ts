@@ -28,7 +28,10 @@ const emitRefiFromOfferAndRepay = async (lender: Gondi, borrower: Gondi, contrac
     const signedOfferForRefi = await lender._makeSingleNftOffer(offer, contract);
     const refinanceFromOffers = await borrower.refinanceFromOffers({
       loanId,
-      loan,
+      loan: {
+        ...loan,
+        contractStartTime: loan.startTime,
+      },
       executionData: {
         offerExecution: borrower.offerExecutionFromOffers([signedOfferForRefi]),
         duration: signedOffer.duration,
@@ -46,7 +49,10 @@ const emitRefiFromOfferAndRepay = async (lender: Gondi, borrower: Gondi, contrac
     console.log(e);
   } finally {
     const repaidLoan = await borrower.repayLoan({
-      loan: repayLoan,
+      loan: {
+        ...repayLoan,
+        contractStartTime: repayLoan.startTime,
+      },
       loanId: repayLoanId,
     });
     await repaidLoan.waitTxInBlock();

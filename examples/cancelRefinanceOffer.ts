@@ -46,7 +46,13 @@ const emitCancelRefiOfferAndRepayLoan = async (contract?: Address) => {
     console.log('Error while placing and cancelling renegotiation offer:');
     console.log(e);
   } finally {
-    const repayLoan = await users[1].repayLoan({ loan, loanId });
+    const repayLoan = await users[1].repayLoan({
+      loanId,
+      loan: {
+        ...loan,
+        contractStartTime: loan.startTime,
+      },
+    });
     await repayLoan.waitTxInBlock();
     console.log(`loan repaid: ${contractVersionString}`);
   }
