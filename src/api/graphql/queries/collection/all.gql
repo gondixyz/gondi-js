@@ -15,10 +15,6 @@ query collections($currency: Address!, $after: String) {
         externalUrl
         collectionUrl
         verified
-        royalties {
-          percentage
-          beneficiary
-        }
         image {
           cacheUrl
         }

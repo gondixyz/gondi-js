@@ -18,7 +18,13 @@ const emitAndRepayLoan = async (contract?: Address) => {
 
   await sleep(3000);
 
-  const repayLoan = await users[1].repayLoan({ loan, loanId });
+  const repayLoan = await users[1].repayLoan({
+    loanId,
+    loan: {
+      ...loan,
+      contractStartTime: loan.startTime,
+    },
+  });
   await repayLoan.waitTxInBlock();
   console.log(`loan repaid: ${contractVersionString}`);
 };

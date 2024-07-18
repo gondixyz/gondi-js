@@ -17,7 +17,10 @@ const delegateAndRevoke = async (contract?: Address) => {
 
   try {
     const delegateTrue = await users[1].delegate({
-      loan,
+      loan: {
+        ...loan,
+        contractStartTime: loan.startTime,
+      },
       loanId,
       to: users[0].wallet.account.address,
       enable: true,
@@ -26,7 +29,10 @@ const delegateAndRevoke = async (contract?: Address) => {
     console.log(`nft from loanId ${loanId} successfully delegated: ${contractVersionString}`);
 
     const delegateFalse = await users[1].delegate({
-      loan,
+      loan: {
+        ...loan,
+        contractStartTime: loan.startTime,
+      },
       loanId,
       to: users[0].wallet.account.address,
       enable: false,
@@ -40,7 +46,13 @@ const delegateAndRevoke = async (contract?: Address) => {
     console.log(e);
   }
 
-  const repayLoan = await users[1].repayLoan({ loan, loanId });
+  const repayLoan = await users[1].repayLoan({
+    loanId,
+    loan: {
+      ...loan,
+      contractStartTime: loan.startTime,
+    },
+  });
   await repayLoan.waitTxInBlock();
   console.log(`loan repaid: ${contractVersionString}`);
 

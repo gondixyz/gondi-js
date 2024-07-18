@@ -49,7 +49,13 @@ const settleAuctionWithBuyout = async (
 
   await sleep(3000);
 
-  const sendLoanToAuction = await lender.liquidateLoan({ loan, loanId });
+  const sendLoanToAuction = await lender.liquidateLoan({
+    loanId,
+    loan: {
+      ...loan,
+      contractStartTime: loan.startTime,
+    },
+  });
   const { blockNumber, loanId: liquidatedLoanId } = await sendLoanToAuction.waitTxInBlock();
   console.log(`loan sent to auction: ${contractVersionString}`);
 
@@ -66,7 +72,10 @@ const settleAuctionWithBuyout = async (
   const MIN_BID_LIQUIDATION = 50n;
   const BPS = 10000n;
   const settleAuctionWithBuyout = await lender.settleAuctionWithBuyout({
-    loan,
+    loan: {
+      ...loan,
+      contractStartTime: loan.startTime,
+    },
     auction: {
       loanAddress: loan.contractAddress,
       loanId: liquidatedLoanId,

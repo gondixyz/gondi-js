@@ -29,7 +29,12 @@ const emitRenegotiateAndRepayLoan = async (lender: Gondi, borrower: Gondi, contr
   const { loan, loanId } = await emitLoan.waitTxInBlock();
   console.log(`loan emitted: ${contractVersionString}`);
 
-  const remainingLockup = await lender.getRemainingLockupSeconds({ loan });
+  const remainingLockup = await lender.getRemainingLockupSeconds({
+    loan: {
+      ...loan,
+      contractStartTime: loan.startTime,
+    },
+  });
   await sleep(remainingLockup * 1_000 + SLEEP_BUFFER);
 
   const renegotiationChanges =
@@ -57,7 +62,10 @@ const emitRenegotiateAndRepayLoan = async (lender: Gondi, borrower: Gondi, contr
     await generateBlock(); // We need to push a new block into the blockchain [anvil issue]
     const renegotiation = await borrower.refinanceFullLoan({
       offer: renegotiationOffer,
-      loan,
+      loan: {
+        ...loan,
+        contractStartTime: loan.startTime,
+      },
       loanId,
     });
     const { loan: renegotiatedLoanResult, loanId: newLoanId } = await renegotiation.waitTxInBlock();
@@ -69,7 +77,10 @@ const emitRenegotiateAndRepayLoan = async (lender: Gondi, borrower: Gondi, contr
     console.log(e);
   } finally {
     const repaidLoan = await borrower.repayLoan({
-      loan: repayLoan,
+      loan: {
+        ...repayLoan,
+        contractStartTime: repayLoan.startTime,
+      },
       loanId: repayLoanId,
     });
     await repaidLoan.waitTxInBlock();

@@ -149,12 +149,6 @@ input BidSortInput {
 
 scalar BigInt
 
-type Cart implements Node {
-  createdDate: DateTime!
-  id: String!
-  items(after: String, first: Int! = 10): NFTConnection!
-}
-
 type Collection implements Node {
   bannerImage: Asset
   collectionUrl: String
@@ -167,7 +161,6 @@ type Collection implements Node {
   imageId: String
   name: String
   nftsCount: Int
-  royalties: [Royalty!]!
   slug: String
   statistics: CollectionStatistics!
   twitterUsername: String
@@ -466,6 +459,7 @@ interface Loan implements Node {
   activities: [LoanActivity!]!
   address: Address!
   borrowerAddress: Address!
+  contractStartTime: DateTime!
   currency: Currency!
   duration: BigInt!
   id: String!
@@ -761,6 +755,7 @@ type MultiSourceLoan implements Loan & Node {
   auction: Auction
   blendedAprBps: Float!
   borrowerAddress: Address!
+  contractStartTime: DateTime!
   currency: Currency!
   duration: BigInt!
   id: String!
@@ -802,6 +797,7 @@ type MultiSourceLoanHistory implements Node {
   borrowerAddress: String!
   duration: BigInt!
   id: String!
+  loanId: Int!
   offerIds: [String!]!
   principalAddress: String!
   principalAmount: BigInt!
@@ -1447,11 +1443,6 @@ type RenegotiationRequestedNotification implements Node & Notification {
   user: User!
 }
 
-type Royalty {
-  beneficiary: String!
-  percentage: Float!
-}
-
 type Sale implements Activity & Node {
   id: String!
   nft: NFT!
@@ -1747,8 +1738,6 @@ type User implements Node {
   about: String
   beta: Boolean!
   blockchain: String!
-  cart: Cart!
-  cartId: Int
   createdDate: DateTime!
   id: String!
   linkedWallets: [LinkedWallets!]!

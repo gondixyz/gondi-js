@@ -18,7 +18,10 @@ const revokeAndEmitLoan = async (contract?: Address) => {
   const delegateTo = users[2].wallet.account.address;
   try {
     const delegateTrue = await users[1].delegate({
-      loan,
+      loan: {
+        ...loan,
+        contractStartTime: loan.startTime,
+      },
       loanId,
       to: delegateTo,
       enable: true,
@@ -30,7 +33,13 @@ const revokeAndEmitLoan = async (contract?: Address) => {
     console.log(e);
   }
 
-  const repayLoan = await users[1].repayLoan({ loan, loanId });
+  const repayLoan = await users[1].repayLoan({
+    loanId,
+    loan: {
+      ...loan,
+      contractStartTime: loan.startTime,
+    },
+  });
   await repayLoan.waitTxInBlock();
   console.log(`loan repaid without revoking: ${contractVersionString}`);
 
@@ -49,7 +58,13 @@ const revokeAndEmitLoan = async (contract?: Address) => {
   const { loan: newLoan, loanId: newLoanId } = await revokeDelegationsAndEmitLoan.waitTxInBlock();
   console.log(`revoked old delegations and emitted new loan: ${contractVersionString}`);
 
-  const repayNewLoan = await users[1].repayLoan({ loan: newLoan, loanId: newLoanId });
+  const repayNewLoan = await users[1].repayLoan({
+    loanId: newLoanId,
+    loan: {
+      ...newLoan,
+      contractStartTime: newLoan.startTime,
+    },
+  });
   await repayNewLoan.waitTxInBlock();
   console.log(`new loan repaid after emit revoking previous delegations: ${contractVersionString}`);
 };

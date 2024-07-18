@@ -184,19 +184,6 @@ export type BidSortInput = {
   order: Ordering;
 };
 
-export type Cart = Node & {
-  __typename?: 'Cart';
-  createdDate: Scalars['DateTime'];
-  id: Scalars['String'];
-  items: NftConnection;
-};
-
-
-export type CartItemsArgs = {
-  after?: InputMaybe<Scalars['String']>;
-  first?: Scalars['Int'];
-};
-
 export type Collection = Node & {
   __typename?: 'Collection';
   bannerImage?: Maybe<Asset>;
@@ -210,7 +197,6 @@ export type Collection = Node & {
   imageId?: Maybe<Scalars['String']>;
   name?: Maybe<Scalars['String']>;
   nftsCount?: Maybe<Scalars['Int']>;
-  royalties: Array<Royalty>;
   slug?: Maybe<Scalars['String']>;
   statistics: CollectionStatistics;
   twitterUsername?: Maybe<Scalars['String']>;
@@ -573,6 +559,7 @@ export type Loan = {
   activities: Array<LoanActivity>;
   address: Scalars['Address'];
   borrowerAddress: Scalars['Address'];
+  contractStartTime: Scalars['DateTime'];
   currency: Currency;
   duration: Scalars['BigInt'];
   id: Scalars['String'];
@@ -891,6 +878,7 @@ export type MultiSourceLoan = Loan & Node & {
   auction?: Maybe<Auction>;
   blendedAprBps: Scalars['Float'];
   borrowerAddress: Scalars['Address'];
+  contractStartTime: Scalars['DateTime'];
   currency: Currency;
   duration: Scalars['BigInt'];
   id: Scalars['String'];
@@ -937,6 +925,7 @@ export type MultiSourceLoanHistory = Node & {
   borrowerAddress: Scalars['String'];
   duration: Scalars['BigInt'];
   id: Scalars['String'];
+  loanId: Scalars['Int'];
   offerIds: Array<Scalars['String']>;
   principalAddress: Scalars['String'];
   principalAmount: Scalars['BigInt'];
@@ -2048,12 +2037,6 @@ export type RenegotiationRequestedNotification = Node & Notification & {
   user: User;
 };
 
-export type Royalty = {
-  __typename?: 'Royalty';
-  beneficiary: Scalars['String'];
-  percentage: Scalars['Float'];
-};
-
 export type Sale = Activity & Node & {
   __typename?: 'Sale';
   id: Scalars['String'];
@@ -2364,8 +2347,6 @@ export type User = Node & {
   about?: Maybe<Scalars['String']>;
   beta: Scalars['Boolean'];
   blockchain: Scalars['String'];
-  cart: Cart;
-  cartId?: Maybe<Scalars['Int']>;
   createdDate: Scalars['DateTime'];
   id: Scalars['String'];
   linkedWallets: Array<LinkedWallets>;
@@ -2717,7 +2698,7 @@ export type CollectionsQueryVariables = Exact<{
 }>;
 
 
-export type CollectionsQuery = { __typename?: 'Query', collections: { __typename?: 'CollectionConnection', pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'CollectionEdge', node: { __typename?: 'Collection', id: string, name?: string | null, slug?: string | null, description?: string | null, discordUrl?: string | null, twitterUsername?: string | null, externalUrl?: string | null, collectionUrl?: string | null, verified: boolean, royalties: Array<{ __typename?: 'Royalty', percentage: number, beneficiary: string }>, image?: { __typename?: 'Asset', cacheUrl?: string | null } | null, bannerImage?: { __typename?: 'Asset', cacheUrl?: string | null } | null, contractData?: { __typename?: 'ContractData', blockchain: string, contractAddress: Address, createdDate: Date, creatorAddress?: Address | null } | null, statistics: { __typename?: 'CollectionStatistics', floorPrice7d?: number | null, floorPrice30d?: number | null, totalVolume?: number | null, totalVolume1y?: number | null, totalVolume3m?: number | null, totalVolume1m?: number | null, totalVolume1w?: number | null, totalLoanVolume: bigint, totalLoanVolume1w: bigint, totalLoanVolume1m: bigint, totalLoanVolume3m: bigint, totalLoanVolume1y: bigint, numberOfPricedNfts: number, nftsCount?: number | null, percentageInOutstandingLoans: number, repaymentRate: number, numberOfOffers: number, floorPrice?: { __typename?: 'CurrencyAmount', amount: number, currency: { __typename?: 'Currency', address: Address, decimals: number } } | null, bestOffer?: { __typename?: 'CurrencyAmount', amount: number, currency: { __typename?: 'Currency', address: Address, decimals: number } } | null } } }> } };
+export type CollectionsQuery = { __typename?: 'Query', collections: { __typename?: 'CollectionConnection', pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'CollectionEdge', node: { __typename?: 'Collection', id: string, name?: string | null, slug?: string | null, description?: string | null, discordUrl?: string | null, twitterUsername?: string | null, externalUrl?: string | null, collectionUrl?: string | null, verified: boolean, image?: { __typename?: 'Asset', cacheUrl?: string | null } | null, bannerImage?: { __typename?: 'Asset', cacheUrl?: string | null } | null, contractData?: { __typename?: 'ContractData', blockchain: string, contractAddress: Address, createdDate: Date, creatorAddress?: Address | null } | null, statistics: { __typename?: 'CollectionStatistics', floorPrice7d?: number | null, floorPrice30d?: number | null, totalVolume?: number | null, totalVolume1y?: number | null, totalVolume3m?: number | null, totalVolume1m?: number | null, totalVolume1w?: number | null, totalLoanVolume: bigint, totalLoanVolume1w: bigint, totalLoanVolume1m: bigint, totalLoanVolume3m: bigint, totalLoanVolume1y: bigint, numberOfPricedNfts: number, nftsCount?: number | null, percentageInOutstandingLoans: number, repaymentRate: number, numberOfOffers: number, floorPrice?: { __typename?: 'CurrencyAmount', amount: number, currency: { __typename?: 'Currency', address: Address, decimals: number } } | null, bestOffer?: { __typename?: 'CurrencyAmount', amount: number, currency: { __typename?: 'Currency', address: Address, decimals: number } } | null } } }> } };
 
 export type CollectionsIdByContractAddressQueryVariables = Exact<{
   contractAddress: Scalars['Address'];
@@ -2742,7 +2723,7 @@ export type ListListingsQueryVariables = Exact<{
 }>;
 
 
-export type ListListingsQuery = { __typename?: 'Query', result: { __typename?: 'ListingConnection', pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'ListingEdge', node: { __typename?: 'Listing', id: string, marketplaceName: MarketplaceEnum, createdDate: Date, user: { __typename?: 'User', walletAddress: Address }, nft: { __typename?: 'NFT', id: string, tokenId: bigint, collection?: { __typename?: 'Collection', id: string, slug?: string | null, contractData?: { __typename?: 'ContractData', contractAddress: Address } | null } | null } } }> } };
+export type ListListingsQuery = { __typename?: 'Query', result: { __typename?: 'ListingConnection', pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'ListingEdge', node: { __typename?: 'Listing', id: string, marketplaceName: MarketplaceEnum, createdDate: Date, desiredDuration?: number | null, desiredPrincipalAddress?: Address | null, user: { __typename?: 'User', walletAddress: Address }, nft: { __typename?: 'NFT', id: string, tokenId: bigint, collection?: { __typename?: 'Collection', id: string, slug?: string | null, contractData?: { __typename?: 'ContractData', contractAddress: Address } | null } | null } } }> } };
 
 export type ListLoansQueryVariables = Exact<{
   borrowerAddress?: InputMaybe<Scalars['String']>;
@@ -2929,13 +2910,7 @@ export type BidEdgeFieldPolicy = {
 	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
 	node?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type CartKeySpecifier = ('createdDate' | 'id' | 'items' | CartKeySpecifier)[];
-export type CartFieldPolicy = {
-	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
-	id?: FieldPolicy<any> | FieldReadFunction<any>,
-	items?: FieldPolicy<any> | FieldReadFunction<any>
-};
-export type CollectionKeySpecifier = ('bannerImage' | 'collectionUrl' | 'contractData' | 'description' | 'discordUrl' | 'externalUrl' | 'id' | 'image' | 'imageId' | 'name' | 'nftsCount' | 'royalties' | 'slug' | 'statistics' | 'twitterUsername' | 'verified' | CollectionKeySpecifier)[];
+export type CollectionKeySpecifier = ('bannerImage' | 'collectionUrl' | 'contractData' | 'description' | 'discordUrl' | 'externalUrl' | 'id' | 'image' | 'imageId' | 'name' | 'nftsCount' | 'slug' | 'statistics' | 'twitterUsername' | 'verified' | CollectionKeySpecifier)[];
 export type CollectionFieldPolicy = {
 	bannerImage?: FieldPolicy<any> | FieldReadFunction<any>,
 	collectionUrl?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -2948,7 +2923,6 @@ export type CollectionFieldPolicy = {
 	imageId?: FieldPolicy<any> | FieldReadFunction<any>,
 	name?: FieldPolicy<any> | FieldReadFunction<any>,
 	nftsCount?: FieldPolicy<any> | FieldReadFunction<any>,
-	royalties?: FieldPolicy<any> | FieldReadFunction<any>,
 	slug?: FieldPolicy<any> | FieldReadFunction<any>,
 	statistics?: FieldPolicy<any> | FieldReadFunction<any>,
 	twitterUsername?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3164,11 +3138,12 @@ export type ListingEdgeFieldPolicy = {
 	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
 	node?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type LoanKeySpecifier = ('activities' | 'address' | 'borrowerAddress' | 'currency' | 'duration' | 'id' | 'indexInBlock' | 'loanId' | 'offer' | 'offerIds' | 'principalAddress' | 'protocolFee' | 'repaidActivity' | 'startTime' | 'status' | 'timestamp' | 'txHash' | LoanKeySpecifier)[];
+export type LoanKeySpecifier = ('activities' | 'address' | 'borrowerAddress' | 'contractStartTime' | 'currency' | 'duration' | 'id' | 'indexInBlock' | 'loanId' | 'offer' | 'offerIds' | 'principalAddress' | 'protocolFee' | 'repaidActivity' | 'startTime' | 'status' | 'timestamp' | 'txHash' | LoanKeySpecifier)[];
 export type LoanFieldPolicy = {
 	activities?: FieldPolicy<any> | FieldReadFunction<any>,
 	address?: FieldPolicy<any> | FieldReadFunction<any>,
 	borrowerAddress?: FieldPolicy<any> | FieldReadFunction<any>,
+	contractStartTime?: FieldPolicy<any> | FieldReadFunction<any>,
 	currency?: FieldPolicy<any> | FieldReadFunction<any>,
 	duration?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3402,13 +3377,14 @@ export type LostSourceNotificationFieldPolicy = {
 	readOn?: FieldPolicy<any> | FieldReadFunction<any>,
 	user?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type MultiSourceLoanKeySpecifier = ('activities' | 'address' | 'auction' | 'blendedAprBps' | 'borrowerAddress' | 'currency' | 'duration' | 'id' | 'indexInBlock' | 'loanId' | 'nft' | 'offer' | 'offerIds' | 'principalAddress' | 'principalAmount' | 'protocolFee' | 'renegotiationRequest' | 'repaidActivity' | 'sources' | 'startTime' | 'status' | 'timestamp' | 'topUpRequest' | 'totalOriginationFee' | 'txHash' | MultiSourceLoanKeySpecifier)[];
+export type MultiSourceLoanKeySpecifier = ('activities' | 'address' | 'auction' | 'blendedAprBps' | 'borrowerAddress' | 'contractStartTime' | 'currency' | 'duration' | 'id' | 'indexInBlock' | 'loanId' | 'nft' | 'offer' | 'offerIds' | 'principalAddress' | 'principalAmount' | 'protocolFee' | 'renegotiationRequest' | 'repaidActivity' | 'sources' | 'startTime' | 'status' | 'timestamp' | 'topUpRequest' | 'totalOriginationFee' | 'txHash' | MultiSourceLoanKeySpecifier)[];
 export type MultiSourceLoanFieldPolicy = {
 	activities?: FieldPolicy<any> | FieldReadFunction<any>,
 	address?: FieldPolicy<any> | FieldReadFunction<any>,
 	auction?: FieldPolicy<any> | FieldReadFunction<any>,
 	blendedAprBps?: FieldPolicy<any> | FieldReadFunction<any>,
 	borrowerAddress?: FieldPolicy<any> | FieldReadFunction<any>,
+	contractStartTime?: FieldPolicy<any> | FieldReadFunction<any>,
 	currency?: FieldPolicy<any> | FieldReadFunction<any>,
 	duration?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3441,13 +3417,14 @@ export type MultiSourceLoanEdgeFieldPolicy = {
 	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
 	node?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type MultiSourceLoanHistoryKeySpecifier = ('activity' | 'activityId' | 'borrowerAddress' | 'duration' | 'id' | 'offerIds' | 'principalAddress' | 'principalAmount' | 'sources' | 'startTime' | MultiSourceLoanHistoryKeySpecifier)[];
+export type MultiSourceLoanHistoryKeySpecifier = ('activity' | 'activityId' | 'borrowerAddress' | 'duration' | 'id' | 'loanId' | 'offerIds' | 'principalAddress' | 'principalAmount' | 'sources' | 'startTime' | MultiSourceLoanHistoryKeySpecifier)[];
 export type MultiSourceLoanHistoryFieldPolicy = {
 	activity?: FieldPolicy<any> | FieldReadFunction<any>,
 	activityId?: FieldPolicy<any> | FieldReadFunction<any>,
 	borrowerAddress?: FieldPolicy<any> | FieldReadFunction<any>,
 	duration?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	loanId?: FieldPolicy<any> | FieldReadFunction<any>,
 	offerIds?: FieldPolicy<any> | FieldReadFunction<any>,
 	principalAddress?: FieldPolicy<any> | FieldReadFunction<any>,
 	principalAmount?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3959,11 +3936,6 @@ export type RenegotiationRequestedNotificationFieldPolicy = {
 	readOn?: FieldPolicy<any> | FieldReadFunction<any>,
 	user?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type RoyaltyKeySpecifier = ('beneficiary' | 'percentage' | RoyaltyKeySpecifier)[];
-export type RoyaltyFieldPolicy = {
-	beneficiary?: FieldPolicy<any> | FieldReadFunction<any>,
-	percentage?: FieldPolicy<any> | FieldReadFunction<any>
-};
 export type SaleKeySpecifier = ('id' | 'nft' | 'order' | 'orderId' | 'taker' | 'timestamp' | 'txHash' | SaleKeySpecifier)[];
 export type SaleFieldPolicy = {
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -4121,13 +4093,11 @@ export type UnderfundedOfferNotificationFieldPolicy = {
 	readOn?: FieldPolicy<any> | FieldReadFunction<any>,
 	user?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type UserKeySpecifier = ('about' | 'beta' | 'blockchain' | 'cart' | 'cartId' | 'createdDate' | 'id' | 'linkedWallets' | 'mail' | 'mailValidationDate' | 'originalProfilePicture' | 'profilePictureId' | 'size64ProfilePicture' | 'size128ProfilePicture' | 'size256ProfilePicture' | 'size512ProfilePicture' | 'statistics' | 'twitterHandle' | 'updatedAt' | 'usedProduct' | 'username' | 'walletAddress' | UserKeySpecifier)[];
+export type UserKeySpecifier = ('about' | 'beta' | 'blockchain' | 'createdDate' | 'id' | 'linkedWallets' | 'mail' | 'mailValidationDate' | 'originalProfilePicture' | 'profilePictureId' | 'size64ProfilePicture' | 'size128ProfilePicture' | 'size256ProfilePicture' | 'size512ProfilePicture' | 'statistics' | 'twitterHandle' | 'updatedAt' | 'usedProduct' | 'username' | 'walletAddress' | UserKeySpecifier)[];
 export type UserFieldPolicy = {
 	about?: FieldPolicy<any> | FieldReadFunction<any>,
 	beta?: FieldPolicy<any> | FieldReadFunction<any>,
 	blockchain?: FieldPolicy<any> | FieldReadFunction<any>,
-	cart?: FieldPolicy<any> | FieldReadFunction<any>,
-	cartId?: FieldPolicy<any> | FieldReadFunction<any>,
 	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	linkedWallets?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -4302,10 +4272,6 @@ export type StrictTypedTypePolicies = {
 	BidEdge?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | BidEdgeKeySpecifier | (() => undefined | BidEdgeKeySpecifier),
 		fields?: BidEdgeFieldPolicy,
-	},
-	Cart?: Omit<TypePolicy, "fields" | "keyFields"> & {
-		keyFields?: false | CartKeySpecifier | (() => undefined | CartKeySpecifier),
-		fields?: CartFieldPolicy,
 	},
 	Collection?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | CollectionKeySpecifier | (() => undefined | CollectionKeySpecifier),
@@ -4678,10 +4644,6 @@ export type StrictTypedTypePolicies = {
 	RenegotiationRequestedNotification?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | RenegotiationRequestedNotificationKeySpecifier | (() => undefined | RenegotiationRequestedNotificationKeySpecifier),
 		fields?: RenegotiationRequestedNotificationFieldPolicy,
-	},
-	Royalty?: Omit<TypePolicy, "fields" | "keyFields"> & {
-		keyFields?: false | RoyaltyKeySpecifier | (() => undefined | RoyaltyKeySpecifier),
-		fields?: RoyaltyFieldPolicy,
 	},
 	Sale?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | SaleKeySpecifier | (() => undefined | SaleKeySpecifier),
@@ -5065,10 +5027,6 @@ export const CollectionsDocument = gql`
         externalUrl
         collectionUrl
         verified
-        royalties {
-          percentage
-          beneficiary
-        }
         image {
           cacheUrl
         }
@@ -5143,6 +5101,8 @@ export const ListListingsDocument = gql`
         id
         marketplaceName
         createdDate
+        desiredDuration
+        desiredPrincipalAddress
         user {
           walletAddress
         }

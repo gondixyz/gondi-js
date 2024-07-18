@@ -55,13 +55,21 @@ const emitLoanThenAuctionAndBid = async (
   });
   console.log(`refinance offer placed successfully: ${contractVersionString}`);
 
-  const remainingLockup = await users[0].getRemainingLockupSeconds({ loan });
+  const remainingLockup = await users[0].getRemainingLockupSeconds({
+    loan: {
+      ...loan,
+      contractStartTime: loan.startTime,
+    },
+  });
   await sleep(remainingLockup * 1_000);
   await generateBlock(); // We need to push a new block into the blockchain [anvil issue]
 
   const refinancePartialLoan = await refinancer.refinancePartialLoan({
     offer: renegotiationOffer,
-    loan,
+    loan: {
+      ...loan,
+      contractStartTime: loan.startTime,
+    },
     loanId,
   });
   const { loan: refinancedLoanResult, loanId: refinancedLoanId } =
@@ -76,7 +84,10 @@ const emitLoanThenAuctionAndBid = async (
   await sleep(3000);
 
   const sendLoanToAuction = await lender.liquidateLoan({
-    loan: refinancedLoanResult,
+    loan: {
+      ...refinancedLoanResult,
+      contractStartTime: refinancedLoanResult.startTime,
+    },
     loanId: refinancedLoanId,
   });
   const { blockNumber, loanId: liquidatedLoanId } = await sendLoanToAuction.waitTxInBlock();

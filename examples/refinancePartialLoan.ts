@@ -28,7 +28,12 @@ const emitRefinacePartialAndRepayLoan = async (contract?: Address) => {
   const { loan, loanId } = await emitLoan.waitTxInBlock();
   console.log(`loan emitted: ${contractVersionString}`);
 
-  const remainingLockup = await users[0].getRemainingLockupSeconds({ loan });
+  const remainingLockup = await users[0].getRemainingLockupSeconds({
+    loan: {
+      ...loan,
+      contractStartTime: loan.startTime,
+    },
+  });
   console.log(`remaining lockup: ${remainingLockup}`);
   await sleep(remainingLockup * 1_000 + SLEEP_BUFFER);
 
@@ -61,7 +66,10 @@ const emitRefinacePartialAndRepayLoan = async (contract?: Address) => {
     await generateBlock(); // We need to push a new block into the blockchain [anvil issue]
     const refinancePartialLoan = await users[0].refinancePartialLoan({
       offer: renegotiationOffer,
-      loan,
+      loan: {
+        ...loan,
+        contractStartTime: loan.startTime,
+      },
       loanId,
     });
     const { loan: refinancedLoanResult, loanId: newLoanId } =
@@ -74,7 +82,10 @@ const emitRefinacePartialAndRepayLoan = async (contract?: Address) => {
     console.log(e);
   } finally {
     const repaidLoan = await users[1].repayLoan({
-      loan: repayLoan,
+      loan: {
+        ...repayLoan,
+        contractStartTime: repayLoan.startTime,
+      },
       loanId: repayLoanId,
     });
     await repaidLoan.waitTxInBlock();
