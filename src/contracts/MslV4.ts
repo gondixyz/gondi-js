@@ -357,10 +357,6 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
     };
   }
 
-  async extendLoan(): ReturnType<MslV5['extendLoan']> {
-    throw new Error('Not implemented for V1');
-  }
-
   async addTranche(): ReturnType<MslV6['addTranche']> {
     throw new Error('Not implemented for V1');
   }
