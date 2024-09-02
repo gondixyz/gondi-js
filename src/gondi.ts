@@ -34,6 +34,7 @@ export class Gondi {
   bcClient: PublicClient<Transport, Chain>;
   api: Api;
   reservoir: Reservoir;
+  defaults: { Msl: Address; UserVault: Address };
 
   constructor({ wallet, apiClient, reservoirBaseApiUrl }: GondiProps) {
     this.wallet = wallet;
@@ -42,6 +43,10 @@ export class Gondi {
       transport: () => createTransport(wallet.transport),
     });
     this.contracts = new Contracts(this.bcClient, wallet);
+    this.defaults = {
+      Msl: this.contracts.MultiSourceLoanV6.address,
+      UserVault: this.contracts.UserVaultV5.address, // V6 UserVault contract will not be used
+    };
     this.api = new Api({ wallet, apiClient });
     this.reservoir = new Reservoir({
       baseApiUrl: reservoirBaseApiUrl,
@@ -57,11 +62,7 @@ export class Gondi {
 
   /** @internal */
   async _makeSingleNftOffer(offer: model.SingleNftOfferInput, mslContractAddress?: Address) {
-    const contract = mslContractAddress
-      ? this.contracts.Msl(mslContractAddress)
-      : this.contracts.MultiSourceLoanV5;
-    // TODO: Uncomment me when v3 is released
-    // : this.contracts.MultiSourceLoanV6;
+    const contract = this.contracts.Msl(mslContractAddress ?? this.defaults.Msl);
     const contractAddress = contract.address;
 
     const offerInput = {
@@ -115,11 +116,7 @@ export class Gondi {
 
   /** @internal */
   async _makeCollectionOffer(offer: model.CollectionOfferInput, mslContractAddress?: Address) {
-    const contract = mslContractAddress
-      ? this.contracts.Msl(mslContractAddress)
-      : this.contracts.MultiSourceLoanV5;
-    // TODO: Uncomment me when v3 is released
-    // : this.contracts.MultiSourceLoanV6;
+    const contract = this.contracts.Msl(mslContractAddress ?? this.defaults.Msl);
     const contractAddress = contract.address;
 
     const offerInput = {
@@ -722,10 +719,8 @@ export class Gondi {
     to,
     collection,
     tokenId,
-    contract = this.contracts.MultiSourceLoanV5.address,
-  }: // TODO: Uncomment me when v3 is released
-  // contract = this.contracts.MultiSourceLoanV6.address,
-  {
+    contract = this.defaults.Msl,
+  }: {
     to: Address;
     collection: Address;
     tokenId: bigint;
@@ -910,10 +905,8 @@ export class Gondi {
 
   async isApprovedNFTForAll({
     nftAddress,
-    to = this.contracts.MultiSourceLoanV5.address,
-  }: // TODO: Uncomment me when v3 is released
-  // to = this.contracts.MultiSourceLoanV6.address,
-  {
+    to = this.defaults.Msl,
+  }: {
     nftAddress: Address;
     to?: Address;
   }) {
@@ -925,10 +918,8 @@ export class Gondi {
     nftAddress,
     isOldErc721,
     tokenId,
-    to = this.contracts.MultiSourceLoanV5.address,
-  }: // TODO: Uncomment me when v3 is released
-  // to = this.contracts.MultiSourceLoanV6.address,
-  {
+    to = this.defaults.Msl,
+  }: {
     nftAddress: Address;
     to?: Address;
   } & (
@@ -951,10 +942,8 @@ export class Gondi {
 
   async approveNFTForAll({
     nftAddress,
-    to = this.contracts.MultiSourceLoanV5.address,
-  }: // TODO: Uncomment me when v3 is released
-  // to = this.contracts.MultiSourceLoanV6.address,
-  {
+    to = this.defaults.Msl,
+  }: {
     nftAddress: Address;
     to?: Address;
   }) {
@@ -980,10 +969,8 @@ export class Gondi {
     nftAddress,
     isOldErc721,
     tokenId,
-    to = this.contracts.MultiSourceLoanV5.address,
-  }: // TODO: Uncomment me when v3 is released
-  // to = this.contracts.MultiSourceLoanV6.address,
-  {
+    to = this.defaults.Msl,
+  }: {
     nftAddress: Address;
     to?: Address;
   } & (
@@ -1019,10 +1006,8 @@ export class Gondi {
   async isApprovedToken({
     tokenAddress,
     amount,
-    to = this.contracts.MultiSourceLoanV5.address,
-  }: // TODO: Uncomment me when v3 is released
-  // to = this.contracts.MultiSourceLoanV6.address,
-  {
+    to = this.defaults.Msl,
+  }: {
     tokenAddress: Address;
     amount: bigint;
     to?: Address;
@@ -1034,10 +1019,8 @@ export class Gondi {
   async approveToken({
     tokenAddress,
     amount = model.MAX_NUMBER,
-    to = this.contracts.MultiSourceLoanV5.address,
-  }: // TODO: Uncomment me when v3 is released
-  // to = this.contracts.MultiSourceLoanV6.address,
-  {
+    to = this.defaults.Msl,
+  }: {
     tokenAddress: Address;
     amount?: bigint;
     to?: Address;
@@ -1061,9 +1044,7 @@ export class Gondi {
 
   async createUserVault({
     nfts,
-    userVaultAddress = this.contracts.UserVaultV5.address,
-    // TODO: uncomment when we realease v6
-    // userVaultAddress = this.contracts.UserVaultV6.address,
+    userVaultAddress = this.defaults.UserVault,
   }: {
     nfts: Parameters<Contracts['UserVaultV5']['createVault']>[0];
     userVaultAddress?: Address;
@@ -1072,9 +1053,7 @@ export class Gondi {
   }
 
   async depositUserVaultERC721s({
-    userVaultAddress = this.contracts.UserVaultV5.address,
-    // TODO: uncomment when we realease v6
-    // userVaultAddress = this.contracts.UserVaultV6.address,
+    userVaultAddress = this.defaults.UserVault,
     ...data
   }: {
     userVaultAddress?: Address;
@@ -1083,9 +1062,7 @@ export class Gondi {
   }
 
   async depositUserVaultOldERC721s({
-    userVaultAddress = this.contracts.UserVaultV5.address,
-    // TODO: uncomment when we realease v6
-    // userVaultAddress = this.contracts.UserVaultV6.address,
+    userVaultAddress = this.defaults.UserVault,
     ...data
   }: {
     userVaultAddress?: Address;
@@ -1094,9 +1071,7 @@ export class Gondi {
   }
 
   async burnUserVaultAndWithdraw({
-    userVaultAddress = this.contracts.UserVaultV5.address,
-    // TODO: uncomment when we realease v6
-    // userVaultAddress = this.contracts.UserVaultV6.address,
+    userVaultAddress = this.defaults.UserVault,
     ...data
   }: {
     userVaultAddress?: Address;
