@@ -99,7 +99,7 @@ export type ListOffersProps = {
 export interface ListLoansProps {
   limit?: number;
   cursor?: string | null;
-  borrowerAddress?: Address;
+  borrowers?: Address[];
   collections?: number[];
   nfts?: number[];
   statuses?: LoanStatusType[];

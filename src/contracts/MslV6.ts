@@ -18,7 +18,6 @@ import { bpsToPercentage, sumBy } from '@/utils/number';
 import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 
 import { BaseContract } from './BaseContract';
-import { MslV5 } from './MslV5';
 
 export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
   constructor({ walletClient }: { walletClient: Wallet }) {
@@ -208,10 +207,6 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
         };
       },
     };
-  }
-
-  async extendLoan(): ReturnType<MslV5['extendLoan']> {
-    throw new Error('Not implemented for V3');
   }
 
   async revokeDelegationsAndEmitLoan({

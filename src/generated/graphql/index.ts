@@ -107,8 +107,7 @@ export type AuctionEndedNotification = Node & Notification & {
 };
 
 export enum AuctionSortField {
-  EndTime = 'END_TIME',
-  Status = 'STATUS'
+  EndTime = 'END_TIME'
 }
 
 export type AuctionSortInput = {
@@ -937,6 +936,8 @@ export type Mutation = {
 export type MutationAddListingsOfNftsFromUserArgs = {
   desiredDuration?: InputMaybe<Scalars['Int']>;
   desiredPrincipalAddress?: InputMaybe<Scalars['Address']>;
+  excludeCollections?: InputMaybe<Array<Scalars['String']>>;
+  onlyCollections?: InputMaybe<Array<Scalars['String']>>;
 };
 
 
@@ -1007,6 +1008,12 @@ export type MutationMarkNotificationIdsAsReadArgs = {
 
 export type MutationRemoveListingArgs = {
   nftId: Scalars['Int'];
+};
+
+
+export type MutationRemoveListingsOfNftsFromUserArgs = {
+  excludeCollections?: InputMaybe<Array<Scalars['String']>>;
+  onlyCollections?: InputMaybe<Array<Scalars['String']>>;
 };
 
 
@@ -1446,7 +1453,7 @@ export type Query = {
   listLoanActivities: LoanActivityConnection;
   listLoans: MultiSourceLoanConnection;
   listNftDelegations: DelegationConnection;
-  listNftOffersAndRenegotiations: SingleNftOfferRenegotiationConnection;
+  listNftOffersAndRenegotiations: SingleNftOfferCollectionOfferRenegotiationConnection;
   listNftsFromCollections: NftConnection;
   listNftsFromUser: NftConnection;
   listNotifications: NotificationConnection;
@@ -1582,7 +1589,7 @@ export type QueryListLoanActivitiesArgs = {
 
 export type QueryListLoansArgs = {
   after?: InputMaybe<Scalars['String']>;
-  borrowerAddress?: InputMaybe<Scalars['String']>;
+  borrowers?: InputMaybe<Array<Scalars['String']>>;
   collections?: InputMaybe<Array<Scalars['Int']>>;
   contractAddresses?: InputMaybe<Array<Scalars['Address']>>;
   currencyAddress?: InputMaybe<Scalars['Address']>;
@@ -1613,7 +1620,13 @@ export type QueryListNftOffersAndRenegotiationsArgs = {
   currencyAddress?: InputMaybe<Scalars['Address']>;
   first?: InputMaybe<Scalars['Int']>;
   hidden?: InputMaybe<Scalars['Boolean']>;
+  isAddNewTranche?: InputMaybe<Scalars['Boolean']>;
   lenders?: InputMaybe<Array<Scalars['String']>>;
+  loanId?: InputMaybe<Scalars['String']>;
+  nfts?: InputMaybe<Array<Scalars['Int']>>;
+  onlyCollectionOffers?: Scalars['Boolean'];
+  onlyInvalid?: Scalars['Boolean'];
+  onlySingleNftOffers?: Scalars['Boolean'];
   sortBy?: InputMaybe<OffersSortInput>;
   statuses?: InputMaybe<Array<OfferStatus>>;
   terms?: InputMaybe<TermsFilter>;
@@ -1633,6 +1646,7 @@ export type QueryListNftsFromCollectionsArgs = {
 
 export type QueryListNftsFromUserArgs = {
   after?: InputMaybe<Scalars['String']>;
+  collectionAddresses?: InputMaybe<Array<Scalars['Address']>>;
   first?: InputMaybe<Scalars['Int']>;
   searchTerm?: InputMaybe<Scalars['String']>;
   sortBy?: InputMaybe<Array<NftSortInput>>;
@@ -1896,6 +1910,21 @@ export type SingleNftOffer = Node & Offer & {
   validators: Array<OfferValidator>;
 };
 
+export type SingleNftOfferCollectionOfferRenegotiation = CollectionOffer | Renegotiation | SingleNftOffer;
+
+export type SingleNftOfferCollectionOfferRenegotiationConnection = {
+  __typename?: 'SingleNFTOfferCollectionOfferRenegotiationConnection';
+  edges: Array<SingleNftOfferCollectionOfferRenegotiationEdge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int'];
+};
+
+export type SingleNftOfferCollectionOfferRenegotiationEdge = {
+  __typename?: 'SingleNFTOfferCollectionOfferRenegotiationEdge';
+  cursor: Scalars['String'];
+  node: SingleNftOfferCollectionOfferRenegotiation;
+};
+
 export type SingleNftOfferInput = {
   aprBps: Scalars['BigInt'];
   borrowerAddress: Scalars['Address'];
@@ -1913,21 +1942,6 @@ export type SingleNftOfferInput = {
   principalAmount: Scalars['BigInt'];
   requiresLiquidation?: InputMaybe<Scalars['Boolean']>;
   signerAddress?: InputMaybe<Scalars['Address']>;
-};
-
-export type SingleNftOfferRenegotiation = Renegotiation | SingleNftOffer;
-
-export type SingleNftOfferRenegotiationConnection = {
-  __typename?: 'SingleNFTOfferRenegotiationConnection';
-  edges: Array<SingleNftOfferRenegotiationEdge>;
-  pageInfo: PageInfo;
-  totalCount: Scalars['Int'];
-};
-
-export type SingleNftOfferRenegotiationEdge = {
-  __typename?: 'SingleNFTOfferRenegotiationEdge';
-  cursor: Scalars['String'];
-  node: SingleNftOfferRenegotiation;
 };
 
 export type SingleNftOrder = Activity & Node & Order & {
@@ -2235,10 +2249,6 @@ export type UserStatisticsWavgRepaidAprArgs = {
   walletsAddresses: Array<Scalars['Address']>;
 };
 
-export type CollectionInfoFragment = { __typename?: 'Collection', id: string, name?: string | null, slug?: string | null, collectionUrl?: string | null, image?: { __typename?: 'Asset', data: string, cacheUrl?: string | null, contentTypeMime: string } | null };
-
-export type CollectionInfoWithContractFragment = { __typename?: 'Collection', id: string, name?: string | null, slug?: string | null, collectionUrl?: string | null, contractData?: { __typename?: 'ContractData', creatorAddress?: Address | null, contractAddress: Address, standard: string } | null, image?: { __typename?: 'Asset', data: string, cacheUrl?: string | null, contentTypeMime: string } | null };
-
 export type CurrencyAmountInfoFragment = { __typename?: 'CurrencyAmount', amount: number, currency: { __typename?: 'Currency', address: Address, decimals: number } };
 
 export type CurrencyInfoFragment = { __typename?: 'Currency', address: Address, decimals: number };
@@ -2396,7 +2406,7 @@ export type ListListingsQueryVariables = Exact<{
 export type ListListingsQuery = { __typename?: 'Query', result: { __typename?: 'ListingConnection', pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'ListingEdge', node: { __typename?: 'Listing', id: string, marketplaceName: MarketplaceEnum, createdDate: Date, desiredDuration?: number | null, desiredPrincipalAddress?: Address | null, user: { __typename?: 'User', walletAddress: Address }, nft: { __typename?: 'NFT', id: string, tokenId: bigint, collection?: { __typename?: 'Collection', id: string, slug?: string | null, contractData?: { __typename?: 'ContractData', contractAddress: Address } | null } | null } } }> } };
 
 export type ListLoansQueryVariables = Exact<{
-  borrowerAddress?: InputMaybe<Scalars['String']>;
+  borrowers?: InputMaybe<Array<Scalars['String']> | Scalars['String']>;
   collections?: InputMaybe<Array<Scalars['Int']> | Scalars['Int']>;
   nfts?: InputMaybe<Array<Scalars['Int']> | Scalars['Int']>;
   statuses?: InputMaybe<Array<LoanStatusType> | LoanStatusType>;
@@ -3475,14 +3485,14 @@ export type SingleNFTOfferFieldPolicy = {
 	status?: FieldPolicy<any> | FieldReadFunction<any>,
 	validators?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type SingleNFTOfferRenegotiationConnectionKeySpecifier = ('edges' | 'pageInfo' | 'totalCount' | SingleNFTOfferRenegotiationConnectionKeySpecifier)[];
-export type SingleNFTOfferRenegotiationConnectionFieldPolicy = {
+export type SingleNFTOfferCollectionOfferRenegotiationConnectionKeySpecifier = ('edges' | 'pageInfo' | 'totalCount' | SingleNFTOfferCollectionOfferRenegotiationConnectionKeySpecifier)[];
+export type SingleNFTOfferCollectionOfferRenegotiationConnectionFieldPolicy = {
 	edges?: FieldPolicy<any> | FieldReadFunction<any>,
 	pageInfo?: FieldPolicy<any> | FieldReadFunction<any>,
 	totalCount?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type SingleNFTOfferRenegotiationEdgeKeySpecifier = ('cursor' | 'node' | SingleNFTOfferRenegotiationEdgeKeySpecifier)[];
-export type SingleNFTOfferRenegotiationEdgeFieldPolicy = {
+export type SingleNFTOfferCollectionOfferRenegotiationEdgeKeySpecifier = ('cursor' | 'node' | SingleNFTOfferCollectionOfferRenegotiationEdgeKeySpecifier)[];
+export type SingleNFTOfferCollectionOfferRenegotiationEdgeFieldPolicy = {
 	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
 	node?: FieldPolicy<any> | FieldReadFunction<any>
 };
@@ -3994,13 +4004,13 @@ export type StrictTypedTypePolicies = {
 		keyFields?: false | SingleNFTOfferKeySpecifier | (() => undefined | SingleNFTOfferKeySpecifier),
 		fields?: SingleNFTOfferFieldPolicy,
 	},
-	SingleNFTOfferRenegotiationConnection?: Omit<TypePolicy, "fields" | "keyFields"> & {
-		keyFields?: false | SingleNFTOfferRenegotiationConnectionKeySpecifier | (() => undefined | SingleNFTOfferRenegotiationConnectionKeySpecifier),
-		fields?: SingleNFTOfferRenegotiationConnectionFieldPolicy,
+	SingleNFTOfferCollectionOfferRenegotiationConnection?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | SingleNFTOfferCollectionOfferRenegotiationConnectionKeySpecifier | (() => undefined | SingleNFTOfferCollectionOfferRenegotiationConnectionKeySpecifier),
+		fields?: SingleNFTOfferCollectionOfferRenegotiationConnectionFieldPolicy,
 	},
-	SingleNFTOfferRenegotiationEdge?: Omit<TypePolicy, "fields" | "keyFields"> & {
-		keyFields?: false | SingleNFTOfferRenegotiationEdgeKeySpecifier | (() => undefined | SingleNFTOfferRenegotiationEdgeKeySpecifier),
-		fields?: SingleNFTOfferRenegotiationEdgeFieldPolicy,
+	SingleNFTOfferCollectionOfferRenegotiationEdge?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | SingleNFTOfferCollectionOfferRenegotiationEdgeKeySpecifier | (() => undefined | SingleNFTOfferCollectionOfferRenegotiationEdgeKeySpecifier),
+		fields?: SingleNFTOfferCollectionOfferRenegotiationEdgeFieldPolicy,
 	},
 	SingleNFTOrder?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | SingleNFTOrderKeySpecifier | (() => undefined | SingleNFTOrderKeySpecifier),
@@ -4381,9 +4391,9 @@ export const ListListingsDocument = gql`
 }
     `;
 export const ListLoansDocument = gql`
-    query listLoans($borrowerAddress: String = "", $collections: [Int!] = [], $nfts: [Int!], $statuses: [LoanStatusType!] = [], $sortBy: [LoanSortInput!] = [], $terms: TermsFilter, $orderByStatuses: Boolean, $loansCurrencyAddress: Address, $first: Int = 24, $after: String) {
+    query listLoans($borrowers: [String!] = [], $collections: [Int!] = [], $nfts: [Int!], $statuses: [LoanStatusType!] = [], $sortBy: [LoanSortInput!] = [], $terms: TermsFilter, $orderByStatuses: Boolean, $loansCurrencyAddress: Address, $first: Int = 24, $after: String) {
   loans: listLoans(
-    borrowerAddress: $borrowerAddress
+    borrowers: $borrowers
     collections: $collections
     nfts: $nfts
     statuses: $statuses

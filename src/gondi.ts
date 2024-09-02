@@ -664,22 +664,6 @@ export class Gondi {
     });
   }
 
-  async extendLoan({
-    loan,
-    newDuration,
-    loanId,
-  }: {
-    loan: LoanToMslLoanType;
-    newDuration: bigint;
-    loanId: bigint;
-  }) {
-    return this.contracts.Msl(loan.contractAddress).extendLoan({
-      loan: loanToMslLoan(loan),
-      newDuration,
-      loanId,
-    });
-  }
-
   async addTranche({
     offer,
     loan,
