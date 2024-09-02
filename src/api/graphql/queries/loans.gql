@@ -1,5 +1,5 @@
 query listLoans(
-  $borrowerAddress: String = ""
+  $borrowers: [String!] = []
   $collections: [Int!] = []
   $nfts: [Int!]
   $statuses: [LoanStatusType!] = []
@@ -11,7 +11,7 @@ query listLoans(
   $after: String
 ) {
   loans: listLoans(
-    borrowerAddress: $borrowerAddress
+    borrowers: $borrowers
     collections: $collections
     nfts: $nfts
     statuses: $statuses
