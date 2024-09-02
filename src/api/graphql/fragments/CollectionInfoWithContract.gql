@@ -1,8 +1,0 @@
-fragment CollectionInfoWithContract on Collection {
-  ...CollectionInfo
-  contractData {
-    creatorAddress
-    contractAddress
-    standard
-  }
-}

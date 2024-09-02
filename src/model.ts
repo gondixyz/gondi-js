@@ -116,10 +116,3 @@ export type ListListingsProps = {
   limit?: number;
   cursor?: string | null;
 };
-
-export type ListWithdrawalPositionsProps = {
-  poolAddresses?: Address[];
-  owner?: Address;
-  limit?: number;
-  cursor?: string | null;
-};
