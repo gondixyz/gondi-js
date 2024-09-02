@@ -90,19 +90,19 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
     return {
       MultiSourceLoan: {
         v4: '0x60C20627429668F267b5cF55c6605c665C69887D',
-        v5: '0xTODO', // TODO: deploy
-        v6: '0xTODO', // TODO: deploy
+        v5: '0xTODO',
+        v6: '0xTODO',
       },
       AuctionLoanLiquidator: {
         v4: '0x29C73faa2f9180ea5a7B0bEC243ebc63a5B4f280',
-        v5: '0xTODO', // TODO: deploy
-        v6: '0xTODO', // TODO: deploy
+        v5: '0xTODO',
+        v6: '0xTODO',
       },
       UserVault: {
         v5: '0xTODO',
         v6: '0xTODO',
       },
-      LeverageAddress: '0xTODO', // TODO: deploy
+      LeverageAddress: '0xTODO',
       SeaportAddress: '0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC',
       CryptoPunksAddress: '0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb',
     };
@@ -112,12 +112,12 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
     MultiSourceLoan: {
       v4: '0xCa5a494Ca20483e21ec1E41FE1D9461Da77595Bd',
       v5: '0x478f6F994C6fb3cf3e444a489b3AD9edB8cCaE16',
-      v6: '0xTODO', // TODO: deploy
+      v6: '0xf65b99ce6dc5f6c556172bcc0ff27d3665a7d9a8',
     },
     AuctionLoanLiquidator: {
       v4: '0x237e4421C742d843Fdd96D22294D338507e17091',
       v5: '0x97d34635b605c2f1630d6b4c6c5d222b8a2ca47d',
-      v6: '0xTODO', // TODO: deploy
+      v6: '0x2995ae7233fa89b314b5a707465b57a582f440f0',
     },
     UserVault: {
       v5: '0x14a6Dcebb2Bb73aae1b199CCAadA75247b81976D',
