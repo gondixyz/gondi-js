@@ -66,7 +66,7 @@ const link = ApolloLink.from([
   withScalars({ schema: lendingSchema, typesMap }),
   createHttpLink({
     uri: ({ operationName }) => `${apiUrl()}?operation=${encodeURIComponent(operationName)}`,
-  }) as unknown as ApolloLink,
+  }),
 ]);
 
 export const apolloClient = (wallet: Wallet) => {

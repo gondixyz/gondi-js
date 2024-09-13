@@ -1,6 +1,6 @@
 import { Address, encodeAbiParameters } from 'viem';
 
-import { filterLogs, LoanV4 } from '@/blockchain';
+import { LoanV4 } from '@/blockchain';
 import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { auctionLoanLiquidatorABI as auctionLoanLiquidatorABIV4 } from '@/generated/blockchain/v4';
@@ -73,9 +73,7 @@ export class AllV4 extends BaseContract<typeof auctionLoanLiquidatorABIV4> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-
-        const filter = await this.contract.createEventFilter.BidPlaced();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('BidPlaced', receipt.logs);
         if (events.length === 0) throw new Error('Bid not placed');
         return { ...events[0].args, ...receipt };
       },
@@ -115,9 +113,7 @@ export class AllV4 extends BaseContract<typeof auctionLoanLiquidatorABIV4> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-
-        const filter = await this.contract.createEventFilter.AuctionSettled();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('AuctionSettled', receipt.logs);
         if (events.length === 0) throw new Error('Auction not settled');
         return { ...events[0].args, ...receipt };
       },

@@ -1,6 +1,5 @@
 import { Address } from 'viem';
 
-import { filterLogs } from '@/blockchain';
 import { Wallet } from '@/contracts';
 import { UserVaultV6 } from '@/contracts/UserVaultV6';
 import { getContracts } from '@/deploys';
@@ -41,9 +40,7 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-
-        const filter = await this.contract.createEventFilter.ERC721Withdrawn();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('ERC721Withdrawn', receipt.logs);
         if (events.length !== tokenIds.length) throw new Error('Withdrawn count mismatch');
         return {
           events: events.map((event) => event.args),
@@ -89,9 +86,7 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-
-        const filter = await this.contract.createEventFilter.ERC721Deposited();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('ERC721Deposited', receipt.logs);
         if (events.length === 0) throw new Error('Deposit not created');
         return { ...events[0].args, ...receipt };
       },
@@ -108,8 +103,7 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
       hash: txHash,
     });
 
-    const filter = await this.contract.createEventFilter.Transfer({});
-    const events = filterLogs(receipt, filter);
+    const events = this.parseEventLogs('Transfer', receipt.logs);
     if (events.length === 0) throw new Error('Vault not created');
     return { ...events[0].args, ...receipt };
   }

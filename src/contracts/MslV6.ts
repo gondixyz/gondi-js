@@ -1,13 +1,6 @@
 import { Address, encodeFunctionData, Hash } from 'viem';
 
-import {
-  filterLogs,
-  LoanV6,
-  OfferV6,
-  RenegotiationV6,
-  REORG_SAFETY_BUFFER,
-  zeroHash,
-} from '@/blockchain';
+import { LoanV6, OfferV6, RenegotiationV6, REORG_SAFETY_BUFFER, zeroHash } from '@/blockchain';
 import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { multiSourceLoanAbi as multiSourceLoanAbiV6 } from '@/generated/blockchain/v6';
@@ -100,8 +93,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
           hash: txHash,
         });
 
-        const filter = await this.contract.createEventFilter.OfferCancelled();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('OfferCancelled', receipt.logs);
         if (events.length === 0) throw new Error('Offer not cancelled');
         return { ...events[0].args, ...receipt };
       },
@@ -117,8 +109,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filter = await this.contract.createEventFilter.AllOffersCancelled();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('AllOffersCancelled', receipt.logs);
         if (events.length === 0) throw new Error('Offers not cancelled');
         return { ...events[0].args, ...receipt };
       },
@@ -133,8 +124,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filter = await this.contract.createEventFilter.RenegotiationOfferCancelled();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('RenegotiationOfferCancelled', receipt.logs);
         if (events.length === 0) throw new Error('Renegotiation offer not cancelled');
         return { ...events[0].args, ...receipt };
       },
@@ -186,8 +176,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filter = await this.contract.createEventFilter.LoanEmitted();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('LoanEmitted', receipt.logs);
         if (events.length === 0) throw new Error('Loan not emitted');
         const args = events[0].args;
         return {
@@ -245,13 +234,11 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
           hash: txHash,
         });
 
-        const revokeFilter = await this.contract.createEventFilter.RevokeDelegate();
-        const revokeEvents = filterLogs(receipt, revokeFilter);
+        const revokeEvents = this.parseEventLogs('RevokeDelegate', receipt.logs);
         if (revokeEvents.length !== delegations.length)
           throw new Error('Revoke delegations failed');
 
-        const emitFilter = await this.contract.createEventFilter.LoanEmitted();
-        const emitEvents = filterLogs(receipt, emitFilter);
+        const emitEvents = this.parseEventLogs('LoanEmitted', receipt.logs);
         if (emitEvents.length === 0) throw new Error('Loan not emitted');
 
         const results = [
@@ -292,8 +279,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filter = await this.contract.createEventFilter.LoanRepaid();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('LoanRepaid', receipt.logs);
         if (events.length === 0) throw new Error('Loan not repaid');
         return { ...events[0].args, ...receipt };
       },
@@ -379,8 +365,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filter = await this.contract.createEventFilter.LoanRefinanced();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('LoanRefinanced', receipt.logs);
         if (events.length !== refinancings.length) throw new Error('Loan not refinanced');
 
         const results = events.map(({ args }) => args);
@@ -448,8 +433,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filter = await this.contract.createEventFilter.LoanRefinancedFromNewOffers();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('LoanRefinancedFromNewOffers', receipt.logs);
         if (events.length === 0) throw new Error('LoanRefinancedFromNewOffers not emitted');
         const args = events[0].args;
         return {
@@ -485,8 +469,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filter = await this.contract.createEventFilter.LoanRefinanced();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('LoanRefinanced', receipt.logs);
         if (events.length === 0) throw new Error('Loan not refinanced');
         const args = events[0].args;
         return {
@@ -530,9 +513,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filter = await this.contract.createEventFilter.Delegated();
-        const events = filterLogs(receipt, filter);
-
+        const events = this.parseEventLogs('Delegated', receipt.logs);
         if (events.length !== delegations.length) throw new Error('Delegate multicall failed');
 
         return {
@@ -564,8 +545,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filter = await this.contract.createEventFilter.Delegated();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('Delegated', receipt.logs);
         if (events.length === 0) throw new Error('Token not delegated');
         const args = events[0].args;
         return {
@@ -598,8 +578,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filter = await this.contract.createEventFilter.RevokeDelegate();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('RevokeDelegate', receipt.logs);
         if (events.length === 0) throw new Error('Token delegation not revoked');
         const args = events[0].args;
         return { ...args, ...receipt };
@@ -615,10 +594,8 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filterForeclosed = await this.contract.createEventFilter.LoanForeclosed();
-        const filterSentToLiquidator = await this.contract.createEventFilter.LoanSentToLiquidator();
-        const foreclosedEvents = filterLogs(receipt, filterForeclosed);
-        const sentToLiquidatorEvents = filterLogs(receipt, filterSentToLiquidator);
+        const foreclosedEvents = this.parseEventLogs('LoanForeclosed', receipt.logs);
+        const sentToLiquidatorEvents = this.parseEventLogs('LoanSentToLiquidator', receipt.logs);
         if (foreclosedEvents.length === 0 && sentToLiquidatorEvents.length === 0)
           throw new Error('Loan not liquidated');
         return {

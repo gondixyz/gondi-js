@@ -1,13 +1,4 @@
-import {
-  Account,
-  Address,
-  Chain,
-  getContract,
-  GetContractReturnType,
-  PublicClient,
-  Transport,
-  WalletClient,
-} from 'viem';
+import { Account, Address, Chain, PublicClient, Transport, WalletClient } from 'viem';
 
 import { oldErc721Abi } from '@/generated/blockchain/oldErc721';
 import { erc20ABI, erc721ABI } from '@/generated/blockchain/v5';
@@ -16,6 +7,7 @@ import { areSameAddress } from '@/utils/string';
 import { AllV4 } from './AllV4';
 import { AllV5 } from './AllV5';
 import { AllV6 } from './AllV6';
+import { BaseContract } from './BaseContract';
 import { CryptoPunks } from './CryptoPunks';
 import { LeverageV5 } from './LeverageV5';
 import { MslV4 } from './MslV4';
@@ -26,10 +18,16 @@ import { UserVaultV5 } from './UserVaultV5';
 import { UserVaultV6 } from './UserVaultV6';
 
 export type Wallet = WalletClient<Transport, Chain, Account>;
+export type GondiPublicClient = PublicClient<Transport, Chain>;
+
+export interface KeyedClient {
+  public: GondiPublicClient;
+  wallet: Wallet;
+}
 
 export class Contracts {
+  publicClient: GondiPublicClient;
   walletClient: Wallet;
-  publicClient: PublicClient;
 
   MultiSourceLoanV4: MslV4;
   MultiSourceLoanV5: MslV5;
@@ -43,7 +41,7 @@ export class Contracts {
   Seaport: Seaport;
   CryptoPunks: CryptoPunks;
 
-  constructor(publicClient: PublicClient, walletClient: Wallet) {
+  constructor(publicClient: GondiPublicClient, walletClient: Wallet) {
     this.walletClient = walletClient;
     this.publicClient = publicClient;
 
@@ -105,36 +103,27 @@ export class Contracts {
     throw new Error(`Invalid Contract Address ${contractAddress}`);
   }
 
-  ERC721(
-    nftAddress: Address,
-  ): GetContractReturnType<typeof erc721ABI, PublicClient, Wallet, Address> {
-    return getContract({
-      address: nftAddress,
+  ERC721(address: Address) {
+    return new BaseContract({
+      address,
       abi: erc721ABI,
       walletClient: this.walletClient,
-      publicClient: this.publicClient,
     });
   }
 
-  OldERC721(
-    nftAddress: Address,
-  ): GetContractReturnType<typeof oldErc721Abi, PublicClient, Wallet, Address> {
-    return getContract({
-      address: nftAddress,
+  OldERC721(address: Address) {
+    return new BaseContract({
+      address,
       abi: oldErc721Abi,
       walletClient: this.walletClient,
-      publicClient: this.publicClient,
     });
   }
 
-  ERC20(
-    nftAddress: Address,
-  ): GetContractReturnType<typeof erc20ABI, PublicClient, Wallet, Address> {
-    return getContract({
-      address: nftAddress,
+  ERC20(address: Address) {
+    return new BaseContract({
+      address,
       abi: erc20ABI,
       walletClient: this.walletClient,
-      publicClient: this.publicClient,
     });
   }
 }
