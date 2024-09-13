@@ -1,6 +1,6 @@
 import { Address, encodeFunctionData, Hash } from 'viem';
 
-import { filterLogs, LoanV5, OfferV5 } from '@/blockchain';
+import { LoanV5, OfferV5 } from '@/blockchain';
 import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { leverageABI, multiSourceLoanABI } from '@/generated/blockchain/v5';
@@ -144,9 +144,7 @@ export class LeverageV5 extends BaseContract<typeof leverageABI> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-
-        const filter = await this.contract.createEventFilter.BNPLLoansStarted();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('BNPLLoansStarted', receipt.logs);
         if (events.length === 0) throw new Error('BNPL Loans not started');
         return { ...events[0].args, ...receipt };
       },
@@ -192,9 +190,7 @@ export class LeverageV5 extends BaseContract<typeof leverageABI> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-
-        const filter = await this.contract.createEventFilter.SellAndRepayExecuted();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('SellAndRepayExecuted', receipt.logs);
         if (events.length === 0) throw new Error('Sell and repay not executed');
         return { ...events[0].args, ...receipt };
       },

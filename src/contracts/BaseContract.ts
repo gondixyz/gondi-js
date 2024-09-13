@@ -1,6 +1,7 @@
 import {
   Abi,
   Address,
+  ContractEventName,
   ContractFunctionArgs,
   ContractFunctionName,
   createPublicClient,
@@ -8,8 +9,10 @@ import {
   getContract,
   GetContractReturnType,
   Hash,
+  parseEventLogs,
   PublicClient,
   SimulateContractParameters,
+  TransactionReceipt,
 } from 'viem';
 
 import { Wallet } from '@/contracts';
@@ -27,6 +30,11 @@ export class BaseContract<TAbi extends Abi> {
       options?: { value?: bigint },
     ) => Promise<Hash>;
   };
+
+  parseEventLogs: <TFunctionName extends ContractEventName<TAbi>>(
+    eventName: TFunctionName,
+    logs: TransactionReceipt['logs'],
+  ) => ReturnType<typeof parseEventLogs<TAbi, true, TFunctionName>>;
 
   constructor({
     walletClient,
@@ -52,6 +60,8 @@ export class BaseContract<TAbi extends Abi> {
         wallet: walletClient,
       },
     });
+
+    this.parseEventLogs = (eventName, logs) => parseEventLogs({ eventName, logs, abi: this.abi });
 
     this.safeContractWrite = new Proxy({} as typeof this.safeContractWrite, {
       get<TFunctionName extends ContractFunctionName<TAbi, 'nonpayable' | 'payable'>>(

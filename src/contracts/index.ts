@@ -1,13 +1,4 @@
-import {
-  Account,
-  Address,
-  Chain,
-  getContract,
-  GetContractReturnType,
-  PublicClient,
-  Transport,
-  WalletClient,
-} from 'viem';
+import { Account, Address, Chain, PublicClient, Transport, WalletClient } from 'viem';
 
 import { oldErc721Abi } from '@/generated/blockchain/oldErc721';
 import { erc20ABI, erc721ABI } from '@/generated/blockchain/v5';
@@ -16,6 +7,7 @@ import { areSameAddress } from '@/utils/string';
 import { AllV4 } from './AllV4';
 import { AllV5 } from './AllV5';
 import { AllV6 } from './AllV6';
+import { BaseContract } from './BaseContract';
 import { CryptoPunks } from './CryptoPunks';
 import { LeverageV5 } from './LeverageV5';
 import { MslV4 } from './MslV4';
@@ -111,36 +103,27 @@ export class Contracts {
     throw new Error(`Invalid Contract Address ${contractAddress}`);
   }
 
-  ERC721(nftAddress: Address): GetContractReturnType<typeof erc721ABI, KeyedClient> {
-    return getContract({
-      address: nftAddress,
+  ERC721(address: Address) {
+    return new BaseContract({
+      address,
       abi: erc721ABI,
-      client: {
-        public: this.publicClient,
-        wallet: this.walletClient,
-      },
+      walletClient: this.walletClient,
     });
   }
 
-  OldERC721(nftAddress: Address): GetContractReturnType<typeof oldErc721Abi, KeyedClient> {
-    return getContract({
-      address: nftAddress,
+  OldERC721(address: Address) {
+    return new BaseContract({
+      address,
       abi: oldErc721Abi,
-      client: {
-        public: this.publicClient,
-        wallet: this.walletClient,
-      },
+      walletClient: this.walletClient,
     });
   }
 
-  ERC20(nftAddress: Address): GetContractReturnType<typeof erc20ABI, KeyedClient> {
-    return getContract({
-      address: nftAddress,
+  ERC20(address: Address) {
+    return new BaseContract({
+      address,
       abi: erc20ABI,
-      client: {
-        public: this.publicClient,
-        wallet: this.walletClient,
-      },
+      walletClient: this.walletClient,
     });
   }
 }

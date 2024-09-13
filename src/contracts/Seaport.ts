@@ -1,6 +1,6 @@
 import { Address, zeroAddress } from 'viem';
 
-import { filterLogs, zeroHash } from '@/blockchain';
+import { zeroHash } from '@/blockchain';
 import { Wallet } from '@/contracts';
 import { getContracts, getCurrencies } from '@/deploys';
 import { seaportABI } from '@/generated/blockchain/seaport';
@@ -245,11 +245,9 @@ export class Seaport extends BaseContract<typeof seaportABI> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-
-        const filter = await this.contract.createEventFilter.OrderCancelled({
-          offerer: orderComponents.offerer,
-        });
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('OrderCancelled', receipt.logs).filter(
+          (event) => event.args.offerer === orderComponents.offerer,
+        );
         if (events.length === 0) throw new Error('Order not cancelled');
         return { ...events[0].args, ...receipt };
       },

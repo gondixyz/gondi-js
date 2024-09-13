@@ -1,7 +1,7 @@
 import { Account, Address, createPublicClient, createTransport, Hash, Hex } from 'viem';
 
 import { Api, Props as ApiProps } from '@/api';
-import { Auction, filterLogs, LoanV5, OfferV5, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
+import { Auction, LoanV5, OfferV5, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Contracts, GondiPublicClient, Wallet } from '@/contracts';
 import { getCurrencies } from '@/deploys';
 import { MarketplaceEnum, OffersSortField, Ordering } from '@/generated/graphql';
@@ -898,7 +898,7 @@ export class Gondi {
 
   async getOwner({ nftAddress, tokenId }: { nftAddress: Address; tokenId: bigint }) {
     const erc721 = this.contracts.ERC721(nftAddress);
-    return erc721.read.ownerOf([tokenId]);
+    return erc721.contract.read.ownerOf([tokenId]);
   }
 
   async isApprovedNFTForAll({
@@ -911,7 +911,7 @@ export class Gondi {
     to?: Address;
   }) {
     const erc721 = this.contracts.ERC721(nftAddress);
-    return erc721.read.isApprovedForAll([this.account.address, to]);
+    return erc721.contract.read.isApprovedForAll([this.account.address, to]);
   }
 
   async isApprovedNFT({
@@ -936,7 +936,7 @@ export class Gondi {
   )) {
     if (isOldErc721) {
       const erc721 = this.contracts.OldERC721(nftAddress);
-      const tokenApprovedFor = await erc721.read.approvedFor([tokenId]);
+      const tokenApprovedFor = await erc721.contract.read.approvedFor([tokenId]);
       return areSameAddress(tokenApprovedFor, to);
     }
     return this.isApprovedNFTForAll({ nftAddress, to });
@@ -952,8 +952,7 @@ export class Gondi {
     to?: Address;
   }) {
     const erc721 = this.contracts.ERC721(nftAddress);
-
-    const txHash = await erc721.write.setApprovalForAll([to, true]);
+    const txHash = await erc721.safeContractWrite.setApprovalForAll([to, true]);
 
     return {
       txHash,
@@ -961,8 +960,7 @@ export class Gondi {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filter = await erc721.createEventFilter.ApprovalForAll({});
-        const events = filterLogs(receipt, filter);
+        const events = erc721.parseEventLogs('ApprovalForAll', receipt.logs);
         if (events.length === 0) throw new Error('ERC721 approval for all not set');
         return { ...events[0].args, ...receipt };
       },
@@ -991,7 +989,7 @@ export class Gondi {
   )) {
     if (isOldErc721) {
       const erc721 = this.contracts.OldERC721(nftAddress);
-      const txHash = await erc721.write.approve([to, tokenId]);
+      const txHash = await erc721.safeContractWrite.approve([to, tokenId]);
 
       return {
         txHash,
@@ -999,8 +997,7 @@ export class Gondi {
           const receipt = await this.bcClient.waitForTransactionReceipt({
             hash: txHash,
           });
-          const filter = await erc721.createEventFilter.Approval({});
-          const events = filterLogs(receipt, filter);
+          const events = erc721.parseEventLogs('Approval', receipt.logs);
           if (events.length === 0) throw new Error('ERC721 approval not set');
           return { ...events[0].args, ...receipt };
         },
@@ -1021,7 +1018,7 @@ export class Gondi {
     to?: Address;
   }) {
     const erc20 = this.contracts.ERC20(tokenAddress);
-    return (await erc20.read.allowance([this.account.address, to])) >= amount;
+    return (await erc20.contract.read.allowance([this.account.address, to])) >= amount;
   }
 
   async approveToken({
@@ -1036,7 +1033,7 @@ export class Gondi {
     to?: Address;
   }) {
     const erc20 = this.contracts.ERC20(tokenAddress);
-    const txHash = await erc20.write.approve([to, amount]);
+    const txHash = await erc20.safeContractWrite.approve([to, amount]);
 
     return {
       txHash,
@@ -1044,8 +1041,7 @@ export class Gondi {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filter = await erc20.createEventFilter.Approval({});
-        const events = filterLogs(receipt, filter);
+        const events = erc20.parseEventLogs('Approval', receipt.logs);
         if (events.length === 0) throw new Error('ERC20 approval not set');
         return { ...events[0].args, ...receipt };
       },
