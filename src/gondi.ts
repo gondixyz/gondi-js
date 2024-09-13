@@ -1,17 +1,8 @@
-import {
-  Address,
-  Chain,
-  createPublicClient,
-  createTransport,
-  Hash,
-  Hex,
-  PublicClient,
-  Transport,
-} from 'viem';
+import { Account, Address, createPublicClient, createTransport, Hash, Hex } from 'viem';
 
 import { Api, Props as ApiProps } from '@/api';
 import { Auction, filterLogs, LoanV5, OfferV5, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
-import { Contracts, Wallet } from '@/contracts';
+import { Contracts, GondiPublicClient, Wallet } from '@/contracts';
 import { getCurrencies } from '@/deploys';
 import { MarketplaceEnum, OffersSortField, Ordering } from '@/generated/graphql';
 import * as model from '@/model';
@@ -31,12 +22,14 @@ import { OptionalNullable } from '@/utils/types';
 export class Gondi {
   contracts: Contracts;
   wallet: Wallet;
-  bcClient: PublicClient<Transport, Chain>;
+  account: Account;
+  bcClient: GondiPublicClient;
   api: Api;
   reservoir: Reservoir;
 
   constructor({ wallet, apiClient, reservoirBaseApiUrl }: GondiProps) {
     this.wallet = wallet;
+    this.account = wallet.account;
     this.bcClient = createPublicClient({
       chain: wallet.chain,
       transport: () => createTransport(wallet.transport),
@@ -66,8 +59,8 @@ export class Gondi {
 
     const offerInput = {
       ...offer,
-      lenderAddress: offer.lenderAddress ? offer.lenderAddress : this.wallet.account?.address,
-      signerAddress: this.wallet.account?.address,
+      lenderAddress: offer.lenderAddress ? offer.lenderAddress : this.account.address,
+      signerAddress: this.account.address,
       borrowerAddress: offer.borrowerAddress ?? zeroAddress,
       requiresLiquidation: !!offer.requiresLiquidation,
       contractAddress,
@@ -124,8 +117,8 @@ export class Gondi {
 
     const offerInput = {
       ...offer,
-      lenderAddress: offer.lenderAddress ? offer.lenderAddress : this.wallet.account?.address,
-      signerAddress: this.wallet.account?.address,
+      lenderAddress: offer.lenderAddress ? offer.lenderAddress : this.account.address,
+      signerAddress: this.account.address,
       borrowerAddress: offer.borrowerAddress ?? zeroAddress,
       requiresLiquidation: !!offer.requiresLiquidation,
       contractAddress,
@@ -235,8 +228,8 @@ export class Gondi {
     skipSignature?: boolean;
   }) {
     const renegotiationInput = {
-      lenderAddress: this.wallet.account?.address,
-      signerAddress: this.wallet.account?.address,
+      lenderAddress: this.account.address,
+      signerAddress: this.account.address,
       ...renegotiation,
       targetPrincipal: renegotiation.targetPrincipal ?? [],
       trancheIndex: renegotiation.trancheIndex ?? [],
@@ -541,7 +534,7 @@ export class Gondi {
       loanId,
       loan,
       trancheIndex: areSameAddress(loan.contractAddress, this.contracts.MultiSourceLoanV6.address),
-      address: this.wallet.account?.address,
+      address: this.account.address,
     });
     const { offer } = await this.api.generateRenegotiationOfferHash({ renegotiationInput });
     return offer.renegotiationId;
@@ -918,7 +911,7 @@ export class Gondi {
     to?: Address;
   }) {
     const erc721 = this.contracts.ERC721(nftAddress);
-    return erc721.read.isApprovedForAll([this.wallet.account?.address, to]);
+    return erc721.read.isApprovedForAll([this.account.address, to]);
   }
 
   async isApprovedNFT({
@@ -1028,7 +1021,7 @@ export class Gondi {
     to?: Address;
   }) {
     const erc20 = this.contracts.ERC20(tokenAddress);
-    return (await erc20.read.allowance([this.wallet.account?.address, to])) >= amount;
+    return (await erc20.read.allowance([this.account.address, to])) >= amount;
   }
 
   async approveToken({

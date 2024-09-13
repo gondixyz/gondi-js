@@ -26,10 +26,16 @@ import { UserVaultV5 } from './UserVaultV5';
 import { UserVaultV6 } from './UserVaultV6';
 
 export type Wallet = WalletClient<Transport, Chain, Account>;
+export type GondiPublicClient = PublicClient<Transport, Chain>;
+
+export interface KeyedClient {
+  public: GondiPublicClient;
+  wallet: Wallet;
+}
 
 export class Contracts {
+  publicClient: GondiPublicClient;
   walletClient: Wallet;
-  publicClient: PublicClient;
 
   MultiSourceLoanV4: MslV4;
   MultiSourceLoanV5: MslV5;
@@ -43,7 +49,7 @@ export class Contracts {
   Seaport: Seaport;
   CryptoPunks: CryptoPunks;
 
-  constructor(publicClient: PublicClient, walletClient: Wallet) {
+  constructor(publicClient: GondiPublicClient, walletClient: Wallet) {
     this.walletClient = walletClient;
     this.publicClient = publicClient;
 
@@ -105,36 +111,36 @@ export class Contracts {
     throw new Error(`Invalid Contract Address ${contractAddress}`);
   }
 
-  ERC721(
-    nftAddress: Address,
-  ): GetContractReturnType<typeof erc721ABI, PublicClient, Wallet, Address> {
+  ERC721(nftAddress: Address): GetContractReturnType<typeof erc721ABI, KeyedClient> {
     return getContract({
       address: nftAddress,
       abi: erc721ABI,
-      walletClient: this.walletClient,
-      publicClient: this.publicClient,
+      client: {
+        public: this.publicClient,
+        wallet: this.walletClient,
+      },
     });
   }
 
-  OldERC721(
-    nftAddress: Address,
-  ): GetContractReturnType<typeof oldErc721Abi, PublicClient, Wallet, Address> {
+  OldERC721(nftAddress: Address): GetContractReturnType<typeof oldErc721Abi, KeyedClient> {
     return getContract({
       address: nftAddress,
       abi: oldErc721Abi,
-      walletClient: this.walletClient,
-      publicClient: this.publicClient,
+      client: {
+        public: this.publicClient,
+        wallet: this.walletClient,
+      },
     });
   }
 
-  ERC20(
-    nftAddress: Address,
-  ): GetContractReturnType<typeof erc20ABI, PublicClient, Wallet, Address> {
+  ERC20(nftAddress: Address): GetContractReturnType<typeof erc20ABI, KeyedClient> {
     return getContract({
       address: nftAddress,
       abi: erc20ABI,
-      walletClient: this.walletClient,
-      publicClient: this.publicClient,
+      client: {
+        public: this.publicClient,
+        wallet: this.walletClient,
+      },
     });
   }
 }

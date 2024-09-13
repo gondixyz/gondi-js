@@ -1,11 +1,7 @@
-import {
-  Abi,
-  AbiParametersToPrimitiveTypes,
-  ExtractAbiEventNames,
-  ExtractAbiFunction,
-} from 'abitype';
+import { Abi, AbiParametersToPrimitiveTypes, ExtractAbiFunction } from 'abitype';
 import {
   Address,
+  ContractEventName,
   decodeEventLog,
   DecodeEventLogReturnType,
   encodeEventTopics,
@@ -95,7 +91,7 @@ export const zeroHex: HexString = `0x0`;
 
 export const REORG_SAFETY_BUFFER = 5n * 60n;
 
-export function filterLogs<TAbi extends Abi, TEventName extends ExtractAbiEventNames<TAbi>>(
+export function filterLogs<TAbi extends Abi, TEventName extends ContractEventName<TAbi>>(
   receipt: TransactionReceipt,
   filter: EncodeEventTopicsParameters<TAbi, TEventName>,
 ): (DecodeEventLogReturnType<TAbi, TEventName> & { topics: string[] })[] {

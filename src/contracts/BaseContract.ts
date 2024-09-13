@@ -1,7 +1,8 @@
-import { ExtractAbiFunctionNames } from 'abitype';
 import {
   Abi,
   Address,
+  ContractFunctionArgs,
+  ContractFunctionName,
   createPublicClient,
   createTransport,
   getContract,
@@ -18,10 +19,10 @@ export class BaseContract<TAbi extends Abi> {
   address: Address;
   bcClient: PublicClient;
   wallet: Wallet;
-  contract: GetContractReturnType<TAbi, PublicClient, Wallet, Address>;
+  contract: GetContractReturnType<TAbi, PublicClient | Wallet>;
 
   safeContractWrite: {
-    [TFunctionName in ExtractAbiFunctionNames<TAbi>]: (
+    [TFunctionName in ContractFunctionName<TAbi, 'nonpayable' | 'payable'>]: (
       args: SimulateContractParameters<TAbi, TFunctionName>['args'],
       options?: { value?: bigint },
     ) => Promise<Hash>;
@@ -46,26 +47,31 @@ export class BaseContract<TAbi extends Abi> {
     this.contract = getContract({
       address: this.address,
       abi: this.abi,
-      walletClient,
-      publicClient: this.bcClient,
+      client: {
+        public: this.bcClient,
+        wallet: walletClient,
+      },
     });
 
     this.safeContractWrite = new Proxy({} as typeof this.safeContractWrite, {
-      get<TFunctionName extends string>(_: unknown, functionName: TFunctionName) {
+      get<TFunctionName extends ContractFunctionName<TAbi, 'nonpayable' | 'payable'>>(
+        _: unknown,
+        functionName: TFunctionName,
+      ) {
         return async (
-          args: SimulateContractParameters<TAbi, TFunctionName>['args'],
+          args: ContractFunctionArgs<TAbi, 'nonpayable' | 'payable', TFunctionName>,
           options: { value?: bigint } = {},
         ) => {
           // The typecast here is necessary,
           // we still enjoy the type checking on the arguments themselves so it's not the end of the world
           const { request } = await bcClient.simulateContract({
-            address: address,
-            abi: abi,
+            address,
+            abi,
             functionName,
             args,
             account: walletClient.account,
             ...options,
-          } as SimulateContractParameters);
+          } as unknown as SimulateContractParameters);
 
           return walletClient.writeContract(request);
         };

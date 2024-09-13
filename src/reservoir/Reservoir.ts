@@ -364,7 +364,9 @@ export class Reservoir {
     const erc721 = getContract({
       abi: erc721ABI,
       address: collectionContractAddress,
-      publicClient: this.mainnetClient,
+      client: {
+        public: this.mainnetClient,
+      },
     });
 
     const owner = await erc721.read.ownerOf([tokenId]);

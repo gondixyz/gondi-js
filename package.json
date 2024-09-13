@@ -64,7 +64,7 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
-    "@apollo/client": "^3.7.16",
+    "@apollo/client": "~3.9.10",
     "@reservoir0x/reservoir-sdk": "^1.12.14",
     "abitype": "^1.0.0",
     "apollo-link-scalars": "^4.0.2",
@@ -72,7 +72,11 @@
     "graphql": "^16.8.1",
     "graphql-tag": "^2.12.6",
     "siwe": "^2.1.4",
-    "viem": "^1.13.1"
+    "viem": "~2.21.0"
+  },
+  "peerDependencies": {
+    "@apollo/client": "~3.9.10",
+    "viem": "~2.21.0"
   },
   "packageManager": "yarn@4.2.1"
 }
