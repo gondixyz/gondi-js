@@ -1,6 +1,6 @@
 import { Address } from 'viem';
 
-import { Auction, filterLogs, LoanV6 } from '@/blockchain';
+import { Auction, LoanV6 } from '@/blockchain';
 import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { auctionWithBuyoutLoanLiquidatorAbi as auctionWithBuyoutLoanLiquidatorABIV6 } from '@/generated/blockchain/v6';
@@ -44,9 +44,7 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-
-        const filter = await this.contract.createEventFilter.BidPlaced();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('BidPlaced', receipt.logs);
         if (events.length === 0) throw new Error('Bid not placed');
         return { ...events[0].args, ...receipt };
       },
@@ -76,9 +74,7 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-
-        const filter = await this.contract.createEventFilter.AuctionSettledWithBuyout();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('AuctionSettledWithBuyout', receipt.logs);
         if (events.length === 0) throw new Error('Auction not settled');
         return { ...events[0].args, ...receipt };
       },
@@ -97,9 +93,7 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-
-        const filter = await this.contract.createEventFilter.AuctionSettled();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('AuctionSettled', receipt.logs);
         if (events.length === 0) throw new Error('Auction not settled');
         return { ...events[0].args, ...receipt };
       },

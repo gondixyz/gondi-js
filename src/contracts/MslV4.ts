@@ -1,6 +1,6 @@
 import { Address, Hash, zeroAddress } from 'viem';
 
-import { filterLogs, LoanV4, OfferV4, RenegotiationV4 } from '@/blockchain';
+import { LoanV4, OfferV4, RenegotiationV4 } from '@/blockchain';
 import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { multiSourceLoanABI as multiSourceLoanABIV4 } from '@/generated/blockchain/v4';
@@ -99,8 +99,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
           hash: txHash,
         });
 
-        const filter = await this.contract.createEventFilter.OfferCancelled();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('OfferCancelled', receipt.logs);
         if (events.length === 0) throw new Error('Offer not cancelled');
         return { ...events[0].args, ...receipt };
       },
@@ -119,8 +118,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filter = await this.contract.createEventFilter.AllOffersCancelled();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('AllOffersCancelled', receipt.logs);
         if (events.length === 0) throw new Error('Offers not cancelled');
         return { ...events[0].args, ...receipt };
       },
@@ -138,8 +136,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filter = await this.contract.createEventFilter.RenegotiationOfferCancelled();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('RenegotiationOfferCancelled', receipt.logs);
         if (events.length === 0) throw new Error('Offer not cancelled');
         return { ...events[0].args, ...receipt };
       },
@@ -157,8 +154,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filter = await this.contract.createEventFilter.RenegotiationOfferCancelled();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('AllRenegotiationOffersCancelled', receipt.logs);
         if (events.length === 0) throw new Error('Offer not cancelled');
         return { ...events[0].args, ...receipt };
       },
@@ -188,8 +184,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filter = await this.contract.createEventFilter.LoanEmitted();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('LoanEmitted', receipt.logs);
         if (events.length === 0) throw new Error('Loan not emitted');
         const args = events[0].args;
         return {
@@ -227,8 +222,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filter = await this.contract.createEventFilter.LoanRepaid();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('LoanRepaid', receipt.logs);
         if (events.length === 0) throw new Error('Loan not repaid');
         return { ...events[0].args, ...receipt };
       },
@@ -291,8 +285,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filter = await this.contract.createEventFilter.LoanRefinanced();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('LoanRefinanced', receipt.logs);
         if (events.length !== refinancings.length) throw new Error('Loan not refinanced');
 
         const results = events.map(({ args }) => args);
@@ -337,8 +330,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filter = await this.contract.createEventFilter.LoanRefinanced();
-        const events = filterLogs(receipt, filter);
+        const events = this.parseEventLogs('LoanRefinanced', receipt.logs);
         if (events.length === 0) throw new Error('Loan not refinanced');
         const args = events[0].args;
         return {
@@ -389,10 +381,8 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const filterForeclosed = await this.contract.createEventFilter.LoanForeclosed();
-        const filterSentToLiquidator = await this.contract.createEventFilter.LoanSentToLiquidator();
-        const foreclosedEvents = filterLogs(receipt, filterForeclosed);
-        const sentToLiquidatorEvents = filterLogs(receipt, filterSentToLiquidator);
+        const foreclosedEvents = this.parseEventLogs('LoanForeclosed', receipt.logs);
+        const sentToLiquidatorEvents = this.parseEventLogs('LoanSentToLiquidator', receipt.logs);
         if (foreclosedEvents.length === 0 && sentToLiquidatorEvents.length === 0)
           throw new Error('Loan not liquidated');
         return {

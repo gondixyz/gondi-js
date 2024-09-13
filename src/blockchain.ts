@@ -1,19 +1,5 @@
-import {
-  Abi,
-  AbiParametersToPrimitiveTypes,
-  ExtractAbiEventNames,
-  ExtractAbiFunction,
-} from 'abitype';
-import {
-  Address,
-  decodeEventLog,
-  DecodeEventLogReturnType,
-  encodeEventTopics,
-  EncodeEventTopicsParameters,
-  Hash,
-  TransactionReceipt,
-  zeroAddress as zeroAddressViem,
-} from 'viem';
+import { AbiParametersToPrimitiveTypes, ExtractAbiFunction } from 'abitype';
+import { Address, Hash, zeroAddress as zeroAddressViem } from 'viem';
 
 import type { multiSourceLoanABI as multiSourceLoanABIV4 } from '@/generated/blockchain/v4';
 import type {
@@ -94,24 +80,3 @@ export const zeroHash: Hash = `0x${'0'.repeat(64)}`;
 export const zeroHex: HexString = `0x0`;
 
 export const REORG_SAFETY_BUFFER = 5n * 60n;
-
-export function filterLogs<TAbi extends Abi, TEventName extends ExtractAbiEventNames<TAbi>>(
-  receipt: TransactionReceipt,
-  filter: EncodeEventTopicsParameters<TAbi, TEventName>,
-): (DecodeEventLogReturnType<TAbi, TEventName> & { topics: string[] })[] {
-  return receipt.logs
-    .filter((log) => {
-      const topics = encodeEventTopics(filter);
-      return topics[0] == log.topics[0];
-    })
-    .map((log) => {
-      const decoded = decodeEventLog({
-        abi: filter.abi,
-        data: log.data,
-        topics: log.topics,
-        eventName: filter.eventName,
-      });
-      return { ...decoded, topics: log.topics };
-    })
-    .filter((event) => event.eventName == filter.eventName);
-}
