@@ -15,6 +15,7 @@
   ],
   "scripts": {
     "docs": "typedoc --options ./typedocconfig.ts --out docs/$npm_package_version && rm -rf docs/lts && cp -r docs/$npm_package_version/ docs/lts/",
+    "analyze": "METAFILE=true yarn build",
     "build": "node esbuild.js && tsc && tsc-alias",
     "build-unbundle": "tsc --outDir dist && tsc-alias",
     "lint": "yarn run fmt-check && eslint src/ --ext .js,.jsx,.ts,.tsx",

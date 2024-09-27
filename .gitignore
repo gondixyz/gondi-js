@@ -5,6 +5,7 @@
 # builds
 dist
 .env
+meta.json
 
 # misc
 .DS_Store
