@@ -1,8 +1,11 @@
-import { buildSync } from 'esbuild';
+import { build } from 'esbuild';
+import { writeFileSync } from 'fs';
 
 import packageJson from './package.json' assert { type: 'json' };
 
-buildSync({
+const metafile = !!process.env.METAFILE;
+
+const result = await build({
   entryPoints: ['src/index.ts'],
 
   allowOverwrite: true,
@@ -13,7 +16,7 @@ buildSync({
   format: 'esm',
   platform: 'node',
   target: ['esnext'],
-
+  metafile,
   tsconfig: './tsconfig.json',
   outfile: './dist/index.mjs',
 
@@ -24,3 +27,5 @@ buildSync({
     ...Object.keys(packageJson.dependencies || {}),
   ],
 });
+
+if (metafile) writeFileSync('meta.json', JSON.stringify(result.metafile));
