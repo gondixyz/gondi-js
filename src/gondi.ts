@@ -478,8 +478,8 @@ export class Gondi {
     }
   }
 
-  async ownedNfts() {
-    const result = await this.api.ownedNfts();
+  async ownedNfts(args: Parameters<Api['ownedNfts']>[0]) {
+    const result = await this.api.ownedNfts(args);
     const { edges: ownedNfts, pageInfo } = result.ownedNfts;
     return { ownedNfts: ownedNfts.map((edge) => edge.node), pageInfo };
   }
@@ -1066,6 +1066,36 @@ export class Gondi {
     userVaultAddress?: Address;
   } & Parameters<Contracts['UserVaultV5']['burnAndWithdraw']>[0]) {
     return this.contracts.UserVault(userVaultAddress).burnAndWithdraw(data);
+  }
+  async wrapOldERC721({ wrapperAddress, tokenId }: { wrapperAddress: Address; tokenId: bigint }) {
+    const wrapper = this.contracts.OldERC721Wrapper(wrapperAddress);
+    const wrapped = this.contracts.OldERC721(await wrapper.contract.read.wrapped());
+    const stashAddress = await wrapper.contract.read.stashAddress([this.wallet.account.address]);
+    const txTransfer = await wrapped.safeContractWrite.transfer([stashAddress, tokenId]);
+
+    const waitTransferMined = async () => {
+      const receipt = await this.bcClient.waitForTransactionReceipt({
+        hash: txTransfer,
+      });
+      return receipt;
+    };
+
+    const txMint: Promise<Address> = new Promise(async (resolve, _reject) => {
+      await waitTransferMined();
+      resolve(await wrapper.safeContractWrite.wrap([tokenId]));
+    });
+    return {
+      waitTransferMined,
+      waitMintMined: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: await txMint,
+        });
+        return receipt;
+      },
+      waitMined: async function () {
+        return [await this.waitTransferMined(), await this.waitMintMined()];
+      },
+    };
   }
 }
 
