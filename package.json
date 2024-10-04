@@ -20,7 +20,7 @@
     "lint": "yarn run fmt-check && eslint src/ --ext .js,.jsx,.ts,.tsx",
     "fmt-check": "prettier --config .prettierrc --ignore-path .prettierignore --check .",
     "fmt": "prettier --config .prettierrc --ignore-path .prettierignore --write .",
-    "gql:types": "graphql-code-generator",
+    "gql:types": "tsx --env-file=.env codegen.ts",
     "prepare": "husky install",
     "postinstall": "husky install",
     "prepack": "pinst --disable",
