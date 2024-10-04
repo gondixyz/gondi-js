@@ -1,5 +1,5 @@
-query collections($currency: Address!, $after: String) {
-  collections: listCollections(after: $after) {
+query collections($currency: Address!, $collections: [Int!], $standards: [TokenStandardType!], $after: String) {
+  collections: listCollections(collections: $collections, standards: $standards , after: $after) {
     pageInfo {
       endCursor
       hasNextPage
@@ -15,6 +15,11 @@ query collections($currency: Address!, $after: String) {
         externalUrl
         collectionUrl
         verified
+        wrapperCollections {
+          contractData {
+            contractAddress
+          }
+        }
         image {
           cacheUrl
         }

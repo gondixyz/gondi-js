@@ -1,5 +1,6 @@
 import { Account, Address, Chain, PublicClient, Transport, WalletClient } from 'viem';
 
+import { oldErc721Abi } from '@/generated/blockchain/oldERC721';
 import { erc20ABI, erc721ABI } from '@/generated/blockchain/v5';
 import { erc1155Abi } from '@/generated/blockchain/v6';
 import { NftStandard } from '@/model';
@@ -17,6 +18,7 @@ import { MslV6 } from './MslV6';
 import { Seaport } from './Seaport';
 import { UserVaultV5 } from './UserVaultV5';
 import { UserVaultV6 } from './UserVaultV6';
+import { oldErc721WrapperAbi } from '@/generated/blockchain/oldERC721Wrapper';
 
 export type Wallet = WalletClient<Transport, Chain, Account>;
 export type GondiPublicClient = PublicClient<Transport, Chain>;
@@ -131,7 +133,15 @@ export class Contracts {
       walletClient: this.walletClient,
     });
   }
-
+  
+  OldERC721Wrapper(address: Address) {
+    return new BaseContract({
+      address,
+      abi: oldErc721WrapperAbi,
+      walletClient: this.walletClient,
+    });
+  }
+  
   ERC20(address: Address) {
     return new BaseContract({
       address,

@@ -4,7 +4,7 @@ import { Api, Props as ApiProps } from '@/api';
 import { Auction, LoanV5, OfferV5, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Contracts, GondiPublicClient, Wallet } from '@/contracts';
 import { getCurrencies } from '@/deploys';
-import { MarketplaceEnum, OffersSortField, Ordering } from '@/generated/graphql';
+import { MarketplaceEnum, OffersSortField, Ordering, TokenStandardType } from '@/generated/graphql';
 import * as model from '@/model';
 import { NftStandard } from '@/model';
 import { Reservoir } from '@/reservoir/Reservoir';
@@ -443,10 +443,16 @@ export class Gondi {
     return Number(result.nft.id);
   }
 
-  async collections(props: { statsCurrency?: Address }) {
-    const result = await this.api.collections({ currency: props.statsCurrency ?? zeroAddress });
-    const { edges: collections, pageInfo } = result.collections;
-    return { collections: collections.map((edge) => edge.node), pageInfo };
+  async collections(props: {
+    statsCurrency?: Address;
+    standards?: TokenStandardType[];
+    collections?: number[];
+  }) {
+    const { statsCurrency: currency = zeroAddress, collections, standards } = props;
+    const {
+      collections: { edges, pageInfo },
+    } = await this.api.collections({ currency, collections, standards });
+    return { collections: edges.map((edge) => edge.node), pageInfo };
   }
 
   async collectionId(props: { slug: string; contractAddress?: never }): Promise<number>;
@@ -479,8 +485,8 @@ export class Gondi {
     }
   }
 
-  async ownedNfts() {
-    const result = await this.api.ownedNfts();
+  async ownedNfts(args: Parameters<Api['ownedNfts']>[0]) {
+    const result = await this.api.ownedNfts(args);
     const { edges: ownedNfts, pageInfo } = result.ownedNfts;
     return { ownedNfts: ownedNfts.map((edge) => edge.node), pageInfo };
   }
@@ -1016,6 +1022,121 @@ export class Gondi {
     ...data
   }: { userVaultAddress?: Address } & BurnAndWithdrawArgs) {
     return this.contracts.UserVault(userVaultAddress).burnAndWithdraw(data);
+  }
+  async wrapOldERC721({
+    collection,
+    tokenId,
+  }: {
+    collection: {
+      id: string;
+      wrapperCollections?: { contractData: { contractAddress: Address } }[];
+    };
+    tokenId: bigint;
+  }) {
+    if (collection?.id === undefined) throw Error('Invalid collection');
+
+    const wrapperAddress = await this._getWrapperAddress(collection);
+    if (wrapperAddress === undefined) throw Error('Collection has no associated wrappers');
+
+    const wrapper = this.contracts.OldERC721Wrapper(wrapperAddress);
+    const wrappedAddress = await wrapper.contract.read.wrapped();
+    const wrapped = this.contracts.OldERC721(wrappedAddress);
+    const stashAddress = await wrapper.contract.read.stashAddress([this.wallet.account.address]);
+    const txTransfer = await wrapped.safeContractWrite.transfer([stashAddress, tokenId]);
+
+    const waitTransferMined = async () => {
+      const receipt = await this.bcClient.waitForTransactionReceipt({
+        hash: txTransfer,
+      });
+      return receipt;
+    };
+
+    const waitMintMined = async () => {
+      const receipt = await this.bcClient.waitForTransactionReceipt({
+        hash: await txMint,
+      });
+      return receipt;
+    };
+
+    const waitMined = async () => {
+      return [await waitTransferMined(), await waitMintMined()];
+    };
+
+    const txMint: Promise<Address> = new Promise(async (resolve, _reject) => {
+      await waitTransferMined();
+      resolve(await wrapper.safeContractWrite.wrap([tokenId]));
+    });
+    return {
+      waitTransferMined,
+      waitMintMined,
+      waitMined,
+    };
+  }
+
+  async unwrapOldERC721({
+    collection,
+    tokenId,
+    wrapperCollection,
+  }: (
+    | {
+        collection?: never;
+        wrapperCollection: { id: string; contractData?: { contractAddress: Address } };
+      }
+    | { collection: { id: string }; wrapperCollection?: never }
+  ) & {
+    tokenId: bigint;
+  }) {
+    if (collection?.id === undefined && wrapperCollection?.id === undefined)
+      throw Error('Invalid collection');
+
+    const wrapperAddress = wrapperCollection
+      ? await this._getCollectionAddress(wrapperCollection)
+      : await this._getWrapperAddress(collection);
+
+    if (wrapperAddress === undefined) throw Error('Collection has no associated wrappers');
+
+    const wrapper = this.contracts.OldERC721Wrapper(wrapperAddress);
+
+    const tx = await wrapper.safeContractWrite.unwrap([tokenId]);
+    const waitMined = async () => await this.bcClient.waitForTransactionReceipt({ hash: tx });
+
+    return {
+      waitMined,
+    };
+  }
+
+  async _getWrapperAddress(collection: {
+    id: string;
+    wrapperCollections?: { contractData: { contractAddress: Address } }[];
+  }) {
+    if (collection.wrapperCollections)
+      return collection.wrapperCollections[0]?.contractData?.contractAddress;
+    const {
+      collections: [
+        {
+          wrapperCollections: [{ contractData: wrapperContractData }],
+        },
+      ],
+    } = await this.collections({
+      statsCurrency: zeroAddress,
+      collections: [Number(collection.id)],
+      standards: [TokenStandardType.OldErc721],
+    });
+    return wrapperContractData?.contractAddress;
+  }
+
+  async _getCollectionAddress(collection: {
+    id: string;
+    contractData?: { contractAddress: Address };
+  }) {
+    if (collection.contractData) return collection.contractData.contractAddress;
+    const {
+      collections: [{ contractData }],
+    } = await this.collections({
+      statsCurrency: zeroAddress,
+      collections: [Number(collection.id)],
+    });
+    return contractData?.contractAddress;
   }
 }
 

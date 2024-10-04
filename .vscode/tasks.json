@@ -4,7 +4,10 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "yarn build"
+            "command": "yarn build",
+            "problemMatcher": [
+                "$tsc"
+            ]
         }
     ]
 }
