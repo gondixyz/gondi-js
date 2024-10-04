@@ -58,7 +58,8 @@
           },
           { "label": "Send Loan to Auction and Bid", "value": "sendLoanToAuctionAndBid" },
           { "label": "User Vault Creation, Deposit, Burn and Withdraw", "value": "userVaults" },
-          { "label": "Settle Auction with Buyout", "value": "settleAuctionWithBuyout" }
+          { "label": "Settle Auction with Buyout", "value": "settleAuctionWithBuyout" },
+          { "label": "Wrap Old ERC721", "value": "wrapOldERC721" }
         ]
       }
     }
