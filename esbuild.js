@@ -9,7 +9,7 @@ const result = await build({
   entryPoints: ['src/index.ts'],
 
   allowOverwrite: true,
-  sourcemap: true,
+  sourcemap: 'both',
   bundle: true,
   minify: true,
   keepNames: true,
