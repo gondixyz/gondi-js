@@ -900,6 +900,14 @@ export class Gondi {
     return erc721.contract.read.ownerOf([tokenId]);
   }
 
+  /**
+   * Get the balance of an ERC 1155 token id.
+   */
+  async balanceOf({ nftAddress, tokenId }: { nftAddress: Address; tokenId: bigint }) {
+    const erc1155 = this.contracts.ERC1155(nftAddress);
+    return erc1155.contract.read.balanceOf([this.wallet.account.address, tokenId]);
+  }
+
   async isApprovedNFTForAll({
     nftAddress,
     standard,
