@@ -6,6 +6,7 @@ import { Contracts, GondiPublicClient, Wallet } from '@/contracts';
 import { getCurrencies } from '@/deploys';
 import { MarketplaceEnum, OffersSortField, Ordering } from '@/generated/graphql';
 import * as model from '@/model';
+import { NftStandard } from '@/model';
 import { Reservoir } from '@/reservoir/Reservoir';
 import { isNative, SeaportOrder } from '@/reservoir/utils';
 import {
@@ -38,7 +39,7 @@ export class Gondi {
     this.contracts = new Contracts(this.bcClient, wallet);
     this.defaults = {
       Msl: this.contracts.MultiSourceLoanV6.address,
-      UserVault: this.contracts.UserVaultV5.address, // V6 UserVault contract will not be used
+      UserVault: this.contracts.UserVaultV6.address,
     };
     this.api = new Api({ wallet, apiClient });
     this.reservoir = new Reservoir({
@@ -891,6 +892,9 @@ export class Gondi {
     });
   }
 
+  /**
+   * Get the owner of an ERC 721 token.
+   */
   async getOwner({ nftAddress, tokenId }: { nftAddress: Address; tokenId: bigint }) {
     const erc721 = this.contracts.ERC721(nftAddress);
     return erc721.contract.read.ownerOf([tokenId]);
@@ -898,50 +902,28 @@ export class Gondi {
 
   async isApprovedNFTForAll({
     nftAddress,
+    standard,
     to = this.defaults.Msl,
   }: {
     nftAddress: Address;
+    standard: Parameters<Contracts['Nft']>[1];
     to?: Address;
   }) {
-    const erc721 = this.contracts.ERC721(nftAddress);
-    return erc721.contract.read.isApprovedForAll([this.account.address, to]);
-  }
-
-  async isApprovedNFT({
-    nftAddress,
-    isOldErc721,
-    tokenId,
-    to = this.defaults.Msl,
-  }: {
-    nftAddress: Address;
-    to?: Address;
-  } & (
-    | {
-        isOldErc721: true;
-        tokenId: bigint;
-      }
-    | {
-        isOldErc721?: never;
-        tokenId?: never;
-      }
-  )) {
-    if (isOldErc721) {
-      const erc721 = this.contracts.OldERC721(nftAddress);
-      const tokenApprovedFor = await erc721.contract.read.approvedFor([tokenId]);
-      return areSameAddress(tokenApprovedFor, to);
-    }
-    return this.isApprovedNFTForAll({ nftAddress, to });
+    const nft = this.contracts.Nft(nftAddress, standard);
+    return nft.contract.read.isApprovedForAll([this.account.address, to]);
   }
 
   async approveNFTForAll({
     nftAddress,
+    standard,
     to = this.defaults.Msl,
   }: {
     nftAddress: Address;
+    standard: Parameters<Contracts['Nft']>[1];
     to?: Address;
   }) {
-    const erc721 = this.contracts.ERC721(nftAddress);
-    const txHash = await erc721.safeContractWrite.setApprovalForAll([to, true]);
+    const nft = this.contracts.Nft(nftAddress, standard);
+    const txHash = await nft.safeContractWrite.setApprovalForAll([to, true]);
 
     return {
       txHash,
@@ -949,48 +931,12 @@ export class Gondi {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const events = erc721.parseEventLogs('ApprovalForAll', receipt.logs);
-        if (events.length === 0) throw new Error('ERC721 approval for all not set');
+        // @ts-ignore TODO: fix parseEventLogs
+        const events = nft.parseEventLogs('ApprovalForAll', receipt.logs);
+        if (events.length === 0) throw new Error(`${standard} approval for all not set`);
         return { ...events[0].args, ...receipt };
       },
     };
-  }
-
-  async approveNFT({
-    nftAddress,
-    isOldErc721,
-    tokenId,
-    to = this.defaults.Msl,
-  }: {
-    nftAddress: Address;
-    to?: Address;
-  } & (
-    | {
-        isOldErc721: true;
-        tokenId: bigint;
-      }
-    | {
-        isOldErc721?: never;
-        tokenId?: never;
-      }
-  )) {
-    if (isOldErc721) {
-      const erc721 = this.contracts.OldERC721(nftAddress);
-      const txHash = await erc721.safeContractWrite.approve([to, tokenId]);
-
-      return {
-        txHash,
-        waitTxInBlock: async () => {
-          const receipt = await this.bcClient.waitForTransactionReceipt({
-            hash: txHash,
-          });
-          const events = erc721.parseEventLogs('Approval', receipt.logs);
-          if (events.length === 0) throw new Error('ERC721 approval not set');
-          return { ...events[0].args, ...receipt };
-        },
-      };
-    }
-    return this.approveNFTForAll({ nftAddress, to });
   }
 
   async isApprovedToken({
@@ -1031,11 +977,14 @@ export class Gondi {
     };
   }
 
-  async createUserVault({
+  async createUserVault({ nfts }: { nfts: CreateVaultArgs }) {
+    return this._createUserVault({ nfts });
+  }
+  async _createUserVault({
     nfts,
     userVaultAddress = this.defaults.UserVault,
   }: {
-    nfts: Parameters<Contracts['UserVaultV5']['createVault']>[0];
+    nfts: CreateVaultArgs;
     userVaultAddress?: Address;
   }) {
     return this.contracts.UserVault(userVaultAddress).createVault(nfts);
@@ -1044,27 +993,21 @@ export class Gondi {
   async depositUserVaultERC721s({
     userVaultAddress = this.defaults.UserVault,
     ...data
-  }: {
-    userVaultAddress?: Address;
-  } & Parameters<Contracts['UserVaultV5']['depositERC721s']>[0]) {
+  }: { userVaultAddress?: Address } & DepositERC721sArgs) {
     return this.contracts.UserVault(userVaultAddress).depositERC721s(data);
   }
 
-  async depositUserVaultOldERC721s({
+  async depositUserVaultERC1155s({
     userVaultAddress = this.defaults.UserVault,
     ...data
-  }: {
-    userVaultAddress?: Address;
-  } & Parameters<Contracts['UserVaultV6']['depositERC721s']>[0]) {
-    return this.contracts.UserVault(userVaultAddress).depositOldERC721s(data);
+  }: { userVaultAddress?: Address } & DepositERC1155sArgs) {
+    return this.contracts.UserVault(userVaultAddress).depositERC1155s(data);
   }
 
   async burnUserVaultAndWithdraw({
     userVaultAddress = this.defaults.UserVault,
     ...data
-  }: {
-    userVaultAddress?: Address;
-  } & Parameters<Contracts['UserVaultV5']['burnAndWithdraw']>[0]) {
+  }: { userVaultAddress?: Address } & BurnAndWithdrawArgs) {
     return this.contracts.UserVault(userVaultAddress).burnAndWithdraw(data);
   }
 }
@@ -1083,6 +1026,28 @@ type OfferFromExecutionOffer = OptionalNullable<
   MakeOfferType,
   'borrowerAddress' | 'lenderAddress' | 'offerHash' | 'signature'
 >;
+
+export type CreateVaultArgs = {
+  collection: Address;
+  tokenIds: bigint[];
+  amounts: bigint[];
+  standard: NftStandard;
+}[];
+export type DepositERC1155sArgs = {
+  vaultId: bigint;
+  collection: Address;
+  tokenIds: bigint[];
+  amounts: bigint[];
+};
+export type DepositERC721sArgs = Omit<DepositERC1155sArgs, 'amounts'>;
+export type BurnAndWithdrawArgs = {
+  vaultId: bigint;
+  collections: Address[];
+  tokenIds: bigint[];
+  tokens?: Address[]; // erc20 tokens
+  erc1155Collections?: Address[];
+  erc1155TokenIds?: bigint[];
+};
 
 export interface EmitLoanArgs {
   offerExecution: {

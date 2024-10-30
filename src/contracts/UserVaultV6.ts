@@ -3,6 +3,12 @@ import { Address } from 'viem';
 import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { userVaultAbi as userVaultABIV6 } from '@/generated/blockchain/v6';
+import {
+  BurnAndWithdrawArgs,
+  CreateVaultArgs,
+  DepositERC721sArgs,
+  DepositERC1155sArgs,
+} from '@/gondi';
 
 import { BaseContract } from './BaseContract';
 
@@ -21,30 +27,23 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
     vaultId,
     collections,
     tokenIds,
-    oldCollections = [],
-    oldTokenIds = [],
     tokens = [],
-  }: {
-    vaultId: bigint;
-    collections: Address[];
-    tokenIds: bigint[];
-    oldCollections?: Address[];
-    oldTokenIds?: bigint[];
-    tokens?: Address[]; // erc20 tokens
-  }) {
+    erc1155Collections = [],
+    erc1155TokenIds = [],
+  }: BurnAndWithdrawArgs) {
     if (collections.length != tokenIds.length) {
       throw new Error('collections and tokenIds must have the same length');
     }
-    if (oldCollections.length != oldTokenIds.length) {
-      throw new Error('oldCollections and oldTokenIds must have the same length');
+    if (erc1155Collections.length != erc1155TokenIds.length) {
+      throw new Error('erc1155Collections and erc1155TokenIds must have the same length');
     }
     const txHash = await this.safeContractWrite.burnAndWithdraw([
       vaultId,
       collections,
       tokenIds,
-      oldCollections,
-      oldTokenIds,
       tokens,
+      erc1155Collections,
+      erc1155TokenIds,
     ]);
 
     return {
@@ -54,8 +53,13 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
           hash: txHash,
         });
         const events = this.parseEventLogs('ERC721Withdrawn', receipt.logs);
-        const oldEvents = this.parseEventLogs('OldERC721Withdrawn', receipt.logs);
-        if (events.length !== tokenIds.length || oldEvents.length !== oldTokenIds.length)
+        const tokenEvents = this.parseEventLogs('ERC20Withdrawn', receipt.logs);
+        const erc1155Events = this.parseEventLogs('ERC1155Withdrawn', receipt.logs);
+        if (
+          events.length !== tokenIds.length ||
+          tokenEvents.length !== tokens.length ||
+          erc1155Events.length !== erc1155TokenIds.length
+        )
           throw new Error('Withdrawn count mismatch');
         return {
           events: events.map((event) => event.args),
@@ -66,24 +70,24 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
     };
   }
 
-  async createVault(nfts: { collection: Address; tokenIds: bigint[]; isOldErc721?: boolean }[]) {
+  async createVault(nfts: CreateVaultArgs) {
     const { id: vaultId } = await this.#mintVault();
     const receipts = [];
 
     // Regroup all elements in the same collection in case users send tokenIds as separate elements of the array
     const groupedNfts: Record<Address, (typeof nfts)[number]> = {};
-    for (const { collection, tokenIds, isOldErc721 } of nfts) {
+    for (const nft of nfts) {
+      const { collection, tokenIds } = nft;
       if (groupedNfts[collection]) {
         groupedNfts[collection].tokenIds.push(...tokenIds);
       } else {
-        groupedNfts[collection] = { collection, tokenIds: [...tokenIds], isOldErc721 };
+        groupedNfts[collection] = { ...nft, tokenIds: [...tokenIds] };
       }
     }
 
-    for (const { collection, tokenIds, isOldErc721 } of Object.values(groupedNfts)) {
-      const deposit = isOldErc721
-        ? await this.depositOldERC721s({ vaultId, collection, tokenIds })
-        : await this.depositERC721s({ vaultId, collection, tokenIds });
+    for (const nft of Object.values(groupedNfts)) {
+      const call = nft.standard === 'ERC721' ? this.depositERC721s : this.depositERC1155s;
+      const deposit = await call({ vaultId, ...nft });
       const receipt = await deposit.waitTxInBlock();
       receipts.push(receipt);
     }
@@ -91,15 +95,7 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
     return { vaultId, receipts };
   }
 
-  async depositERC721s({
-    vaultId,
-    collection,
-    tokenIds,
-  }: {
-    vaultId: bigint;
-    collection: Address;
-    tokenIds: bigint[];
-  }) {
+  async depositERC721s({ vaultId, collection, tokenIds }: DepositERC721sArgs) {
     const txHash = await this.safeContractWrite.depositERC721s([vaultId, collection, tokenIds]);
 
     return {
@@ -115,16 +111,13 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
     };
   }
 
-  async depositOldERC721s({
-    vaultId,
-    collection,
-    tokenIds,
-  }: {
-    vaultId: bigint;
-    collection: Address;
-    tokenIds: bigint[];
-  }) {
-    const txHash = await this.safeContractWrite.depositOldERC721s([vaultId, collection, tokenIds]);
+  async depositERC1155s({ vaultId, collection, tokenIds, amounts }: DepositERC1155sArgs) {
+    const txHash = await this.safeContractWrite.depositERC1155s([
+      vaultId,
+      collection,
+      tokenIds,
+      amounts,
+    ]);
 
     return {
       txHash,
@@ -132,7 +125,7 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        const events = this.parseEventLogs('OldERC721Deposited', receipt.logs);
+        const events = this.parseEventLogs('ERC1155Deposited', receipt.logs);
         if (events.length === 0) throw new Error('Deposit not created');
         return { ...events[0].args, ...receipt };
       },

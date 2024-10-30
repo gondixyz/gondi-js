@@ -1,7 +1,8 @@
 import { Account, Address, Chain, PublicClient, Transport, WalletClient } from 'viem';
 
-import { oldErc721Abi } from '@/generated/blockchain/oldErc721';
 import { erc20ABI, erc721ABI } from '@/generated/blockchain/v5';
+import { erc1155Abi } from '@/generated/blockchain/v6';
+import { NftStandard } from '@/model';
 import { areSameAddress } from '@/utils/string';
 
 import { AllV4 } from './AllV4';
@@ -76,7 +77,7 @@ export class Contracts {
 
   /**
    *
-   * @param contractAddress The contract address of the MultiSourceLoanV4 or MultiSourceLoanV5 contract
+   * @param contractAddress The contract address of the MSL contract
    * @returns The corresponding AuctionLoanLiquidator contract
    */
   All(contractAddress: Address) {
@@ -103,6 +104,16 @@ export class Contracts {
     throw new Error(`Invalid Contract Address ${contractAddress}`);
   }
 
+  Nft(address: Address, standard: NftStandard) {
+    if (standard === 'ERC721') {
+      return this.ERC721(address);
+    }
+    if (standard === 'ERC1155') {
+      return this.ERC1155(address);
+    }
+    throw new Error(`Invalid NFT standard ${standard}`);
+  }
+
   ERC721(address: Address) {
     return new BaseContract({
       address,
@@ -111,10 +122,10 @@ export class Contracts {
     });
   }
 
-  OldERC721(address: Address) {
+  ERC1155(address: Address) {
     return new BaseContract({
       address,
-      abi: oldErc721Abi,
+      abi: erc1155Abi,
       walletClient: this.walletClient,
     });
   }
