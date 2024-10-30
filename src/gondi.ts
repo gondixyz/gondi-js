@@ -931,7 +931,6 @@ export class Gondi {
         const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
         });
-        // @ts-ignore TODO: fix parseEventLogs
         const events = nft.parseEventLogs('ApprovalForAll', receipt.logs);
         if (events.length === 0) throw new Error(`${standard} approval for all not set`);
         return { ...events[0].args, ...receipt };

@@ -26,6 +26,8 @@ export interface KeyedClient {
   wallet: Wallet;
 }
 
+type Erc721Or1155ABI = typeof erc721ABI | typeof erc1155Abi;
+
 export class Contracts {
   publicClient: GondiPublicClient;
   walletClient: Wallet;
@@ -106,10 +108,10 @@ export class Contracts {
 
   Nft(address: Address, standard: NftStandard) {
     if (standard === 'ERC721') {
-      return this.ERC721(address);
+      return this.ERC721(address) as BaseContract<Erc721Or1155ABI>;
     }
     if (standard === 'ERC1155') {
-      return this.ERC1155(address);
+      return this.ERC1155(address) as BaseContract<Erc721Or1155ABI>;
     }
     throw new Error(`Invalid NFT standard ${standard}`);
   }
