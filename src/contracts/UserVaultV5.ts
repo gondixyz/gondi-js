@@ -55,10 +55,11 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
   async createVault(nfts: CreateVaultArgs) {
     const { id: vaultId } = await this.#mintVault();
     const receipts = [];
+    const erc721Nfts = nfts.filter((nft) => nft.standard === 'ERC721');
 
     // Regroup all elements in the same collection in case users send tokenIds as separate elements of the array
-    const groupedNfts: Record<Address, (typeof nfts)[number]> = {};
-    for (const nft of nfts) {
+    const groupedNfts: Record<Address, (typeof erc721Nfts)[number]> = {};
+    for (const nft of erc721Nfts) {
       const { collection, tokenIds } = nft;
       if (groupedNfts[collection]) {
         groupedNfts[collection].tokenIds.push(...tokenIds);
@@ -67,8 +68,8 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
       }
     }
 
-    for (const { collection, tokenIds } of Object.values(groupedNfts)) {
-      const deposit = await this.depositERC721s({ vaultId, collection, tokenIds });
+    for (const nft of Object.values(groupedNfts)) {
+      const deposit = await this.depositERC721s({ vaultId, ...nft });
       const receipt = await deposit.waitTxInBlock();
       receipts.push(receipt);
     }

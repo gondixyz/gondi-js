@@ -50,7 +50,7 @@ export const localChain = {
 export const secret = '0'.repeat(64);
 export const transport = http(localChain.rpcUrls.default.http[0]);
 export const testTokenId = BigInt(process.env.TEST_TOKEN_ID ?? 0);
-export const testCollection = {
+export const test721Collection = {
   contractAddress: process.env.TEST_COLLECTION as unknown as Address,
 };
 export const zeroHash = '0x' + '0'.repeat(64);
@@ -63,7 +63,7 @@ if (!testCurrency) {
 if (!process.env.TEST_WALLETS) {
   throw new Error('TEST_WALLETS not provided, please provide comma separated list');
 }
-export const wallets = process.env.TEST_WALLETS.split(',').map((privateKey) => {
+export const wallets: Gondi['wallet'][] = process.env.TEST_WALLETS.split(',').map((privateKey) => {
   if (!isHex(privateKey)) throw new Error('invalid private keys');
   return createWalletClient({
     account: privateKeyToAccount(privateKey as unknown as Address),
@@ -82,9 +82,9 @@ export const users = wallets.map(
     }),
 );
 
-export const testCollectionId = (await users[0].collectionId(testCollection))[0];
+export const testCollectionId = (await users[0].collectionId(test721Collection))[0];
 export const testNftId = await users[0].nftId({
-  ...testCollection,
+  ...test721Collection,
   tokenId: testTokenId,
 });
 
@@ -136,15 +136,18 @@ export const approveToken = async (
 export const approveNFT = async (
   user: Gondi,
   to: Address,
-  collection: Address | undefined = testCollection.contractAddress,
+  collection: Address,
+  standard: 'ERC721' | 'ERC1155',
 ) => {
   const isApprovedAlready = await user.isApprovedNFTForAll({
     nftAddress: collection,
+    standard,
     to,
   });
   if (!isApprovedAlready) {
     const approveNFT = await user.approveNFTForAll({
       nftAddress: collection,
+      standard,
       to,
     });
     await approveNFT.waitTxInBlock();
@@ -154,7 +157,7 @@ export const approveNFT = async (
 const approveForUser = async (user: Gondi, to: Address) => {
   await approveToken(user, to, WETH);
   await approveToken(user, to, USDC);
-  await approveNFT(user, to);
+  await approveNFT(user, to, test721Collection.contractAddress, 'ERC721');
 };
 
 const SEAPORT_CONTRACT_ADDRESS = '0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC';
