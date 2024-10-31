@@ -5593,7 +5593,7 @@ export const iUserVaultAbi = [
       { name: '_tokenIds', internalType: 'uint256[]', type: 'uint256[]' },
       { name: '_tokens', internalType: 'address[]', type: 'address[]' },
       { name: '_erc1155Tokens', internalType: 'address[]', type: 'address[]' },
-      { name: '_1TokensIds', internalType: 'uint256[]', type: 'uint256[]' },
+      { name: '_erc1155TokensIds', internalType: 'uint256[]', type: 'uint256[]' },
     ],
     name: 'burnAndWithdraw',
     outputs: [],
