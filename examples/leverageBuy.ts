@@ -1,4 +1,4 @@
-import { setAllowances, testCollection } from './common';
+import { setAllowances, test721Collection } from './common';
 import { testCollectionOfferInput, users } from './common';
 
 async function main() {
@@ -19,7 +19,7 @@ async function main() {
         expirationTime: signedOffer.expirationTime,
         amount: signedOffer.principalAmount,
         nft: {
-          collectionContractAddress: testCollection.contractAddress,
+          collectionContractAddress: test721Collection.contractAddress,
           tokenId: 7607n, // change this for listed nft in opensea
           price: 78000000000000000000n,
           orderSource: 'opensea.io',

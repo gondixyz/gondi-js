@@ -11,7 +11,7 @@
     "dotenv": "^16.3.1",
     "tsx": "^3.12.7",
     "typescript": "^5.0.0",
-    "viem": "^2.4.1"
+    "viem": "~2.21.0"
   },
   "dependencies": {
     "gondi": "workspace:*"

@@ -30,7 +30,7 @@ const emitLoansRefinanceBatchAndRepay = async (contract?: Address) => {
   };
   const signedOffer = await lender._makeSingleNftOffer(offer, contract);
   const contractVersionString = `msl: ${signedOffer.contractAddress}`;
-  await approveNFT(users[1], signedOffer.contractAddress, ANOTHER_COLLECTION);
+  await approveNFT(users[1], signedOffer.contractAddress, ANOTHER_COLLECTION, 'ERC721');
   console.log(`approving second nft: ${contractVersionString}`);
 
   const secondNftId = await lender.nftId({

@@ -153,7 +153,7 @@ for (const collection of COLLECTION_ADDRESSES) {
 // Approve NFTs and Currencies
 for (const contract of CONTRACTS) {
   for (const collection of COLLECTION_ADDRESSES) {
-    await approveNFT(users[0], contract, collection);
+    await approveNFT(users[0], contract, collection, 'ERC721');
   }
   for (const currency of CURRENCIES) {
     await approveToken(users[1], contract, currency);

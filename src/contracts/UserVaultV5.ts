@@ -4,6 +4,7 @@ import { Wallet } from '@/contracts';
 import { UserVaultV6 } from '@/contracts/UserVaultV6';
 import { getContracts } from '@/deploys';
 import { userVaultABI as userVaultABIV5 } from '@/generated/blockchain/v5';
+import { BurnAndWithdrawArgs, CreateVaultArgs, DepositERC721sArgs } from '@/gondi';
 
 import { BaseContract } from './BaseContract';
 
@@ -23,7 +24,7 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
     collections,
     tokenIds,
     tokens = [],
-  }: Parameters<UserVaultV6['burnAndWithdraw']>[0]): ReturnType<UserVaultV6['burnAndWithdraw']> {
+  }: BurnAndWithdrawArgs): ReturnType<UserVaultV6['burnAndWithdraw']> {
     if (collections.length != tokenIds.length) {
       throw new Error('collections and tokenIds must have the same length');
     }
@@ -50,22 +51,25 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
       },
     };
   }
-  async createVault(nfts: Parameters<UserVaultV6['createVault']>[0]) {
+
+  async createVault(nfts: CreateVaultArgs) {
     const { id: vaultId } = await this.#mintVault();
     const receipts = [];
+    const erc721Nfts = nfts.filter((nft) => nft.standard === 'ERC721');
 
     // Regroup all elements in the same collection in case users send tokenIds as separate elements of the array
-    const groupedNfts: Record<Address, (typeof nfts)[number]> = {};
-    for (const { collection, tokenIds } of nfts) {
+    const groupedNfts: Record<Address, (typeof erc721Nfts)[number]> = {};
+    for (const nft of erc721Nfts) {
+      const { collection, tokenIds } = nft;
       if (groupedNfts[collection]) {
         groupedNfts[collection].tokenIds.push(...tokenIds);
       } else {
-        groupedNfts[collection] = { collection, tokenIds: [...tokenIds] };
+        groupedNfts[collection] = { ...nft, tokenIds: [...tokenIds] };
       }
     }
 
-    for (const { collection, tokenIds } of Object.values(groupedNfts)) {
-      const deposit = await this.depositERC721s({ vaultId, collection, tokenIds });
+    for (const nft of Object.values(groupedNfts)) {
+      const deposit = await this.depositERC721s({ vaultId, ...nft });
       const receipt = await deposit.waitTxInBlock();
       receipts.push(receipt);
     }
@@ -73,11 +77,7 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
     return { vaultId, receipts };
   }
 
-  async depositERC721s({
-    vaultId,
-    collection,
-    tokenIds,
-  }: Parameters<UserVaultV6['depositERC721s']>[0]) {
+  async depositERC721s({ vaultId, collection, tokenIds }: DepositERC721sArgs) {
     const txHash = await this.safeContractWrite.depositERC721s([vaultId, collection, tokenIds]);
 
     return {
@@ -93,7 +93,7 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
     };
   }
 
-  async depositOldERC721s() {
+  async depositERC1155s() {
     throw new Error('Not implemented');
   }
 

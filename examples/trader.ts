@@ -86,7 +86,7 @@ async function lend(gondi: Gondi, collections: Collection[]) {
     );
     if (offer.principalAmount > desiredPrincipal && offer.duration == desiredDuration) {
       console.log('emitting loan ', nft.collection?.id, nft.tokenId);
-      await approveNFT(gondi, offer.contractAddress, offer.nftCollateralAddress);
+      await approveNFT(gondi, offer.contractAddress, offer.nftCollateralAddress, 'ERC721');
       await approveToken(gondi, offer.contractAddress);
       await users[1].emitLoan({
         offerExecution: users[1].offerExecutionFromOffers([offer]),
@@ -99,7 +99,7 @@ async function lend(gondi: Gondi, collections: Collection[]) {
 }
 async function repay(gondi: Gondi, collections: Collection[]) {
   const { loans } = await gondi.loans({
-    borrowerAddress: gondi.wallet.account.address,
+    borrowers: [gondi.wallet.account.address],
     statuses: [LoanStatusType.LoanInitiated],
   });
   for (const loan of loans) {

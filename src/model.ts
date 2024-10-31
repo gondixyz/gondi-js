@@ -116,3 +116,5 @@ export type ListListingsProps = {
   limit?: number;
   cursor?: string | null;
 };
+
+export type NftStandard = 'ERC721' | 'ERC1155';

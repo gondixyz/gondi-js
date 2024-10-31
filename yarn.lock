@@ -5001,7 +5001,7 @@ __metadata:
     gondi: "workspace:*"
     tsx: "npm:^3.12.7"
     typescript: "npm:^5.0.0"
-    viem: "npm:^2.4.1"
+    viem: "npm:~2.21.0"
   languageName: unknown
   linkType: soft
 
@@ -9796,7 +9796,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"viem@npm:^2.4.1, viem@npm:~2.21.0":
+"viem@npm:~2.21.0":
   version: 2.21.6
   resolution: "viem@npm:2.21.6"
   dependencies:
