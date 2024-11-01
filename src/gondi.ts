@@ -4,7 +4,7 @@ import { Api, Props as ApiProps } from '@/api';
 import { Auction, LoanV5, OfferV5, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Contracts, GondiPublicClient, Wallet } from '@/contracts';
 import { getCurrencies } from '@/deploys';
-import { MarketplaceEnum, OffersSortField, Ordering } from '@/generated/graphql';
+import { MarketplaceEnum, OffersSortField, Ordering, TokenStandardType } from '@/generated/graphql';
 import * as model from '@/model';
 import { NftStandard } from '@/model';
 import { Reservoir } from '@/reservoir/Reservoir';
@@ -443,10 +443,16 @@ export class Gondi {
     return Number(result.nft.id);
   }
 
-  async collections(props: { statsCurrency?: Address }) {
-    const result = await this.api.collections({ currency: props.statsCurrency ?? zeroAddress });
-    const { edges: collections, pageInfo } = result.collections;
-    return { collections: collections.map((edge) => edge.node), pageInfo };
+  async collections(props: {
+    statsCurrency?: Address;
+    standards?: TokenStandardType[];
+    collections?: number[];
+  }) {
+    const { statsCurrency: currency = zeroAddress, collections, standards } = props;
+    const {
+      collections: { edges, pageInfo },
+    } = await this.api.collections({ currency, collections, standards });
+    return { collections: edges.map((edge) => edge.node), pageInfo };
   }
 
   async collectionId(props: { slug: string; contractAddress?: never }): Promise<number>;
@@ -479,8 +485,8 @@ export class Gondi {
     }
   }
 
-  async ownedNfts() {
-    const result = await this.api.ownedNfts();
+  async ownedNfts(args: Parameters<Api['ownedNfts']>[0]) {
+    const result = await this.api.ownedNfts(args);
     const { edges: ownedNfts, pageInfo } = result.ownedNfts;
     return { ownedNfts: ownedNfts.map((edge) => edge.node), pageInfo };
   }
@@ -1017,6 +1023,28 @@ export class Gondi {
   }: { userVaultAddress?: Address } & BurnAndWithdrawArgs) {
     return this.contracts.UserVault(userVaultAddress).burnAndWithdraw(data);
   }
+
+  async wrapOldERC721({ collection, tokenId }: wrapOldERC721Args) {
+    const wrapperAddress = await this.api.getWrapperAddress(collection);
+    const wrapper = this.contracts.OldERC721Wrapper(wrapperAddress);
+    const naked = this.contracts.OldERC721(collection.contractData.contractAddress);
+    const stashAddress = await wrapper.contract.read.stashAddress([this.wallet.account.address]);
+    const currentOwner = await naked.contract.read.ownerOf([tokenId]);
+    if (currentOwner == this.wallet.account.address) {
+      const txTransfer = await naked.safeContractWrite.transfer([stashAddress, tokenId]);
+      await this.bcClient.waitForTransactionReceipt({ hash: txTransfer });
+    } else if (currentOwner != stashAddress) {
+      throw Error('NFT not owned');
+    }
+    return await wrapper.wrapOldERC721({ tokenId });
+  }
+
+  async unwrapOldERC721({ collection, tokenId }: wrapOldERC721Args) {
+    const wrapperAddress = await this.api.getWrapperAddress(collection);
+    const wrapper = this.contracts.OldERC721Wrapper(wrapperAddress);
+
+    return await wrapper.unwrap(tokenId);
+  }
 }
 
 interface GondiProps {
@@ -1054,6 +1082,14 @@ export type BurnAndWithdrawArgs = {
   tokens?: Address[]; // erc20 tokens
   erc1155Collections?: Address[];
   erc1155TokenIds?: bigint[];
+};
+
+type wrapOldERC721Args = {
+  collection: {
+    contractData: { contractAddress: Address };
+    wrapperCollections?: { contractData: { contractAddress: Address } }[];
+  };
+  tokenId: bigint;
 };
 
 export interface EmitLoanArgs {

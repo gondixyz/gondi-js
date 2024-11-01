@@ -5,6 +5,7 @@ export {
   OffersSortField,
   Ordering,
   MarketplaceEnum,
+  TokenStandardType,
 } from '@/generated/graphql';
 
 export type * as Types from '@/model';
