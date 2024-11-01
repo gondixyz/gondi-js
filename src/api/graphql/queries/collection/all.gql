@@ -1,5 +1,10 @@
-query collections($currency: Address!, $collections: [Int!], $standards: [TokenStandardType!], $after: String) {
-  collections: listCollections(collections: $collections, standards: $standards , after: $after) {
+query collections(
+  $currency: Address!
+  $collections: [Int!]
+  $standards: [TokenStandardType!]
+  $after: String
+) {
+  collections: listCollections(collections: $collections, standards: $standards, after: $after) {
     pageInfo {
       endCursor
       hasNextPage

@@ -19,6 +19,17 @@ query ownedNfts(
         id
         collection {
           id
+          contractData {
+            contractAddress
+          }
+          wrapperCollections {
+            contractData {
+              contractAddress
+            }
+            contractData {
+              contractAddress
+            }
+          }
         }
         tokenId
         price

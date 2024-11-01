@@ -187,7 +187,7 @@ export type Collection = Node & {
   __typename?: 'Collection';
   bannerImage?: Maybe<Asset>;
   collectionUrl?: Maybe<Scalars['String']>;
-  contractData?: Maybe<ContractData>;
+  contractData: ContractData;
   description?: Maybe<Scalars['String']>;
   discordUrl?: Maybe<Scalars['String']>;
   externalUrl?: Maybe<Scalars['String']>;
@@ -196,10 +196,11 @@ export type Collection = Node & {
   imageId?: Maybe<Scalars['String']>;
   name?: Maybe<Scalars['String']>;
   nftsCount?: Maybe<Scalars['Int']>;
-  slug?: Maybe<Scalars['String']>;
+  slug: Scalars['String'];
   statistics: CollectionStatistics;
   twitterUsername?: Maybe<Scalars['String']>;
   verified: Scalars['Boolean'];
+  wrappedCollection?: Maybe<Collection>;
   wrapperCollections: Array<Collection>;
 };
 
@@ -2162,8 +2163,10 @@ export enum TokenStandardType {
 
 export type TopUpRequest = Node & {
   __typename?: 'TopUpRequest';
+  createdDate: Scalars['DateTime'];
   desiredAprBps: Scalars['BigInt'];
   desiredTopUp: Scalars['BigInt'];
+  expirationDate: Scalars['DateTime'];
   id: Scalars['String'];
   loanId: Scalars['String'];
 };
@@ -2444,14 +2447,14 @@ export type GenerateCollectionOfferHashMutationVariables = Exact<{
 }>;
 
 
-export type GenerateCollectionOfferHashMutation = { __typename?: 'Mutation', offer: { __typename?: 'CollectionOffer', offerHash?: Hash | null, offerId: bigint, lenderAddress?: Address | null, signerAddress?: Address | null, borrowerAddress?: Address | null, validators: Array<{ __typename?: 'OfferValidator', validator: Address, arguments: Hex }>, collection: { __typename?: 'Collection', contractData?: { __typename?: 'ContractData', contractAddress: Address } | null } } };
+export type GenerateCollectionOfferHashMutation = { __typename?: 'Mutation', offer: { __typename?: 'CollectionOffer', offerHash?: Hash | null, offerId: bigint, lenderAddress?: Address | null, signerAddress?: Address | null, borrowerAddress?: Address | null, validators: Array<{ __typename?: 'OfferValidator', validator: Address, arguments: Hex }>, collection: { __typename?: 'Collection', contractData: { __typename?: 'ContractData', contractAddress: Address } } } };
 
 export type SaveCollectionOfferMutationVariables = Exact<{
   offer: CollectionSignedOfferInput;
 }>;
 
 
-export type SaveCollectionOfferMutation = { __typename?: 'Mutation', offer: { __typename?: 'CollectionOffer', id: string, status: string, collection: { __typename?: 'Collection', contractData?: { __typename?: 'ContractData', contractAddress: Address } | null } } };
+export type SaveCollectionOfferMutation = { __typename?: 'Mutation', offer: { __typename?: 'CollectionOffer', id: string, status: string, collection: { __typename?: 'Collection', contractData: { __typename?: 'ContractData', contractAddress: Address } } } };
 
 export type HideOfferMutationVariables = Exact<{
   contract: Scalars['Address'];
@@ -2466,14 +2469,14 @@ export type GenerateSingleNftOfferHashMutationVariables = Exact<{
 }>;
 
 
-export type GenerateSingleNftOfferHashMutation = { __typename?: 'Mutation', offer: { __typename?: 'SingleNFTOffer', offerHash?: Hash | null, offerId: bigint, lenderAddress?: Address | null, signerAddress?: Address | null, borrowerAddress?: Address | null, validators: Array<{ __typename?: 'OfferValidator', validator: Address, arguments: Hex }>, nft: { __typename?: 'NFT', tokenId: bigint, collection?: { __typename?: 'Collection', contractData?: { __typename?: 'ContractData', contractAddress: Address } | null } | null } } };
+export type GenerateSingleNftOfferHashMutation = { __typename?: 'Mutation', offer: { __typename?: 'SingleNFTOffer', offerHash?: Hash | null, offerId: bigint, lenderAddress?: Address | null, signerAddress?: Address | null, borrowerAddress?: Address | null, validators: Array<{ __typename?: 'OfferValidator', validator: Address, arguments: Hex }>, nft: { __typename?: 'NFT', tokenId: bigint, collection?: { __typename?: 'Collection', contractData: { __typename?: 'ContractData', contractAddress: Address } } | null } } };
 
 export type SaveSingleNftOfferMutationVariables = Exact<{
   offer: SingleNftSignedOfferInput;
 }>;
 
 
-export type SaveSingleNftOfferMutation = { __typename?: 'Mutation', offer: { __typename?: 'SingleNFTOffer', id: string, status: string, nft: { __typename?: 'NFT', tokenId: bigint, collection?: { __typename?: 'Collection', contractData?: { __typename?: 'ContractData', contractAddress: Address } | null } | null } } };
+export type SaveSingleNftOfferMutation = { __typename?: 'Mutation', offer: { __typename?: 'SingleNFTOffer', id: string, status: string, nft: { __typename?: 'NFT', tokenId: bigint, collection?: { __typename?: 'Collection', contractData: { __typename?: 'ContractData', contractAddress: Address } } | null } } };
 
 export type UnhideOfferMutationVariables = Exact<{
   contract: Scalars['Address'];
@@ -2488,7 +2491,7 @@ export type GenerateRenegotiationOfferHashMutationVariables = Exact<{
 }>;
 
 
-export type GenerateRenegotiationOfferHashMutation = { __typename?: 'Mutation', offer: { __typename?: 'Renegotiation', loanId: bigint, renegotiationId: bigint, offerHash?: Hash | null, lenderAddress?: Address | null, signerAddress?: Address | null, nft: { __typename?: 'NFT', tokenId: bigint, collection?: { __typename?: 'Collection', contractData?: { __typename?: 'ContractData', contractAddress: Address } | null } | null } } };
+export type GenerateRenegotiationOfferHashMutation = { __typename?: 'Mutation', offer: { __typename?: 'Renegotiation', loanId: bigint, renegotiationId: bigint, offerHash?: Hash | null, lenderAddress?: Address | null, signerAddress?: Address | null, nft: { __typename?: 'NFT', tokenId: bigint, collection?: { __typename?: 'Collection', contractData: { __typename?: 'ContractData', contractAddress: Address } } | null } } };
 
 export type HideRenegotiationOfferMutationVariables = Exact<{
   id: Scalars['String'];
@@ -2550,7 +2553,14 @@ export type CollectionsQueryVariables = Exact<{
 }>;
 
 
-export type CollectionsQuery = { __typename?: 'Query', collections: { __typename?: 'CollectionConnection', pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'CollectionEdge', node: { __typename?: 'Collection', id: string, name?: string | null, slug?: string | null, description?: string | null, discordUrl?: string | null, twitterUsername?: string | null, externalUrl?: string | null, collectionUrl?: string | null, verified: boolean, wrapperCollections: Array<{ __typename?: 'Collection', contractData?: { __typename?: 'ContractData', contractAddress: Address } | null }>, image?: { __typename?: 'Asset', cacheUrl?: string | null } | null, bannerImage?: { __typename?: 'Asset', cacheUrl?: string | null } | null, contractData?: { __typename?: 'ContractData', blockchain: string, contractAddress: Address, createdDate: Date, creatorAddress?: Address | null } | null, statistics: { __typename?: 'CollectionStatistics', floorPrice7d?: number | null, floorPrice30d?: number | null, totalVolume?: number | null, totalVolume1y?: number | null, totalVolume3m?: number | null, totalVolume1m?: number | null, totalVolume1w?: number | null, totalLoanVolume: bigint, totalLoanVolume1w: bigint, totalLoanVolume1m: bigint, totalLoanVolume3m: bigint, totalLoanVolume1y: bigint, numberOfPricedNfts: number, nftsCount?: number | null, percentageInOutstandingLoans: number, repaymentRate: number, numberOfOffers: number, floorPrice?: { __typename?: 'CurrencyAmount', amount: number, currency: { __typename?: 'Currency', address: Address, decimals: number } } | null, bestOffer?: { __typename?: 'CurrencyAmount', amount: number, currency: { __typename?: 'Currency', address: Address, decimals: number } } | null } } }> } };
+export type CollectionsQuery = { __typename?: 'Query', collections: { __typename?: 'CollectionConnection', pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'CollectionEdge', node: { __typename?: 'Collection', id: string, name?: string | null, slug: string, description?: string | null, discordUrl?: string | null, twitterUsername?: string | null, externalUrl?: string | null, collectionUrl?: string | null, verified: boolean, wrapperCollections: Array<{ __typename?: 'Collection', contractData: { __typename?: 'ContractData', contractAddress: Address } }>, image?: { __typename?: 'Asset', cacheUrl?: string | null } | null, bannerImage?: { __typename?: 'Asset', cacheUrl?: string | null } | null, contractData: { __typename?: 'ContractData', blockchain: string, contractAddress: Address, createdDate: Date, creatorAddress?: Address | null }, statistics: { __typename?: 'CollectionStatistics', floorPrice7d?: number | null, floorPrice30d?: number | null, totalVolume?: number | null, totalVolume1y?: number | null, totalVolume3m?: number | null, totalVolume1m?: number | null, totalVolume1w?: number | null, totalLoanVolume: bigint, totalLoanVolume1w: bigint, totalLoanVolume1m: bigint, totalLoanVolume3m: bigint, totalLoanVolume1y: bigint, numberOfPricedNfts: number, nftsCount?: number | null, percentageInOutstandingLoans: number, repaymentRate: number, numberOfOffers: number, floorPrice?: { __typename?: 'CurrencyAmount', amount: number, currency: { __typename?: 'Currency', address: Address, decimals: number } } | null, bestOffer?: { __typename?: 'CurrencyAmount', amount: number, currency: { __typename?: 'Currency', address: Address, decimals: number } } | null } } }> } };
+
+export type CollectionByContractAddressQueryVariables = Exact<{
+  contractAddress: Scalars['Address'];
+}>;
+
+
+export type CollectionByContractAddressQuery = { __typename?: 'Query', collection: Array<{ __typename?: 'Collection', contractData: { __typename?: 'ContractData', contractAddress: Address }, wrapperCollections: Array<{ __typename?: 'Collection', contractData: { __typename?: 'ContractData', contractAddress: Address } }> }> };
 
 export type CollectionsIdByContractAddressQueryVariables = Exact<{
   contractAddress: Scalars['Address'];
@@ -2575,7 +2585,7 @@ export type ListListingsQueryVariables = Exact<{
 }>;
 
 
-export type ListListingsQuery = { __typename?: 'Query', result: { __typename?: 'ListingConnection', pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'ListingEdge', node: { __typename?: 'Listing', id: string, marketplaceName: MarketplaceEnum, createdDate: Date, desiredDuration?: number | null, desiredPrincipalAddress?: Address | null, user: { __typename?: 'User', walletAddress: Address }, nft: { __typename?: 'NFT', id: string, tokenId: bigint, collection?: { __typename?: 'Collection', id: string, slug?: string | null, contractData?: { __typename?: 'ContractData', contractAddress: Address } | null } | null } } }> } };
+export type ListListingsQuery = { __typename?: 'Query', result: { __typename?: 'ListingConnection', pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'ListingEdge', node: { __typename?: 'Listing', id: string, marketplaceName: MarketplaceEnum, createdDate: Date, desiredDuration?: number | null, desiredPrincipalAddress?: Address | null, user: { __typename?: 'User', walletAddress: Address }, nft: { __typename?: 'NFT', id: string, tokenId: bigint, collection?: { __typename?: 'Collection', id: string, slug: string, contractData: { __typename?: 'ContractData', contractAddress: Address } } | null } } }> } };
 
 export type ListLoansQueryVariables = Exact<{
   borrowers?: InputMaybe<Array<Scalars['String']> | Scalars['String']>;
@@ -2591,7 +2601,7 @@ export type ListLoansQueryVariables = Exact<{
 }>;
 
 
-export type ListLoansQuery = { __typename?: 'Query', loans: { __typename?: 'MultiSourceLoanConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'MultiSourceLoanEdge', node: { __typename?: 'MultiSourceLoan', id: string, address: Address, loanId: number, timestamp: Date, txHash: Hash, indexInBlock: number, borrowerAddress: Address, principalAddress: Address, startTime: Date, duration: bigint, status: string, principalAmount: bigint, blendedAprBps: number, totalOriginationFee: bigint, protocolFee: bigint, offer: { __typename?: 'CollectionOffer', offerId: bigint, signerAddress?: Address | null } | { __typename?: 'SingleNFTOffer', offerId: bigint, signerAddress?: Address | null }, currency: { __typename?: 'Currency', symbol: string, decimals: number, address: Address }, repaidActivity?: { __typename?: 'LoanRepaid', totalInterest: bigint, timestamp: Date } | null, nft: { __typename?: 'NFT', id: string, name?: string | null, tokenId: bigint, nftId: string, owner?: Address | null, image?: { __typename?: 'Asset', data: string, cacheUrl?: string | null, contentTypeMime: string, accessTypeName: string } | null, collection?: { __typename?: 'Collection', id: string, slug?: string | null, name?: string | null, nftsCount?: number | null, contractData?: { __typename?: 'ContractData', contractAddress: Address } | null } | null }, sources: Array<{ __typename?: 'Source', id: string, loanId: string, originationFee: bigint, principalAmount: bigint, lenderAddress: string, accruedInterest: bigint, aprBps: bigint, startTime: Date }> } }> } };
+export type ListLoansQuery = { __typename?: 'Query', loans: { __typename?: 'MultiSourceLoanConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'MultiSourceLoanEdge', node: { __typename?: 'MultiSourceLoan', id: string, address: Address, loanId: number, timestamp: Date, txHash: Hash, indexInBlock: number, borrowerAddress: Address, principalAddress: Address, startTime: Date, duration: bigint, status: string, principalAmount: bigint, blendedAprBps: number, totalOriginationFee: bigint, protocolFee: bigint, offer: { __typename?: 'CollectionOffer', offerId: bigint, signerAddress?: Address | null } | { __typename?: 'SingleNFTOffer', offerId: bigint, signerAddress?: Address | null }, currency: { __typename?: 'Currency', symbol: string, decimals: number, address: Address }, repaidActivity?: { __typename?: 'LoanRepaid', totalInterest: bigint, timestamp: Date } | null, nft: { __typename?: 'NFT', id: string, name?: string | null, tokenId: bigint, nftId: string, owner?: Address | null, image?: { __typename?: 'Asset', data: string, cacheUrl?: string | null, contentTypeMime: string, accessTypeName: string } | null, collection?: { __typename?: 'Collection', id: string, slug: string, name?: string | null, nftsCount?: number | null, contractData: { __typename?: 'ContractData', contractAddress: Address } } | null }, sources: Array<{ __typename?: 'Source', id: string, loanId: string, originationFee: bigint, principalAmount: bigint, lenderAddress: string, accruedInterest: bigint, aprBps: bigint, startTime: Date }> } }> } };
 
 export type NftIdByContractAddressAndTokenIdQueryVariables = Exact<{
   contractAddress: Scalars['Address'];
@@ -2617,7 +2627,7 @@ export type OwnedNftsQueryVariables = Exact<{
 }>;
 
 
-export type OwnedNftsQuery = { __typename?: 'Query', ownedNfts: { __typename?: 'NFTConnection', pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'NFTEdge', node: { __typename?: 'NFT', id: string, tokenId: bigint, price?: bigint | null, priceCurrencyAddress?: string | null, collection?: { __typename?: 'Collection', id: string } | null, activeLoan?: { __typename?: 'MultiSourceLoan', id: string } | null, statistics: { __typename?: 'NftStatistics', lastSale?: { __typename?: 'Sale', order: { __typename?: 'CollectionOrder', price: bigint, currency: { __typename?: 'Currency', address: Address, decimals: number } } | { __typename?: 'SingleNFTOrder', price: bigint, currency: { __typename?: 'Currency', address: Address, decimals: number } } } | null, topTraitFloorPrice?: { __typename?: 'CurrencyAmount', amount: number, currency: { __typename?: 'Currency', address: Address, decimals: number } } | null } } }> } };
+export type OwnedNftsQuery = { __typename?: 'Query', ownedNfts: { __typename?: 'NFTConnection', pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'NFTEdge', node: { __typename?: 'NFT', id: string, tokenId: bigint, price?: bigint | null, priceCurrencyAddress?: string | null, collection?: { __typename?: 'Collection', id: string, contractData: { __typename?: 'ContractData', contractAddress: Address }, wrapperCollections: Array<{ __typename?: 'Collection', contractData: { __typename?: 'ContractData', contractAddress: Address } }> } | null, activeLoan?: { __typename?: 'MultiSourceLoan', id: string } | null, statistics: { __typename?: 'NftStatistics', lastSale?: { __typename?: 'Sale', order: { __typename?: 'CollectionOrder', price: bigint, currency: { __typename?: 'Currency', address: Address, decimals: number } } | { __typename?: 'SingleNFTOrder', price: bigint, currency: { __typename?: 'Currency', address: Address, decimals: number } } } | null, topTraitFloorPrice?: { __typename?: 'CurrencyAmount', amount: number, currency: { __typename?: 'Currency', address: Address, decimals: number } } | null } } }> } };
 
 export type ListOffersQueryVariables = Exact<{
   borrowerAddress?: InputMaybe<Scalars['String']>;
@@ -2634,7 +2644,7 @@ export type ListOffersQueryVariables = Exact<{
 }>;
 
 
-export type ListOffersQuery = { __typename?: 'Query', result: { __typename?: 'OfferConnection', pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'OfferEdge', node: { __typename?: 'CollectionOffer', id: string, offerId: bigint, lenderAddress?: Address | null, borrowerAddress?: Address | null, signerAddress?: Address | null, contractAddress: Address, requiresLiquidation?: boolean | null, principalAddress: Address, principalAmount: bigint, aprBps: bigint, fee: bigint, capacity: bigint, expirationTime: bigint, duration: bigint, status: string, offerHash?: Hash | null, signature?: Hex | null, createdDate?: Date | null, repayment: bigint, hidden?: boolean | null, maxSeniorRepayment: bigint, collection: { __typename?: 'Collection', id: string, slug?: string | null, contractData?: { __typename?: 'ContractData', contractAddress: Address } | null }, currency: { __typename?: 'Currency', symbol: string, decimals: number, address: Address }, validators: Array<{ __typename?: 'OfferValidator', arguments: Hex, validator: Address }> } | { __typename?: 'SingleNFTOffer', id: string, offerId: bigint, lenderAddress?: Address | null, borrowerAddress?: Address | null, signerAddress?: Address | null, contractAddress: Address, requiresLiquidation?: boolean | null, principalAddress: Address, principalAmount: bigint, aprBps: bigint, fee: bigint, capacity: bigint, expirationTime: bigint, duration: bigint, status: string, offerHash?: Hash | null, signature?: Hex | null, createdDate?: Date | null, repayment: bigint, hidden?: boolean | null, maxSeniorRepayment: bigint, nft: { __typename?: 'NFT', id: string, tokenId: bigint, collection?: { __typename?: 'Collection', id: string, slug?: string | null, contractData?: { __typename?: 'ContractData', contractAddress: Address } | null } | null }, currency: { __typename?: 'Currency', symbol: string, decimals: number, address: Address }, validators: Array<{ __typename?: 'OfferValidator', arguments: Hex, validator: Address }> } }> } };
+export type ListOffersQuery = { __typename?: 'Query', result: { __typename?: 'OfferConnection', pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'OfferEdge', node: { __typename?: 'CollectionOffer', id: string, offerId: bigint, lenderAddress?: Address | null, borrowerAddress?: Address | null, signerAddress?: Address | null, contractAddress: Address, requiresLiquidation?: boolean | null, principalAddress: Address, principalAmount: bigint, aprBps: bigint, fee: bigint, capacity: bigint, expirationTime: bigint, duration: bigint, status: string, offerHash?: Hash | null, signature?: Hex | null, createdDate?: Date | null, repayment: bigint, hidden?: boolean | null, maxSeniorRepayment: bigint, collection: { __typename?: 'Collection', id: string, slug: string, contractData: { __typename?: 'ContractData', contractAddress: Address } }, currency: { __typename?: 'Currency', symbol: string, decimals: number, address: Address }, validators: Array<{ __typename?: 'OfferValidator', arguments: Hex, validator: Address }> } | { __typename?: 'SingleNFTOffer', id: string, offerId: bigint, lenderAddress?: Address | null, borrowerAddress?: Address | null, signerAddress?: Address | null, contractAddress: Address, requiresLiquidation?: boolean | null, principalAddress: Address, principalAmount: bigint, aprBps: bigint, fee: bigint, capacity: bigint, expirationTime: bigint, duration: bigint, status: string, offerHash?: Hash | null, signature?: Hex | null, createdDate?: Date | null, repayment: bigint, hidden?: boolean | null, maxSeniorRepayment: bigint, nft: { __typename?: 'NFT', id: string, tokenId: bigint, collection?: { __typename?: 'Collection', id: string, slug: string, contractData: { __typename?: 'ContractData', contractAddress: Address } } | null }, currency: { __typename?: 'Currency', symbol: string, decimals: number, address: Address }, validators: Array<{ __typename?: 'OfferValidator', arguments: Hex, validator: Address }> } }> } };
 
 export type ActiveOfferNotificationKeySpecifier = ('createdOn' | 'id' | 'notificationType' | 'offer' | 'offerId' | 'readOn' | 'user' | ActiveOfferNotificationKeySpecifier)[];
 export type ActiveOfferNotificationFieldPolicy = {
@@ -2756,7 +2766,7 @@ export type BidEdgeFieldPolicy = {
 	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
 	node?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type CollectionKeySpecifier = ('bannerImage' | 'collectionUrl' | 'contractData' | 'description' | 'discordUrl' | 'externalUrl' | 'id' | 'image' | 'imageId' | 'name' | 'nftsCount' | 'slug' | 'statistics' | 'twitterUsername' | 'verified' | 'wrapperCollections' | CollectionKeySpecifier)[];
+export type CollectionKeySpecifier = ('bannerImage' | 'collectionUrl' | 'contractData' | 'description' | 'discordUrl' | 'externalUrl' | 'id' | 'image' | 'imageId' | 'name' | 'nftsCount' | 'slug' | 'statistics' | 'twitterUsername' | 'verified' | 'wrappedCollection' | 'wrapperCollections' | CollectionKeySpecifier)[];
 export type CollectionFieldPolicy = {
 	bannerImage?: FieldPolicy<any> | FieldReadFunction<any>,
 	collectionUrl?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -2773,6 +2783,7 @@ export type CollectionFieldPolicy = {
 	statistics?: FieldPolicy<any> | FieldReadFunction<any>,
 	twitterUsername?: FieldPolicy<any> | FieldReadFunction<any>,
 	verified?: FieldPolicy<any> | FieldReadFunction<any>,
+	wrappedCollection?: FieldPolicy<any> | FieldReadFunction<any>,
 	wrapperCollections?: FieldPolicy<any> | FieldReadFunction<any>
 };
 export type CollectionConnectionKeySpecifier = ('edges' | 'pageInfo' | 'totalCount' | CollectionConnectionKeySpecifier)[];
@@ -3789,10 +3800,12 @@ export type StatByCollectionFieldPolicy = {
 	collection?: FieldPolicy<any> | FieldReadFunction<any>,
 	value?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type TopUpRequestKeySpecifier = ('desiredAprBps' | 'desiredTopUp' | 'id' | 'loanId' | TopUpRequestKeySpecifier)[];
+export type TopUpRequestKeySpecifier = ('createdDate' | 'desiredAprBps' | 'desiredTopUp' | 'expirationDate' | 'id' | 'loanId' | TopUpRequestKeySpecifier)[];
 export type TopUpRequestFieldPolicy = {
+	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
 	desiredAprBps?: FieldPolicy<any> | FieldReadFunction<any>,
 	desiredTopUp?: FieldPolicy<any> | FieldReadFunction<any>,
+	expirationDate?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	loanId?: FieldPolicy<any> | FieldReadFunction<any>
 };
@@ -4590,6 +4603,20 @@ export const CollectionsDocument = gql`
   }
 }
     ${CurrencyAmountInfoFragmentDoc}`;
+export const CollectionByContractAddressDocument = gql`
+    query collectionByContractAddress($contractAddress: Address!) {
+  collection: getCollectionsByContractAddress(contractAddress: $contractAddress) {
+    contractData {
+      contractAddress
+    }
+    wrapperCollections {
+      contractData {
+        contractAddress
+      }
+    }
+  }
+}
+    `;
 export const CollectionsIdByContractAddressDocument = gql`
     query collectionsIdByContractAddress($contractAddress: Address!) {
   collections: getCollectionsByContractAddress(contractAddress: $contractAddress) {
@@ -4763,6 +4790,17 @@ export const OwnedNftsDocument = gql`
         id
         collection {
           id
+          contractData {
+            contractAddress
+          }
+          wrapperCollections {
+            contractData {
+              contractAddress
+            }
+            contractData {
+              contractAddress
+            }
+          }
         }
         tokenId
         price
@@ -4920,6 +4958,9 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
     },
     collections(variables: CollectionsQueryVariables, options?: C): Promise<CollectionsQuery> {
       return requester<CollectionsQuery, CollectionsQueryVariables>(CollectionsDocument, variables, options) as Promise<CollectionsQuery>;
+    },
+    collectionByContractAddress(variables: CollectionByContractAddressQueryVariables, options?: C): Promise<CollectionByContractAddressQuery> {
+      return requester<CollectionByContractAddressQuery, CollectionByContractAddressQueryVariables>(CollectionByContractAddressDocument, variables, options) as Promise<CollectionByContractAddressQuery>;
     },
     collectionsIdByContractAddress(variables: CollectionsIdByContractAddressQueryVariables, options?: C): Promise<CollectionsIdByContractAddressQuery> {
       return requester<CollectionsIdByContractAddressQuery, CollectionsIdByContractAddressQueryVariables>(CollectionsIdByContractAddressDocument, variables, options) as Promise<CollectionsIdByContractAddressQuery>;

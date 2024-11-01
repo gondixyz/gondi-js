@@ -40,6 +40,7 @@ export class Api {
   collections;
   collectionIdBySlug;
   collectionsIdByContractAddress;
+  collectionByContractAddress;
   listNft;
   unlistNft;
   ownedNfts;
@@ -64,6 +65,7 @@ export class Api {
     this.collectionIdBySlug = this.api.collectionIdBySlug;
     this.collectionsIdByContractAddress = this.api.collectionsIdByContractAddress;
     this.collections = this.api.collections;
+    this.collectionByContractAddress = this.api.collectionByContractAddress;
     this.listNft = this.api.listNft;
     this.unlistNft = this.api.unlistNft;
     this.ownedNfts = this.api.ownedNfts;
@@ -186,5 +188,19 @@ export class Api {
       ...mapPageInfo(pageInfo),
       listings,
     };
+  }
+
+  async getWrapperAddress(collection: {
+    contractData: { contractAddress: `0x${string}` };
+    wrapperCollections?: { contractData: { contractAddress: `0x${string}` } }[];
+  }) {
+    if (collection.wrapperCollections)
+      return collection.wrapperCollections[0]?.contractData?.contractAddress;
+    const { collection: collections } = await this.api.collectionByContractAddress({
+      contractAddress: collection.contractData.contractAddress,
+    });
+    const wrapperAddress = collections[0]?.wrapperCollections[0]?.contractData?.contractAddress;
+    if (!wrapperAddress) throw Error('Collection has no associated wrappers');
+    return wrapperAddress;
   }
 }

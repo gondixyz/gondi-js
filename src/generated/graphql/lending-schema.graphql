@@ -151,7 +151,7 @@ scalar BigInt
 type Collection implements Node {
   bannerImage: Asset
   collectionUrl: String
-  contractData: ContractData
+  contractData: ContractData!
   description: String
   discordUrl: String
   externalUrl: String
@@ -160,10 +160,11 @@ type Collection implements Node {
   imageId: String
   name: String
   nftsCount: Int
-  slug: String
+  slug: String!
   statistics: CollectionStatistics!
   twitterUsername: String
   verified: Boolean!
+  wrappedCollection: Collection
   wrapperCollections: [Collection!]!
 }
 
@@ -1588,8 +1589,10 @@ enum TokenStandardType {
 }
 
 type TopUpRequest implements Node {
+  createdDate: DateTime!
   desiredAprBps: BigInt!
   desiredTopUp: BigInt!
+  expirationDate: DateTime!
   id: String!
   loanId: String!
 }

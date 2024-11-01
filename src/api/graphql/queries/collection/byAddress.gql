@@ -1,0 +1,12 @@
+query collectionByContractAddress($contractAddress: Address!) {
+  collection: getCollectionsByContractAddress(contractAddress: $contractAddress) {
+    contractData {
+      contractAddress
+    }
+    wrapperCollections {
+      contractData {
+        contractAddress
+      }
+    }
+  }
+}

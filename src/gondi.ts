@@ -1023,120 +1023,27 @@ export class Gondi {
   }: { userVaultAddress?: Address } & BurnAndWithdrawArgs) {
     return this.contracts.UserVault(userVaultAddress).burnAndWithdraw(data);
   }
-  async wrapOldERC721({
-    collection,
-    tokenId,
-  }: {
-    collection: {
-      id: string;
-      wrapperCollections?: { contractData: { contractAddress: Address } }[];
-    };
-    tokenId: bigint;
-  }) {
-    if (collection?.id === undefined) throw Error('Invalid collection');
 
-    const wrapperAddress = await this._getWrapperAddress(collection);
-    if (wrapperAddress === undefined) throw Error('Collection has no associated wrappers');
-
+  async wrapOldERC721({ collection, tokenId }: wrapOldERC721Args) {
+    const wrapperAddress = await this.api.getWrapperAddress(collection);
     const wrapper = this.contracts.OldERC721Wrapper(wrapperAddress);
-    const wrappedAddress = await wrapper.contract.read.wrapped();
-    const wrapped = this.contracts.OldERC721(wrappedAddress);
+    const naked = this.contracts.OldERC721(collection.contractData.contractAddress);
     const stashAddress = await wrapper.contract.read.stashAddress([this.wallet.account.address]);
-    const txTransfer = await wrapped.safeContractWrite.transfer([stashAddress, tokenId]);
-
-    const waitTransferMined = async () => {
-      const receipt = await this.bcClient.waitForTransactionReceipt({
-        hash: txTransfer,
-      });
-      return receipt;
-    };
-
-    const waitMintMined = async () => {
-      const receipt = await this.bcClient.waitForTransactionReceipt({
-        hash: await txMint,
-      });
-      return receipt;
-    };
-
-    const waitMined = async () => {
-      return [await waitTransferMined(), await waitMintMined()];
-    };
-
-    const txMint: Promise<Address> = new Promise(async (resolve, _reject) => {
-      await waitTransferMined();
-      resolve(await wrapper.safeContractWrite.wrap([tokenId]));
-    });
-    return {
-      waitTransferMined,
-      waitMintMined,
-      waitMined,
-    };
+    const currentOwner = await naked.contract.read.ownerOf([tokenId]);
+    if (currentOwner == this.wallet.account.address) {
+      const txTransfer = await naked.safeContractWrite.transfer([stashAddress, tokenId]);
+      await this.bcClient.waitForTransactionReceipt({ hash: txTransfer });
+    } else if (currentOwner != stashAddress) {
+      throw Error('NFT not owned');
+    }
+    return await wrapper.wrapOldERC721({ tokenId });
   }
 
-  async unwrapOldERC721({
-    collection,
-    tokenId,
-    wrapperCollection,
-  }: (
-    | {
-        collection?: never;
-        wrapperCollection: { id: string; contractData?: { contractAddress: Address } };
-      }
-    | { collection: { id: string }; wrapperCollection?: never }
-  ) & {
-    tokenId: bigint;
-  }) {
-    if (collection?.id === undefined && wrapperCollection?.id === undefined)
-      throw Error('Invalid collection');
-
-    const wrapperAddress = wrapperCollection
-      ? await this._getCollectionAddress(wrapperCollection)
-      : await this._getWrapperAddress(collection);
-
-    if (wrapperAddress === undefined) throw Error('Collection has no associated wrappers');
-
+  async unwrapOldERC721({ collection, tokenId }: wrapOldERC721Args) {
+    const wrapperAddress = await this.api.getWrapperAddress(collection);
     const wrapper = this.contracts.OldERC721Wrapper(wrapperAddress);
 
-    const tx = await wrapper.safeContractWrite.unwrap([tokenId]);
-    const waitMined = async () => await this.bcClient.waitForTransactionReceipt({ hash: tx });
-
-    return {
-      waitMined,
-    };
-  }
-
-  async _getWrapperAddress(collection: {
-    id: string;
-    wrapperCollections?: { contractData: { contractAddress: Address } }[];
-  }) {
-    if (collection.wrapperCollections)
-      return collection.wrapperCollections[0]?.contractData?.contractAddress;
-    const {
-      collections: [
-        {
-          wrapperCollections: [{ contractData: wrapperContractData }],
-        },
-      ],
-    } = await this.collections({
-      statsCurrency: zeroAddress,
-      collections: [Number(collection.id)],
-      standards: [TokenStandardType.OldErc721],
-    });
-    return wrapperContractData?.contractAddress;
-  }
-
-  async _getCollectionAddress(collection: {
-    id: string;
-    contractData?: { contractAddress: Address };
-  }) {
-    if (collection.contractData) return collection.contractData.contractAddress;
-    const {
-      collections: [{ contractData }],
-    } = await this.collections({
-      statsCurrency: zeroAddress,
-      collections: [Number(collection.id)],
-    });
-    return contractData?.contractAddress;
+    return await wrapper.unwrap(tokenId);
   }
 }
 
@@ -1175,6 +1082,14 @@ export type BurnAndWithdrawArgs = {
   tokens?: Address[]; // erc20 tokens
   erc1155Collections?: Address[];
   erc1155TokenIds?: bigint[];
+};
+
+type wrapOldERC721Args = {
+  collection: {
+    contractData: { contractAddress: Address };
+    wrapperCollections?: { contractData: { contractAddress: Address } }[];
+  };
+  tokenId: bigint;
 };
 
 export interface EmitLoanArgs {
