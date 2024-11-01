@@ -20,22 +20,22 @@ export class OldERC721Wrapper extends BaseContract<typeof oldErc721WrapperAbi> {
   }
 
   async wrapOldERC721({ tokenId }: { tokenId: bigint }) {
-    const txMint = await this.safeContractWrite.wrap([tokenId]);
+    const txHash = await this.safeContractWrite.wrap([tokenId]);
 
     return {
-      txHash: txMint,
-      waitMined: async () => await this.bcClient.waitForTransactionReceipt({ hash: txMint }),
+      txHash,
+      waitMined: () => this.bcClient.waitForTransactionReceipt({ hash: txHash }),
     };
   }
 
   async unwrap(tokenId: bigint) {
-    const tx = await this.safeContractWrite.unwrap([tokenId]);
+    const txHash = await this.safeContractWrite.unwrap([tokenId]);
 
     return {
-      txHash: tx,
+      txHash,
       waitMined: () =>
         this.bcClient.waitForTransactionReceipt({
-          hash: tx,
+          hash: txHash,
         }),
     };
   }
