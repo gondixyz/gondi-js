@@ -121,7 +121,7 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
     },
     UserVault: {
       v5: '0x14a6Dcebb2Bb73aae1b199CCAadA75247b81976D',
-      v6: '0xC9f152168BC7b75F76b74e1f382F90bC2FeDd15f', // TODO: Update me
+      v6: '0x823dE2c44369e94CAc3DA789Ad4b6493e27e4Bfe',
     },
     LeverageAddress: '0x87Ce6e8124fFd68fa721FcC7f35fdA14A11E233e',
     SeaportAddress: '0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC',
