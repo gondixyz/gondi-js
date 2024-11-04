@@ -1,3 +1,97 @@
+# Breaking Changes 0.14.0
+
+### Important
+
+---
+
+This document outlines the breaking changes introduced in our codebase for version 0.14.0. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [Owned NFTs](#emit-loan) arguments update
+- [Is Approved NFT](#is-approved-nft) has been deleted
+- [Is Approved NFT For All](#is-approved-nft-for-all) arguments update
+- [Approve NFT](#approve-nft) has been deleted
+- [Approve NFT For All](#approve-nft-for-all) arguments update
+- [Create User Vault](#create-user-vault) arguments update
+
+---
+
+## Owned NFTs
+
+**Description:**
+
+`ownedNfts` method argument has been updated to gondi API parameters for query.
+
+---
+
+## Is Approved NFT
+
+**Description:**
+
+`isApprovedNFT` has been removed in favour of `isApprovedNFTForAll`
+
+---
+
+## Is Approved NFT For All
+
+**Description:**
+
+`isApprovedNFTForAll` method argument has been updated to:
+
+```ts
+async isApprovedNFTForAll({ nftAddress, standard, to }: {
+  nftAddress: Address;
+  standard: 'ERC721' | 'ERC1155';
+  to?: Address; // Defaults to MSL contract
+})
+```
+
+---
+
+## Approve NFT
+
+**Description:**
+
+`isApprovedNFT` has been removed in favour of `isApprovedNFTForAll`
+
+---
+
+## Approve NFT For All
+
+**Description:**
+
+`approveNFTForAll` method argument has been updated to:
+
+```ts
+async approveNFTForAll({ nftAddress, standard, to }: {
+  nftAddress: Address;
+  standard: 'ERC721' | 'ERC1155';
+  to?: Address; // Defaults to MSL contract
+})
+```
+
+---
+
+## Create User Vault
+
+**Description:**
+
+`createUserVault` method argument has been updated to:
+
+```ts
+type CreateVaultArgs = {
+  collection: Address;
+  tokenIds: bigint[];
+  amounts: bigint[];
+  standard: NftStandard;
+}[]
+
+async createUserVault({ nfts }: { nfts: CreateVaultArgs })
+```
+
+---
+
 # Breaking Changes 0.6.0
 
 ### Important
