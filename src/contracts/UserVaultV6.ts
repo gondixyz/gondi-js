@@ -77,11 +77,12 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
     // Regroup all elements in the same collection in case users send tokenIds as separate elements of the array
     const groupedNfts: Record<Address, (typeof nfts)[number]> = {};
     for (const nft of nfts) {
-      const { collection, tokenIds } = nft;
+      const { collection, tokenIds, amounts } = nft;
       if (groupedNfts[collection]) {
         groupedNfts[collection].tokenIds.push(...tokenIds);
+        groupedNfts[collection].amounts.push(...amounts);
       } else {
-        groupedNfts[collection] = { ...nft, tokenIds: [...tokenIds] };
+        groupedNfts[collection] = { ...nft, tokenIds: [...tokenIds], amounts: [...amounts] };
       }
     }
 
