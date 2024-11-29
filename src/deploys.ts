@@ -19,12 +19,10 @@ interface Contracts {
     v6: Address;
   };
   LeverageAddress: Address;
-  SeaportAddress: Address;
   CryptoPunksAddress: Address;
 }
 
 interface ApiKeys {
-  reservoirApiKey: string;
   infuraApiKey: string;
 }
 
@@ -79,8 +77,6 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
       },
       LeverageAddress:
         ensureAddress(process.env.GONDI_LEVERAGE) ?? '0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0',
-      SeaportAddress:
-        ensureAddress(process.env.SEAPORT) ?? '0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC',
       CryptoPunksAddress:
         ensureAddress(process.env.CRYPTO_PUNKS) ?? '0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb',
     };
@@ -103,7 +99,6 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
         v6: '0xTODO',
       },
       LeverageAddress: '0xTODO',
-      SeaportAddress: '0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC',
       CryptoPunksAddress: '0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb',
     };
   }
@@ -124,13 +119,11 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
       v6: '0x823dE2c44369e94CAc3DA789Ad4b6493e27e4Bfe',
     },
     LeverageAddress: '0x87Ce6e8124fFd68fa721FcC7f35fdA14A11E233e',
-    SeaportAddress: '0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC',
     CryptoPunksAddress: '0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb',
   };
 };
 
 export const getApiKeys = (): ApiKeys => ({
-  reservoirApiKey: '5b472f8c-b471-531a-a450-56e428e5a00a',
   infuraApiKey: '9b7006cb0b0b42f1813ae9418741fbb5',
 });
 

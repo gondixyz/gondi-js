@@ -93,7 +93,7 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
     };
   }
 
-  async depositERC1155s() {
+  async depositERC1155s(): ReturnType<UserVaultV6['depositERC1155s']> {
     throw new Error('Not implemented');
   }
 

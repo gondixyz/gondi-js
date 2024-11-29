@@ -78,7 +78,6 @@ export const users = wallets.map(
   (wallet) =>
     new Gondi({
       wallet,
-      reservoirBaseApiUrl: 'http://localhost:8080/marketplaces/reservoir',
     }),
 );
 

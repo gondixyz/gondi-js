@@ -16,7 +16,6 @@ import { LeverageV5 } from './LeverageV5';
 import { MslV4 } from './MslV4';
 import { MslV5 } from './MslV5';
 import { MslV6 } from './MslV6';
-import { Seaport } from './Seaport';
 import { UserVaultV5 } from './UserVaultV5';
 import { UserVaultV6 } from './UserVaultV6';
 
@@ -43,7 +42,6 @@ export class Contracts {
   UserVaultV5: UserVaultV5;
   UserVaultV6: UserVaultV6;
   Leverage: LeverageV5;
-  Seaport: Seaport;
   CryptoPunks: CryptoPunks;
 
   constructor(publicClient: GondiPublicClient, walletClient: Wallet) {
@@ -62,7 +60,6 @@ export class Contracts {
       walletClient,
       mslAddress: this.MultiSourceLoanV5.address,
     });
-    this.Seaport = new Seaport({ walletClient });
     this.CryptoPunks = new CryptoPunks({ walletClient });
   }
 

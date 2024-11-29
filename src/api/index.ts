@@ -1,5 +1,5 @@
 import { ApolloClient, NormalizedCacheObject } from '@apollo/client';
-import { getAddress } from 'viem';
+import { getAddress, TypedDataDefinition } from 'viem';
 
 import { apolloClient } from '@/api/client';
 import { getSdkApollo } from '@/api/sdk';
@@ -10,6 +10,8 @@ import {
   ListListingsQueryVariables,
   ListLoansQueryVariables,
   ListOffersQueryVariables,
+  NftOrderInput,
+  NftSignedOrderInput,
   SingleNftSignedOfferInput,
 } from '@/generated/graphql';
 import { RenegotiationOffer } from '@/model';
@@ -48,10 +50,8 @@ export class Api {
   hideRenegotiationOffer;
   unhideOffer;
   unhideRenegotiationOffer;
-  saveSignedSaleOffer;
-  hideSaleOffer;
-  unhideSaleOffer;
-  listBestBidsForNft;
+  hideOrder;
+  unhideOrder;
 
   constructor({ apiClient, wallet }: Props) {
     const gqlClient = apiClient ?? apolloClient(wallet);
@@ -69,14 +69,12 @@ export class Api {
     this.listNft = this.api.listNft;
     this.unlistNft = this.api.unlistNft;
     this.ownedNfts = this.api.ownedNfts;
-    this.saveSignedSaleOffer = this.api.saveSignedSaleOffer;
     this.hideOffer = this.api.hideOffer;
     this.hideRenegotiationOffer = this.api.hideRenegotiationOffer;
     this.unhideOffer = this.api.unhideOffer;
     this.unhideRenegotiationOffer = this.api.unhideRenegotiationOffer;
-    this.hideSaleOffer = this.api.hideSaleOffer;
-    this.unhideSaleOffer = this.api.unhideSaleOffer;
-    this.listBestBidsForNft = this.api.listBestBidsForNft;
+    this.hideOrder = this.api.hideOrder;
+    this.unhideOrder = this.api.unhideOrder;
   }
 
   async saveSingleNftOffer(offerInput: SingleNftSignedOfferInput) {
@@ -92,6 +90,19 @@ export class Api {
       nftCollateralAddress,
       nftCollateralTokenId: response.offer.nft.tokenId,
       ...offerInput,
+    };
+  }
+
+  async generateNftOrderToBeSigned(orderInput: NftOrderInput) {
+    const response = await this.api.generateNftOrderToBeSigned({ orderInput });
+    return response.typedData as TypedDataDefinition;
+  }
+
+  async saveSignedNftOrder(signedOrderInput: NftSignedOrderInput) {
+    const response = await this.api.saveSignedNftOrder({ signedOrderInput });
+    return {
+      ...response.order,
+      signedOrderInput,
     };
   }
 

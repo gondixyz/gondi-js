@@ -39,6 +39,7 @@ const config: CodegenConfig = {
           Address: 'Address',
           Signature: 'Hex',
           Hex: 'Hex',
+          JSON: 'object',
         },
       },
     },
