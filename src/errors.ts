@@ -43,7 +43,3 @@ export class InterruptedSeaportSendTransactionStepError extends InterruptedSendT
     this.signature = signature;
   }
 }
-
-export class InterruptedCryptoPunksSendTransactionStepError extends InterruptedSendTransactionStepError {}
-
-export class InterruptedGenericSendTransactionStepError extends InterruptedSendTransactionStepError {}

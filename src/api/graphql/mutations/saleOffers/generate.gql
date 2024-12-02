@@ -1,0 +1,8 @@
+mutation generateNftOrderToBeSigned($orderInput: NFTOrderInput!) {
+  typedData: generateNftOrderToBeSigned(orderInput: $orderInput) {
+    types
+    primaryType
+    domain
+    message
+  }
+}

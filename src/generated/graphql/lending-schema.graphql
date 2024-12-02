@@ -16,11 +16,12 @@ interface Activity implements Node {
 
 scalar Address
 
-type Asset {
+type Asset implements Node {
   accessTypeName: String!
   cacheUrl: String
   contentTypeMime: String!
   data: String!
+  id: String!
 }
 
 type Auction implements Node {
@@ -165,6 +166,7 @@ type Collection implements Node {
   twitterUsername: String
   verified: Boolean!
   wrappedCollection: Collection
+  wrappedCollectionId: Int
   wrapperCollections: [Collection!]!
 }
 
@@ -190,6 +192,7 @@ type CollectionLoansData {
 
 type CollectionOffer implements Node & Offer {
   aprBps: BigInt!
+  availablePrincipalAmount: BigInt!
   borrowerAddress: Address
   capacity: BigInt!
   collection: Collection!
@@ -315,6 +318,7 @@ type CollectionStatistics {
   numberOfOffers(currencyAddress: Address!): Float!
   numberOfPricedNfts: Int!
   outstandingLoanCount: Int!
+  outstandingNftsCount: BigInt!
   outstandingPrincipal(currencyAddress: Address!): BigInt!
   percentageInOutstandingLoans: Float!
   repaymentRate: Float!
@@ -335,15 +339,6 @@ type CollectionStatistics {
   totalVolume2m: Float
   totalVolume3m: Float
   totalVolume4m: Float
-}
-
-input ConsiderationInput {
-  endAmount: BigInt!
-  identifierOrCriteria: BigInt!
-  itemType: Int!
-  recipient: Address!
-  startAmount: BigInt!
-  token: Address!
 }
 
 type ContractData implements Node {
@@ -399,6 +394,11 @@ input Interval {
   max: Float = null
   min: Float = null
 }
+
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
 
 type LinkedWallets implements Node {
   id: String!
@@ -678,6 +678,7 @@ enum LoanSortField {
   APR_BPS
   DURATION
   EFFECTIVE_APR_BPS
+  END_DATE
   EXPECTED_INTEREST
   EXPIRATION_DATE
   ORIGINATION_FEE
@@ -718,6 +719,7 @@ type LostSource implements Node {
   aprBps: BigInt!
   duration: BigInt!
   earnedInterest: BigInt!
+  endDate: DateTime!
   expectedInterestLeft: BigInt!
   id: String!
   lenderAddress: String!
@@ -726,6 +728,7 @@ type LostSource implements Node {
   originationFee: BigInt!
   principalAmount: BigInt!
   profit: BigInt!
+  repaidInterest: BigInt!
   startTime: DateTime!
 }
 
@@ -753,6 +756,7 @@ type MultiSourceLoan implements Loan & Node {
   contractStartTime: DateTime!
   currency: Currency!
   duration: BigInt!
+  endDate: DateTime!
   id: String!
   indexInBlock: Int!
   loanId: Int!
@@ -810,12 +814,13 @@ type Mutation {
   addOrUpdateRenegotiationRequest(desiredAprBps: BigInt = null, desiredDuration: BigInt = null, desiredPrincipalAmount: BigInt = null, loanId: String!): RenegotiationRequest!
   addOrUpdateTopUpRequest(desiredAprBps: BigInt!, desiredTopUp: BigInt!, loanId: String!): TopUpRequest!
   generateCollectionOfferToBeSigned(offerInput: CollectionOfferInput!): CollectionOffer!
+  generateNftOrderToBeSigned(orderInput: NFTOrderInput!): TypedData!
   generateRenegotiationOfferToBeSigned(renegotiationInput: RenegotiationOfferInput!): Renegotiation!
   generateSingleNftOfferToBeSigned(offerInput: SingleNFTOfferInput!): SingleNFTOffer!
   hideAllOffers(contractAddress: Address!, minOfferId: String!): [Offer!]!
   hideOffer(contractAddress: Address!, offerId: String!): Offer!
+  hideOrder(orderId: Int!): Order!
   hideRenegotiation(contractAddress: Address = "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9", renegotiationId: String!): Renegotiation!
-  hideSaleOffer(saleOfferId: String!): SingleNFTOrder!
   markNotificationIdsAsRead(ids: [Int!]): Void
   markNotificationsAsRead: Void
   removeListing(nftId: Int!): Listing!
@@ -824,12 +829,12 @@ type Mutation {
   removeTopUpRequest(loanId: String!): TopUpRequest!
   saveRenegotiationSignedOffer(signedRenegotiationInput: SignedRenegotiationOfferInput!): Renegotiation!
   saveSignedCollectionOffer(signedOfferInput: CollectionSignedOfferInput!): CollectionOffer!
-  saveSignedSaleOffer(signedOfferInput: SignedOrderInput!): SingleNFTOrder!
+  saveSignedNftOrder(signedOrderInput: NFTSignedOrderInput!): SingleNFTOrder!
   saveSignedSingleNftOffer(signedOfferInput: SingleNFTSignedOfferInput!): SingleNFTOffer!
   setReferral(referrerId: Int!): Void
   showOffer(contractAddress: Address!, offerId: String!): Offer!
+  showOrder(orderId: Int!): Order!
   showRenegotiation(contractAddress: Address = "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9", renegotiationId: String!): Renegotiation!
-  showSaleOffer(saleOfferId: String!): SingleNFTOrder!
 }
 
 type NFT implements Node {
@@ -840,7 +845,6 @@ type NFT implements Node {
   description: String
   id: String!
   image: Asset
-  inStash: Boolean!
   isFlagged: Boolean
   listed: Listing
   marketPlaceOfPrice: String
@@ -855,6 +859,7 @@ type NFT implements Node {
   tokenId: BigInt!
   traits: [Trait!]!
   url: String
+  wrappedCount: [Int!]!
   wrapsNfts: [NFT!]
 }
 
@@ -867,6 +872,29 @@ type NFTConnection {
 type NFTEdge {
   cursor: String!
   node: NFT!
+}
+
+input NFTOrderInput {
+  amount: BigInt!
+  contractAddress: Address!
+  currencyAddress: Address!
+  expirationTime: BigInt!
+  isAsk: Boolean!
+  startTime: BigInt!
+  taker: Address = null
+  tokenId: BigInt!
+}
+
+input NFTSignedOrderInput {
+  amount: BigInt!
+  contractAddress: Address!
+  currencyAddress: Address!
+  expirationTime: BigInt!
+  isAsk: Boolean!
+  signature: Signature!
+  startTime: BigInt!
+  taker: Address = null
+  tokenId: BigInt!
 }
 
 type NewCollectionUnlistedOfferNotification implements Node & Notification {
@@ -957,6 +985,7 @@ enum NotificationType {
 
 interface Offer implements Node {
   aprBps: BigInt!
+  availablePrincipalAmount: BigInt!
   borrowerAddress: Address
   capacity: BigInt!
   consumedCapacity: BigInt!
@@ -1092,6 +1121,24 @@ type OrderEdge {
   node: Order!
 }
 
+enum OrderSortField {
+  EXPIRATION
+}
+
+input OrderSortInput {
+  field: OrderSortField!
+  order: Ordering!
+}
+
+enum OrderStatusType {
+  Active
+  Cancelled
+  Executed
+  Expired
+  Inactive
+  Outperformed
+}
+
 enum Ordering {
   ASC
   DESC
@@ -1116,6 +1163,7 @@ type OutbidNotification implements Node & Notification {
 type OutstandingLoanStatistics {
   loansData(currencyAddress: Address): LoansData!
   outstandingLoanCount: Int!
+  outstandingNftsCount: BigInt!
   outstandingPrincipal(currencyAddress: Address!): BigInt!
   totalOutstandingPrincipal: BigInt!
 }
@@ -1164,14 +1212,14 @@ type Query {
   getUserPointActivities(after: String, first: Int = 10): PointActivityConnection!
   getUserPoints: Int!
   listAuctions(after: String, currencyAddress: Address = null, first: Int = 10, sortBy: [AuctionSortInput!] = null, statuses: [AuctionStatus!] = null): AuctionConnection!
-  listBestBidsForNft(currencyAddress: String!, nftId: Int!): [Order!]!
   listBids(after: String, auctionId: String = null, bidders: [String!] = null, currencyAddress: Address = null, first: Int = 10, onlyLatest: Boolean! = false, sortBy: [BidSortInput!] = null): BidConnection!
   listCollections(after: String, collections: [Int!] = null, excludeGondiUserVault: Boolean = false, first: Int = 10, searchTerm: String = null, sortBy: [CollectionSortInput!] = null, standards: [TokenStandardType!] = null, withListings: Boolean = false, withLoans: Boolean = false): CollectionConnection!
   listCollectionsWithListings(after: String, collections: [Int!] = null, first: Int! = 10, searchTerm: String = null): CollectionConnection!
   listCollectionsWithLoans(after: String, collections: [Int!] = null, first: Int! = 10, searchTerm: String = null): CollectionConnection!
   listListings(after: String, collectionIds: [Int!] = null, currencyAddress: Address = null, first: Int = 10, marketplaceNames: [MarketplaceEnum!] = null, searchTerm: String = null, userFilter: UserFilter = null, withLoans: Boolean = false): ListingConnection!
+  listListingsForSale(after: String, currencyAddress: Address = null, first: Int = null, forTaker: Address = null, hidden: Boolean = null, maker: Address = null, nftId: Int = null, sortBy: [OrderSortInput!] = null, statuses: [OrderStatusType!] = null): OrderConnection!
   listLoanActivities(after: String, collections: [Int!] = null, first: Int! = 10, loanId: String = null, sortBy: [LoanActivitySortInput!] = null, types: [LoanActivityType!] = null): LoanActivityConnection!
-  listLoans(after: String, borrowers: [String!] = null, collections: [Int!] = null, contractAddresses: [Address!] = null, currencyAddress: Address = null, excludeOwn: Boolean = null, first: Int! = 10, hideEndLocked: Boolean = null, hideLocked: Boolean = null, nfts: [Int!] = null, orderByStatuses: Boolean = true, sortBy: [LoanSortInput!] = null, statuses: [LoanStatusType!] = null, terms: TermsFilter = null, withRenegRequestOnly: Boolean! = false, withTopUpRequestOnly: Boolean! = false): MultiSourceLoanConnection!
+  listLoans(after: String, borrowers: [String!] = null, collections: [Int!] = null, contractAddresses: [Address!] = null, currencyAddress: Address = null, excludeAddresses: [Address!] = null, first: Int! = 10, hideEndLocked: Boolean = null, hideLocked: Boolean = null, nfts: [Int!] = null, orderByStatuses: Boolean = true, sortBy: [LoanSortInput!] = null, statuses: [LoanStatusType!] = null, terms: TermsFilter = null, withRenegRequestOnly: Boolean! = false, withTopUpRequestOnly: Boolean! = false): MultiSourceLoanConnection!
   listNftDelegations(after: String, contractAddress: Address = null, first: Int! = 20, nftId: Int!): DelegationConnection!
   listNftOffersAndRenegotiations(
     after: String
@@ -1204,27 +1252,7 @@ type Query {
   listNotifications(after: String, first: Int = 50, notificationTypes: [NotificationType!] = null, onlyRead: Boolean! = false, onlyUnread: Boolean! = false): NotificationConnection!
   listOffers(after: String, borrowerAddress: String = null, collections: [Int!] = null, contractAddress: Address = null, currencyAddress: Address = null, first: Int = 10, hidden: Boolean = null, lenders: [String!] = null, nfts: [Int!] = null, onlyCollectionOffers: Boolean = false, onlySingleNftOffers: Boolean = false, sortBy: [OffersSortInput!] = null, statuses: [OfferStatus!] = null, terms: TermsFilter = null, worseOffers: Boolean = true): OfferConnection!
   listRenegotiations(after: String, collections: [Int!] = null, first: Int = 10, hidden: Boolean = null, isAddNewTranche: Boolean = null, loanId: String = null, sortBy: [OffersSortInput!] = null, statuses: [OfferStatus!] = null, terms: RefinanceTermsFilter = null): RenegotiationConnection!
-  listSaleOffers(after: String, bidder: [String!] = null, first: Int = 10): OrderConnection!
-  listSources(
-    after: String
-    collections: [Int!] = null
-    contractAddresses: [Address!] = null
-    currencyAddress: Address = null
-
-    """Only considered if include_lost is False | None."""
-    excludeOwn: Boolean = null
-    first: Int! = 10
-    hideEndLocked: Boolean = null
-    hideLocked: Boolean = null
-    includeLost: Boolean = null
-    lenders: [String!] = null
-    loanPrincipal: Interval = null
-    sortBy: [SourceSortInput!] = null
-    statuses: [LoanStatusType!] = null
-    terms: TermsFilter = null
-    withdrawalQueues: [Int!] = null
-  ): SourceLostSourceConnection!
-  listUserSaleOffers(after: String, first: Int = 10): OrderConnection!
+  listSources(after: String, collections: [Int!] = null, contractAddresses: [Address!] = null, currencyAddress: Address = null, excludeAddresses: [Address!] = null, first: Int! = 10, hideEndLocked: Boolean = null, hideLocked: Boolean = null, includeLost: Boolean = null, lenders: [String!] = null, loanPrincipal: Interval = null, sortBy: [SourceSortInput!] = null, statuses: [LoanStatusType!] = null, terms: TermsFilter = null, withdrawalQueues: [Int!] = null): SourceLostSourceConnection!
   me: User
 }
 
@@ -1245,6 +1273,7 @@ input RefinanceTermsFilter {
 
 type Renegotiation implements Node {
   aprBps: BigInt!
+  availablePrincipalAmount: BigInt!
   createdDate: DateTime
   duration: BigInt!
   expirationTime: BigInt!
@@ -1329,30 +1358,7 @@ type Sale implements Activity & Node {
   txHash: Hash
 }
 
-input SaleOfferInput {
-  endAmount: BigInt!
-  identifierOrCriteria: BigInt!
-  itemType: Int!
-  startAmount: BigInt!
-  token: Address!
-}
-
 scalar Signature
-
-input SignedOrderInput {
-  conduitKey: Hash!
-  consideration: [ConsiderationInput!]!
-  counter: BigInt!
-  endTime: BigInt!
-  offer: [SaleOfferInput!]!
-  offerer: Address!
-  orderType: Int!
-  salt: BigInt!
-  signature: Signature!
-  startTime: BigInt!
-  zone: Address!
-  zoneHash: Hash!
-}
 
 input SignedRenegotiationOfferInput {
   aprBps: BigInt!
@@ -1375,6 +1381,7 @@ input SignedRenegotiationOfferInput {
 
 type SingleNFTOffer implements Node & Offer {
   aprBps: BigInt!
+  availablePrincipalAmount: BigInt!
   borrowerAddress: Address
   capacity: BigInt!
   consumedCapacity: BigInt!
@@ -1490,6 +1497,7 @@ type Source implements Node {
   borrowerEaprBps: BigInt!
   earnedInterest: BigInt!
   effectiveDuration: BigInt!
+  endDate: DateTime!
   expectedInterestLeft: BigInt!
   id: String!
   lenderAddress: String!
@@ -1502,6 +1510,7 @@ type Source implements Node {
   principalAmount: BigInt!
   profit: BigInt!
   refinanceNetAprBps: BigInt!
+  repaidInterest: BigInt!
   seniorPrincipalAmount: BigInt
   startTime: DateTime!
 }
@@ -1538,9 +1547,11 @@ enum SourceSortField {
   DUE_DATE
   DURATION
   EARNED_INTEREST
+  END_DATE
   ORIGINATION_FEE
   PRINCIPAL_AMOUNT
   REFINANCE_NET_APR_BPS
+  REPAID_INTEREST
   START_TIME
 }
 
@@ -1563,6 +1574,7 @@ type SourcesStatistics {
   outstanding: BigInt!
   principal: BigInt!
   profit: BigInt!
+  repaidInterest: BigInt!
   wavgAprBps: BigInt!
   wavgLenderEaprBps: BigInt!
 }
@@ -1624,6 +1636,13 @@ input TraitKeyValueOptionsInput {
 input TraitRangeOptionsInput {
   key: String!
   range: RangeInput!
+}
+
+type TypedData {
+  domain: JSON!
+  message: JSON!
+  primaryType: String!
+  types: JSON!
 }
 
 type UnderfundedOfferNotification implements Node & Notification {

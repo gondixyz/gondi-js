@@ -1,14 +1,12 @@
-import { Account, Address, createPublicClient, createTransport, Hash, Hex } from 'viem';
+import { Account, Address, createPublicClient, createTransport, Hash } from 'viem';
 
 import { Api, Props as ApiProps } from '@/api';
-import { Auction, LoanV5, OfferV5, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
+import { Auction, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Contracts, GondiPublicClient, Wallet } from '@/contracts';
-import { getCurrencies } from '@/deploys';
 import { MarketplaceEnum, OffersSortField, Ordering, TokenStandardType } from '@/generated/graphql';
 import * as model from '@/model';
 import { NftStandard } from '@/model';
-import { Reservoir } from '@/reservoir/Reservoir';
-import { isNative, SeaportOrder } from '@/reservoir/utils';
+import { millisToSeconds } from '@/utils/dates';
 import {
   generateFakeRenegotiationInput,
   loanToMslLoan,
@@ -17,7 +15,7 @@ import {
 } from '@/utils/loan';
 import { min } from '@/utils/number';
 import { FULFILLED, REJECTED } from '@/utils/promises';
-import { areSameAddress, NATIVE_MARKETPLACE } from '@/utils/string';
+import { areSameAddress } from '@/utils/string';
 import { OptionalNullable } from '@/utils/types';
 
 export class Gondi {
@@ -26,10 +24,9 @@ export class Gondi {
   account: Account;
   bcClient: GondiPublicClient;
   api: Api;
-  reservoir: Reservoir;
   defaults: { Msl: Address; UserVault: Address };
 
-  constructor({ wallet, apiClient, reservoirBaseApiUrl }: GondiProps) {
+  constructor({ wallet, apiClient }: GondiProps) {
     this.wallet = wallet;
     this.account = wallet.account;
     this.bcClient = createPublicClient({
@@ -42,12 +39,6 @@ export class Gondi {
       UserVault: this.contracts.UserVaultV6.address,
     };
     this.api = new Api({ wallet, apiClient });
-    this.reservoir = new Reservoir({
-      baseApiUrl: reservoirBaseApiUrl,
-      wallet,
-      Seaport: this.contracts.Seaport,
-      CryptoPunks: this.contracts.CryptoPunks,
-    });
   }
 
   async makeSingleNftOffer(offer: model.SingleNftOfferInput) {
@@ -161,37 +152,41 @@ export class Gondi {
     return await this.api.saveCollectionOffer(signedOffer);
   }
 
-  async makeSaleOffer({
+  async makeOrder({
     collectionContractAddress,
     tokenId,
     price,
     expirationTime,
+    currencyAddress,
+    taker,
+    isAsk = true,
   }: {
     collectionContractAddress: Address;
     tokenId: bigint;
     price: bigint;
     expirationTime: bigint;
+    currencyAddress: Address;
+    isAsk?: boolean;
+    taker?: Address;
   }) {
-    const {
-      parameters: {
-        totalOriginalConsiderationItems: _totalOriginalConsiderationItems,
-        ...saleOffer
-      },
-      signature,
-    } = await this.contracts.Seaport.generateOrderFromSaleOffer({
-      collectionContractAddress,
-      tokenId,
-      price,
+    const orderInput = {
+      startTime: BigInt(Math.floor(millisToSeconds(Date.now()))),
       expirationTime,
-    });
-    return this.api.saveSignedSaleOffer({
-      offer: { ...saleOffer, signature },
-    });
+      isAsk,
+      currencyAddress,
+      amount: price,
+      contractAddress: collectionContractAddress,
+      tokenId,
+      taker,
+    };
+    const typedData = await this.api.generateNftOrderToBeSigned(orderInput);
+    const signature = await this.wallet.signTypedData(typedData);
+    return this.api.saveSignedNftOrder({ ...orderInput, signature });
   }
 
-  async cancelSaleOffer({ saleOffer }: { saleOffer: SeaportOrder }) {
-    return this.contracts.Seaport.cancel({ orderComponents: saleOffer });
-  }
+  // TODO: implement
+  // async cancelOrder({ id }: { id: number }) {
+  // }
 
   async cancelOffer({ id, contractAddress }: { id: bigint; contractAddress: Address }) {
     return this.contracts.Msl(contractAddress).cancelOffer({
@@ -295,12 +290,12 @@ export class Gondi {
     });
   }
 
-  async hideSaleOffer({ id }: { id: string }) {
-    return this.api.hideSaleOffer({ id });
+  async hideOrder({ id }: { id: number }) {
+    return this.api.hideOrder({ id });
   }
 
-  async unhideSaleOffer({ id }: { id: string }) {
-    return this.api.unhideSaleOffer({ id });
+  async unhideOrder({ id }: { id: number }) {
+    return this.api.unhideOrder({ id });
   }
 
   async cancelAllRenegotiations({
@@ -501,24 +496,6 @@ export class Gondi {
     return this.contracts.Msl(loan.contractAddress).isEndLockedUp({
       loan: loanToMslLoan(loan),
     });
-  }
-
-  async getBestNativeSaleOffer({
-    contractAddress,
-    tokenId,
-  }: {
-    contractAddress: Address;
-    tokenId: bigint;
-  }) {
-    const { WETH_ADDRESS } = getCurrencies();
-    const nftId = await this.nftId({ contractAddress, tokenId });
-    const { bids } = await this.api.listBestBidsForNft({
-      nftId,
-      currencyAddress: WETH_ADDRESS,
-    });
-    const nativeBid = bids.find((bid) => bid.marketPlace === NATIVE_MARKETPLACE);
-
-    return nativeBid ?? null;
   }
 
   private contractToVersion(contract: Address) {
@@ -782,122 +759,6 @@ export class Gondi {
     return this.contracts.All(auction.loanAddress).getRemainingLockupSeconds({ auction });
   }
 
-  async buy(
-    tokensToBuy: {
-      collectionContractAddress: Address;
-      tokenId: bigint;
-      price: bigint;
-      orderSource: string;
-    }[],
-  ) {
-    return this.reservoir.buyTokens(tokensToBuy);
-  }
-
-  async leverageBuy({
-    leverageBuyData,
-  }: {
-    leverageBuyData: {
-      offer: OfferV5 & { signature: Hash };
-      expirationTime: bigint;
-      amount: bigint;
-      nft: {
-        collectionContractAddress: Address;
-        tokenId: bigint;
-        price: bigint;
-        orderSource: string;
-      };
-    }[];
-  }) {
-    const executionData = await Promise.all(
-      leverageBuyData.map((data) =>
-        this.reservoir.getExecutionDataForBuyToken({
-          collectionContractAddress: data.nft.collectionContractAddress,
-          tokenId: data.nft.tokenId,
-          price: data.nft.price,
-          exactOrderSource: data.nft.orderSource,
-        }),
-      ),
-    );
-
-    // We calculate the amount of eth to send to the contract
-    // This is the sum of the eth to send for each nft minus the amount of weth that is being borrowed
-    const ethToSend = executionData.reduce(
-      (acc, { value }, index) =>
-        acc + value - leverageBuyData[index].amount + leverageBuyData[index].offer.fee,
-      0n,
-    );
-
-    const dataForLeverageContract = leverageBuyData.map((data, index) => ({
-      ...data,
-      callbackData: executionData[index].callbackData,
-    }));
-
-    return this.contracts.Leverage.buy({
-      leverageBuyData: dataForLeverageContract,
-      ethToSend: ethToSend < 0n ? 0n : ethToSend,
-    });
-  }
-
-  async leverageSell({
-    loan,
-    loanId,
-    price,
-    orderSource,
-  }: {
-    loan: LoanV5;
-    loanId: bigint;
-    price: bigint;
-    orderSource: string;
-  }) {
-    let executionData: {
-      callbackData: Hex;
-      isSeaportCall: boolean;
-    } | null = null;
-
-    if (isNative(orderSource)) {
-      const bestNativeBid = await this.getBestNativeSaleOffer({
-        contractAddress: loan.nftCollateralAddress,
-        tokenId: loan.nftCollateralTokenId,
-      });
-      if (!bestNativeBid || bestNativeBid.netAmount < price) {
-        throw new Error(`No native bid for price ${price}`);
-      }
-
-      executionData = await this.reservoir.generateFulfillOrderExecutionData({
-        askOrBid: {
-          rawData: await this.contracts.Seaport.recoverOrderFromNativeBid({
-            nativeBid: bestNativeBid,
-            collectionContractAddress: loan.nftCollateralAddress,
-            tokenId: loan.nftCollateralTokenId,
-          }),
-          price: {
-            netAmount: {
-              raw: String(price),
-            },
-          },
-        },
-        signature: bestNativeBid.signature,
-        tokenId: loan.nftCollateralTokenId,
-      });
-    } else {
-      executionData = await this.reservoir.getCallbackDataForSellToken({
-        collectionContractAddress: loan.nftCollateralAddress,
-        tokenId: loan.nftCollateralTokenId,
-        price,
-        exactOrderSource: orderSource,
-      });
-    }
-
-    const shouldDelegate = executionData.isSeaportCall;
-
-    return this.contracts.Leverage.sell({
-      loan,
-      callbackData: executionData.callbackData,
-      shouldDelegate,
-      loanId,
-    });
-  }
-
   /**
    * Get the owner of an ERC 721 token.
    */
@@ -1050,7 +911,6 @@ export class Gondi {
 interface GondiProps {
   wallet: Wallet;
   apiClient?: ApiProps['apiClient'];
-  reservoirBaseApiUrl?: string;
 }
 
 type MakeOfferType =
