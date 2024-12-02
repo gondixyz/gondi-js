@@ -15,7 +15,7 @@ This document outlines the breaking changes introduced in our codebase for versi
 - [Get Best Native Sale Offer](#get-best-native-sale-offer) deleted function
 - [Buy](#buy) deleted function
 - [Leverage Buy](#leverage-buy) deleted function
-- [Leverage Sell](#leverage-sell) deleted function
+- [Leverage Sell](#leverage-sell-v0.15.0b1) deleted function
 
 ---
 
@@ -75,7 +75,7 @@ The function `leverageBuy` was deleted
 
 ---
 
-## Leverage Sell
+<h2 id="leverage-sell-v0.15.0b1">Leverage Sell </h2>
 
 **Description:**
 
