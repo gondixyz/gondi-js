@@ -1,3 +1,88 @@
+# Breaking Changes 0.15.0b1
+
+### Important
+
+---
+
+This document outlines the breaking changes introduced in our codebase for version 0.15.0b1. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [Make Order](#make-order) function name and args argument
+- [Hide Order](#hide-order) function name and args argument
+- [Unhide Order](#unhide-order) function name and args argument
+- [Cancel Order](#cancel-order) deleted function
+- [Get Best Native Sale Offer](#get-best-native-sale-offer) deleted function
+- [Buy](#buy) deleted function
+- [Leverage Buy](#leverage-buy) deleted function
+- [Leverage Sell](#leverage-sell) deleted function
+
+---
+
+## Make Order
+
+**Description:**
+
+`makeSaleOrder` was replaced with `makeOrder`. We added `currencyAddress, taker, isAsk` as arguments
+
+---
+
+## Hide Order
+
+**Description:**
+
+`hideSaleOrder` was replaced with `hideOrder`. `id` argument is now a number
+
+---
+
+## Unhide Order
+
+**Description:**
+
+`unhideSaleOrder` was replaced with `unhideOrder`. `id` argument is now a number
+
+---
+
+## Cancel Order
+
+**Description:**
+
+The function `cancelSaleOrder` was deleted (for now)
+
+---
+
+## Get Best Native Sale Offer
+
+**Description:**
+
+The function `getBestNativeSaleOffer` was deleted
+
+---
+
+## Buy
+
+**Description:**
+
+The function `buy` was deleted
+
+---
+
+## Leverage Buy
+
+**Description:**
+
+The function `leverageBuy` was deleted
+
+---
+
+## Leverage Sell
+
+**Description:**
+
+The function `leverageSell` was deleted (for now)
+
+---
+
 # Breaking Changes 0.14.0
 
 ### Important
