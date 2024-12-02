@@ -8,9 +8,9 @@ This document outlines the breaking changes introduced in our codebase for versi
 
 ## Table of Contents
 
-- [Make Order](#make-order) function name and args argument
-- [Hide Order](#hide-order) function name and args argument
-- [Unhide Order](#unhide-order) function name and args argument
+- [Make Order](#replace-makesaleorder-with-makeorder) function renamed and args argument
+- [Hide Order](#replace-hidesaleorder-with-hideorder) function renamed and args argument
+- [Unhide Order](#replace-unhidesaleorder-with-unhideorder) function renamed and args argument
 - [Cancel Order](#cancel-order) deleted function
 - [Get Best Native Sale Offer](#get-best-native-sale-offer) deleted function
 - [Buy](#buy) deleted function
@@ -19,7 +19,7 @@ This document outlines the breaking changes introduced in our codebase for versi
 
 ---
 
-## Make Order
+## Replace makeSaleOrder with makeOrder
 
 **Description:**
 
@@ -27,7 +27,7 @@ This document outlines the breaking changes introduced in our codebase for versi
 
 ---
 
-## Hide Order
+## Replace hideSaleOrder with hideOrder
 
 **Description:**
 
@@ -35,7 +35,7 @@ This document outlines the breaking changes introduced in our codebase for versi
 
 ---
 
-## Unhide Order
+## Replace unhideSaleOrder with unhideOrder
 
 **Description:**
 
