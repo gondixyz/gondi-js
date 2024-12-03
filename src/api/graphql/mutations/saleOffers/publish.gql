@@ -1,0 +1,20 @@
+mutation publishOrder($orderInput: NFTOrderInput!) {
+  result: publishOrder(orderInput: $orderInput) {
+    ... on SingleNFTOrder {
+      id
+      status
+      signature
+      loanRepaymentSignature
+      repaymentData
+    }
+    ... on SignatureRequest {
+      key
+      typedData {
+        types
+        primaryType
+        domain
+        message
+      }
+    }
+  }
+}

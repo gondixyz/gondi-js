@@ -304,15 +304,18 @@ export type CollectionOrder = Activity & Node & Order & {
   hidden: Scalars['Boolean'];
   id: Scalars['String'];
   isAsk: Scalars['Boolean'];
+  isPrivate: Scalars['Boolean'];
+  loanRepaymentSignature: Scalars['Signature'];
   maker: Scalars['Address'];
   marketPlace: Scalars['String'];
   netAmount: Scalars['BigInt'];
   nonce: Scalars['BigInt'];
   orderType: Scalars['String'];
   price: Scalars['BigInt'];
-  signature: Scalars['Hash'];
+  signature: Scalars['Signature'];
   startTime: Scalars['DateTime'];
   status: Scalars['String'];
+  taker: Scalars['Address'];
   timestamp: Scalars['DateTime'];
   txHash?: Maybe<Scalars['Hash']>;
 };
@@ -938,7 +941,6 @@ export type Mutation = {
   addOrUpdateRenegotiationRequest: RenegotiationRequest;
   addOrUpdateTopUpRequest: TopUpRequest;
   generateCollectionOfferToBeSigned: CollectionOffer;
-  generateNftOrderToBeSigned: TypedData;
   generateRenegotiationOfferToBeSigned: Renegotiation;
   generateSingleNftOfferToBeSigned: SingleNftOffer;
   hideAllOffers: Array<Offer>;
@@ -947,13 +949,13 @@ export type Mutation = {
   hideRenegotiation: Renegotiation;
   markNotificationIdsAsRead?: Maybe<Scalars['Void']>;
   markNotificationsAsRead?: Maybe<Scalars['Void']>;
+  publishOrder: SingleNftOrderSignatureRequest;
   removeListing: Listing;
   removeListingsOfNftsFromUser?: Maybe<Scalars['Void']>;
   removeRenegotiationRequest: RenegotiationRequest;
   removeTopUpRequest: TopUpRequest;
   saveRenegotiationSignedOffer: Renegotiation;
   saveSignedCollectionOffer: CollectionOffer;
-  saveSignedNftOrder: SingleNftOrder;
   saveSignedSingleNftOffer: SingleNftOffer;
   setReferral?: Maybe<Scalars['Void']>;
   showOffer: Offer;
@@ -998,11 +1000,6 @@ export type MutationGenerateCollectionOfferToBeSignedArgs = {
 };
 
 
-export type MutationGenerateNftOrderToBeSignedArgs = {
-  orderInput: NftOrderInput;
-};
-
-
 export type MutationGenerateRenegotiationOfferToBeSignedArgs = {
   renegotiationInput: RenegotiationOfferInput;
 };
@@ -1041,6 +1038,11 @@ export type MutationMarkNotificationIdsAsReadArgs = {
 };
 
 
+export type MutationPublishOrderArgs = {
+  orderInput: NftOrderInput;
+};
+
+
 export type MutationRemoveListingArgs = {
   nftId: Scalars['Int'];
 };
@@ -1070,11 +1072,6 @@ export type MutationSaveRenegotiationSignedOfferArgs = {
 
 export type MutationSaveSignedCollectionOfferArgs = {
   signedOfferInput: CollectionSignedOfferInput;
-};
-
-
-export type MutationSaveSignedNftOrderArgs = {
-  signedOrderInput: NftSignedOrderInput;
 };
 
 
@@ -1150,18 +1147,8 @@ export type NftOrderInput = {
   currencyAddress: Scalars['Address'];
   expirationTime: Scalars['BigInt'];
   isAsk: Scalars['Boolean'];
-  startTime: Scalars['BigInt'];
-  taker?: InputMaybe<Scalars['Address']>;
-  tokenId: Scalars['BigInt'];
-};
-
-export type NftSignedOrderInput = {
-  amount: Scalars['BigInt'];
-  contractAddress: Scalars['Address'];
-  currencyAddress: Scalars['Address'];
-  expirationTime: Scalars['BigInt'];
-  isAsk: Scalars['Boolean'];
-  signature: Scalars['Signature'];
+  repaymentSignature?: InputMaybe<Scalars['Signature']>;
+  signature?: InputMaybe<Scalars['Signature']>;
   startTime: Scalars['BigInt'];
   taker?: InputMaybe<Scalars['Address']>;
   tokenId: Scalars['BigInt'];
@@ -1390,15 +1377,18 @@ export type Order = {
   hidden: Scalars['Boolean'];
   id: Scalars['String'];
   isAsk: Scalars['Boolean'];
+  isPrivate: Scalars['Boolean'];
+  loanRepaymentSignature: Scalars['Signature'];
   maker: Scalars['Address'];
   marketPlace: Scalars['String'];
   netAmount: Scalars['BigInt'];
   nonce: Scalars['BigInt'];
   orderType: Scalars['String'];
   price: Scalars['BigInt'];
-  signature: Scalars['Hash'];
+  signature: Scalars['Signature'];
   startTime: Scalars['DateTime'];
   status: Scalars['String'];
+  taker: Scalars['Address'];
   timestamp: Scalars['DateTime'];
   txHash?: Maybe<Scalars['Hash']>;
 };
@@ -1673,6 +1663,7 @@ export type QueryListListingsArgs = {
 
 export type QueryListListingsForSaleArgs = {
   after?: InputMaybe<Scalars['String']>;
+  collectionId?: InputMaybe<Scalars['Int']>;
   currencyAddress?: InputMaybe<Scalars['Address']>;
   first?: InputMaybe<Scalars['Int']>;
   forTaker?: InputMaybe<Scalars['Address']>;
@@ -1933,6 +1924,12 @@ export type Sale = Activity & Node & {
   txHash?: Maybe<Scalars['Hash']>;
 };
 
+export type SignatureRequest = {
+  __typename?: 'SignatureRequest';
+  key: Scalars['String'];
+  typedData: TypedData;
+};
+
 export type SignedRenegotiationOfferInput = {
   aprBps: Scalars['BigInt'];
   duration: Scalars['BigInt'];
@@ -2034,19 +2031,26 @@ export type SingleNftOrder = Activity & Node & Order & {
   hidden: Scalars['Boolean'];
   id: Scalars['String'];
   isAsk: Scalars['Boolean'];
+  isPrivate: Scalars['Boolean'];
+  loanRepaymentSignature: Scalars['Signature'];
   maker: Scalars['Address'];
   marketPlace: Scalars['String'];
   netAmount: Scalars['BigInt'];
   nft: Nft;
+  nftId: Scalars['Int'];
   nonce: Scalars['BigInt'];
   orderType: Scalars['String'];
   price: Scalars['BigInt'];
-  signature: Scalars['Hash'];
+  repaymentData: Scalars['Hex'];
+  signature: Scalars['Signature'];
   startTime: Scalars['DateTime'];
   status: Scalars['String'];
+  taker: Scalars['Address'];
   timestamp: Scalars['DateTime'];
   txHash?: Maybe<Scalars['Hash']>;
 };
+
+export type SingleNftOrderSignatureRequest = SignatureRequest | SingleNftOrder;
 
 export type SingleNftSignedOfferInput = {
   aprBps: Scalars['BigInt'];
@@ -2459,7 +2463,7 @@ export type CurrencyAmountInfoFragment = { __typename?: 'CurrencyAmount', amount
 
 export type CurrencyInfoFragment = { __typename?: 'Currency', address: Address, decimals: number };
 
-export type SaleOfferInfoFragment = { __typename?: 'SingleNFTOrder', id: string, netAmount: bigint, status: string, marketPlace: string, fees: bigint, maker: Address, expiration?: Date | null, createdDate: Date, startTime: Date, hidden: boolean, signature: Hash, currencyAddress: Address, nonce: bigint };
+export type SaleOfferInfoFragment = { __typename?: 'SingleNFTOrder', id: string, netAmount: bigint, status: string, marketPlace: string, fees: bigint, maker: Address, expiration?: Date | null, createdDate: Date, startTime: Date, hidden: boolean, signature: Hex, currencyAddress: Address, nonce: bigint };
 
 export type ListNftMutationVariables = Exact<{
   nftId: Scalars['Int'];
@@ -2549,13 +2553,6 @@ export type UnhideRenegotiationOfferMutationVariables = Exact<{
 
 export type UnhideRenegotiationOfferMutation = { __typename?: 'Mutation', showRenegotiation: { __typename?: 'Renegotiation', id: string } };
 
-export type GenerateNftOrderToBeSignedMutationVariables = Exact<{
-  orderInput: NftOrderInput;
-}>;
-
-
-export type GenerateNftOrderToBeSignedMutation = { __typename?: 'Mutation', typedData: { __typename?: 'TypedData', types: object, primaryType: string, domain: object, message: object } };
-
 export type HideOrderMutationVariables = Exact<{
   id: Scalars['Int'];
 }>;
@@ -2563,12 +2560,12 @@ export type HideOrderMutationVariables = Exact<{
 
 export type HideOrderMutation = { __typename?: 'Mutation', hideOrder: { __typename?: 'CollectionOrder', id: string } | { __typename?: 'SingleNFTOrder', id: string } };
 
-export type SaveSignedNftOrderMutationVariables = Exact<{
-  signedOrderInput: NftSignedOrderInput;
+export type PublishOrderMutationVariables = Exact<{
+  orderInput: NftOrderInput;
 }>;
 
 
-export type SaveSignedNftOrderMutation = { __typename?: 'Mutation', order: { __typename?: 'SingleNFTOrder', id: string, status: string } };
+export type PublishOrderMutation = { __typename?: 'Mutation', result: { __typename?: 'SignatureRequest', key: string, typedData: { __typename?: 'TypedData', types: object, primaryType: string, domain: object, message: object } } | { __typename?: 'SingleNFTOrder', id: string, status: string, signature: Hex, loanRepaymentSignature: Hex, repaymentData: Hex } };
 
 export type UnhideOrderMutationVariables = Exact<{
   id: Scalars['Int'];
@@ -2878,7 +2875,7 @@ export type CollectionOfferStatisticsFieldPolicy = {
 	acceptedLoans?: FieldPolicy<any> | FieldReadFunction<any>,
 	consumedCapacity?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type CollectionOrderKeySpecifier = ('collection' | 'createdDate' | 'currency' | 'currencyAddress' | 'expiration' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'maker' | 'marketPlace' | 'netAmount' | 'nonce' | 'orderType' | 'price' | 'signature' | 'startTime' | 'status' | 'timestamp' | 'txHash' | CollectionOrderKeySpecifier)[];
+export type CollectionOrderKeySpecifier = ('collection' | 'createdDate' | 'currency' | 'currencyAddress' | 'expiration' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'loanRepaymentSignature' | 'maker' | 'marketPlace' | 'netAmount' | 'nonce' | 'orderType' | 'price' | 'signature' | 'startTime' | 'status' | 'taker' | 'timestamp' | 'txHash' | CollectionOrderKeySpecifier)[];
 export type CollectionOrderFieldPolicy = {
 	collection?: FieldPolicy<any> | FieldReadFunction<any>,
 	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -2889,6 +2886,8 @@ export type CollectionOrderFieldPolicy = {
 	hidden?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	isAsk?: FieldPolicy<any> | FieldReadFunction<any>,
+	isPrivate?: FieldPolicy<any> | FieldReadFunction<any>,
+	loanRepaymentSignature?: FieldPolicy<any> | FieldReadFunction<any>,
 	maker?: FieldPolicy<any> | FieldReadFunction<any>,
 	marketPlace?: FieldPolicy<any> | FieldReadFunction<any>,
 	netAmount?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -2898,6 +2897,7 @@ export type CollectionOrderFieldPolicy = {
 	signature?: FieldPolicy<any> | FieldReadFunction<any>,
 	startTime?: FieldPolicy<any> | FieldReadFunction<any>,
 	status?: FieldPolicy<any> | FieldReadFunction<any>,
+	taker?: FieldPolicy<any> | FieldReadFunction<any>,
 	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
 	txHash?: FieldPolicy<any> | FieldReadFunction<any>
 };
@@ -3324,14 +3324,13 @@ export type MultiSourceLoanHistoryFieldPolicy = {
 	sources?: FieldPolicy<any> | FieldReadFunction<any>,
 	startTime?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type MutationKeySpecifier = ('addListingsOfNftsFromUser' | 'addOrUpdateListing' | 'addOrUpdateRenegotiationRequest' | 'addOrUpdateTopUpRequest' | 'generateCollectionOfferToBeSigned' | 'generateNftOrderToBeSigned' | 'generateRenegotiationOfferToBeSigned' | 'generateSingleNftOfferToBeSigned' | 'hideAllOffers' | 'hideOffer' | 'hideOrder' | 'hideRenegotiation' | 'markNotificationIdsAsRead' | 'markNotificationsAsRead' | 'removeListing' | 'removeListingsOfNftsFromUser' | 'removeRenegotiationRequest' | 'removeTopUpRequest' | 'saveRenegotiationSignedOffer' | 'saveSignedCollectionOffer' | 'saveSignedNftOrder' | 'saveSignedSingleNftOffer' | 'setReferral' | 'showOffer' | 'showOrder' | 'showRenegotiation' | MutationKeySpecifier)[];
+export type MutationKeySpecifier = ('addListingsOfNftsFromUser' | 'addOrUpdateListing' | 'addOrUpdateRenegotiationRequest' | 'addOrUpdateTopUpRequest' | 'generateCollectionOfferToBeSigned' | 'generateRenegotiationOfferToBeSigned' | 'generateSingleNftOfferToBeSigned' | 'hideAllOffers' | 'hideOffer' | 'hideOrder' | 'hideRenegotiation' | 'markNotificationIdsAsRead' | 'markNotificationsAsRead' | 'publishOrder' | 'removeListing' | 'removeListingsOfNftsFromUser' | 'removeRenegotiationRequest' | 'removeTopUpRequest' | 'saveRenegotiationSignedOffer' | 'saveSignedCollectionOffer' | 'saveSignedSingleNftOffer' | 'setReferral' | 'showOffer' | 'showOrder' | 'showRenegotiation' | MutationKeySpecifier)[];
 export type MutationFieldPolicy = {
 	addListingsOfNftsFromUser?: FieldPolicy<any> | FieldReadFunction<any>,
 	addOrUpdateListing?: FieldPolicy<any> | FieldReadFunction<any>,
 	addOrUpdateRenegotiationRequest?: FieldPolicy<any> | FieldReadFunction<any>,
 	addOrUpdateTopUpRequest?: FieldPolicy<any> | FieldReadFunction<any>,
 	generateCollectionOfferToBeSigned?: FieldPolicy<any> | FieldReadFunction<any>,
-	generateNftOrderToBeSigned?: FieldPolicy<any> | FieldReadFunction<any>,
 	generateRenegotiationOfferToBeSigned?: FieldPolicy<any> | FieldReadFunction<any>,
 	generateSingleNftOfferToBeSigned?: FieldPolicy<any> | FieldReadFunction<any>,
 	hideAllOffers?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3340,13 +3339,13 @@ export type MutationFieldPolicy = {
 	hideRenegotiation?: FieldPolicy<any> | FieldReadFunction<any>,
 	markNotificationIdsAsRead?: FieldPolicy<any> | FieldReadFunction<any>,
 	markNotificationsAsRead?: FieldPolicy<any> | FieldReadFunction<any>,
+	publishOrder?: FieldPolicy<any> | FieldReadFunction<any>,
 	removeListing?: FieldPolicy<any> | FieldReadFunction<any>,
 	removeListingsOfNftsFromUser?: FieldPolicy<any> | FieldReadFunction<any>,
 	removeRenegotiationRequest?: FieldPolicy<any> | FieldReadFunction<any>,
 	removeTopUpRequest?: FieldPolicy<any> | FieldReadFunction<any>,
 	saveRenegotiationSignedOffer?: FieldPolicy<any> | FieldReadFunction<any>,
 	saveSignedCollectionOffer?: FieldPolicy<any> | FieldReadFunction<any>,
-	saveSignedNftOrder?: FieldPolicy<any> | FieldReadFunction<any>,
 	saveSignedSingleNftOffer?: FieldPolicy<any> | FieldReadFunction<any>,
 	setReferral?: FieldPolicy<any> | FieldReadFunction<any>,
 	showOffer?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3515,7 +3514,7 @@ export type OfferValidatorFieldPolicy = {
 	offerId?: FieldPolicy<any> | FieldReadFunction<any>,
 	validator?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type OrderKeySpecifier = ('createdDate' | 'currency' | 'currencyAddress' | 'expiration' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'maker' | 'marketPlace' | 'netAmount' | 'nonce' | 'orderType' | 'price' | 'signature' | 'startTime' | 'status' | 'timestamp' | 'txHash' | OrderKeySpecifier)[];
+export type OrderKeySpecifier = ('createdDate' | 'currency' | 'currencyAddress' | 'expiration' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'loanRepaymentSignature' | 'maker' | 'marketPlace' | 'netAmount' | 'nonce' | 'orderType' | 'price' | 'signature' | 'startTime' | 'status' | 'taker' | 'timestamp' | 'txHash' | OrderKeySpecifier)[];
 export type OrderFieldPolicy = {
 	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
 	currency?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3525,6 +3524,8 @@ export type OrderFieldPolicy = {
 	hidden?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	isAsk?: FieldPolicy<any> | FieldReadFunction<any>,
+	isPrivate?: FieldPolicy<any> | FieldReadFunction<any>,
+	loanRepaymentSignature?: FieldPolicy<any> | FieldReadFunction<any>,
 	maker?: FieldPolicy<any> | FieldReadFunction<any>,
 	marketPlace?: FieldPolicy<any> | FieldReadFunction<any>,
 	netAmount?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3534,6 +3535,7 @@ export type OrderFieldPolicy = {
 	signature?: FieldPolicy<any> | FieldReadFunction<any>,
 	startTime?: FieldPolicy<any> | FieldReadFunction<any>,
 	status?: FieldPolicy<any> | FieldReadFunction<any>,
+	taker?: FieldPolicy<any> | FieldReadFunction<any>,
 	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
 	txHash?: FieldPolicy<any> | FieldReadFunction<any>
 };
@@ -3706,6 +3708,11 @@ export type SaleFieldPolicy = {
 	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
 	txHash?: FieldPolicy<any> | FieldReadFunction<any>
 };
+export type SignatureRequestKeySpecifier = ('key' | 'typedData' | SignatureRequestKeySpecifier)[];
+export type SignatureRequestFieldPolicy = {
+	key?: FieldPolicy<any> | FieldReadFunction<any>,
+	typedData?: FieldPolicy<any> | FieldReadFunction<any>
+};
 export type SingleNFTOfferKeySpecifier = ('aprBps' | 'availablePrincipalAmount' | 'borrowerAddress' | 'capacity' | 'consumedCapacity' | 'contractAddress' | 'createdDate' | 'currency' | 'duration' | 'expirationTime' | 'fee' | 'hidden' | 'id' | 'lenderAddress' | 'maxPrincipal' | 'maxSeniorRepayment' | 'maxTrancheFloor' | 'netPrincipal' | 'nft' | 'offerHash' | 'offerId' | 'principalAddress' | 'principalAmount' | 'repayment' | 'requiresLiquidation' | 'signature' | 'signerAddress' | 'statistics' | 'status' | 'validators' | SingleNFTOfferKeySpecifier)[];
 export type SingleNFTOfferFieldPolicy = {
 	aprBps?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3750,7 +3757,7 @@ export type SingleNFTOfferCollectionOfferRenegotiationEdgeFieldPolicy = {
 	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
 	node?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type SingleNFTOrderKeySpecifier = ('createdDate' | 'currency' | 'currencyAddress' | 'expiration' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'maker' | 'marketPlace' | 'netAmount' | 'nft' | 'nonce' | 'orderType' | 'price' | 'signature' | 'startTime' | 'status' | 'timestamp' | 'txHash' | SingleNFTOrderKeySpecifier)[];
+export type SingleNFTOrderKeySpecifier = ('createdDate' | 'currency' | 'currencyAddress' | 'expiration' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'loanRepaymentSignature' | 'maker' | 'marketPlace' | 'netAmount' | 'nft' | 'nftId' | 'nonce' | 'orderType' | 'price' | 'repaymentData' | 'signature' | 'startTime' | 'status' | 'taker' | 'timestamp' | 'txHash' | SingleNFTOrderKeySpecifier)[];
 export type SingleNFTOrderFieldPolicy = {
 	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
 	currency?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3760,16 +3767,21 @@ export type SingleNFTOrderFieldPolicy = {
 	hidden?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	isAsk?: FieldPolicy<any> | FieldReadFunction<any>,
+	isPrivate?: FieldPolicy<any> | FieldReadFunction<any>,
+	loanRepaymentSignature?: FieldPolicy<any> | FieldReadFunction<any>,
 	maker?: FieldPolicy<any> | FieldReadFunction<any>,
 	marketPlace?: FieldPolicy<any> | FieldReadFunction<any>,
 	netAmount?: FieldPolicy<any> | FieldReadFunction<any>,
 	nft?: FieldPolicy<any> | FieldReadFunction<any>,
+	nftId?: FieldPolicy<any> | FieldReadFunction<any>,
 	nonce?: FieldPolicy<any> | FieldReadFunction<any>,
 	orderType?: FieldPolicy<any> | FieldReadFunction<any>,
 	price?: FieldPolicy<any> | FieldReadFunction<any>,
+	repaymentData?: FieldPolicy<any> | FieldReadFunction<any>,
 	signature?: FieldPolicy<any> | FieldReadFunction<any>,
 	startTime?: FieldPolicy<any> | FieldReadFunction<any>,
 	status?: FieldPolicy<any> | FieldReadFunction<any>,
+	taker?: FieldPolicy<any> | FieldReadFunction<any>,
 	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
 	txHash?: FieldPolicy<any> | FieldReadFunction<any>
 };
@@ -4301,6 +4313,10 @@ export type StrictTypedTypePolicies = {
 		keyFields?: false | SaleKeySpecifier | (() => undefined | SaleKeySpecifier),
 		fields?: SaleFieldPolicy,
 	},
+	SignatureRequest?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | SignatureRequestKeySpecifier | (() => undefined | SignatureRequestKeySpecifier),
+		fields?: SignatureRequestFieldPolicy,
+	},
 	SingleNFTOffer?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | SingleNFTOfferKeySpecifier | (() => undefined | SingleNFTOfferKeySpecifier),
 		fields?: SingleNFTOfferFieldPolicy,
@@ -4549,16 +4565,6 @@ export const UnhideRenegotiationOfferDocument = gql`
   }
 }
     `;
-export const GenerateNftOrderToBeSignedDocument = gql`
-    mutation generateNftOrderToBeSigned($orderInput: NFTOrderInput!) {
-  typedData: generateNftOrderToBeSigned(orderInput: $orderInput) {
-    types
-    primaryType
-    domain
-    message
-  }
-}
-    `;
 export const HideOrderDocument = gql`
     mutation hideOrder($id: Int!) {
   hideOrder(orderId: $id) {
@@ -4566,11 +4572,25 @@ export const HideOrderDocument = gql`
   }
 }
     `;
-export const SaveSignedNftOrderDocument = gql`
-    mutation saveSignedNftOrder($signedOrderInput: NFTSignedOrderInput!) {
-  order: saveSignedNftOrder(signedOrderInput: $signedOrderInput) {
-    id
-    status
+export const PublishOrderDocument = gql`
+    mutation publishOrder($orderInput: NFTOrderInput!) {
+  result: publishOrder(orderInput: $orderInput) {
+    ... on SingleNFTOrder {
+      id
+      status
+      signature
+      loanRepaymentSignature
+      repaymentData
+    }
+    ... on SignatureRequest {
+      key
+      typedData {
+        types
+        primaryType
+        domain
+        message
+      }
+    }
   }
 }
     `;
@@ -4991,14 +5011,11 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
     unhideRenegotiationOffer(variables: UnhideRenegotiationOfferMutationVariables, options?: C): Promise<UnhideRenegotiationOfferMutation> {
       return requester<UnhideRenegotiationOfferMutation, UnhideRenegotiationOfferMutationVariables>(UnhideRenegotiationOfferDocument, variables, options) as Promise<UnhideRenegotiationOfferMutation>;
     },
-    generateNftOrderToBeSigned(variables: GenerateNftOrderToBeSignedMutationVariables, options?: C): Promise<GenerateNftOrderToBeSignedMutation> {
-      return requester<GenerateNftOrderToBeSignedMutation, GenerateNftOrderToBeSignedMutationVariables>(GenerateNftOrderToBeSignedDocument, variables, options) as Promise<GenerateNftOrderToBeSignedMutation>;
-    },
     hideOrder(variables: HideOrderMutationVariables, options?: C): Promise<HideOrderMutation> {
       return requester<HideOrderMutation, HideOrderMutationVariables>(HideOrderDocument, variables, options) as Promise<HideOrderMutation>;
     },
-    saveSignedNftOrder(variables: SaveSignedNftOrderMutationVariables, options?: C): Promise<SaveSignedNftOrderMutation> {
-      return requester<SaveSignedNftOrderMutation, SaveSignedNftOrderMutationVariables>(SaveSignedNftOrderDocument, variables, options) as Promise<SaveSignedNftOrderMutation>;
+    publishOrder(variables: PublishOrderMutationVariables, options?: C): Promise<PublishOrderMutation> {
+      return requester<PublishOrderMutation, PublishOrderMutationVariables>(PublishOrderDocument, variables, options) as Promise<PublishOrderMutation>;
     },
     unhideOrder(variables: UnhideOrderMutationVariables, options?: C): Promise<UnhideOrderMutation> {
       return requester<UnhideOrderMutation, UnhideOrderMutationVariables>(UnhideOrderDocument, variables, options) as Promise<UnhideOrderMutation>;

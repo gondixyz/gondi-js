@@ -18,6 +18,7 @@ interface Contracts {
     v5: Address;
     v6: Address;
   };
+  PurchaseBundler: Address;
 }
 
 interface ApiKeys {
@@ -73,6 +74,7 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
           ensureAddress(process.env.GONDI_USER_VAULT_V6) ??
           '0x4A679253410272dd5232B3Ff7cF5dbB88f295319',
       },
+      PurchaseBundler: '0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f',
     };
   }
 
@@ -92,6 +94,7 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
         v5: '0xTODO',
         v6: '0xTODO',
       },
+      PurchaseBundler: '0xTODO',
     };
   }
 
@@ -110,6 +113,7 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
       v5: '0x14a6Dcebb2Bb73aae1b199CCAadA75247b81976D',
       v6: '0x823dE2c44369e94CAc3DA789Ad4b6493e27e4Bfe',
     },
+    PurchaseBundler: '0xTODO',
   };
 };
 

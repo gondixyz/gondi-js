@@ -7,7 +7,7 @@ import {
   users,
 } from './common';
 
-const makeOrder = async () => {
+const sellAndRepay = async () => {
   const signedOffer = await users[0].makeSingleNftOffer(testSingleNftOfferInput);
   const emitLoan = await users[1].emitLoan({
     offerExecution: users[1].offerExecutionFromOffers([signedOffer]),
@@ -24,10 +24,17 @@ const makeOrder = async () => {
       currencyAddress: testCurrency,
       isAsk: true,
     });
-    console.log(`order placed successfully: ${JSON.stringify(signedOrder, 4)}`);
+    await users[0].sellAndRepay({
+      repaymentData: signedOrder.repaymentData,
+      loan: {
+        ...loan,
+        loanId,
+        contractStartTime: loan.startTime,
+      },
+      borrowerSignature: signedOrder.repaymentSignature,
+    });
   } catch (err) {
     console.log(err);
-  } finally {
     const repayLoan = await users[1].repayLoan({
       loanId,
       loan: {
@@ -37,13 +44,14 @@ const makeOrder = async () => {
     });
     await repayLoan.waitTxInBlock();
     console.log('Repaid');
+  } finally {
   }
 };
 
 async function main() {
   try {
     await setAllowances();
-    await makeOrder();
+    await sellAndRepay();
   } catch (e) {
     console.log('Error:');
     console.log(e);

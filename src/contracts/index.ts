@@ -1,6 +1,7 @@
 import { Account, Address, Chain, PublicClient, Transport, WalletClient } from 'viem';
 
 import { OldERC721Wrapper } from '@/contracts/OldERC721Wrapper';
+import { PurchaseBundler } from '@/contracts/PurchaseBundler';
 import { oldErc721Abi } from '@/generated/blockchain/oldERC721';
 import { erc20ABI, erc721ABI } from '@/generated/blockchain/v5';
 import { erc1155Abi } from '@/generated/blockchain/v6';
@@ -39,6 +40,7 @@ export class Contracts {
   AuctionLoanLiquidatorV6: AllV6;
   UserVaultV5: UserVaultV5;
   UserVaultV6: UserVaultV6;
+  PurchaseBundler: PurchaseBundler;
 
   constructor(publicClient: GondiPublicClient, walletClient: Wallet) {
     this.walletClient = walletClient;
@@ -52,6 +54,7 @@ export class Contracts {
     this.AuctionLoanLiquidatorV6 = new AllV6({ walletClient });
     this.UserVaultV5 = new UserVaultV5({ walletClient });
     this.UserVaultV6 = new UserVaultV6({ walletClient });
+    this.PurchaseBundler = new PurchaseBundler({ walletClient });
   }
 
   Msl(contractAddress: Address) {

@@ -1,9 +1,23 @@
-import { Account, Address, createPublicClient, createTransport, Hash } from 'viem';
+import {
+  Account,
+  Address,
+  createPublicClient,
+  createTransport,
+  Hash,
+  Hex,
+  TypedDataDefinition,
+} from 'viem';
 
 import { Api, Props as ApiProps } from '@/api';
 import { Auction, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Contracts, GondiPublicClient, Wallet } from '@/contracts';
-import { MarketplaceEnum, OffersSortField, Ordering, TokenStandardType } from '@/generated/graphql';
+import {
+  MarketplaceEnum,
+  NftOrderInput,
+  OffersSortField,
+  Ordering,
+  TokenStandardType,
+} from '@/generated/graphql';
 import * as model from '@/model';
 import { NftStandard } from '@/model';
 import { millisToSeconds } from '@/utils/dates';
@@ -169,7 +183,7 @@ export class Gondi {
     isAsk?: boolean;
     taker?: Address;
   }) {
-    const orderInput = {
+    const orderInput: NftOrderInput = {
       startTime: BigInt(Math.floor(millisToSeconds(Date.now()))),
       expirationTime,
       isAsk,
@@ -179,9 +193,16 @@ export class Gondi {
       tokenId,
       taker,
     };
-    const typedData = await this.api.generateNftOrderToBeSigned(orderInput);
-    const signature = await this.wallet.signTypedData(typedData);
-    return this.api.saveSignedNftOrder({ ...orderInput, signature });
+    let response = await this.api.publishOrder(orderInput);
+    while (response.__typename === 'SignatureRequest') {
+      const key = response.key as 'signature' | 'repaymentSignature';
+      orderInput[key] = await this.wallet.signTypedData(response.typedData as TypedDataDefinition);
+      response = await this.api.publishOrder(orderInput);
+    }
+
+    if (response.__typename !== 'SingleNFTOrder') throw new Error('This should never happen');
+
+    return { ...response, ...orderInput };
   }
 
   // TODO: implement
@@ -905,6 +926,22 @@ export class Gondi {
     const wrapper = this.contracts.OldERC721Wrapper(wrapperAddress);
 
     return await wrapper.unwrap(tokenId);
+  }
+
+  async sellAndRepay({
+    repaymentData,
+    loan,
+    borrowerSignature,
+  }: {
+    repaymentData: Hex;
+    loan: LoanToMslLoanType & { loanId: bigint };
+    borrowerSignature: Hex;
+  }) {
+    return await this.contracts.PurchaseBundler.sell({
+      repaymentData,
+      loan,
+      borrowerSignature,
+    });
   }
 }
 

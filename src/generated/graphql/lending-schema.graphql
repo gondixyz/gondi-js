@@ -259,15 +259,18 @@ type CollectionOrder implements Activity & Node & Order {
   hidden: Boolean!
   id: String!
   isAsk: Boolean!
+  isPrivate: Boolean!
+  loanRepaymentSignature: Signature!
   maker: Address!
   marketPlace: String!
   netAmount: BigInt!
   nonce: BigInt!
   orderType: String!
   price: BigInt!
-  signature: Hash!
+  signature: Signature!
   startTime: DateTime!
   status: String!
+  taker: Address!
   timestamp: DateTime!
   txHash: Hash
 }
@@ -814,7 +817,6 @@ type Mutation {
   addOrUpdateRenegotiationRequest(desiredAprBps: BigInt = null, desiredDuration: BigInt = null, desiredPrincipalAmount: BigInt = null, loanId: String!): RenegotiationRequest!
   addOrUpdateTopUpRequest(desiredAprBps: BigInt!, desiredTopUp: BigInt!, loanId: String!): TopUpRequest!
   generateCollectionOfferToBeSigned(offerInput: CollectionOfferInput!): CollectionOffer!
-  generateNftOrderToBeSigned(orderInput: NFTOrderInput!): TypedData!
   generateRenegotiationOfferToBeSigned(renegotiationInput: RenegotiationOfferInput!): Renegotiation!
   generateSingleNftOfferToBeSigned(offerInput: SingleNFTOfferInput!): SingleNFTOffer!
   hideAllOffers(contractAddress: Address!, minOfferId: String!): [Offer!]!
@@ -823,13 +825,13 @@ type Mutation {
   hideRenegotiation(contractAddress: Address = "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9", renegotiationId: String!): Renegotiation!
   markNotificationIdsAsRead(ids: [Int!]): Void
   markNotificationsAsRead: Void
+  publishOrder(orderInput: NFTOrderInput!): SingleNFTOrderSignatureRequest!
   removeListing(nftId: Int!): Listing!
   removeListingsOfNftsFromUser(excludeCollections: [String!] = null, onlyCollections: [String!] = null, searchTerm: String = null): Void
   removeRenegotiationRequest(loanId: String!): RenegotiationRequest!
   removeTopUpRequest(loanId: String!): TopUpRequest!
   saveRenegotiationSignedOffer(signedRenegotiationInput: SignedRenegotiationOfferInput!): Renegotiation!
   saveSignedCollectionOffer(signedOfferInput: CollectionSignedOfferInput!): CollectionOffer!
-  saveSignedNftOrder(signedOrderInput: NFTSignedOrderInput!): SingleNFTOrder!
   saveSignedSingleNftOffer(signedOfferInput: SingleNFTSignedOfferInput!): SingleNFTOffer!
   setReferral(referrerId: Int!): Void
   showOffer(contractAddress: Address!, offerId: String!): Offer!
@@ -880,18 +882,8 @@ input NFTOrderInput {
   currencyAddress: Address!
   expirationTime: BigInt!
   isAsk: Boolean!
-  startTime: BigInt!
-  taker: Address = null
-  tokenId: BigInt!
-}
-
-input NFTSignedOrderInput {
-  amount: BigInt!
-  contractAddress: Address!
-  currencyAddress: Address!
-  expirationTime: BigInt!
-  isAsk: Boolean!
-  signature: Signature!
+  repaymentSignature: Signature = null
+  signature: Signature = null
   startTime: BigInt!
   taker: Address = null
   tokenId: BigInt!
@@ -1097,15 +1089,18 @@ interface Order implements Activity & Node {
   hidden: Boolean!
   id: String!
   isAsk: Boolean!
+  isPrivate: Boolean!
+  loanRepaymentSignature: Signature!
   maker: Address!
   marketPlace: String!
   netAmount: BigInt!
   nonce: BigInt!
   orderType: String!
   price: BigInt!
-  signature: Hash!
+  signature: Signature!
   startTime: DateTime!
   status: String!
+  taker: Address!
   timestamp: DateTime!
   txHash: Hash
 }
@@ -1217,7 +1212,7 @@ type Query {
   listCollectionsWithListings(after: String, collections: [Int!] = null, first: Int! = 10, searchTerm: String = null): CollectionConnection!
   listCollectionsWithLoans(after: String, collections: [Int!] = null, first: Int! = 10, searchTerm: String = null): CollectionConnection!
   listListings(after: String, collectionIds: [Int!] = null, currencyAddress: Address = null, first: Int = 10, marketplaceNames: [MarketplaceEnum!] = null, searchTerm: String = null, userFilter: UserFilter = null, withLoans: Boolean = false): ListingConnection!
-  listListingsForSale(after: String, currencyAddress: Address = null, first: Int = null, forTaker: Address = null, hidden: Boolean = null, maker: Address = null, nftId: Int = null, sortBy: [OrderSortInput!] = null, statuses: [OrderStatusType!] = null): OrderConnection!
+  listListingsForSale(after: String, collectionId: Int = null, currencyAddress: Address = null, first: Int = null, forTaker: Address = null, hidden: Boolean = null, maker: Address = null, nftId: Int = null, sortBy: [OrderSortInput!] = null, statuses: [OrderStatusType!] = null): OrderConnection!
   listLoanActivities(after: String, collections: [Int!] = null, first: Int! = 10, loanId: String = null, sortBy: [LoanActivitySortInput!] = null, types: [LoanActivityType!] = null): LoanActivityConnection!
   listLoans(after: String, borrowers: [String!] = null, collections: [Int!] = null, contractAddresses: [Address!] = null, currencyAddress: Address = null, excludeAddresses: [Address!] = null, first: Int! = 10, hideEndLocked: Boolean = null, hideLocked: Boolean = null, nfts: [Int!] = null, orderByStatuses: Boolean = true, sortBy: [LoanSortInput!] = null, statuses: [LoanStatusType!] = null, terms: TermsFilter = null, withRenegRequestOnly: Boolean! = false, withTopUpRequestOnly: Boolean! = false): MultiSourceLoanConnection!
   listNftDelegations(after: String, contractAddress: Address = null, first: Int! = 20, nftId: Int!): DelegationConnection!
@@ -1360,6 +1355,11 @@ type Sale implements Activity & Node {
 
 scalar Signature
 
+type SignatureRequest {
+  key: String!
+  typedData: TypedData!
+}
+
 input SignedRenegotiationOfferInput {
   aprBps: BigInt!
   duration: BigInt!
@@ -1455,19 +1455,26 @@ type SingleNFTOrder implements Activity & Node & Order {
   hidden: Boolean!
   id: String!
   isAsk: Boolean!
+  isPrivate: Boolean!
+  loanRepaymentSignature: Signature!
   maker: Address!
   marketPlace: String!
   netAmount: BigInt!
   nft: NFT!
+  nftId: Int!
   nonce: BigInt!
   orderType: String!
   price: BigInt!
-  signature: Hash!
+  repaymentData: Hex!
+  signature: Signature!
   startTime: DateTime!
   status: String!
+  taker: Address!
   timestamp: DateTime!
   txHash: Hash
 }
+
+union SingleNFTOrderSignatureRequest = SignatureRequest | SingleNFTOrder
 
 input SingleNFTSignedOfferInput {
   aprBps: BigInt!
