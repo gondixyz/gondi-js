@@ -4,8 +4,7 @@ mutation publishOrder($orderInput: NFTOrderInput!) {
       id
       status
       signature
-      loanRepaymentSignature
-      repaymentData
+      repaymentCalldata
     }
     ... on SignatureRequest {
       key

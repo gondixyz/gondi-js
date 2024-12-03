@@ -25,13 +25,7 @@ const sellAndRepay = async () => {
       isAsk: true,
     });
     await users[0].sellAndRepay({
-      repaymentData: signedOrder.repaymentData,
-      loan: {
-        ...loan,
-        loanId,
-        contractStartTime: loan.startTime,
-      },
-      borrowerSignature: signedOrder.repaymentSignature,
+      repaymentCalldata: signedOrder.repaymentCalldata,
     });
   } catch (err) {
     console.log(err);

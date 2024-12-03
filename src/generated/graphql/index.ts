@@ -305,7 +305,6 @@ export type CollectionOrder = Activity & Node & Order & {
   id: Scalars['String'];
   isAsk: Scalars['Boolean'];
   isPrivate: Scalars['Boolean'];
-  loanRepaymentSignature: Scalars['Signature'];
   maker: Scalars['Address'];
   marketPlace: Scalars['String'];
   netAmount: Scalars['BigInt'];
@@ -1378,7 +1377,6 @@ export type Order = {
   id: Scalars['String'];
   isAsk: Scalars['Boolean'];
   isPrivate: Scalars['Boolean'];
-  loanRepaymentSignature: Scalars['Signature'];
   maker: Scalars['Address'];
   marketPlace: Scalars['String'];
   netAmount: Scalars['BigInt'];
@@ -2032,7 +2030,6 @@ export type SingleNftOrder = Activity & Node & Order & {
   id: Scalars['String'];
   isAsk: Scalars['Boolean'];
   isPrivate: Scalars['Boolean'];
-  loanRepaymentSignature: Scalars['Signature'];
   maker: Scalars['Address'];
   marketPlace: Scalars['String'];
   netAmount: Scalars['BigInt'];
@@ -2041,7 +2038,7 @@ export type SingleNftOrder = Activity & Node & Order & {
   nonce: Scalars['BigInt'];
   orderType: Scalars['String'];
   price: Scalars['BigInt'];
-  repaymentData: Scalars['Hex'];
+  repaymentCalldata: Scalars['Hex'];
   signature: Scalars['Signature'];
   startTime: Scalars['DateTime'];
   status: Scalars['String'];
@@ -2565,7 +2562,7 @@ export type PublishOrderMutationVariables = Exact<{
 }>;
 
 
-export type PublishOrderMutation = { __typename?: 'Mutation', result: { __typename?: 'SignatureRequest', key: string, typedData: { __typename?: 'TypedData', types: object, primaryType: string, domain: object, message: object } } | { __typename?: 'SingleNFTOrder', id: string, status: string, signature: Hex, loanRepaymentSignature: Hex, repaymentData: Hex } };
+export type PublishOrderMutation = { __typename?: 'Mutation', result: { __typename?: 'SignatureRequest', key: string, typedData: { __typename?: 'TypedData', types: object, primaryType: string, domain: object, message: object } } | { __typename?: 'SingleNFTOrder', id: string, status: string, signature: Hex, repaymentCalldata: Hex } };
 
 export type UnhideOrderMutationVariables = Exact<{
   id: Scalars['Int'];
@@ -2875,7 +2872,7 @@ export type CollectionOfferStatisticsFieldPolicy = {
 	acceptedLoans?: FieldPolicy<any> | FieldReadFunction<any>,
 	consumedCapacity?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type CollectionOrderKeySpecifier = ('collection' | 'createdDate' | 'currency' | 'currencyAddress' | 'expiration' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'loanRepaymentSignature' | 'maker' | 'marketPlace' | 'netAmount' | 'nonce' | 'orderType' | 'price' | 'signature' | 'startTime' | 'status' | 'taker' | 'timestamp' | 'txHash' | CollectionOrderKeySpecifier)[];
+export type CollectionOrderKeySpecifier = ('collection' | 'createdDate' | 'currency' | 'currencyAddress' | 'expiration' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'maker' | 'marketPlace' | 'netAmount' | 'nonce' | 'orderType' | 'price' | 'signature' | 'startTime' | 'status' | 'taker' | 'timestamp' | 'txHash' | CollectionOrderKeySpecifier)[];
 export type CollectionOrderFieldPolicy = {
 	collection?: FieldPolicy<any> | FieldReadFunction<any>,
 	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -2887,7 +2884,6 @@ export type CollectionOrderFieldPolicy = {
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	isAsk?: FieldPolicy<any> | FieldReadFunction<any>,
 	isPrivate?: FieldPolicy<any> | FieldReadFunction<any>,
-	loanRepaymentSignature?: FieldPolicy<any> | FieldReadFunction<any>,
 	maker?: FieldPolicy<any> | FieldReadFunction<any>,
 	marketPlace?: FieldPolicy<any> | FieldReadFunction<any>,
 	netAmount?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3514,7 +3510,7 @@ export type OfferValidatorFieldPolicy = {
 	offerId?: FieldPolicy<any> | FieldReadFunction<any>,
 	validator?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type OrderKeySpecifier = ('createdDate' | 'currency' | 'currencyAddress' | 'expiration' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'loanRepaymentSignature' | 'maker' | 'marketPlace' | 'netAmount' | 'nonce' | 'orderType' | 'price' | 'signature' | 'startTime' | 'status' | 'taker' | 'timestamp' | 'txHash' | OrderKeySpecifier)[];
+export type OrderKeySpecifier = ('createdDate' | 'currency' | 'currencyAddress' | 'expiration' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'maker' | 'marketPlace' | 'netAmount' | 'nonce' | 'orderType' | 'price' | 'signature' | 'startTime' | 'status' | 'taker' | 'timestamp' | 'txHash' | OrderKeySpecifier)[];
 export type OrderFieldPolicy = {
 	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
 	currency?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3525,7 +3521,6 @@ export type OrderFieldPolicy = {
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	isAsk?: FieldPolicy<any> | FieldReadFunction<any>,
 	isPrivate?: FieldPolicy<any> | FieldReadFunction<any>,
-	loanRepaymentSignature?: FieldPolicy<any> | FieldReadFunction<any>,
 	maker?: FieldPolicy<any> | FieldReadFunction<any>,
 	marketPlace?: FieldPolicy<any> | FieldReadFunction<any>,
 	netAmount?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3757,7 +3752,7 @@ export type SingleNFTOfferCollectionOfferRenegotiationEdgeFieldPolicy = {
 	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
 	node?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type SingleNFTOrderKeySpecifier = ('createdDate' | 'currency' | 'currencyAddress' | 'expiration' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'loanRepaymentSignature' | 'maker' | 'marketPlace' | 'netAmount' | 'nft' | 'nftId' | 'nonce' | 'orderType' | 'price' | 'repaymentData' | 'signature' | 'startTime' | 'status' | 'taker' | 'timestamp' | 'txHash' | SingleNFTOrderKeySpecifier)[];
+export type SingleNFTOrderKeySpecifier = ('createdDate' | 'currency' | 'currencyAddress' | 'expiration' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'maker' | 'marketPlace' | 'netAmount' | 'nft' | 'nftId' | 'nonce' | 'orderType' | 'price' | 'repaymentCalldata' | 'signature' | 'startTime' | 'status' | 'taker' | 'timestamp' | 'txHash' | SingleNFTOrderKeySpecifier)[];
 export type SingleNFTOrderFieldPolicy = {
 	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
 	currency?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3768,7 +3763,6 @@ export type SingleNFTOrderFieldPolicy = {
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	isAsk?: FieldPolicy<any> | FieldReadFunction<any>,
 	isPrivate?: FieldPolicy<any> | FieldReadFunction<any>,
-	loanRepaymentSignature?: FieldPolicy<any> | FieldReadFunction<any>,
 	maker?: FieldPolicy<any> | FieldReadFunction<any>,
 	marketPlace?: FieldPolicy<any> | FieldReadFunction<any>,
 	netAmount?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3777,7 +3771,7 @@ export type SingleNFTOrderFieldPolicy = {
 	nonce?: FieldPolicy<any> | FieldReadFunction<any>,
 	orderType?: FieldPolicy<any> | FieldReadFunction<any>,
 	price?: FieldPolicy<any> | FieldReadFunction<any>,
-	repaymentData?: FieldPolicy<any> | FieldReadFunction<any>,
+	repaymentCalldata?: FieldPolicy<any> | FieldReadFunction<any>,
 	signature?: FieldPolicy<any> | FieldReadFunction<any>,
 	startTime?: FieldPolicy<any> | FieldReadFunction<any>,
 	status?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -4579,8 +4573,7 @@ export const PublishOrderDocument = gql`
       id
       status
       signature
-      loanRepaymentSignature
-      repaymentData
+      repaymentCalldata
     }
     ... on SignatureRequest {
       key

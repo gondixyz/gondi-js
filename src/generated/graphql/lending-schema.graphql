@@ -260,7 +260,6 @@ type CollectionOrder implements Activity & Node & Order {
   id: String!
   isAsk: Boolean!
   isPrivate: Boolean!
-  loanRepaymentSignature: Signature!
   maker: Address!
   marketPlace: String!
   netAmount: BigInt!
@@ -1090,7 +1089,6 @@ interface Order implements Activity & Node {
   id: String!
   isAsk: Boolean!
   isPrivate: Boolean!
-  loanRepaymentSignature: Signature!
   maker: Address!
   marketPlace: String!
   netAmount: BigInt!
@@ -1456,7 +1454,6 @@ type SingleNFTOrder implements Activity & Node & Order {
   id: String!
   isAsk: Boolean!
   isPrivate: Boolean!
-  loanRepaymentSignature: Signature!
   maker: Address!
   marketPlace: String!
   netAmount: BigInt!
@@ -1465,7 +1462,7 @@ type SingleNFTOrder implements Activity & Node & Order {
   nonce: BigInt!
   orderType: String!
   price: BigInt!
-  repaymentData: Hex!
+  repaymentCalldata: Hex!
   signature: Signature!
   startTime: DateTime!
   status: String!

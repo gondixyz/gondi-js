@@ -1,9 +1,8 @@
-import { decodeAbiParameters, encodeAbiParameters, Hex } from 'viem';
+import { Hex } from 'viem';
 
 import { Wallet } from '@/contracts';
 import { getContracts } from '@/deploys';
 import { purchaseBundlerAbi } from '@/generated/blockchain/v6';
-import { LoanToMslLoanType } from '@/utils/loan';
 
 import { BaseContract } from './BaseContract';
 
@@ -68,21 +67,8 @@ export class PurchaseBundler extends BaseContract<typeof purchaseBundlerAbi> {
     },
   ];
 
-  async sell({
-    repaymentData,
-    loan,
-    borrowerSignature,
-  }: {
-    repaymentData: Hex;
-    loan: LoanToMslLoanType & { loanId: bigint };
-    borrowerSignature: Hex;
-  }) {
-    const decodedData = decodeAbiParameters(PurchaseBundler.SignableRepaymentData, repaymentData);
-    const encoded = encodeAbiParameters(PurchaseBundler.LoanRepaymentData, [
-      { data: decodedData[0], loan, borrowerSignature },
-    ]);
-    console.log(encoded);
-    const txHash = await this.safeContractWrite.sell([[encoded]]);
+  async sell({ repaymentCalldata }: { repaymentCalldata: Hex }) {
+    const txHash = await this.safeContractWrite.sell([[repaymentCalldata]]);
 
     return {
       txHash,

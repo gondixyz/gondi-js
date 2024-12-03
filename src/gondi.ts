@@ -928,19 +928,9 @@ export class Gondi {
     return await wrapper.unwrap(tokenId);
   }
 
-  async sellAndRepay({
-    repaymentData,
-    loan,
-    borrowerSignature,
-  }: {
-    repaymentData: Hex;
-    loan: LoanToMslLoanType & { loanId: bigint };
-    borrowerSignature: Hex;
-  }) {
+  async sellAndRepay({ repaymentCalldata }: { repaymentCalldata: Hex }) {
     return await this.contracts.PurchaseBundler.sell({
-      repaymentData,
-      loan,
-      borrowerSignature,
+      repaymentCalldata,
     });
   }
 }
