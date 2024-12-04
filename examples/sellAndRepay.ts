@@ -20,7 +20,7 @@ const sellAndRepay = async () => {
       collectionContractAddress: test721Collection.contractAddress,
       tokenId: testTokenId,
       price: 1n,
-      expirationTime: 1n,
+      expirationTime: loan.startTime + 60n * 10n,
       currencyAddress: testCurrency,
       isAsk: true,
     });

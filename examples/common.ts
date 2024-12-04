@@ -159,7 +159,7 @@ const approveForUser = async (user: Gondi, to: Address) => {
   await approveNFT(user, to, test721Collection.contractAddress, 'ERC721');
 };
 
-const SEAPORT_CONTRACT_ADDRESS = '0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC';
+const SEAPORT_CONTRACT_ADDRESS = '0x0000000000000068F116a894984e2DB1123eB395';
 const CONTRACTS = [
   MULTI_SOURCE_LOAN_CONTRACT_V6,
   process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? '',
