@@ -1,5 +1,5 @@
 import { ApolloClient, NormalizedCacheObject } from '@apollo/client';
-import { getAddress, TypedDataDefinition } from 'viem';
+import { getAddress } from 'viem';
 
 import { apolloClient } from '@/api/client';
 import { getSdkApollo } from '@/api/sdk';
@@ -11,7 +11,6 @@ import {
   ListLoansQueryVariables,
   ListOffersQueryVariables,
   NftOrderInput,
-  NftSignedOrderInput,
   SingleNftSignedOfferInput,
 } from '@/generated/graphql';
 import { RenegotiationOffer } from '@/model';
@@ -93,17 +92,9 @@ export class Api {
     };
   }
 
-  async generateNftOrderToBeSigned(orderInput: NftOrderInput) {
-    const response = await this.api.generateNftOrderToBeSigned({ orderInput });
-    return response.typedData as TypedDataDefinition;
-  }
-
-  async saveSignedNftOrder(signedOrderInput: NftSignedOrderInput) {
-    const response = await this.api.saveSignedNftOrder({ signedOrderInput });
-    return {
-      ...response.order,
-      signedOrderInput,
-    };
+  async publishOrder(orderInput: NftOrderInput) {
+    const response = await this.api.publishOrder({ orderInput });
+    return response.result;
   }
 
   async saveCollectionOffer(offerInput: CollectionSignedOfferInput) {

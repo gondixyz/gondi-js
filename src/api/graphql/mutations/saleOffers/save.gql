@@ -1,6 +1,0 @@
-mutation saveSignedNftOrder($signedOrderInput: NFTSignedOrderInput!) {
-  order: saveSignedNftOrder(signedOrderInput: $signedOrderInput) {
-    id
-    status
-  }
-}
