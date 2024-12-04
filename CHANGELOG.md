@@ -1,4 +1,4 @@
-# Breaking Changes 0.15.0b1
+# Breaking Changes 0.15.0b2
 
 ### Important
 
@@ -15,7 +15,7 @@ This document outlines the breaking changes introduced in our codebase for versi
 - [Get Best Native Sale Offer](#get-best-native-sale-offer) deleted function
 - [Buy](#buy) deleted function
 - [Leverage Buy](#leverage-buy) deleted function
-- [Leverage Sell](#leverage-sell) deleted function
+- [Leverage Sell](#replace-leveragesell-with-sellandrepay) function renamed and args argument
 
 ---
 
@@ -75,11 +75,74 @@ The function `leverageBuy` was deleted
 
 ---
 
-## Leverage Sell
+## replace leverageSell With sellAndRepay
 
 **Description:**
 
-The function `leverageSell` was deleted (for now)
+`leverageSell` was replaced with `sellAndRepay`. The function now expects a single argument `repaymentCalldata` which is the encoded structured data that the `repayLoan` fn expects
+
+`borrowerSignature` must be calculated since `PurchaseBundler` will be the msg.sender of the transaction
+
+```
+struct LoanRepaymentData {
+    SignableRepaymentData data;
+    Loan loan;
+    bytes borrowerSignature;
+}
+```
+
+Internal Types:
+
+```
+struct SignableRepaymentData {
+    uint256 loanId;
+    bytes callbackData;
+    bool shouldDelegate;
+}
+
+// For Loan type, check the loan version, for V2:
+struct Loan {
+    address borrower;
+    uint256 nftCollateralTokenId;
+    address nftCollateralAddress;
+    address principalAddress;
+    uint256 principalAmount;
+    uint256 startTime;
+    uint256 duration;
+    Source[] source;
+}
+
+struct Source {
+    uint256 loanId;
+    address lender;
+    uint256 principalAmount;
+    uint256 accruedInterest;
+    uint256 startTime;
+    uint256 aprBps;
+}
+
+// For V3:
+struct Loan {
+    address borrower;
+    uint256 nftCollateralTokenId;
+    address nftCollateralAddress;
+    address principalAddress;
+    uint256 principalAmount;
+    uint256 startTime;
+    uint256 duration;
+    Tranche[] tranche;
+    uint256 protocolFee;
+}
+struct Tranche {
+    uint256 loanId;
+    uint256 floor;
+    uint256 principalAmount;
+    address lender;
+    uint256 accruedInterest;
+    uint256 startTime;
+    uint256 aprBps;
+}
+```
 
 ---
 
