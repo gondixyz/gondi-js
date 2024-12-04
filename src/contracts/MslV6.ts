@@ -1,4 +1,4 @@
-import { Address, encodeFunctionData, Hash } from 'viem';
+import { Address, decodeFunctionData, encodeFunctionData, Hash, Hex } from 'viem';
 
 import { LoanV6, OfferV6, RenegotiationV6, REORG_SAFETY_BUFFER, zeroHash } from '@/blockchain';
 import { Wallet } from '@/contracts';
@@ -604,5 +604,16 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
         };
       },
     };
+  }
+
+  decodeRepaymentCalldata(calldata: Hex) {
+    const decoded = decodeFunctionData({
+      abi: multiSourceLoanAbiV6,
+      data: calldata,
+    });
+    if (decoded.functionName !== 'repayLoan') {
+      throw new Error('Wrong calldata');
+    }
+    return decoded.args[0];
   }
 }

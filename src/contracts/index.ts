@@ -2,6 +2,7 @@ import { Account, Address, Chain, PublicClient, Transport, WalletClient } from '
 
 import { OldERC721Wrapper } from '@/contracts/OldERC721Wrapper';
 import { PurchaseBundler } from '@/contracts/PurchaseBundler';
+import { getContracts } from '@/deploys';
 import { oldErc721Abi } from '@/generated/blockchain/oldERC721';
 import { erc20ABI, erc721ABI } from '@/generated/blockchain/v5';
 import { erc1155Abi } from '@/generated/blockchain/v6';
@@ -40,11 +41,14 @@ export class Contracts {
   AuctionLoanLiquidatorV6: AllV6;
   UserVaultV5: UserVaultV5;
   UserVaultV6: UserVaultV6;
-  PurchaseBundler: PurchaseBundler;
+  PurchaseBundlerMslV5: PurchaseBundler;
+  PurchaseBundlerMslV6: PurchaseBundler;
 
   constructor(publicClient: GondiPublicClient, walletClient: Wallet) {
     this.walletClient = walletClient;
     this.publicClient = publicClient;
+
+    const { PurchaseBundler: PurchaseBundlerContract } = getContracts(walletClient.chain);
 
     this.MultiSourceLoanV4 = new MslV4({ walletClient });
     this.MultiSourceLoanV5 = new MslV5({ walletClient });
@@ -54,7 +58,16 @@ export class Contracts {
     this.AuctionLoanLiquidatorV6 = new AllV6({ walletClient });
     this.UserVaultV5 = new UserVaultV5({ walletClient });
     this.UserVaultV6 = new UserVaultV6({ walletClient });
-    this.PurchaseBundler = new PurchaseBundler({ walletClient });
+    this.PurchaseBundlerMslV5 = new PurchaseBundler({
+      walletClient,
+      contractAddress: PurchaseBundlerContract.v6.mslv5,
+      msl: this.MultiSourceLoanV5,
+    });
+    this.PurchaseBundlerMslV6 = new PurchaseBundler({
+      walletClient,
+      contractAddress: PurchaseBundlerContract.v6.mslv6,
+      msl: this.MultiSourceLoanV6,
+    });
   }
 
   Msl(contractAddress: Address) {
@@ -84,6 +97,21 @@ export class Contracts {
     }
     if (areSameAddress(contractAddress, this.MultiSourceLoanV6.address)) {
       return this.AuctionLoanLiquidatorV6;
+    }
+    throw new Error(`Invalid Contract Address ${contractAddress}`);
+  }
+
+  /**
+   *
+   * @param contractAddress The contract address of the MSL contract
+   * @returns The corresponding AuctionLoanLiquidator contract
+   */
+  PurchaseBundler(contractAddress: Address) {
+    if (areSameAddress(contractAddress, this.MultiSourceLoanV5.address)) {
+      return this.PurchaseBundlerMslV5;
+    }
+    if (areSameAddress(contractAddress, this.MultiSourceLoanV6.address)) {
+      return this.PurchaseBundlerMslV6;
     }
     throw new Error(`Invalid Contract Address ${contractAddress}`);
   }

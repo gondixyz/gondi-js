@@ -16,16 +16,19 @@ const sellAndRepay = async () => {
   });
   const { loan, loanId } = await emitLoan.waitTxInBlock();
   try {
+    const price = 100n;
     const signedOrder = await users[1].makeOrder({
       collectionContractAddress: test721Collection.contractAddress,
       tokenId: testTokenId,
-      price: 1n,
+      price,
       expirationTime: loan.startTime + 60n * 10n,
       currencyAddress: testCurrency,
       isAsk: true,
     });
-    await users[0].sellAndRepay({
+    await users[0].buyWithSellAndRepay({
       repaymentCalldata: signedOrder.repaymentCalldata,
+      mslContractAddress: loan.contractAddress,
+      price,
     });
   } catch (err) {
     console.log(err);

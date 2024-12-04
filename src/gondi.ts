@@ -928,9 +928,18 @@ export class Gondi {
     return await wrapper.unwrap(tokenId);
   }
 
-  async sellAndRepay({ repaymentCalldata }: { repaymentCalldata: Hex }) {
-    return await this.contracts.PurchaseBundler.sell({
+  async buyWithSellAndRepay({
+    repaymentCalldata,
+    mslContractAddress,
+    price,
+  }: {
+    repaymentCalldata: Hex;
+    mslContractAddress: Address;
+    price: bigint;
+  }) {
+    return await this.contracts.PurchaseBundler(mslContractAddress).sell({
       repaymentCalldata,
+      price,
     });
   }
 }
