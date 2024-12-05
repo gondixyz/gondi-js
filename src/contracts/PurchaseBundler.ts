@@ -32,16 +32,13 @@ export class PurchaseBundler extends BaseContract<typeof purchaseBundlerAbi> {
 
     const { principalAddress, nftCollateralAddress, nftCollateralTokenId } = repaymentArgs.loan;
 
-    const txHash = await this.safeContractWrite.sell(
-      [
-        [repaymentCalldata],
-        [principalAddress],
-        [price],
-        [nftCollateralAddress],
-        [nftCollateralTokenId],
-      ],
+    const txHash = await this.safeContractWrite.executeSell([
       [principalAddress],
-    );
+      [price],
+      [nftCollateralAddress],
+      [nftCollateralTokenId],
+      [repaymentCalldata],
+    ]);
 
     return {
       txHash,
