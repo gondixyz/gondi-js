@@ -937,7 +937,7 @@ export class Gondi {
     mslContractAddress: Address;
     price: bigint;
   }) {
-    return await this.contracts.PurchaseBundler(mslContractAddress).sell({
+    return await this.contracts.PurchaseBundler(mslContractAddress).executeSell({
       repaymentCalldata,
       price,
     });

@@ -1,4 +1,4 @@
-import { Address, Hex } from 'viem';
+import { Address, decodeAbiParameters, Hex } from 'viem';
 
 import { Wallet } from '@/contracts';
 import { MslV5 } from '@/contracts/MslV5';
@@ -27,8 +27,30 @@ export class PurchaseBundler extends BaseContract<typeof purchaseBundlerAbi> {
     this.msl = msl;
   }
 
-  async sell({ repaymentCalldata, price }: { repaymentCalldata: Hex; price: bigint }) {
+  static EXECUTION_INFO = {
+    name: 'executionInfo',
+    type: 'tuple',
+    components: [
+      {
+        name: 'reservoirExecutionInfo',
+        type: 'tuple',
+        components: [
+          { name: 'module', type: 'address' },
+          { name: 'data', type: 'bytes' },
+          { name: 'value', type: 'uint256' },
+        ],
+      },
+      { name: 'contractMustBeOwner', type: 'bool' },
+    ],
+  } as const;
+
+  async executeSell({ repaymentCalldata, price }: { repaymentCalldata: Hex; price: bigint }) {
     const repaymentArgs = this.msl.decodeRepaymentCalldata(repaymentCalldata);
+
+    const callbackData = decodeAbiParameters(
+      [PurchaseBundler.EXECUTION_INFO],
+      repaymentArgs.data.callbackData,
+    );
 
     const { principalAddress, nftCollateralAddress, nftCollateralTokenId } = repaymentArgs.loan;
 
@@ -37,6 +59,7 @@ export class PurchaseBundler extends BaseContract<typeof purchaseBundlerAbi> {
       [price],
       [nftCollateralAddress],
       [nftCollateralTokenId],
+      callbackData[0].reservoirExecutionInfo.module,
       [repaymentCalldata],
     ]);
 
