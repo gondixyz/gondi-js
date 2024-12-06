@@ -1,5 +1,6 @@
 import {
   setAllowances,
+  sleep,
   test721Collection,
   testCurrency,
   testSingleNftOfferInput,
@@ -8,28 +9,36 @@ import {
 } from './common';
 
 const sellAndRepay = async () => {
-  const signedOffer = await users[0].makeSingleNftOffer(testSingleNftOfferInput);
-  const emitLoan = await users[1].emitLoan({
-    offerExecution: users[1].offerExecutionFromOffers([signedOffer]),
+  const owner = users[0];
+  const lender = users[1];
+  const signedOffer = await lender.makeSingleNftOffer(testSingleNftOfferInput);
+  const emitLoan = await owner.emitLoan({
+    offerExecution: owner.offerExecutionFromOffers([signedOffer]),
     duration: signedOffer.duration,
     tokenId: testTokenId,
   });
   const { loan, loanId } = await emitLoan.waitTxInBlock();
+  await sleep(2000);
   try {
-    const signedOrder = await users[1].makeOrder({
+    const price = 100n;
+    const signedOrder = await owner.makeOrder({
       collectionContractAddress: test721Collection.contractAddress,
       tokenId: testTokenId,
-      price: 1n,
+      price,
       expirationTime: loan.startTime + 60n * 10n,
       currencyAddress: testCurrency,
       isAsk: true,
+      // taker: lender.wallet.account.address,
     });
-    await users[0].sellAndRepay({
+    await lender.buyWithSellAndRepay({
       repaymentCalldata: signedOrder.repaymentCalldata,
+      mslContractAddress: loan.contractAddress,
+      price,
     });
+    console.log('Executed Sell & Repay with Listing');
   } catch (err) {
     console.log(err);
-    const repayLoan = await users[1].repayLoan({
+    const repayLoan = await owner.repayLoan({
       loanId,
       loan: {
         ...loan,
