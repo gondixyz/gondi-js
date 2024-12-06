@@ -60,12 +60,12 @@ export class Contracts {
     this.UserVaultV6 = new UserVaultV6({ walletClient });
     this.PurchaseBundlerMslV5 = new PurchaseBundler({
       walletClient,
-      contractAddress: PurchaseBundlerContract.v6.mslv5,
+      contractAddress: PurchaseBundlerContract.v5,
       msl: this.MultiSourceLoanV5,
     });
     this.PurchaseBundlerMslV6 = new PurchaseBundler({
       walletClient,
-      contractAddress: PurchaseBundlerContract.v6.mslv6,
+      contractAddress: PurchaseBundlerContract.v6,
       msl: this.MultiSourceLoanV6,
     });
   }

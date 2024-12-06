@@ -19,10 +19,8 @@ interface Contracts {
     v6: Address;
   };
   PurchaseBundler: {
-    v6: {
-      mslv5: Address;
-      mslv6: Address;
-    };
+    v5: Address;
+    v6: Address;
   };
 }
 
@@ -80,10 +78,8 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
           '0x4A679253410272dd5232B3Ff7cF5dbB88f295319',
       },
       PurchaseBundler: {
-        v6: {
-          mslv5: '0xTODO',
-          mslv6: '0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f',
-        },
+        v5: '0xTODO',
+        v6: '0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f',
       },
     };
   }
@@ -105,10 +101,8 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
         v6: '0xTODO',
       },
       PurchaseBundler: {
-        v6: {
-          mslv5: '0xTODO',
-          mslv6: '0xTODO',
-        },
+        v5: '0xTODO',
+        v6: '0xTODO',
       },
     };
   }
@@ -129,10 +123,8 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
       v6: '0x823dE2c44369e94CAc3DA789Ad4b6493e27e4Bfe',
     },
     PurchaseBundler: {
-      v6: {
-        mslv5: '0xTODO',
-        mslv6: '0xTODO',
-      },
+      v5: '0xTODO',
+      v6: '0xTODO',
     },
   };
 };
