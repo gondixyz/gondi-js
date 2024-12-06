@@ -824,7 +824,7 @@ type Mutation {
   hideRenegotiation(contractAddress: Address = "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9", renegotiationId: String!): Renegotiation!
   markNotificationIdsAsRead(ids: [Int!]): Void
   markNotificationsAsRead: Void
-  publishOrder(orderInput: NFTOrderInput!): SingleNFTOrderSignatureRequest!
+  publishOrder(orderInput: NFTOrderInput!): PurchaseBundlerOrderSignatureRequest!
   removeListing(nftId: Int!): Listing!
   removeListingsOfNftsFromUser(excludeCollections: [String!] = null, onlyCollections: [String!] = null, searchTerm: String = null): Void
   removeRenegotiationRequest(loanId: String!): RenegotiationRequest!
@@ -1188,6 +1188,37 @@ type PointActivityEdge {
   node: PointActivity!
 }
 
+type PurchaseBundlerOrder implements Activity & Node & Order {
+  cancelCalldata: Hex!
+  createdDate: DateTime!
+  currency: Currency!
+  currencyAddress: Address!
+  expiration: DateTime
+  fees: BigInt!
+  hidden: Boolean!
+  id: String!
+  isAsk: Boolean!
+  isPrivate: Boolean!
+  maker: Address!
+  marketPlace: String!
+  marketplaceAddress: Address!
+  netAmount: BigInt!
+  nft: NFT!
+  nftId: Int!
+  nonce: BigInt!
+  orderType: String!
+  price: BigInt!
+  repaymentCalldata: Hex!
+  signature: Signature!
+  startTime: DateTime!
+  status: String!
+  taker: Address!
+  timestamp: DateTime!
+  txHash: Hash
+}
+
+union PurchaseBundlerOrderSignatureRequest = PurchaseBundlerOrder | SignatureRequest
+
 type Query {
   getCollectionBySlug(slug: String!): Collection
   getCollectionLoansData(collectionId: Int!, currencyAddress: Address): CollectionLoansData!
@@ -1462,7 +1493,6 @@ type SingleNFTOrder implements Activity & Node & Order {
   nonce: BigInt!
   orderType: String!
   price: BigInt!
-  repaymentCalldata: Hex!
   signature: Signature!
   startTime: DateTime!
   status: String!
@@ -1470,8 +1500,6 @@ type SingleNFTOrder implements Activity & Node & Order {
   timestamp: DateTime!
   txHash: Hash
 }
-
-union SingleNFTOrderSignatureRequest = SignatureRequest | SingleNFTOrder
 
 input SingleNFTSignedOfferInput {
   aprBps: BigInt!

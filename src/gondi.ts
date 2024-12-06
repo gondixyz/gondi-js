@@ -200,7 +200,7 @@ export class Gondi {
       response = await this.api.publishOrder(orderInput);
     }
 
-    if (response.__typename !== 'SingleNFTOrder') throw new Error('This should never happen');
+    if (response.__typename !== 'PurchaseBundlerOrder') throw new Error('This should never happen');
 
     return { ...response, ...orderInput };
   }
@@ -315,8 +315,8 @@ export class Gondi {
     return this.api.hideOrder({ id });
   }
 
-  async unhideOrder({ id }: { id: number }) {
-    return this.api.unhideOrder({ id });
+  async showOrder({ id }: { id: number }) {
+    return this.api.showOrder({ id });
   }
 
   async cancelAllRenegotiations({

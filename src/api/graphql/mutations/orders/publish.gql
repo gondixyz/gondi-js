@@ -1,10 +1,11 @@
 mutation publishOrder($orderInput: NFTOrderInput!) {
   result: publishOrder(orderInput: $orderInput) {
-    ... on SingleNFTOrder {
+    ... on PurchaseBundlerOrder {
       id
       status
       signature
       repaymentCalldata
+      cancelCalldata
     }
     ... on SignatureRequest {
       key

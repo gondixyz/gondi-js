@@ -1,4 +1,4 @@
-mutation unhideOrder($id: Int!) {
+mutation showOrder($id: Int!) {
   showOrder(orderId: $id) {
     id
   }
