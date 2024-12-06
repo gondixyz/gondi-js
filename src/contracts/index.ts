@@ -70,6 +70,14 @@ export class Contracts {
     });
   }
 
+  GenericContract(address: Address) {
+    return new BaseContract({
+      address,
+      abi: [],
+      walletClient: this.walletClient,
+    });
+  }
+
   Msl(contractAddress: Address) {
     if (areSameAddress(contractAddress, this.MultiSourceLoanV4.address)) {
       return this.MultiSourceLoanV4;

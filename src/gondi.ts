@@ -16,6 +16,7 @@ import {
   NftOrderInput,
   OffersSortField,
   Ordering,
+  SellAndRepayOrder,
   TokenStandardType,
 } from '@/generated/graphql';
 import * as model from '@/model';
@@ -200,14 +201,16 @@ export class Gondi {
       response = await this.api.publishOrder(orderInput);
     }
 
-    if (response.__typename !== 'SingleNFTOrder') throw new Error('This should never happen');
+    if (response.__typename !== 'SellAndRepayOrder') throw new Error('This should never happen');
 
     return { ...response, ...orderInput };
   }
 
-  // TODO: implement
-  // async cancelOrder({ id }: { id: number }) {
-  // }
+  async cancelOrder(order: Pick<SellAndRepayOrder, 'cancelCalldata' | 'marketplaceAddress'>) {
+    return this.contracts
+      .GenericContract(order.marketplaceAddress)
+      .sendTransactionData(order.cancelCalldata);
+  }
 
   async cancelOffer({ id, contractAddress }: { id: bigint; contractAddress: Address }) {
     return this.contracts.Msl(contractAddress).cancelOffer({
@@ -315,8 +318,8 @@ export class Gondi {
     return this.api.hideOrder({ id });
   }
 
-  async unhideOrder({ id }: { id: number }) {
-    return this.api.unhideOrder({ id });
+  async showOrder({ id }: { id: number }) {
+    return this.api.showOrder({ id });
   }
 
   async cancelAllRenegotiations({

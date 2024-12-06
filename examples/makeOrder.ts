@@ -24,7 +24,7 @@ const makeOrder = async () => {
       currencyAddress: testCurrency,
       isAsk: true,
     });
-    console.log(`order placed successfully: ${JSON.stringify(signedOrder, 4)}`);
+    console.log(`order placed successfully: ${JSON.stringify(signedOrder, null, 4)}`);
   } catch (err) {
     console.log(err);
   } finally {
