@@ -209,7 +209,7 @@ export class Gondi {
   async cancelOrder(order: Pick<SellAndRepayOrder, 'cancelCalldata' | 'marketplaceAddress'>) {
     return this.contracts
       .GenericContract(order.marketplaceAddress)
-      .sendRawTransaction(order.cancelCalldata);
+      .sendTransactionData(order.cancelCalldata);
   }
 
   async cancelOffer({ id, contractAddress }: { id: bigint; contractAddress: Address }) {
