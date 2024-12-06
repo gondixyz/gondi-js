@@ -9,6 +9,7 @@ import {
   getContract,
   GetContractReturnType,
   Hash,
+  Hex,
   parseEventLogs,
   PublicClient,
   SimulateContractParameters,
@@ -87,5 +88,16 @@ export class BaseContract<TAbi extends Abi> {
         };
       },
     });
+  }
+
+  async sendRawTransaction(serializedTransaction: Hex) {
+    const txHash = await this.wallet.sendRawTransaction({ serializedTransaction });
+    return {
+      txHash,
+      waitTxInBlock: () =>
+        this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        }),
+    };
   }
 }

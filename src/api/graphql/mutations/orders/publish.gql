@@ -6,6 +6,7 @@ mutation publishOrder($orderInput: NFTOrderInput!) {
       signature
       repaymentCalldata
       cancelCalldata
+      marketplaceAddress
     }
     ... on SignatureRequest {
       key

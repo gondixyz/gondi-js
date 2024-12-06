@@ -2561,7 +2561,7 @@ export type PublishOrderMutationVariables = Exact<{
 }>;
 
 
-export type PublishOrderMutation = { __typename?: 'Mutation', result: { __typename?: 'PurchaseBundlerOrder', id: string, status: string, signature: Hex, repaymentCalldata: Hex, cancelCalldata: Hex } | { __typename?: 'SignatureRequest', key: string, typedData: { __typename?: 'TypedData', types: object, primaryType: string, domain: object, message: object } } };
+export type PublishOrderMutation = { __typename?: 'Mutation', result: { __typename?: 'PurchaseBundlerOrder', id: string, status: string, signature: Hex, repaymentCalldata: Hex, cancelCalldata: Hex, marketplaceAddress: Address } | { __typename?: 'SignatureRequest', key: string, typedData: { __typename?: 'TypedData', types: object, primaryType: string, domain: object, message: object } } };
 
 export type ShowOrderMutationVariables = Exact<{
   id: Scalars['Int'];
@@ -4593,6 +4593,7 @@ export const PublishOrderDocument = gql`
       signature
       repaymentCalldata
       cancelCalldata
+      marketplaceAddress
     }
     ... on SignatureRequest {
       key

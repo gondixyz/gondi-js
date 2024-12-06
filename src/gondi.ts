@@ -16,6 +16,7 @@ import {
   NftOrderInput,
   OffersSortField,
   Ordering,
+  PurchaseBundlerOrder,
   TokenStandardType,
 } from '@/generated/graphql';
 import * as model from '@/model';
@@ -205,9 +206,11 @@ export class Gondi {
     return { ...response, ...orderInput };
   }
 
-  // TODO: implement
-  // async cancelOrder({ id }: { id: number }) {
-  // }
+  async cancelOrder(order: Pick<PurchaseBundlerOrder, 'cancelCalldata' | 'marketplaceAddress'>) {
+    return this.contracts
+      .GenericContract(order.marketplaceAddress)
+      .sendRawTransaction(order.cancelCalldata);
+  }
 
   async cancelOffer({ id, contractAddress }: { id: bigint; contractAddress: Address }) {
     return this.contracts.Msl(contractAddress).cancelOffer({
