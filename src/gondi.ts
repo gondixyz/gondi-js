@@ -16,7 +16,7 @@ import {
   NftOrderInput,
   OffersSortField,
   Ordering,
-  PurchaseBundlerOrder,
+  SellAndRepayOrder,
   TokenStandardType,
 } from '@/generated/graphql';
 import * as model from '@/model';
@@ -201,12 +201,12 @@ export class Gondi {
       response = await this.api.publishOrder(orderInput);
     }
 
-    if (response.__typename !== 'PurchaseBundlerOrder') throw new Error('This should never happen');
+    if (response.__typename !== 'SellAndRepayOrder') throw new Error('This should never happen');
 
     return { ...response, ...orderInput };
   }
 
-  async cancelOrder(order: Pick<PurchaseBundlerOrder, 'cancelCalldata' | 'marketplaceAddress'>) {
+  async cancelOrder(order: Pick<SellAndRepayOrder, 'cancelCalldata' | 'marketplaceAddress'>) {
     return this.contracts
       .GenericContract(order.marketplaceAddress)
       .sendRawTransaction(order.cancelCalldata);

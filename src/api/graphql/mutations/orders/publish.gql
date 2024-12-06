@@ -1,6 +1,6 @@
 mutation publishOrder($orderInput: NFTOrderInput!) {
   result: publishOrder(orderInput: $orderInput) {
-    ... on PurchaseBundlerOrder {
+    ... on SellAndRepayOrder {
       id
       status
       signature
