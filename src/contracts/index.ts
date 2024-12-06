@@ -41,8 +41,8 @@ export class Contracts {
   AuctionLoanLiquidatorV6: AllV6;
   UserVaultV5: UserVaultV5;
   UserVaultV6: UserVaultV6;
-  PurchaseBundlerMslV5: PurchaseBundler;
-  PurchaseBundlerMslV6: PurchaseBundler;
+  PurchaseBundlerV5: PurchaseBundler;
+  PurchaseBundlerV6: PurchaseBundler;
 
   constructor(publicClient: GondiPublicClient, walletClient: Wallet) {
     this.walletClient = walletClient;
@@ -58,12 +58,12 @@ export class Contracts {
     this.AuctionLoanLiquidatorV6 = new AllV6({ walletClient });
     this.UserVaultV5 = new UserVaultV5({ walletClient });
     this.UserVaultV6 = new UserVaultV6({ walletClient });
-    this.PurchaseBundlerMslV5 = new PurchaseBundler({
+    this.PurchaseBundlerV5 = new PurchaseBundler({
       walletClient,
       contractAddress: PurchaseBundlerContract.v5,
       msl: this.MultiSourceLoanV5,
     });
-    this.PurchaseBundlerMslV6 = new PurchaseBundler({
+    this.PurchaseBundlerV6 = new PurchaseBundler({
       walletClient,
       contractAddress: PurchaseBundlerContract.v6,
       msl: this.MultiSourceLoanV6,
@@ -103,17 +103,17 @@ export class Contracts {
 
   /**
    *
-   * @param contractAddress The contract address of the MSL contract
-   * @returns The corresponding AuctionLoanLiquidator contract
+   * @param mslContractAddress The contract address of the MSL contract
+   * @returns The corresponding PurchaseBundler contract
    */
-  PurchaseBundler(contractAddress: Address) {
-    if (areSameAddress(contractAddress, this.MultiSourceLoanV5.address)) {
-      return this.PurchaseBundlerMslV5;
+  PurchaseBundler(mslContractAddress: Address) {
+    if (areSameAddress(mslContractAddress, this.MultiSourceLoanV5.address)) {
+      return this.PurchaseBundlerV5;
     }
-    if (areSameAddress(contractAddress, this.MultiSourceLoanV6.address)) {
-      return this.PurchaseBundlerMslV6;
+    if (areSameAddress(mslContractAddress, this.MultiSourceLoanV6.address)) {
+      return this.PurchaseBundlerV6;
     }
-    throw new Error(`Invalid Contract Address ${contractAddress}`);
+    throw new Error(`Invalid Contract Address ${mslContractAddress}`);
   }
 
   UserVault(contractAddress: Address) {
