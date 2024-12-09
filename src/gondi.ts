@@ -206,9 +206,9 @@ export class Gondi {
     return { ...response, ...orderInput };
   }
 
-  async cancelOrder(order: Pick<SellAndRepayOrder, 'cancelCalldata' | 'marketplaceAddress'>) {
+  async cancelOrder(order: Pick<SellAndRepayOrder, 'cancelCalldata' | 'marketPlaceAddress'>) {
     return this.contracts
-      .GenericContract(order.marketplaceAddress)
+      .GenericContract(order.marketPlaceAddress)
       .sendTransactionData(order.cancelCalldata);
   }
 
