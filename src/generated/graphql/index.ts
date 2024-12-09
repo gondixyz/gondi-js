@@ -1936,7 +1936,7 @@ export type SellAndRepayOrder = Activity & Node & Order & {
   isPrivate: Scalars['Boolean'];
   maker: Scalars['Address'];
   marketPlace: Scalars['String'];
-  marketplaceAddress: Scalars['Address'];
+  marketPlaceAddress: Scalars['Address'];
   netAmount: Scalars['BigInt'];
   nft: Nft;
   nftId: Scalars['Int'];
@@ -2561,7 +2561,7 @@ export type PublishOrderMutationVariables = Exact<{
 }>;
 
 
-export type PublishOrderMutation = { __typename?: 'Mutation', result: { __typename?: 'SellAndRepayOrder', id: string, status: string, signature: Hex, repaymentCalldata: Hex, cancelCalldata: Hex, marketplaceAddress: Address } | { __typename?: 'SignatureRequest', key: string, typedData: { __typename?: 'TypedData', types: object, primaryType: string, domain: object, message: object } } };
+export type PublishOrderMutation = { __typename?: 'Mutation', result: { __typename?: 'SellAndRepayOrder', id: string, status: string, signature: Hex, repaymentCalldata: Hex, cancelCalldata: Hex, marketPlaceAddress: Address } | { __typename?: 'SignatureRequest', key: string, typedData: { __typename?: 'TypedData', types: object, primaryType: string, domain: object, message: object } } };
 
 export type ShowOrderMutationVariables = Exact<{
   id: Scalars['Int'];
@@ -3732,7 +3732,7 @@ export type SaleFieldPolicy = {
 	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
 	txHash?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type SellAndRepayOrderKeySpecifier = ('cancelCalldata' | 'createdDate' | 'currency' | 'currencyAddress' | 'expiration' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'maker' | 'marketPlace' | 'marketplaceAddress' | 'netAmount' | 'nft' | 'nftId' | 'nonce' | 'orderType' | 'price' | 'repaymentCalldata' | 'signature' | 'startTime' | 'status' | 'taker' | 'timestamp' | 'txHash' | SellAndRepayOrderKeySpecifier)[];
+export type SellAndRepayOrderKeySpecifier = ('cancelCalldata' | 'createdDate' | 'currency' | 'currencyAddress' | 'expiration' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'maker' | 'marketPlace' | 'marketPlaceAddress' | 'netAmount' | 'nft' | 'nftId' | 'nonce' | 'orderType' | 'price' | 'repaymentCalldata' | 'signature' | 'startTime' | 'status' | 'taker' | 'timestamp' | 'txHash' | SellAndRepayOrderKeySpecifier)[];
 export type SellAndRepayOrderFieldPolicy = {
 	cancelCalldata?: FieldPolicy<any> | FieldReadFunction<any>,
 	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3746,7 +3746,7 @@ export type SellAndRepayOrderFieldPolicy = {
 	isPrivate?: FieldPolicy<any> | FieldReadFunction<any>,
 	maker?: FieldPolicy<any> | FieldReadFunction<any>,
 	marketPlace?: FieldPolicy<any> | FieldReadFunction<any>,
-	marketplaceAddress?: FieldPolicy<any> | FieldReadFunction<any>,
+	marketPlaceAddress?: FieldPolicy<any> | FieldReadFunction<any>,
 	netAmount?: FieldPolicy<any> | FieldReadFunction<any>,
 	nft?: FieldPolicy<any> | FieldReadFunction<any>,
 	nftId?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -4593,7 +4593,7 @@ export const PublishOrderDocument = gql`
       signature
       repaymentCalldata
       cancelCalldata
-      marketplaceAddress
+      marketPlaceAddress
     }
     ... on SignatureRequest {
       key

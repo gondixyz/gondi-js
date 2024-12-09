@@ -1364,7 +1364,7 @@ type SellAndRepayOrder implements Activity & Node & Order {
   isPrivate: Boolean!
   maker: Address!
   marketPlace: String!
-  marketplaceAddress: Address!
+  marketPlaceAddress: Address!
   netAmount: BigInt!
   nft: NFT!
   nftId: Int!
