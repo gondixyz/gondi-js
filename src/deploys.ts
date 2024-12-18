@@ -75,7 +75,7 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
           '0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82',
         v6:
           ensureAddress(process.env.GONDI_USER_VAULT_V6) ??
-          '0x4A679253410272dd5232B3Ff7cF5dbB88f295319',
+          '0x7a2088a1bFc9d81c55368AE168C2C02570cB814F',
       },
       PurchaseBundler: {
         v5: '0xTODO',
