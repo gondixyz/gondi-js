@@ -466,11 +466,12 @@ export class Gondi {
     statsCurrency?: Address;
     standards?: TokenStandardType[];
     collections?: number[];
+    cursor?: string;
   }) {
-    const { statsCurrency: currency = zeroAddress, collections, standards } = props;
+    const { statsCurrency: currency = zeroAddress, collections, standards, cursor } = props;
     const {
       collections: { edges, pageInfo },
-    } = await this.api.collections({ currency, collections, standards });
+    } = await this.api.collections({ currency, collections, standards, after: cursor });
     return { collections: edges.map((edge) => edge.node), pageInfo };
   }
 
