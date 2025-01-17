@@ -519,7 +519,7 @@ export class Gondi {
 
   async isEndLockedUp({ loan }: { loan: LoanToMslLoanType }) {
     return this.contracts.Msl(loan.contractAddress).isEndLockedUp({
-      loan: loanToMslLoan(loan),
+      loan,
     });
   }
 
