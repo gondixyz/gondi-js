@@ -4036,9 +4036,30 @@ export const iMultiSourceLoanAbi = [
     type: 'event',
     anonymous: false,
     inputs: [
-      { name: 'loanId', internalType: 'uint256', type: 'uint256', indexed: false },
-      { name: 'delegate', internalType: 'address', type: 'address', indexed: false },
-      { name: 'value', internalType: 'bool', type: 'bool', indexed: false },
+      {
+        name: 'loanId',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256'
+      },
+      {
+        name: 'delegate',
+        type: 'address',
+        indexed: false,
+        internalType: 'address'
+      },
+      {
+        name: '_rights',
+        type: 'bytes32',
+        indexed: false,
+        internalType: 'bytes32'
+      },
+      {
+        name: 'value',
+        type: 'bool',
+        indexed: false,
+        internalType: 'bool'
+      }
     ],
     name: 'Delegated',
   },
@@ -7727,9 +7748,30 @@ export const multiSourceLoanAbi = [
     type: 'event',
     anonymous: false,
     inputs: [
-      { name: 'loanId', internalType: 'uint256', type: 'uint256', indexed: false },
-      { name: 'delegate', internalType: 'address', type: 'address', indexed: false },
-      { name: 'value', internalType: 'bool', type: 'bool', indexed: false },
+      {
+        name: 'loanId',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256'
+      },
+      {
+        name: 'delegate',
+        type: 'address',
+        indexed: false,
+        internalType: 'address'
+      },
+      {
+        name: '_rights',
+        type: 'bytes32',
+        indexed: false,
+        internalType: 'bytes32'
+      },
+      {
+        name: 'value',
+        type: 'bool',
+        indexed: false,
+        internalType: 'bool'
+      }
     ],
     name: 'Delegated',
   },
