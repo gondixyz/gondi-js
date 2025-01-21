@@ -63,11 +63,25 @@ export class Gondi {
   }
 
   /** @internal */
-  async _makeSingleNftOffer<T extends boolean | undefined = undefined>(
+  _makeSingleNftOffer(
+    offer: model.SingleNftOfferInput,
+    mslContractAddress: Address,
+    skipSave: true,
+  ): Promise<SingleNftSignedOfferInput>;
+
+  /** @internal */
+  _makeSingleNftOffer(
     offer: model.SingleNftOfferInput,
     mslContractAddress?: Address,
-    skipSave?: T,
-  ): Promise<T extends true ? SingleNftSignedOfferInput : ReturnType<Api['saveSingleNftOffer']>> {
+    skipSave?: false,
+  ): ReturnType<Api['saveSingleNftOffer']>;
+
+  /** @internal */
+  async _makeSingleNftOffer(
+    offer: model.SingleNftOfferInput,
+    mslContractAddress?: Address,
+    skipSave?: boolean,
+  ) {
     const contract = this.contracts.Msl(mslContractAddress ?? this.defaults.Msl);
     const contractAddress = contract.address;
 
@@ -113,10 +127,8 @@ export class Gondi {
       signature,
     };
 
-    if (skipSave) return signedOffer as T extends true ? SingleNftSignedOfferInput : never;
-    return (await this.api.saveSingleNftOffer(signedOffer)) as unknown as T extends true
-      ? never
-      : ReturnType<Api['saveSingleNftOffer']>;
+    if (skipSave) return signedOffer;
+    return await this.api.saveSingleNftOffer(signedOffer);
   }
 
   async makeCollectionOffer(offer: model.CollectionOfferInput) {
