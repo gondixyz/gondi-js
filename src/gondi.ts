@@ -308,18 +308,25 @@ export class Gondi {
     };
 
     if (props.withFallbackOffer) {
-      const fallbackOffer = await this._makeSingleNftOffer(
-        {
-          ...renegotiationInput,
-          principalAddress: props.principalAddress,
-          fee: renegotiationInput.feeAmount,
-          nftId: props.nftId,
-          maxSeniorRepayment: 0n,
-          capacity: 0n,
-        },
-        contractAddress,
-        true,
-      );
+      const {
+        aprBps,
+        duration,
+        expirationTime,
+        principalAmount,
+        feeAmount: fee,
+      } = renegotiationInput;
+      const offerInput: model.SingleNftOfferInput = {
+        nftId: props.nftId,
+        principalAddress: props.principalAddress,
+        principalAmount,
+        aprBps,
+        duration,
+        expirationTime,
+        fee,
+        maxSeniorRepayment: 0n,
+        capacity: 0n,
+      };
+      const fallbackOffer = await this._makeSingleNftOffer(offerInput, contractAddress, true);
       return await this.api.saveRefinanceOffer(renegotiationOffer, fallbackOffer);
     }
 
