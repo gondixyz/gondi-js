@@ -220,6 +220,19 @@ export type CollectionEdge = {
   node: Collection;
 };
 
+export type CollectionEventsCountByDayAndCurrency = {
+  __typename?: 'CollectionEventsCountByDayAndCurrency';
+  auctions: Scalars['BigInt'];
+  buyouts: Scalars['BigInt'];
+  defaults: Scalars['BigInt'];
+  foreclosings: Scalars['BigInt'];
+  originations: Scalars['BigInt'];
+  refinancings: Scalars['BigInt'];
+  renegotiations: Scalars['BigInt'];
+  repayments: Scalars['BigInt'];
+  topUps: Scalars['BigInt'];
+};
+
 export type CollectionLoansData = {
   __typename?: 'CollectionLoansData';
   maxAprBps: Scalars['Float'];
@@ -487,6 +500,35 @@ export type DelegationEdge = {
   node: Delegation;
 };
 
+export type Erc4626Deposit = Node & PoolActivity & {
+  __typename?: 'ERC4626Deposit';
+  assets: Scalars['BigInt'];
+  caller: Scalars['Address'];
+  id: Scalars['String'];
+  indexInBlock: Scalars['Int'];
+  owner: Scalars['Address'];
+  pool: Pool;
+  poolAddress: Scalars['Address'];
+  shares: Scalars['BigInt'];
+  timestamp: Scalars['DateTime'];
+  txHash: Scalars['Hash'];
+};
+
+export type Erc4626Withdraw = Node & PoolActivity & {
+  __typename?: 'ERC4626Withdraw';
+  assets: Scalars['BigInt'];
+  caller: Scalars['Address'];
+  id: Scalars['String'];
+  indexInBlock: Scalars['Int'];
+  owner: Scalars['Address'];
+  pool: Pool;
+  poolAddress: Scalars['Address'];
+  receiver: Scalars['Address'];
+  shares: Scalars['BigInt'];
+  timestamp: Scalars['DateTime'];
+  txHash: Scalars['Hash'];
+};
+
 export type Interval = {
   max?: InputMaybe<Scalars['Float']>;
   min?: InputMaybe<Scalars['Float']>;
@@ -558,6 +600,8 @@ export type LoanActivitiesStatisticsByMonth = {
 };
 
 export type LoanActivity = {
+  activityType: Scalars['String'];
+  eventType: Scalars['String'];
   id: Scalars['String'];
   indexInBlock: Scalars['Int'];
   loan: Loan;
@@ -601,8 +645,10 @@ export enum LoanActivityType {
   LoanSentToAuction = 'LOAN_SENT_TO_AUCTION'
 }
 
-export type LoanAuctioned = LoanActivity & Node & {
+export type LoanAuctioned = LoanActivity & LoanEvent & Node & {
   __typename?: 'LoanAuctioned';
+  activityType: Scalars['String'];
+  eventType: Scalars['String'];
   id: Scalars['String'];
   indexInBlock: Scalars['Int'];
   loan: Loan;
@@ -641,6 +687,15 @@ export type LoanDefaultReminderNotification = Node & Notification & {
   user: User;
 };
 
+export type LoanDefaulted = LoanEvent & Node & {
+  __typename?: 'LoanDefaulted';
+  eventType: Scalars['String'];
+  id: Scalars['String'];
+  loan: Loan;
+  loanId: Scalars['String'];
+  timestamp: Scalars['DateTime'];
+};
+
 export type LoanDefaultedNotification = Node & Notification & {
   __typename?: 'LoanDefaultedNotification';
   createdOn: Scalars['DateTime'];
@@ -652,8 +707,54 @@ export type LoanDefaultedNotification = Node & Notification & {
   user: User;
 };
 
-export type LoanExtended = LoanActivity & Node & {
+export type LoanEvent = {
+  eventType: Scalars['String'];
+  id: Scalars['String'];
+  loan: Loan;
+  loanId: Scalars['String'];
+  timestamp: Scalars['DateTime'];
+};
+
+export type LoanEventConnection = {
+  __typename?: 'LoanEventConnection';
+  edges: Array<LoanEventEdge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int'];
+};
+
+export type LoanEventEdge = {
+  __typename?: 'LoanEventEdge';
+  cursor: Scalars['String'];
+  node: LoanEvent;
+};
+
+export enum LoanEventSortField {
+  Timestamp = 'TIMESTAMP'
+}
+
+export type LoanEventSortInput = {
+  field: LoanEventSortField;
+  order: Ordering;
+};
+
+export enum LoanEventType {
+  LoanAuctioned = 'LOAN_AUCTIONED',
+  LoanBoughtOut = 'LOAN_BOUGHT_OUT',
+  LoanDefaulted = 'LOAN_DEFAULTED',
+  LoanExtended = 'LOAN_EXTENDED',
+  LoanForeclosed = 'LOAN_FORECLOSED',
+  LoanInitiated = 'LOAN_INITIATED',
+  LoanRefinanced = 'LOAN_REFINANCED',
+  LoanRenegotiated = 'LOAN_RENEGOTIATED',
+  LoanRepaid = 'LOAN_REPAID',
+  LoanSentToAuction = 'LOAN_SENT_TO_AUCTION',
+  LoanTopedUp = 'LOAN_TOPED_UP'
+}
+
+export type LoanExtended = LoanActivity & LoanEvent & Node & {
   __typename?: 'LoanExtended';
+  activityType: Scalars['String'];
+  eventType: Scalars['String'];
   id: Scalars['String'];
   indexInBlock: Scalars['Int'];
   loan: Loan;
@@ -677,8 +778,10 @@ export type LoanExtendedNotification = Node & Notification & {
   user: User;
 };
 
-export type LoanForeclosed = LoanActivity & Node & {
+export type LoanForeclosed = LoanActivity & LoanEvent & Node & {
   __typename?: 'LoanForeclosed';
+  activityType: Scalars['String'];
+  eventType: Scalars['String'];
   id: Scalars['String'];
   indexInBlock: Scalars['Int'];
   loan: Loan;
@@ -689,8 +792,10 @@ export type LoanForeclosed = LoanActivity & Node & {
   txHash: Scalars['Hash'];
 };
 
-export type LoanInitiated = LoanActivity & Node & {
+export type LoanInitiated = LoanActivity & LoanEvent & Node & {
   __typename?: 'LoanInitiated';
+  activityType: Scalars['String'];
+  eventType: Scalars['String'];
   id: Scalars['String'];
   indexInBlock: Scalars['Int'];
   loan: Loan;
@@ -714,9 +819,11 @@ export type LoanPayment = Node & {
   source: Scalars['Address'];
 };
 
-export type LoanRefinanced = LoanActivity & Node & {
+export type LoanRefinanced = LoanActivity & LoanEvent & Node & {
   __typename?: 'LoanRefinanced';
+  activityType: Scalars['String'];
   addedNewTranche: Scalars['Boolean'];
+  eventType: Scalars['String'];
   id: Scalars['String'];
   indexInBlock: Scalars['Int'];
   isRenegotiation: Scalars['Boolean'];
@@ -728,8 +835,10 @@ export type LoanRefinanced = LoanActivity & Node & {
   txHash: Scalars['Hash'];
 };
 
-export type LoanRefinancedFromOffers = LoanActivity & Node & {
+export type LoanRefinancedFromOffers = LoanActivity & LoanEvent & Node & {
   __typename?: 'LoanRefinancedFromOffers';
+  activityType: Scalars['String'];
+  eventType: Scalars['String'];
   id: Scalars['String'];
   indexInBlock: Scalars['Int'];
   loan: Loan;
@@ -753,8 +862,10 @@ export type LoanRefinancedNotification = Node & Notification & {
   user: User;
 };
 
-export type LoanRepaid = LoanActivity & Node & {
+export type LoanRepaid = LoanActivity & LoanEvent & Node & {
   __typename?: 'LoanRepaid';
+  activityType: Scalars['String'];
+  eventType: Scalars['String'];
   id: Scalars['String'];
   indexInBlock: Scalars['Int'];
   loan: Loan;
@@ -777,8 +888,10 @@ export type LoanRepaidNotification = Node & Notification & {
   user: User;
 };
 
-export type LoanSentToAuction = LoanActivity & Node & {
+export type LoanSentToAuction = LoanActivity & LoanEvent & Node & {
   __typename?: 'LoanSentToAuction';
+  activityType: Scalars['String'];
+  eventType: Scalars['String'];
   id: Scalars['String'];
   indexInBlock: Scalars['Int'];
   liquidatorAddress: Scalars['String'];
@@ -988,8 +1101,8 @@ export type MutationAddOrUpdateRenegotiationRequestArgs = {
 
 
 export type MutationAddOrUpdateTopUpRequestArgs = {
-  desiredAprBps: Scalars['BigInt'];
-  desiredTopUp: Scalars['BigInt'];
+  desiredAprBps?: InputMaybe<Scalars['BigInt']>;
+  desiredTopUp?: InputMaybe<Scalars['BigInt']>;
   loanId: Scalars['String'];
 };
 
@@ -1065,6 +1178,7 @@ export type MutationRemoveTopUpRequestArgs = {
 
 
 export type MutationSaveRenegotiationSignedOfferArgs = {
+  fallbackOfferInput?: InputMaybe<SingleNftSignedOfferInput>;
   signedRenegotiationInput: SignedRenegotiationOfferInput;
 };
 
@@ -1345,6 +1459,7 @@ export type OfferValidatorInput = {
 
 export enum OffersSortField {
   AprBps = 'APR_BPS',
+  AvailablePrincipalAmount = 'AVAILABLE_PRINCIPAL_AMOUNT',
   CreatedDate = 'CREATED_DATE',
   DailyInterest = 'DAILY_INTEREST',
   Duration = 'DURATION',
@@ -1494,8 +1609,157 @@ export type PointActivityEdge = {
   node: PointActivity;
 };
 
+export type Pool = Node & {
+  __typename?: 'Pool';
+  address: Scalars['Address'];
+  asset: Currency;
+  baseRateAllocator: PoolBaseRateAllocator;
+  collectionFactors: Array<PoolCollectionFactors>;
+  currency: Currency;
+  description: Scalars['String'];
+  id: Scalars['String'];
+  poolActivities: Array<PoolActivity>;
+  statistics: PoolStatistics;
+};
+
+export type PoolActivity = {
+  id: Scalars['String'];
+  indexInBlock: Scalars['Int'];
+  pool: Pool;
+  poolAddress: Scalars['Address'];
+  timestamp: Scalars['DateTime'];
+  txHash: Scalars['Hash'];
+};
+
+export type PoolActivityConnection = {
+  __typename?: 'PoolActivityConnection';
+  edges: Array<PoolActivityEdge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int'];
+};
+
+export type PoolActivityEdge = {
+  __typename?: 'PoolActivityEdge';
+  cursor: Scalars['String'];
+  node: PoolActivity;
+};
+
+export enum PoolActivityType {
+  Erc4626Deposit = 'ERC4626_DEPOSIT',
+  Erc4626Withdraw = 'ERC4626_WITHDRAW',
+  PoolAprFactorSet = 'POOL_APR_FACTOR_SET',
+  PoolAprPremiumSet = 'POOL_APR_PREMIUM_SET',
+  PoolBaseInterestAllocatorSet = 'POOL_BASE_INTEREST_ALLOCATOR_SET',
+  PoolCollectionFactorsSet = 'POOL_COLLECTION_FACTORS_SET',
+  PoolReallocated = 'POOL_REALLOCATED',
+  QueueDeployed = 'QUEUE_DEPLOYED',
+  WithdrawalPositionLocked = 'WITHDRAWAL_POSITION_LOCKED',
+  WithdrawalPositionMinted = 'WITHDRAWAL_POSITION_MINTED',
+  WithdrawnFromQueue = 'WITHDRAWN_FROM_QUEUE'
+}
+
+export type PoolAprFactorSet = Node & PoolActivity & {
+  __typename?: 'PoolAprFactorSet';
+  id: Scalars['String'];
+  indexInBlock: Scalars['Int'];
+  pool: Pool;
+  poolAddress: Scalars['Address'];
+  timestamp: Scalars['DateTime'];
+  txHash: Scalars['Hash'];
+};
+
+export type PoolAprPremiumSet = Node & PoolActivity & {
+  __typename?: 'PoolAprPremiumSet';
+  aprPremium: Scalars['BigInt'];
+  id: Scalars['String'];
+  indexInBlock: Scalars['Int'];
+  pool: Pool;
+  poolAddress: Scalars['Address'];
+  timestamp: Scalars['DateTime'];
+  txHash: Scalars['Hash'];
+};
+
+export type PoolBaseInterestAllocatorSet = Node & PoolActivity & {
+  __typename?: 'PoolBaseInterestAllocatorSet';
+  id: Scalars['String'];
+  indexInBlock: Scalars['Int'];
+  pool: Pool;
+  poolAddress: Scalars['Address'];
+  timestamp: Scalars['DateTime'];
+  txHash: Scalars['Hash'];
+};
+
+export type PoolBaseRateAllocator = Node & {
+  __typename?: 'PoolBaseRateAllocator';
+  address: Scalars['Address'];
+  currency: Currency;
+  description: Scalars['String'];
+  id: Scalars['String'];
+  stakeCurrency: Currency;
+};
+
+export type PoolCollectionFactors = Node & {
+  __typename?: 'PoolCollectionFactors';
+  collection: Collection;
+  collectionId: Scalars['Int'];
+  duration: Scalars['BigInt'];
+  id: Scalars['String'];
+  offerId: Scalars['String'];
+  pool: Pool;
+  poolAddress: Scalars['String'];
+  principalCurrentFactor: Scalars['BigInt'];
+  principalHistoricalFactor: Scalars['BigInt'];
+};
+
+export type PoolCollectionFactorsSet = Node & PoolActivity & {
+  __typename?: 'PoolCollectionFactorsSet';
+  id: Scalars['String'];
+  indexInBlock: Scalars['Int'];
+  pool: Pool;
+  poolAddress: Scalars['Address'];
+  timestamp: Scalars['DateTime'];
+  txHash: Scalars['Hash'];
+};
+
+export type PoolConnection = {
+  __typename?: 'PoolConnection';
+  edges: Array<PoolEdge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int'];
+};
+
+export type PoolEdge = {
+  __typename?: 'PoolEdge';
+  cursor: Scalars['String'];
+  node: Pool;
+};
+
+export type PoolReallocated = Node & PoolActivity & {
+  __typename?: 'PoolReallocated';
+  id: Scalars['String'];
+  indexInBlock: Scalars['Int'];
+  pool: Pool;
+  poolAddress: Scalars['Address'];
+  timestamp: Scalars['DateTime'];
+  txHash: Scalars['Hash'];
+};
+
+export type PoolStatistics = {
+  __typename?: 'PoolStatistics';
+  activeLoansCount: Scalars['Int'];
+  activeOffersCount: Scalars['Int'];
+  balanceAllocatedBaseRate: Scalars['BigInt'];
+  liquid: Scalars['BigInt'];
+  outstandingApr: Scalars['Float'];
+  outstandingPrincipal: Scalars['BigInt'];
+  realizedApr: Scalars['Float'];
+  totalDeposits: Scalars['BigInt'];
+  totalLoanVolume: Scalars['BigInt'];
+};
+
 export type Query = {
   __typename?: 'Query';
+  getCollectionActivitiesCount: CollectionEventsCountByDayAndCurrency;
   getCollectionBySlug?: Maybe<Collection>;
   getCollectionLoansData: CollectionLoansData;
   getCollectionsByContractAddress: Array<Collection>;
@@ -1506,6 +1770,7 @@ export type Query = {
   getNftBySlugAndTokenId?: Maybe<Nft>;
   getOutstandingLoanStatistics: OutstandingLoanStatistics;
   getPointsFromReferrals: Scalars['Int'];
+  getPoolByShareSymbol?: Maybe<Pool>;
   getReferredWallets: Scalars['Int'];
   getSourcesStatistics: SourcesStatistics;
   getSourcesStatisticsByCollection: Array<SourceStatisticsFromCollection>;
@@ -1518,7 +1783,12 @@ export type Query = {
   listCollectionsWithLoans: CollectionConnection;
   listListings: ListingConnection;
   listListingsForSale: OrderConnection;
+  /**
+   * Deprecated.
+   * @deprecated Use list_loan_events instead.
+   */
   listLoanActivities: LoanActivityConnection;
+  listLoanEvents: LoanEventConnection;
   listLoans: MultiSourceLoanConnection;
   listNftDelegations: DelegationConnection;
   listNftOffersAndRenegotiations: SingleNftOfferCollectionOfferRenegotiationConnection;
@@ -1526,9 +1796,20 @@ export type Query = {
   listNftsFromUser: NftConnection;
   listNotifications: NotificationConnection;
   listOffers: OfferConnection;
+  listPoolActivities: PoolActivityConnection;
+  listPools: PoolConnection;
   listRenegotiations: RenegotiationConnection;
   listSources: SourceLostSourceConnection;
+  listWithdrawalPositions: WithdrawalPositionConnection;
+  listWithdrawalQueues: WithdrawalQueueConnection;
   me?: Maybe<User>;
+};
+
+
+export type QueryGetCollectionActivitiesCountArgs = {
+  collectionId: Scalars['Int'];
+  currencyAddress?: InputMaybe<Scalars['Address']>;
+  fromTimestamp: Scalars['Int'];
 };
 
 
@@ -1575,6 +1856,11 @@ export type QueryGetNftByContractAddressAndTokenIdArgs = {
 export type QueryGetNftBySlugAndTokenIdArgs = {
   slug: Scalars['String'];
   tokenId: Scalars['BigInt'];
+};
+
+
+export type QueryGetPoolByShareSymbolArgs = {
+  symbol: Scalars['String'];
 };
 
 
@@ -1676,10 +1962,24 @@ export type QueryListListingsForSaleArgs = {
 export type QueryListLoanActivitiesArgs = {
   after?: InputMaybe<Scalars['String']>;
   collections?: InputMaybe<Array<Scalars['Int']>>;
+  currencyAddress?: InputMaybe<Scalars['Address']>;
   first?: Scalars['Int'];
+  fromTimestamp?: InputMaybe<Scalars['Int']>;
   loanId?: InputMaybe<Scalars['String']>;
   sortBy?: InputMaybe<Array<LoanActivitySortInput>>;
   types?: InputMaybe<Array<LoanActivityType>>;
+};
+
+
+export type QueryListLoanEventsArgs = {
+  after?: InputMaybe<Scalars['String']>;
+  collections?: InputMaybe<Array<Scalars['Int']>>;
+  currencyAddress?: InputMaybe<Scalars['Address']>;
+  first?: Scalars['Int'];
+  fromTimestamp?: InputMaybe<Scalars['Int']>;
+  loanId?: InputMaybe<Scalars['String']>;
+  sortBy?: InputMaybe<Array<LoanEventSortInput>>;
+  types?: InputMaybe<Array<LoanEventType>>;
 };
 
 
@@ -1783,6 +2083,22 @@ export type QueryListOffersArgs = {
 };
 
 
+export type QueryListPoolActivitiesArgs = {
+  after?: InputMaybe<Scalars['String']>;
+  first?: Scalars['Int'];
+  ownerAddresses?: InputMaybe<Array<Scalars['Address']>>;
+  poolAddresses?: InputMaybe<Array<Scalars['Address']>>;
+  types?: InputMaybe<Array<PoolActivityType>>;
+};
+
+
+export type QueryListPoolsArgs = {
+  addresses?: InputMaybe<Array<Scalars['String']>>;
+  after?: InputMaybe<Scalars['String']>;
+  first?: Scalars['Int'];
+};
+
+
 export type QueryListRenegotiationsArgs = {
   after?: InputMaybe<Scalars['String']>;
   collections?: InputMaybe<Array<Scalars['Int']>>;
@@ -1812,6 +2128,33 @@ export type QueryListSourcesArgs = {
   statuses?: InputMaybe<Array<LoanStatusType>>;
   terms?: InputMaybe<TermsFilter>;
   withdrawalQueues?: InputMaybe<Array<Scalars['Int']>>;
+};
+
+
+export type QueryListWithdrawalPositionsArgs = {
+  after?: InputMaybe<Scalars['String']>;
+  first?: Scalars['Int'];
+  owner?: InputMaybe<Scalars['Address']>;
+  poolAddresses?: InputMaybe<Array<Scalars['Address']>>;
+};
+
+
+export type QueryListWithdrawalQueuesArgs = {
+  after?: InputMaybe<Scalars['String']>;
+  first?: Scalars['Int'];
+  poolAddresses?: InputMaybe<Array<Scalars['Address']>>;
+};
+
+export type QueueDeployed = Node & PoolActivity & {
+  __typename?: 'QueueDeployed';
+  id: Scalars['String'];
+  index: Scalars['Int'];
+  indexInBlock: Scalars['Int'];
+  pool: Pool;
+  poolAddress: Scalars['Address'];
+  queueAddress: Scalars['Address'];
+  timestamp: Scalars['DateTime'];
+  txHash: Scalars['Hash'];
 };
 
 export type RangeInput = {
@@ -1934,6 +2277,8 @@ export type SellAndRepayOrder = Activity & Node & Order & {
   id: Scalars['String'];
   isAsk: Scalars['Boolean'];
   isPrivate: Scalars['Boolean'];
+  loan: MultiSourceLoan;
+  loanId: Scalars['String'];
   maker: Scalars['Address'];
   marketPlace: Scalars['String'];
   marketPlaceAddress: Scalars['Address'];
@@ -2219,8 +2564,8 @@ export enum TokenStandardType {
 export type TopUpRequest = Node & {
   __typename?: 'TopUpRequest';
   createdDate: Scalars['DateTime'];
-  desiredAprBps: Scalars['BigInt'];
-  desiredTopUp: Scalars['BigInt'];
+  desiredAprBps?: Maybe<Scalars['BigInt']>;
+  desiredTopUp?: Maybe<Scalars['BigInt']>;
   expirationDate: Scalars['DateTime'];
   id: Scalars['String'];
   loanId: Scalars['String'];
@@ -2485,6 +2830,103 @@ export type UserStatisticsWavgRepaidAprByCollectionArgs = {
   walletsAddresses: Array<Scalars['Address']>;
 };
 
+export type WithdrawalPosition = Node & {
+  __typename?: 'WithdrawalPosition';
+  available: Scalars['BigInt'];
+  id: Scalars['String'];
+  nft: Nft;
+  nftId: Scalars['Int'];
+  pending: Scalars['BigInt'];
+  requested: Scalars['BigInt'];
+  shares: Scalars['BigInt'];
+  unlockTime?: Maybe<Scalars['DateTime']>;
+  withdrawalQueue: WithdrawalQueue;
+  withdrawalQueueId: Scalars['Int'];
+  withdrawn: Scalars['BigInt'];
+};
+
+export type WithdrawalPositionConnection = {
+  __typename?: 'WithdrawalPositionConnection';
+  edges: Array<WithdrawalPositionEdge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int'];
+};
+
+export type WithdrawalPositionEdge = {
+  __typename?: 'WithdrawalPositionEdge';
+  cursor: Scalars['String'];
+  node: WithdrawalPosition;
+};
+
+export type WithdrawalPositionLocked = Node & PoolActivity & {
+  __typename?: 'WithdrawalPositionLocked';
+  contract: Scalars['Address'];
+  id: Scalars['String'];
+  indexInBlock: Scalars['Int'];
+  pool: Pool;
+  poolAddress: Scalars['Address'];
+  timestamp: Scalars['DateTime'];
+  txHash: Scalars['Hash'];
+  unlockTime: Scalars['DateTime'];
+};
+
+export type WithdrawalPositionMinted = Node & PoolActivity & {
+  __typename?: 'WithdrawalPositionMinted';
+  contract: Scalars['Address'];
+  id: Scalars['String'];
+  indexInBlock: Scalars['Int'];
+  pool: Pool;
+  poolAddress: Scalars['Address'];
+  receiver: Scalars['Address'];
+  shares: Scalars['BigInt'];
+  timestamp: Scalars['DateTime'];
+  txHash: Scalars['Hash'];
+};
+
+export type WithdrawalQueue = Node & {
+  __typename?: 'WithdrawalQueue';
+  balance: Scalars['BigInt'];
+  collection: Collection;
+  collectionId: Scalars['Int'];
+  id: Scalars['String'];
+  index: Scalars['Int'];
+  pending: Scalars['BigInt'];
+  pool: Pool;
+  poolAddress: Scalars['Address'];
+  requested: Scalars['BigInt'];
+  requesters: Scalars['Int'];
+  startTime: Scalars['DateTime'];
+  status: Scalars['String'];
+  totalShares: Scalars['BigInt'];
+  totalWithdrawn: Scalars['BigInt'];
+};
+
+export type WithdrawalQueueConnection = {
+  __typename?: 'WithdrawalQueueConnection';
+  edges: Array<WithdrawalQueueEdge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int'];
+};
+
+export type WithdrawalQueueEdge = {
+  __typename?: 'WithdrawalQueueEdge';
+  cursor: Scalars['String'];
+  node: WithdrawalQueue;
+};
+
+export type WithdrawnFromQueue = Node & PoolActivity & {
+  __typename?: 'WithdrawnFromQueue';
+  available: Scalars['BigInt'];
+  contract: Scalars['Address'];
+  id: Scalars['String'];
+  indexInBlock: Scalars['Int'];
+  pool: Pool;
+  poolAddress: Scalars['Address'];
+  receiver: Scalars['Address'];
+  timestamp: Scalars['DateTime'];
+  txHash: Scalars['Hash'];
+};
+
 export type CurrencyAmountInfoFragment = { __typename?: 'CurrencyAmount', amount: number, currency: { __typename?: 'Currency', address: Address, decimals: number } };
 
 export type CurrencyInfoFragment = { __typename?: 'Currency', address: Address, decimals: number };
@@ -2586,11 +3028,12 @@ export type HideRenegotiationOfferMutationVariables = Exact<{
 export type HideRenegotiationOfferMutation = { __typename?: 'Mutation', hideRenegotiation: { __typename?: 'Renegotiation', id: string } };
 
 export type SaveRenegotiationOfferMutationVariables = Exact<{
-  offer: SignedRenegotiationOfferInput;
+  renegotiation: SignedRenegotiationOfferInput;
+  fallbackOffer?: InputMaybe<SingleNftSignedOfferInput>;
 }>;
 
 
-export type SaveRenegotiationOfferMutation = { __typename?: 'Mutation', offer: { __typename?: 'Renegotiation', id: string, status: string } };
+export type SaveRenegotiationOfferMutation = { __typename?: 'Mutation', renegotiation: { __typename?: 'Renegotiation', id: string, status: string } };
 
 export type UnhideRenegotiationOfferMutationVariables = Exact<{
   id: Scalars['String'];
@@ -2854,6 +3297,18 @@ export type CollectionEdgeFieldPolicy = {
 	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
 	node?: FieldPolicy<any> | FieldReadFunction<any>
 };
+export type CollectionEventsCountByDayAndCurrencyKeySpecifier = ('auctions' | 'buyouts' | 'defaults' | 'foreclosings' | 'originations' | 'refinancings' | 'renegotiations' | 'repayments' | 'topUps' | CollectionEventsCountByDayAndCurrencyKeySpecifier)[];
+export type CollectionEventsCountByDayAndCurrencyFieldPolicy = {
+	auctions?: FieldPolicy<any> | FieldReadFunction<any>,
+	buyouts?: FieldPolicy<any> | FieldReadFunction<any>,
+	defaults?: FieldPolicy<any> | FieldReadFunction<any>,
+	foreclosings?: FieldPolicy<any> | FieldReadFunction<any>,
+	originations?: FieldPolicy<any> | FieldReadFunction<any>,
+	refinancings?: FieldPolicy<any> | FieldReadFunction<any>,
+	renegotiations?: FieldPolicy<any> | FieldReadFunction<any>,
+	repayments?: FieldPolicy<any> | FieldReadFunction<any>,
+	topUps?: FieldPolicy<any> | FieldReadFunction<any>
+};
 export type CollectionLoansDataKeySpecifier = ('maxAprBps' | 'maxPrincipalAmount' | 'maxRemainingTime' | 'minAprBps' | 'minPrincipalAmount' | 'minRemainingTime' | CollectionLoansDataKeySpecifier)[];
 export type CollectionLoansDataFieldPolicy = {
 	maxAprBps?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3000,6 +3455,33 @@ export type DelegationEdgeFieldPolicy = {
 	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
 	node?: FieldPolicy<any> | FieldReadFunction<any>
 };
+export type ERC4626DepositKeySpecifier = ('assets' | 'caller' | 'id' | 'indexInBlock' | 'owner' | 'pool' | 'poolAddress' | 'shares' | 'timestamp' | 'txHash' | ERC4626DepositKeySpecifier)[];
+export type ERC4626DepositFieldPolicy = {
+	assets?: FieldPolicy<any> | FieldReadFunction<any>,
+	caller?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
+	owner?: FieldPolicy<any> | FieldReadFunction<any>,
+	pool?: FieldPolicy<any> | FieldReadFunction<any>,
+	poolAddress?: FieldPolicy<any> | FieldReadFunction<any>,
+	shares?: FieldPolicy<any> | FieldReadFunction<any>,
+	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
+	txHash?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type ERC4626WithdrawKeySpecifier = ('assets' | 'caller' | 'id' | 'indexInBlock' | 'owner' | 'pool' | 'poolAddress' | 'receiver' | 'shares' | 'timestamp' | 'txHash' | ERC4626WithdrawKeySpecifier)[];
+export type ERC4626WithdrawFieldPolicy = {
+	assets?: FieldPolicy<any> | FieldReadFunction<any>,
+	caller?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
+	owner?: FieldPolicy<any> | FieldReadFunction<any>,
+	pool?: FieldPolicy<any> | FieldReadFunction<any>,
+	poolAddress?: FieldPolicy<any> | FieldReadFunction<any>,
+	receiver?: FieldPolicy<any> | FieldReadFunction<any>,
+	shares?: FieldPolicy<any> | FieldReadFunction<any>,
+	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
+	txHash?: FieldPolicy<any> | FieldReadFunction<any>
+};
 export type LinkedWalletsKeySpecifier = ('id' | 'pending' | 'shouldAccept' | 'walletAddress' | LinkedWalletsKeySpecifier)[];
 export type LinkedWalletsFieldPolicy = {
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3056,8 +3538,10 @@ export type LoanActivitiesStatisticsByMonthFieldPolicy = {
 	count?: FieldPolicy<any> | FieldReadFunction<any>,
 	outstanding?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type LoanActivityKeySpecifier = ('id' | 'indexInBlock' | 'loan' | 'loanId' | 'multiSourceLoanHistory' | 'nextActivity' | 'timestamp' | 'txHash' | LoanActivityKeySpecifier)[];
+export type LoanActivityKeySpecifier = ('activityType' | 'eventType' | 'id' | 'indexInBlock' | 'loan' | 'loanId' | 'multiSourceLoanHistory' | 'nextActivity' | 'timestamp' | 'txHash' | LoanActivityKeySpecifier)[];
 export type LoanActivityFieldPolicy = {
+	activityType?: FieldPolicy<any> | FieldReadFunction<any>,
+	eventType?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
 	loan?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3078,8 +3562,10 @@ export type LoanActivityEdgeFieldPolicy = {
 	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
 	node?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type LoanAuctionedKeySpecifier = ('id' | 'indexInBlock' | 'loan' | 'loanId' | 'loanPayments' | 'multiSourceLoanHistory' | 'nextActivity' | 'timestamp' | 'totalAuctioned' | 'txHash' | 'withBuyout' | LoanAuctionedKeySpecifier)[];
+export type LoanAuctionedKeySpecifier = ('activityType' | 'eventType' | 'id' | 'indexInBlock' | 'loan' | 'loanId' | 'loanPayments' | 'multiSourceLoanHistory' | 'nextActivity' | 'timestamp' | 'totalAuctioned' | 'txHash' | 'withBuyout' | LoanAuctionedKeySpecifier)[];
 export type LoanAuctionedFieldPolicy = {
+	activityType?: FieldPolicy<any> | FieldReadFunction<any>,
+	eventType?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
 	loan?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3115,6 +3601,14 @@ export type LoanDefaultReminderNotificationFieldPolicy = {
 	readOn?: FieldPolicy<any> | FieldReadFunction<any>,
 	user?: FieldPolicy<any> | FieldReadFunction<any>
 };
+export type LoanDefaultedKeySpecifier = ('eventType' | 'id' | 'loan' | 'loanId' | 'timestamp' | LoanDefaultedKeySpecifier)[];
+export type LoanDefaultedFieldPolicy = {
+	eventType?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	loan?: FieldPolicy<any> | FieldReadFunction<any>,
+	loanId?: FieldPolicy<any> | FieldReadFunction<any>,
+	timestamp?: FieldPolicy<any> | FieldReadFunction<any>
+};
 export type LoanDefaultedNotificationKeySpecifier = ('createdOn' | 'id' | 'loan' | 'loanId' | 'notificationType' | 'readOn' | 'user' | LoanDefaultedNotificationKeySpecifier)[];
 export type LoanDefaultedNotificationFieldPolicy = {
 	createdOn?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3125,8 +3619,29 @@ export type LoanDefaultedNotificationFieldPolicy = {
 	readOn?: FieldPolicy<any> | FieldReadFunction<any>,
 	user?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type LoanExtendedKeySpecifier = ('id' | 'indexInBlock' | 'loan' | 'loanId' | 'multiSourceLoanHistory' | 'nextActivity' | 'timestamp' | 'txHash' | LoanExtendedKeySpecifier)[];
+export type LoanEventKeySpecifier = ('eventType' | 'id' | 'loan' | 'loanId' | 'timestamp' | LoanEventKeySpecifier)[];
+export type LoanEventFieldPolicy = {
+	eventType?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	loan?: FieldPolicy<any> | FieldReadFunction<any>,
+	loanId?: FieldPolicy<any> | FieldReadFunction<any>,
+	timestamp?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type LoanEventConnectionKeySpecifier = ('edges' | 'pageInfo' | 'totalCount' | LoanEventConnectionKeySpecifier)[];
+export type LoanEventConnectionFieldPolicy = {
+	edges?: FieldPolicy<any> | FieldReadFunction<any>,
+	pageInfo?: FieldPolicy<any> | FieldReadFunction<any>,
+	totalCount?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type LoanEventEdgeKeySpecifier = ('cursor' | 'node' | LoanEventEdgeKeySpecifier)[];
+export type LoanEventEdgeFieldPolicy = {
+	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
+	node?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type LoanExtendedKeySpecifier = ('activityType' | 'eventType' | 'id' | 'indexInBlock' | 'loan' | 'loanId' | 'multiSourceLoanHistory' | 'nextActivity' | 'timestamp' | 'txHash' | LoanExtendedKeySpecifier)[];
 export type LoanExtendedFieldPolicy = {
+	activityType?: FieldPolicy<any> | FieldReadFunction<any>,
+	eventType?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
 	loan?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3148,8 +3663,10 @@ export type LoanExtendedNotificationFieldPolicy = {
 	readOn?: FieldPolicy<any> | FieldReadFunction<any>,
 	user?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type LoanForeclosedKeySpecifier = ('id' | 'indexInBlock' | 'loan' | 'loanId' | 'multiSourceLoanHistory' | 'nextActivity' | 'timestamp' | 'txHash' | LoanForeclosedKeySpecifier)[];
+export type LoanForeclosedKeySpecifier = ('activityType' | 'eventType' | 'id' | 'indexInBlock' | 'loan' | 'loanId' | 'multiSourceLoanHistory' | 'nextActivity' | 'timestamp' | 'txHash' | LoanForeclosedKeySpecifier)[];
 export type LoanForeclosedFieldPolicy = {
+	activityType?: FieldPolicy<any> | FieldReadFunction<any>,
+	eventType?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
 	loan?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3159,8 +3676,10 @@ export type LoanForeclosedFieldPolicy = {
 	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
 	txHash?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type LoanInitiatedKeySpecifier = ('id' | 'indexInBlock' | 'loan' | 'loanId' | 'multiSourceLoanHistory' | 'nextActivity' | 'timestamp' | 'txHash' | LoanInitiatedKeySpecifier)[];
+export type LoanInitiatedKeySpecifier = ('activityType' | 'eventType' | 'id' | 'indexInBlock' | 'loan' | 'loanId' | 'multiSourceLoanHistory' | 'nextActivity' | 'timestamp' | 'txHash' | LoanInitiatedKeySpecifier)[];
 export type LoanInitiatedFieldPolicy = {
+	activityType?: FieldPolicy<any> | FieldReadFunction<any>,
+	eventType?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
 	loan?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3182,9 +3701,11 @@ export type LoanPaymentFieldPolicy = {
 	protocolFee?: FieldPolicy<any> | FieldReadFunction<any>,
 	source?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type LoanRefinancedKeySpecifier = ('addedNewTranche' | 'id' | 'indexInBlock' | 'isRenegotiation' | 'loan' | 'loanId' | 'multiSourceLoanHistory' | 'nextActivity' | 'timestamp' | 'txHash' | LoanRefinancedKeySpecifier)[];
+export type LoanRefinancedKeySpecifier = ('activityType' | 'addedNewTranche' | 'eventType' | 'id' | 'indexInBlock' | 'isRenegotiation' | 'loan' | 'loanId' | 'multiSourceLoanHistory' | 'nextActivity' | 'timestamp' | 'txHash' | LoanRefinancedKeySpecifier)[];
 export type LoanRefinancedFieldPolicy = {
+	activityType?: FieldPolicy<any> | FieldReadFunction<any>,
 	addedNewTranche?: FieldPolicy<any> | FieldReadFunction<any>,
+	eventType?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
 	isRenegotiation?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3195,8 +3716,10 @@ export type LoanRefinancedFieldPolicy = {
 	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
 	txHash?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type LoanRefinancedFromOffersKeySpecifier = ('id' | 'indexInBlock' | 'loan' | 'loanId' | 'multiSourceLoanHistory' | 'nextActivity' | 'timestamp' | 'txHash' | LoanRefinancedFromOffersKeySpecifier)[];
+export type LoanRefinancedFromOffersKeySpecifier = ('activityType' | 'eventType' | 'id' | 'indexInBlock' | 'loan' | 'loanId' | 'multiSourceLoanHistory' | 'nextActivity' | 'timestamp' | 'txHash' | LoanRefinancedFromOffersKeySpecifier)[];
 export type LoanRefinancedFromOffersFieldPolicy = {
+	activityType?: FieldPolicy<any> | FieldReadFunction<any>,
+	eventType?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
 	loan?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3218,8 +3741,10 @@ export type LoanRefinancedNotificationFieldPolicy = {
 	readOn?: FieldPolicy<any> | FieldReadFunction<any>,
 	user?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type LoanRepaidKeySpecifier = ('id' | 'indexInBlock' | 'loan' | 'loanId' | 'multiSourceLoanHistory' | 'nextActivity' | 'timestamp' | 'totalInterest' | 'txHash' | LoanRepaidKeySpecifier)[];
+export type LoanRepaidKeySpecifier = ('activityType' | 'eventType' | 'id' | 'indexInBlock' | 'loan' | 'loanId' | 'multiSourceLoanHistory' | 'nextActivity' | 'timestamp' | 'totalInterest' | 'txHash' | LoanRepaidKeySpecifier)[];
 export type LoanRepaidFieldPolicy = {
+	activityType?: FieldPolicy<any> | FieldReadFunction<any>,
+	eventType?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
 	loan?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3240,8 +3765,10 @@ export type LoanRepaidNotificationFieldPolicy = {
 	readOn?: FieldPolicy<any> | FieldReadFunction<any>,
 	user?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type LoanSentToAuctionKeySpecifier = ('id' | 'indexInBlock' | 'liquidatorAddress' | 'loan' | 'loanId' | 'multiSourceLoanHistory' | 'nextActivity' | 'timestamp' | 'txHash' | LoanSentToAuctionKeySpecifier)[];
+export type LoanSentToAuctionKeySpecifier = ('activityType' | 'eventType' | 'id' | 'indexInBlock' | 'liquidatorAddress' | 'loan' | 'loanId' | 'multiSourceLoanHistory' | 'nextActivity' | 'timestamp' | 'txHash' | LoanSentToAuctionKeySpecifier)[];
 export type LoanSentToAuctionFieldPolicy = {
+	activityType?: FieldPolicy<any> | FieldReadFunction<any>,
+	eventType?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
 	liquidatorAddress?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3625,8 +4152,130 @@ export type PointActivityEdgeFieldPolicy = {
 	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
 	node?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type QueryKeySpecifier = ('getCollectionBySlug' | 'getCollectionLoansData' | 'getCollectionsByContractAddress' | 'getListingById' | 'getLoanActivitiesStatisticsByMonth' | 'getLoanById' | 'getNftByContractAddressAndTokenId' | 'getNftBySlugAndTokenId' | 'getOutstandingLoanStatistics' | 'getPointsFromReferrals' | 'getReferredWallets' | 'getSourcesStatistics' | 'getSourcesStatisticsByCollection' | 'getUserPointActivities' | 'getUserPoints' | 'listAuctions' | 'listBids' | 'listCollections' | 'listCollectionsWithListings' | 'listCollectionsWithLoans' | 'listListings' | 'listListingsForSale' | 'listLoanActivities' | 'listLoans' | 'listNftDelegations' | 'listNftOffersAndRenegotiations' | 'listNftsFromCollections' | 'listNftsFromUser' | 'listNotifications' | 'listOffers' | 'listRenegotiations' | 'listSources' | 'me' | QueryKeySpecifier)[];
+export type PoolKeySpecifier = ('address' | 'asset' | 'baseRateAllocator' | 'collectionFactors' | 'currency' | 'description' | 'id' | 'poolActivities' | 'statistics' | PoolKeySpecifier)[];
+export type PoolFieldPolicy = {
+	address?: FieldPolicy<any> | FieldReadFunction<any>,
+	asset?: FieldPolicy<any> | FieldReadFunction<any>,
+	baseRateAllocator?: FieldPolicy<any> | FieldReadFunction<any>,
+	collectionFactors?: FieldPolicy<any> | FieldReadFunction<any>,
+	currency?: FieldPolicy<any> | FieldReadFunction<any>,
+	description?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	poolActivities?: FieldPolicy<any> | FieldReadFunction<any>,
+	statistics?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type PoolActivityKeySpecifier = ('id' | 'indexInBlock' | 'pool' | 'poolAddress' | 'timestamp' | 'txHash' | PoolActivityKeySpecifier)[];
+export type PoolActivityFieldPolicy = {
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
+	pool?: FieldPolicy<any> | FieldReadFunction<any>,
+	poolAddress?: FieldPolicy<any> | FieldReadFunction<any>,
+	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
+	txHash?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type PoolActivityConnectionKeySpecifier = ('edges' | 'pageInfo' | 'totalCount' | PoolActivityConnectionKeySpecifier)[];
+export type PoolActivityConnectionFieldPolicy = {
+	edges?: FieldPolicy<any> | FieldReadFunction<any>,
+	pageInfo?: FieldPolicy<any> | FieldReadFunction<any>,
+	totalCount?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type PoolActivityEdgeKeySpecifier = ('cursor' | 'node' | PoolActivityEdgeKeySpecifier)[];
+export type PoolActivityEdgeFieldPolicy = {
+	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
+	node?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type PoolAprFactorSetKeySpecifier = ('id' | 'indexInBlock' | 'pool' | 'poolAddress' | 'timestamp' | 'txHash' | PoolAprFactorSetKeySpecifier)[];
+export type PoolAprFactorSetFieldPolicy = {
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
+	pool?: FieldPolicy<any> | FieldReadFunction<any>,
+	poolAddress?: FieldPolicy<any> | FieldReadFunction<any>,
+	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
+	txHash?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type PoolAprPremiumSetKeySpecifier = ('aprPremium' | 'id' | 'indexInBlock' | 'pool' | 'poolAddress' | 'timestamp' | 'txHash' | PoolAprPremiumSetKeySpecifier)[];
+export type PoolAprPremiumSetFieldPolicy = {
+	aprPremium?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
+	pool?: FieldPolicy<any> | FieldReadFunction<any>,
+	poolAddress?: FieldPolicy<any> | FieldReadFunction<any>,
+	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
+	txHash?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type PoolBaseInterestAllocatorSetKeySpecifier = ('id' | 'indexInBlock' | 'pool' | 'poolAddress' | 'timestamp' | 'txHash' | PoolBaseInterestAllocatorSetKeySpecifier)[];
+export type PoolBaseInterestAllocatorSetFieldPolicy = {
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
+	pool?: FieldPolicy<any> | FieldReadFunction<any>,
+	poolAddress?: FieldPolicy<any> | FieldReadFunction<any>,
+	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
+	txHash?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type PoolBaseRateAllocatorKeySpecifier = ('address' | 'currency' | 'description' | 'id' | 'stakeCurrency' | PoolBaseRateAllocatorKeySpecifier)[];
+export type PoolBaseRateAllocatorFieldPolicy = {
+	address?: FieldPolicy<any> | FieldReadFunction<any>,
+	currency?: FieldPolicy<any> | FieldReadFunction<any>,
+	description?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	stakeCurrency?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type PoolCollectionFactorsKeySpecifier = ('collection' | 'collectionId' | 'duration' | 'id' | 'offerId' | 'pool' | 'poolAddress' | 'principalCurrentFactor' | 'principalHistoricalFactor' | PoolCollectionFactorsKeySpecifier)[];
+export type PoolCollectionFactorsFieldPolicy = {
+	collection?: FieldPolicy<any> | FieldReadFunction<any>,
+	collectionId?: FieldPolicy<any> | FieldReadFunction<any>,
+	duration?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	offerId?: FieldPolicy<any> | FieldReadFunction<any>,
+	pool?: FieldPolicy<any> | FieldReadFunction<any>,
+	poolAddress?: FieldPolicy<any> | FieldReadFunction<any>,
+	principalCurrentFactor?: FieldPolicy<any> | FieldReadFunction<any>,
+	principalHistoricalFactor?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type PoolCollectionFactorsSetKeySpecifier = ('id' | 'indexInBlock' | 'pool' | 'poolAddress' | 'timestamp' | 'txHash' | PoolCollectionFactorsSetKeySpecifier)[];
+export type PoolCollectionFactorsSetFieldPolicy = {
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
+	pool?: FieldPolicy<any> | FieldReadFunction<any>,
+	poolAddress?: FieldPolicy<any> | FieldReadFunction<any>,
+	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
+	txHash?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type PoolConnectionKeySpecifier = ('edges' | 'pageInfo' | 'totalCount' | PoolConnectionKeySpecifier)[];
+export type PoolConnectionFieldPolicy = {
+	edges?: FieldPolicy<any> | FieldReadFunction<any>,
+	pageInfo?: FieldPolicy<any> | FieldReadFunction<any>,
+	totalCount?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type PoolEdgeKeySpecifier = ('cursor' | 'node' | PoolEdgeKeySpecifier)[];
+export type PoolEdgeFieldPolicy = {
+	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
+	node?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type PoolReallocatedKeySpecifier = ('id' | 'indexInBlock' | 'pool' | 'poolAddress' | 'timestamp' | 'txHash' | PoolReallocatedKeySpecifier)[];
+export type PoolReallocatedFieldPolicy = {
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
+	pool?: FieldPolicy<any> | FieldReadFunction<any>,
+	poolAddress?: FieldPolicy<any> | FieldReadFunction<any>,
+	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
+	txHash?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type PoolStatisticsKeySpecifier = ('activeLoansCount' | 'activeOffersCount' | 'balanceAllocatedBaseRate' | 'liquid' | 'outstandingApr' | 'outstandingPrincipal' | 'realizedApr' | 'totalDeposits' | 'totalLoanVolume' | PoolStatisticsKeySpecifier)[];
+export type PoolStatisticsFieldPolicy = {
+	activeLoansCount?: FieldPolicy<any> | FieldReadFunction<any>,
+	activeOffersCount?: FieldPolicy<any> | FieldReadFunction<any>,
+	balanceAllocatedBaseRate?: FieldPolicy<any> | FieldReadFunction<any>,
+	liquid?: FieldPolicy<any> | FieldReadFunction<any>,
+	outstandingApr?: FieldPolicy<any> | FieldReadFunction<any>,
+	outstandingPrincipal?: FieldPolicy<any> | FieldReadFunction<any>,
+	realizedApr?: FieldPolicy<any> | FieldReadFunction<any>,
+	totalDeposits?: FieldPolicy<any> | FieldReadFunction<any>,
+	totalLoanVolume?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type QueryKeySpecifier = ('getCollectionActivitiesCount' | 'getCollectionBySlug' | 'getCollectionLoansData' | 'getCollectionsByContractAddress' | 'getListingById' | 'getLoanActivitiesStatisticsByMonth' | 'getLoanById' | 'getNftByContractAddressAndTokenId' | 'getNftBySlugAndTokenId' | 'getOutstandingLoanStatistics' | 'getPointsFromReferrals' | 'getPoolByShareSymbol' | 'getReferredWallets' | 'getSourcesStatistics' | 'getSourcesStatisticsByCollection' | 'getUserPointActivities' | 'getUserPoints' | 'listAuctions' | 'listBids' | 'listCollections' | 'listCollectionsWithListings' | 'listCollectionsWithLoans' | 'listListings' | 'listListingsForSale' | 'listLoanActivities' | 'listLoanEvents' | 'listLoans' | 'listNftDelegations' | 'listNftOffersAndRenegotiations' | 'listNftsFromCollections' | 'listNftsFromUser' | 'listNotifications' | 'listOffers' | 'listPoolActivities' | 'listPools' | 'listRenegotiations' | 'listSources' | 'listWithdrawalPositions' | 'listWithdrawalQueues' | 'me' | QueryKeySpecifier)[];
 export type QueryFieldPolicy = {
+	getCollectionActivitiesCount?: FieldPolicy<any> | FieldReadFunction<any>,
 	getCollectionBySlug?: FieldPolicy<any> | FieldReadFunction<any>,
 	getCollectionLoansData?: FieldPolicy<any> | FieldReadFunction<any>,
 	getCollectionsByContractAddress?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3637,6 +4286,7 @@ export type QueryFieldPolicy = {
 	getNftBySlugAndTokenId?: FieldPolicy<any> | FieldReadFunction<any>,
 	getOutstandingLoanStatistics?: FieldPolicy<any> | FieldReadFunction<any>,
 	getPointsFromReferrals?: FieldPolicy<any> | FieldReadFunction<any>,
+	getPoolByShareSymbol?: FieldPolicy<any> | FieldReadFunction<any>,
 	getReferredWallets?: FieldPolicy<any> | FieldReadFunction<any>,
 	getSourcesStatistics?: FieldPolicy<any> | FieldReadFunction<any>,
 	getSourcesStatisticsByCollection?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3650,6 +4300,7 @@ export type QueryFieldPolicy = {
 	listListings?: FieldPolicy<any> | FieldReadFunction<any>,
 	listListingsForSale?: FieldPolicy<any> | FieldReadFunction<any>,
 	listLoanActivities?: FieldPolicy<any> | FieldReadFunction<any>,
+	listLoanEvents?: FieldPolicy<any> | FieldReadFunction<any>,
 	listLoans?: FieldPolicy<any> | FieldReadFunction<any>,
 	listNftDelegations?: FieldPolicy<any> | FieldReadFunction<any>,
 	listNftOffersAndRenegotiations?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3657,9 +4308,24 @@ export type QueryFieldPolicy = {
 	listNftsFromUser?: FieldPolicy<any> | FieldReadFunction<any>,
 	listNotifications?: FieldPolicy<any> | FieldReadFunction<any>,
 	listOffers?: FieldPolicy<any> | FieldReadFunction<any>,
+	listPoolActivities?: FieldPolicy<any> | FieldReadFunction<any>,
+	listPools?: FieldPolicy<any> | FieldReadFunction<any>,
 	listRenegotiations?: FieldPolicy<any> | FieldReadFunction<any>,
 	listSources?: FieldPolicy<any> | FieldReadFunction<any>,
+	listWithdrawalPositions?: FieldPolicy<any> | FieldReadFunction<any>,
+	listWithdrawalQueues?: FieldPolicy<any> | FieldReadFunction<any>,
 	me?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type QueueDeployedKeySpecifier = ('id' | 'index' | 'indexInBlock' | 'pool' | 'poolAddress' | 'queueAddress' | 'timestamp' | 'txHash' | QueueDeployedKeySpecifier)[];
+export type QueueDeployedFieldPolicy = {
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	index?: FieldPolicy<any> | FieldReadFunction<any>,
+	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
+	pool?: FieldPolicy<any> | FieldReadFunction<any>,
+	poolAddress?: FieldPolicy<any> | FieldReadFunction<any>,
+	queueAddress?: FieldPolicy<any> | FieldReadFunction<any>,
+	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
+	txHash?: FieldPolicy<any> | FieldReadFunction<any>
 };
 export type RenegotiationKeySpecifier = ('aprBps' | 'availablePrincipalAmount' | 'createdDate' | 'duration' | 'expirationTime' | 'feeAmount' | 'hidden' | 'id' | 'isAddNewTranche' | 'lenderAddress' | 'loan' | 'loanAddress' | 'loanId' | 'loanReferenceId' | 'nft' | 'offerHash' | 'principalAmount' | 'renegotiationId' | 'repayment' | 'requiresLiquidation' | 'signature' | 'signerAddress' | 'status' | 'strictImprovement' | RenegotiationKeySpecifier)[];
 export type RenegotiationFieldPolicy = {
@@ -3732,7 +4398,7 @@ export type SaleFieldPolicy = {
 	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
 	txHash?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type SellAndRepayOrderKeySpecifier = ('cancelCalldata' | 'createdDate' | 'currency' | 'currencyAddress' | 'expiration' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'maker' | 'marketPlace' | 'marketPlaceAddress' | 'netAmount' | 'nft' | 'nftId' | 'nonce' | 'orderType' | 'price' | 'repaymentCalldata' | 'signature' | 'startTime' | 'status' | 'taker' | 'timestamp' | 'txHash' | SellAndRepayOrderKeySpecifier)[];
+export type SellAndRepayOrderKeySpecifier = ('cancelCalldata' | 'createdDate' | 'currency' | 'currencyAddress' | 'expiration' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'loan' | 'loanId' | 'maker' | 'marketPlace' | 'marketPlaceAddress' | 'netAmount' | 'nft' | 'nftId' | 'nonce' | 'orderType' | 'price' | 'repaymentCalldata' | 'signature' | 'startTime' | 'status' | 'taker' | 'timestamp' | 'txHash' | SellAndRepayOrderKeySpecifier)[];
 export type SellAndRepayOrderFieldPolicy = {
 	cancelCalldata?: FieldPolicy<any> | FieldReadFunction<any>,
 	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3744,6 +4410,8 @@ export type SellAndRepayOrderFieldPolicy = {
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	isAsk?: FieldPolicy<any> | FieldReadFunction<any>,
 	isPrivate?: FieldPolicy<any> | FieldReadFunction<any>,
+	loan?: FieldPolicy<any> | FieldReadFunction<any>,
+	loanId?: FieldPolicy<any> | FieldReadFunction<any>,
 	maker?: FieldPolicy<any> | FieldReadFunction<any>,
 	marketPlace?: FieldPolicy<any> | FieldReadFunction<any>,
 	marketPlaceAddress?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3995,6 +4663,94 @@ export type UserStatisticsFieldPolicy = {
 	wavgRepaidApr?: FieldPolicy<any> | FieldReadFunction<any>,
 	wavgRepaidAprByCollection?: FieldPolicy<any> | FieldReadFunction<any>
 };
+export type WithdrawalPositionKeySpecifier = ('available' | 'id' | 'nft' | 'nftId' | 'pending' | 'requested' | 'shares' | 'unlockTime' | 'withdrawalQueue' | 'withdrawalQueueId' | 'withdrawn' | WithdrawalPositionKeySpecifier)[];
+export type WithdrawalPositionFieldPolicy = {
+	available?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	nft?: FieldPolicy<any> | FieldReadFunction<any>,
+	nftId?: FieldPolicy<any> | FieldReadFunction<any>,
+	pending?: FieldPolicy<any> | FieldReadFunction<any>,
+	requested?: FieldPolicy<any> | FieldReadFunction<any>,
+	shares?: FieldPolicy<any> | FieldReadFunction<any>,
+	unlockTime?: FieldPolicy<any> | FieldReadFunction<any>,
+	withdrawalQueue?: FieldPolicy<any> | FieldReadFunction<any>,
+	withdrawalQueueId?: FieldPolicy<any> | FieldReadFunction<any>,
+	withdrawn?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type WithdrawalPositionConnectionKeySpecifier = ('edges' | 'pageInfo' | 'totalCount' | WithdrawalPositionConnectionKeySpecifier)[];
+export type WithdrawalPositionConnectionFieldPolicy = {
+	edges?: FieldPolicy<any> | FieldReadFunction<any>,
+	pageInfo?: FieldPolicy<any> | FieldReadFunction<any>,
+	totalCount?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type WithdrawalPositionEdgeKeySpecifier = ('cursor' | 'node' | WithdrawalPositionEdgeKeySpecifier)[];
+export type WithdrawalPositionEdgeFieldPolicy = {
+	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
+	node?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type WithdrawalPositionLockedKeySpecifier = ('contract' | 'id' | 'indexInBlock' | 'pool' | 'poolAddress' | 'timestamp' | 'txHash' | 'unlockTime' | WithdrawalPositionLockedKeySpecifier)[];
+export type WithdrawalPositionLockedFieldPolicy = {
+	contract?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
+	pool?: FieldPolicy<any> | FieldReadFunction<any>,
+	poolAddress?: FieldPolicy<any> | FieldReadFunction<any>,
+	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
+	txHash?: FieldPolicy<any> | FieldReadFunction<any>,
+	unlockTime?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type WithdrawalPositionMintedKeySpecifier = ('contract' | 'id' | 'indexInBlock' | 'pool' | 'poolAddress' | 'receiver' | 'shares' | 'timestamp' | 'txHash' | WithdrawalPositionMintedKeySpecifier)[];
+export type WithdrawalPositionMintedFieldPolicy = {
+	contract?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
+	pool?: FieldPolicy<any> | FieldReadFunction<any>,
+	poolAddress?: FieldPolicy<any> | FieldReadFunction<any>,
+	receiver?: FieldPolicy<any> | FieldReadFunction<any>,
+	shares?: FieldPolicy<any> | FieldReadFunction<any>,
+	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
+	txHash?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type WithdrawalQueueKeySpecifier = ('balance' | 'collection' | 'collectionId' | 'id' | 'index' | 'pending' | 'pool' | 'poolAddress' | 'requested' | 'requesters' | 'startTime' | 'status' | 'totalShares' | 'totalWithdrawn' | WithdrawalQueueKeySpecifier)[];
+export type WithdrawalQueueFieldPolicy = {
+	balance?: FieldPolicy<any> | FieldReadFunction<any>,
+	collection?: FieldPolicy<any> | FieldReadFunction<any>,
+	collectionId?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	index?: FieldPolicy<any> | FieldReadFunction<any>,
+	pending?: FieldPolicy<any> | FieldReadFunction<any>,
+	pool?: FieldPolicy<any> | FieldReadFunction<any>,
+	poolAddress?: FieldPolicy<any> | FieldReadFunction<any>,
+	requested?: FieldPolicy<any> | FieldReadFunction<any>,
+	requesters?: FieldPolicy<any> | FieldReadFunction<any>,
+	startTime?: FieldPolicy<any> | FieldReadFunction<any>,
+	status?: FieldPolicy<any> | FieldReadFunction<any>,
+	totalShares?: FieldPolicy<any> | FieldReadFunction<any>,
+	totalWithdrawn?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type WithdrawalQueueConnectionKeySpecifier = ('edges' | 'pageInfo' | 'totalCount' | WithdrawalQueueConnectionKeySpecifier)[];
+export type WithdrawalQueueConnectionFieldPolicy = {
+	edges?: FieldPolicy<any> | FieldReadFunction<any>,
+	pageInfo?: FieldPolicy<any> | FieldReadFunction<any>,
+	totalCount?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type WithdrawalQueueEdgeKeySpecifier = ('cursor' | 'node' | WithdrawalQueueEdgeKeySpecifier)[];
+export type WithdrawalQueueEdgeFieldPolicy = {
+	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
+	node?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type WithdrawnFromQueueKeySpecifier = ('available' | 'contract' | 'id' | 'indexInBlock' | 'pool' | 'poolAddress' | 'receiver' | 'timestamp' | 'txHash' | WithdrawnFromQueueKeySpecifier)[];
+export type WithdrawnFromQueueFieldPolicy = {
+	available?: FieldPolicy<any> | FieldReadFunction<any>,
+	contract?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
+	pool?: FieldPolicy<any> | FieldReadFunction<any>,
+	poolAddress?: FieldPolicy<any> | FieldReadFunction<any>,
+	receiver?: FieldPolicy<any> | FieldReadFunction<any>,
+	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
+	txHash?: FieldPolicy<any> | FieldReadFunction<any>
+};
 export type StrictTypedTypePolicies = {
 	ActiveOfferNotification?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | ActiveOfferNotificationKeySpecifier | (() => undefined | ActiveOfferNotificationKeySpecifier),
@@ -4060,6 +4816,10 @@ export type StrictTypedTypePolicies = {
 		keyFields?: false | CollectionEdgeKeySpecifier | (() => undefined | CollectionEdgeKeySpecifier),
 		fields?: CollectionEdgeFieldPolicy,
 	},
+	CollectionEventsCountByDayAndCurrency?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | CollectionEventsCountByDayAndCurrencyKeySpecifier | (() => undefined | CollectionEventsCountByDayAndCurrencyKeySpecifier),
+		fields?: CollectionEventsCountByDayAndCurrencyFieldPolicy,
+	},
 	CollectionLoansData?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | CollectionLoansDataKeySpecifier | (() => undefined | CollectionLoansDataKeySpecifier),
 		fields?: CollectionLoansDataFieldPolicy,
@@ -4103,6 +4863,14 @@ export type StrictTypedTypePolicies = {
 	DelegationEdge?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | DelegationEdgeKeySpecifier | (() => undefined | DelegationEdgeKeySpecifier),
 		fields?: DelegationEdgeFieldPolicy,
+	},
+	ERC4626Deposit?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | ERC4626DepositKeySpecifier | (() => undefined | ERC4626DepositKeySpecifier),
+		fields?: ERC4626DepositFieldPolicy,
+	},
+	ERC4626Withdraw?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | ERC4626WithdrawKeySpecifier | (() => undefined | ERC4626WithdrawKeySpecifier),
+		fields?: ERC4626WithdrawFieldPolicy,
 	},
 	LinkedWallets?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | LinkedWalletsKeySpecifier | (() => undefined | LinkedWalletsKeySpecifier),
@@ -4152,9 +4920,25 @@ export type StrictTypedTypePolicies = {
 		keyFields?: false | LoanDefaultReminderNotificationKeySpecifier | (() => undefined | LoanDefaultReminderNotificationKeySpecifier),
 		fields?: LoanDefaultReminderNotificationFieldPolicy,
 	},
+	LoanDefaulted?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | LoanDefaultedKeySpecifier | (() => undefined | LoanDefaultedKeySpecifier),
+		fields?: LoanDefaultedFieldPolicy,
+	},
 	LoanDefaultedNotification?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | LoanDefaultedNotificationKeySpecifier | (() => undefined | LoanDefaultedNotificationKeySpecifier),
 		fields?: LoanDefaultedNotificationFieldPolicy,
+	},
+	LoanEvent?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | LoanEventKeySpecifier | (() => undefined | LoanEventKeySpecifier),
+		fields?: LoanEventFieldPolicy,
+	},
+	LoanEventConnection?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | LoanEventConnectionKeySpecifier | (() => undefined | LoanEventConnectionKeySpecifier),
+		fields?: LoanEventConnectionFieldPolicy,
+	},
+	LoanEventEdge?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | LoanEventEdgeKeySpecifier | (() => undefined | LoanEventEdgeKeySpecifier),
+		fields?: LoanEventEdgeFieldPolicy,
 	},
 	LoanExtended?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | LoanExtendedKeySpecifier | (() => undefined | LoanExtendedKeySpecifier),
@@ -4336,9 +5120,69 @@ export type StrictTypedTypePolicies = {
 		keyFields?: false | PointActivityEdgeKeySpecifier | (() => undefined | PointActivityEdgeKeySpecifier),
 		fields?: PointActivityEdgeFieldPolicy,
 	},
+	Pool?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | PoolKeySpecifier | (() => undefined | PoolKeySpecifier),
+		fields?: PoolFieldPolicy,
+	},
+	PoolActivity?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | PoolActivityKeySpecifier | (() => undefined | PoolActivityKeySpecifier),
+		fields?: PoolActivityFieldPolicy,
+	},
+	PoolActivityConnection?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | PoolActivityConnectionKeySpecifier | (() => undefined | PoolActivityConnectionKeySpecifier),
+		fields?: PoolActivityConnectionFieldPolicy,
+	},
+	PoolActivityEdge?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | PoolActivityEdgeKeySpecifier | (() => undefined | PoolActivityEdgeKeySpecifier),
+		fields?: PoolActivityEdgeFieldPolicy,
+	},
+	PoolAprFactorSet?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | PoolAprFactorSetKeySpecifier | (() => undefined | PoolAprFactorSetKeySpecifier),
+		fields?: PoolAprFactorSetFieldPolicy,
+	},
+	PoolAprPremiumSet?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | PoolAprPremiumSetKeySpecifier | (() => undefined | PoolAprPremiumSetKeySpecifier),
+		fields?: PoolAprPremiumSetFieldPolicy,
+	},
+	PoolBaseInterestAllocatorSet?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | PoolBaseInterestAllocatorSetKeySpecifier | (() => undefined | PoolBaseInterestAllocatorSetKeySpecifier),
+		fields?: PoolBaseInterestAllocatorSetFieldPolicy,
+	},
+	PoolBaseRateAllocator?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | PoolBaseRateAllocatorKeySpecifier | (() => undefined | PoolBaseRateAllocatorKeySpecifier),
+		fields?: PoolBaseRateAllocatorFieldPolicy,
+	},
+	PoolCollectionFactors?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | PoolCollectionFactorsKeySpecifier | (() => undefined | PoolCollectionFactorsKeySpecifier),
+		fields?: PoolCollectionFactorsFieldPolicy,
+	},
+	PoolCollectionFactorsSet?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | PoolCollectionFactorsSetKeySpecifier | (() => undefined | PoolCollectionFactorsSetKeySpecifier),
+		fields?: PoolCollectionFactorsSetFieldPolicy,
+	},
+	PoolConnection?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | PoolConnectionKeySpecifier | (() => undefined | PoolConnectionKeySpecifier),
+		fields?: PoolConnectionFieldPolicy,
+	},
+	PoolEdge?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | PoolEdgeKeySpecifier | (() => undefined | PoolEdgeKeySpecifier),
+		fields?: PoolEdgeFieldPolicy,
+	},
+	PoolReallocated?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | PoolReallocatedKeySpecifier | (() => undefined | PoolReallocatedKeySpecifier),
+		fields?: PoolReallocatedFieldPolicy,
+	},
+	PoolStatistics?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | PoolStatisticsKeySpecifier | (() => undefined | PoolStatisticsKeySpecifier),
+		fields?: PoolStatisticsFieldPolicy,
+	},
 	Query?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | QueryKeySpecifier | (() => undefined | QueryKeySpecifier),
 		fields?: QueryFieldPolicy,
+	},
+	QueueDeployed?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | QueueDeployedKeySpecifier | (() => undefined | QueueDeployedKeySpecifier),
+		fields?: QueueDeployedFieldPolicy,
 	},
 	Renegotiation?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | RenegotiationKeySpecifier | (() => undefined | RenegotiationKeySpecifier),
@@ -4443,6 +5287,42 @@ export type StrictTypedTypePolicies = {
 	UserStatistics?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | UserStatisticsKeySpecifier | (() => undefined | UserStatisticsKeySpecifier),
 		fields?: UserStatisticsFieldPolicy,
+	},
+	WithdrawalPosition?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | WithdrawalPositionKeySpecifier | (() => undefined | WithdrawalPositionKeySpecifier),
+		fields?: WithdrawalPositionFieldPolicy,
+	},
+	WithdrawalPositionConnection?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | WithdrawalPositionConnectionKeySpecifier | (() => undefined | WithdrawalPositionConnectionKeySpecifier),
+		fields?: WithdrawalPositionConnectionFieldPolicy,
+	},
+	WithdrawalPositionEdge?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | WithdrawalPositionEdgeKeySpecifier | (() => undefined | WithdrawalPositionEdgeKeySpecifier),
+		fields?: WithdrawalPositionEdgeFieldPolicy,
+	},
+	WithdrawalPositionLocked?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | WithdrawalPositionLockedKeySpecifier | (() => undefined | WithdrawalPositionLockedKeySpecifier),
+		fields?: WithdrawalPositionLockedFieldPolicy,
+	},
+	WithdrawalPositionMinted?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | WithdrawalPositionMintedKeySpecifier | (() => undefined | WithdrawalPositionMintedKeySpecifier),
+		fields?: WithdrawalPositionMintedFieldPolicy,
+	},
+	WithdrawalQueue?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | WithdrawalQueueKeySpecifier | (() => undefined | WithdrawalQueueKeySpecifier),
+		fields?: WithdrawalQueueFieldPolicy,
+	},
+	WithdrawalQueueConnection?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | WithdrawalQueueConnectionKeySpecifier | (() => undefined | WithdrawalQueueConnectionKeySpecifier),
+		fields?: WithdrawalQueueConnectionFieldPolicy,
+	},
+	WithdrawalQueueEdge?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | WithdrawalQueueEdgeKeySpecifier | (() => undefined | WithdrawalQueueEdgeKeySpecifier),
+		fields?: WithdrawalQueueEdgeFieldPolicy,
+	},
+	WithdrawnFromQueue?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | WithdrawnFromQueueKeySpecifier | (() => undefined | WithdrawnFromQueueKeySpecifier),
+		fields?: WithdrawnFromQueueFieldPolicy,
 	}
 };
 export type TypedTypePolicies = StrictTypedTypePolicies & TypePolicies;
@@ -4643,8 +5523,11 @@ export const HideRenegotiationOfferDocument = gql`
 }
     `;
 export const SaveRenegotiationOfferDocument = gql`
-    mutation saveRenegotiationOffer($offer: SignedRenegotiationOfferInput!) {
-  offer: saveRenegotiationSignedOffer(signedRenegotiationInput: $offer) {
+    mutation saveRenegotiationOffer($renegotiation: SignedRenegotiationOfferInput!, $fallbackOffer: SingleNFTSignedOfferInput) {
+  renegotiation: saveRenegotiationSignedOffer(
+    signedRenegotiationInput: $renegotiation
+    fallbackOfferInput: $fallbackOffer
+  ) {
     id
     status
   }

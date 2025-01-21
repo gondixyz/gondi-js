@@ -1,5 +1,11 @@
-mutation saveRenegotiationOffer($offer: SignedRenegotiationOfferInput!) {
-  offer: saveRenegotiationSignedOffer(signedRenegotiationInput: $offer) {
+mutation saveRenegotiationOffer(
+  $renegotiation: SignedRenegotiationOfferInput!
+  $fallbackOffer: SingleNFTSignedOfferInput
+) {
+  renegotiation: saveRenegotiationSignedOffer(
+    signedRenegotiationInput: $renegotiation
+    fallbackOfferInput: $fallbackOffer
+  ) {
     id
     status
   }

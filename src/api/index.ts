@@ -113,15 +113,14 @@ export class Api {
     };
   }
 
-  async saveRefinanceOffer(offerInput: RenegotiationOffer) {
-    const response = await this.api.saveRenegotiationOffer({
-      offer: offerInput,
-    });
-    return {
-      id: response.offer.id,
-      ...offerInput,
-    };
+  async saveRefinanceOffer(
+    renegotiation: RenegotiationOffer,
+    fallbackOffer?: SingleNftSignedOfferInput,
+  ) {
+    const response = await this.api.saveRenegotiationOffer({ renegotiation, fallbackOffer });
+    return { ...renegotiation, id: response.renegotiation.id };
   }
+
   async listOffers(props: ListOffersQueryVariables) {
     const {
       result: { edges, pageInfo },

@@ -1,6 +1,7 @@
 import { Address, isAddress } from 'viem';
 
 import { LoanV4, LoanV5, LoanV6, zeroAddress } from '@/blockchain';
+import { getContracts } from '@/deploys';
 import * as model from '@/model';
 import { millisToSeconds, secondsToMillis, toDate } from '@/utils/dates';
 import { maxBy } from '@/utils/number';
@@ -113,4 +114,15 @@ export const getRemainingSeconds = (loan: Pick<LoanToMslLoanType, 'startTime' | 
   const finishDate = new Date(secondsToMillis(loan.startTime) + secondsToMillis(loan.duration));
   if (finishDate.getTime() < now.getTime()) return 0;
   return millisToSeconds(finishDate.getTime() - now.getTime());
+};
+
+export const isLoanVersion = (contractAddress: string, chainId: number) => {
+  const {
+    MultiSourceLoan: { v4, v5, v6 },
+  } = getContracts({ id: chainId });
+  return {
+    isV4: areSameAddress(contractAddress, v4),
+    isV5: areSameAddress(contractAddress, v5),
+    isV6: areSameAddress(contractAddress, v6),
+  };
 };
