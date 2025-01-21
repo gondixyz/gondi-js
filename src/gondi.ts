@@ -17,6 +17,7 @@ import {
   OffersSortField,
   Ordering,
   SellAndRepayOrder,
+  SingleNftSignedOfferInput,
   TokenStandardType,
 } from '@/generated/graphql';
 import * as model from '@/model';
@@ -24,6 +25,7 @@ import { NftStandard } from '@/model';
 import { millisToSeconds } from '@/utils/dates';
 import {
   generateFakeRenegotiationInput,
+  isLoanVersion,
   loanToMslLoan,
   LoanToMslLoanType,
   renegotiationToMslRenegotiation,
@@ -61,7 +63,25 @@ export class Gondi {
   }
 
   /** @internal */
-  async _makeSingleNftOffer(offer: model.SingleNftOfferInput, mslContractAddress?: Address) {
+  _makeSingleNftOffer(
+    offer: model.SingleNftOfferInput,
+    mslContractAddress: Address,
+    skipSave: true,
+  ): Promise<SingleNftSignedOfferInput>;
+
+  /** @internal */
+  _makeSingleNftOffer(
+    offer: model.SingleNftOfferInput,
+    mslContractAddress?: Address,
+    skipSave?: false,
+  ): ReturnType<Api['saveSingleNftOffer']>;
+
+  /** @internal */
+  async _makeSingleNftOffer(
+    offer: model.SingleNftOfferInput,
+    mslContractAddress?: Address,
+    skipSave?: boolean,
+  ) {
     const contract = this.contracts.Msl(mslContractAddress ?? this.defaults.Msl);
     const contractAddress = contract.address;
 
@@ -96,7 +116,7 @@ export class Gondi {
 
     const signature = await contract.signOffer({ structToSign });
 
-    const signedOffer = {
+    const signedOffer: SingleNftSignedOfferInput = {
       ...offerInput,
       offerValidators: validators.map((validator) => ({
         arguments: validator.arguments,
@@ -107,6 +127,7 @@ export class Gondi {
       signature,
     };
 
+    if (skipSave) return signedOffer;
     return await this.api.saveSingleNftOffer(signedOffer);
   }
 
@@ -235,15 +256,15 @@ export class Gondi {
     });
   }
 
-  async makeRefinanceOffer({
-    renegotiation,
-    contractAddress,
-    skipSignature,
-  }: {
-    renegotiation: model.RenegotiationInput;
-    contractAddress: Address;
-    skipSignature?: boolean;
-  }) {
+  async makeRefinanceOffer({ renegotiation, contractAddress, ...props }: MakeRefinanceOfferProps) {
+    const { isV4, isV5 } = isLoanVersion(contractAddress, this.wallet.chain.id);
+    if (props.skipSignature && props.withFallbackOffer) {
+      throw new Error('skipSignature and withFallbackOffer cannot be true at the same time');
+    }
+    if (props.withFallbackOffer && (isV4 || isV5)) {
+      throw new Error('Unsupported contract address for withFallbackOffer argument');
+    }
+
     const renegotiationInput = {
       lenderAddress: this.account.address,
       signerAddress: this.account.address,
@@ -257,7 +278,7 @@ export class Gondi {
 
     const { renegotiationId, offerHash, loanId, lenderAddress, signerAddress } = response.offer;
 
-    if (skipSignature) {
+    if (props.skipSignature) {
       return {
         ...renegotiationInput,
         offerHash: offerHash ?? zeroHash,
@@ -285,6 +306,30 @@ export class Gondi {
       offerHash: offerHash ?? zeroHash,
       renegotiationId,
     };
+
+    if (props.withFallbackOffer) {
+      const {
+        aprBps,
+        duration,
+        expirationTime,
+        principalAmount,
+        feeAmount: fee,
+      } = renegotiationInput;
+      const offerInput: model.SingleNftOfferInput = {
+        nftId: props.nftId,
+        principalAddress: props.principalAddress,
+        principalAmount,
+        aprBps,
+        duration,
+        expirationTime,
+        fee,
+        maxSeniorRepayment: 0n,
+        capacity: 0n,
+      };
+      const fallbackOffer = await this._makeSingleNftOffer(offerInput, contractAddress, true);
+      return await this.api.saveRefinanceOffer(renegotiationOffer, fallbackOffer);
+    }
+
     return await this.api.saveRefinanceOffer(renegotiationOffer);
   }
 
@@ -965,6 +1010,15 @@ type OfferFromExecutionOffer = OptionalNullable<
   MakeOfferType,
   'borrowerAddress' | 'lenderAddress' | 'offerHash' | 'signature'
 >;
+
+type MakeRefinanceOfferProps = {
+  renegotiation: model.RenegotiationInput;
+  contractAddress: Address;
+} & (
+  | { skipSignature?: never; withFallbackOffer?: never; principalAddress?: never; nftId?: never }
+  | { skipSignature: true; withFallbackOffer?: never; principalAddress?: never; nftId?: never }
+  | { skipSignature?: never; withFallbackOffer: true; principalAddress: Address; nftId: number }
+);
 
 export type CreateVaultArgs = {
   collection: Address;
