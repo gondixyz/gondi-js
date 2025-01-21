@@ -258,13 +258,12 @@ export class Gondi {
 
   async makeRefinanceOffer({ renegotiation, contractAddress, ...props }: MakeRefinanceOfferProps) {
     const { isV4, isV5 } = isLoanVersion(contractAddress, this.wallet.chain.id);
-    if (props.withFallbackOffer && (isV4 || isV5)) {
-      throw new Error('Unsupported contract address for withFallbackOffer argument');
-    }
     if (props.skipSignature && props.withFallbackOffer) {
       throw new Error('skipSignature and withFallbackOffer cannot be true at the same time');
     }
-    // TODO: Handle withFallbackOffer can only be used for full renegotiations
+    if (props.withFallbackOffer && (isV4 || isV5)) {
+      throw new Error('Unsupported contract address for withFallbackOffer argument');
+    }
 
     const renegotiationInput = {
       lenderAddress: this.account.address,
