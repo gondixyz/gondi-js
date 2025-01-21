@@ -302,12 +302,18 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     return lockupTimeSeconds - ellapsedSeconds;
   }
 
-  async isEndLockedUp({ loan }: { loan: LoanToMslLoanType }) {
+  async isEndLockedUp({
+    loan,
+  }: {
+    loan: LoanToMslLoanType & { durationFromRenegotiationOrStart: bigint };
+  }) {
     const lockPeriodBps = await this.contract.read.getMinLockPeriod();
     const lockPercentage = bpsToPercentage(lockPeriodBps);
 
     const loanEndDate = Number(loan.startTime + loan.duration);
-    const endLockupSeconds = Math.ceil(Number(loan.duration) * lockPercentage);
+    const endLockupSeconds = Math.ceil(
+      Number(loan.durationFromRenegotiationOrStart) * lockPercentage,
+    );
 
     return Date.now() > secondsToMillis(loanEndDate - endLockupSeconds);
   }
