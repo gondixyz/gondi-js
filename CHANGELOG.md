@@ -1,3 +1,23 @@
+# Breaking Changes 0.16.1
+
+### Important
+
+---
+
+This document outlines the breaking changes introduced in our codebase for version 0.16.1. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [End Lock Up](#end-lockup-new-loan-property) end lockup now needs an extra property of the loan
+
+---
+
+## End Lockup new loan property
+
+**Description:**
+
+`isEndLockedUp` now needs the `durationFromRenegotiationOrStart` property of the loan
+
 # Breaking Changes 0.15.0b2
 
 ### Important

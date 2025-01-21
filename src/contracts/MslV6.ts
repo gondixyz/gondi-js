@@ -6,7 +6,7 @@ import { getContracts } from '@/deploys';
 import { multiSourceLoanAbi as multiSourceLoanAbiV6 } from '@/generated/blockchain/v6';
 import { EmitLoanArgs } from '@/gondi';
 import { millisToSeconds, SECONDS_IN_DAY, secondsToMillis } from '@/utils/dates';
-import { getMslLoanId, getRemainingSeconds } from '@/utils/loan';
+import { getMslLoanId, getRemainingSeconds, LoanToMslLoanType } from '@/utils/loan';
 import { bpsToPercentage, sumBy } from '@/utils/number';
 import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 
@@ -302,12 +302,18 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     return lockupTimeSeconds - ellapsedSeconds;
   }
 
-  async isEndLockedUp({ loan }: { loan: LoanV6 }) {
+  async isEndLockedUp({
+    loan,
+  }: {
+    loan: LoanToMslLoanType & { durationFromRenegotiationOrStart: bigint };
+  }) {
     const lockPeriodBps = await this.contract.read.getMinLockPeriod();
     const lockPercentage = bpsToPercentage(lockPeriodBps);
 
     const loanEndDate = Number(loan.startTime + loan.duration);
-    const endLockupSeconds = Math.ceil(Number(loan.duration) * lockPercentage);
+    const endLockupSeconds = Math.ceil(
+      Number(loan.durationFromRenegotiationOrStart) * lockPercentage,
+    );
 
     return Date.now() > secondsToMillis(loanEndDate - endLockupSeconds);
   }

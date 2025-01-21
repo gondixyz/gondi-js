@@ -562,9 +562,13 @@ export class Gondi {
     });
   }
 
-  async isEndLockedUp({ loan }: { loan: LoanToMslLoanType }) {
+  async isEndLockedUp({
+    loan,
+  }: {
+    loan: LoanToMslLoanType & { durationFromRenegotiationOrStart: bigint };
+  }) {
     return this.contracts.Msl(loan.contractAddress).isEndLockedUp({
-      loan: loanToMslLoan(loan),
+      loan,
     });
   }
 
