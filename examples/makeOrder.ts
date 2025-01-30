@@ -17,9 +17,10 @@ const makeOrder = async () => {
   const { loan, loanId } = await emitLoan.waitTxInBlock();
   try {
     const signedOrder = await users[1].makeOrder({
-      collectionContractAddress: test721Collection.contractAddress,
+      startTime: BigInt(Math.floor(Date.now() * 1_000)),
+      contractAddress: test721Collection.contractAddress,
       tokenId: testTokenId,
-      price: 1n,
+      amount: 1n,
       expirationTime: 1n,
       currencyAddress: testCurrency,
       isAsk: true,

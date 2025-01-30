@@ -9,11 +9,10 @@ import {
 } from 'viem';
 
 import { Api, Props as ApiProps } from '@/api';
-import { Auction, Signature, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
+import { Auction, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Contracts, GondiPublicClient, Wallet } from '@/contracts';
 import {
   MarketplaceEnum,
-  NftOrderInput,
   OffersSortField,
   Ordering,
   SellAndRepayOrder,
@@ -22,7 +21,6 @@ import {
 } from '@/generated/graphql';
 import * as model from '@/model';
 import { NftStandard } from '@/model';
-import { millisToSeconds } from '@/utils/dates';
 import {
   generateFakeRenegotiationInput,
   isLoanVersion,
@@ -188,46 +186,19 @@ export class Gondi {
     return await this.api.saveCollectionOffer(signedOffer);
   }
 
-  async makeOrder({
-    collectionContractAddress,
-    tokenId,
-    price,
-    expirationTime,
-    currencyAddress,
-    taker,
-    isAsk = true,
-    signature,
-  }: {
-    collectionContractAddress: Address;
-    tokenId: bigint;
-    price: bigint;
-    expirationTime: bigint;
-    currencyAddress: Address;
-    isAsk?: boolean;
-    taker?: Address;
-    signature?: Signature;
-  }) {
-    const orderInput: NftOrderInput = {
-      startTime: BigInt(Math.floor(millisToSeconds(Date.now()))),
-      expirationTime,
-      isAsk,
-      currencyAddress,
-      amount: price,
-      contractAddress: collectionContractAddress,
-      tokenId,
-      taker,
-      signature,
-    };
-    let response = await this.api.publishOrder(orderInput);
+  async makeOrder(sellAndRepayOrderInput: Parameters<Api['publishSellAndRepayOrder']>[0]) {
+    let response = await this.api.publishSellAndRepayOrder(sellAndRepayOrderInput);
     while (response.__typename === 'SignatureRequest') {
       const key = response.key as 'signature' | 'repaymentSignature';
-      orderInput[key] = await this.wallet.signTypedData(response.typedData as TypedDataDefinition);
-      response = await this.api.publishOrder(orderInput);
+      sellAndRepayOrderInput[key] = await this.wallet.signTypedData(
+        response.typedData as TypedDataDefinition,
+      );
+      response = await this.api.publishSellAndRepayOrder(sellAndRepayOrderInput);
     }
 
     if (response.__typename !== 'SellAndRepayOrder') throw new Error('This should never happen');
 
-    return { ...response, ...orderInput };
+    return { ...response, ...sellAndRepayOrderInput };
   }
 
   async cancelOrder(order: Pick<SellAndRepayOrder, 'cancelCalldata' | 'marketPlaceAddress'>) {

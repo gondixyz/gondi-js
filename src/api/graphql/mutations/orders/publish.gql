@@ -1,5 +1,5 @@
-mutation publishOrder($orderInput: NFTOrderInput!) {
-  result: publishOrder(orderInput: $orderInput) {
+mutation publishSellAndRepayOrder($orderInput: NFTOrderInput!) {
+  result: publishSellAndRepayOrder(orderInput: $orderInput) {
     ... on SellAndRepayOrder {
       id
       status
