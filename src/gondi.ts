@@ -9,7 +9,7 @@ import {
 } from 'viem';
 
 import { Api, Props as ApiProps } from '@/api';
-import { Auction, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
+import { Auction, Signature, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Contracts, GondiPublicClient, Wallet } from '@/contracts';
 import {
   MarketplaceEnum,
@@ -196,6 +196,7 @@ export class Gondi {
     currencyAddress,
     taker,
     isAsk = true,
+    signature,
   }: {
     collectionContractAddress: Address;
     tokenId: bigint;
@@ -204,6 +205,7 @@ export class Gondi {
     currencyAddress: Address;
     isAsk?: boolean;
     taker?: Address;
+    signature?: Signature;
   }) {
     const orderInput: NftOrderInput = {
       startTime: BigInt(Math.floor(millisToSeconds(Date.now()))),
@@ -214,6 +216,7 @@ export class Gondi {
       contractAddress: collectionContractAddress,
       tokenId,
       taker,
+      signature,
     };
     let response = await this.api.publishOrder(orderInput);
     while (response.__typename === 'SignatureRequest') {
