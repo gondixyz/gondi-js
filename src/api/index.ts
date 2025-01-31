@@ -92,8 +92,8 @@ export class Api {
     };
   }
 
-  async publishOrder(orderInput: NftOrderInput) {
-    const response = await this.api.publishOrder({ orderInput });
+  async publishSellAndRepayOrder(orderInput: NftOrderInput) {
+    const response = await this.api.publishSellAndRepayOrder({ orderInput });
     return response.result;
   }
 

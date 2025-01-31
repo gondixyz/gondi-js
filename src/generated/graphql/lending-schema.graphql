@@ -159,6 +159,7 @@ type Collection implements Node {
   id: String!
   image: Asset
   imageId: String
+  maxNetPrincipalOffer(currencyAddress: Address!): CollectionOffer
   name: String
   nftsCount: Int
   slug: String!
@@ -218,6 +219,7 @@ type CollectionOffer implements Node & Offer {
   hidden: Boolean
   id: String!
   lenderAddress: Address
+  lenderAvailableBalance: BigInt
   maxPrincipal: BigInt!
   maxSeniorRepayment: BigInt!
 
@@ -313,8 +315,10 @@ enum CollectionSortField {
   LOAN_COUNT
   OFFER_COUNT
   OUTSTANDING_PRINCIPAL
+  TOTAL_LOAN_VOLUME
   TOTAL_OUTSTANDING_PRINCIPAL
   TOTAL_VOLUME
+  TRENDING_VOLUME
 }
 
 input CollectionSortInput {
@@ -508,6 +512,7 @@ interface LoanActivity implements LoanEvent & Node {
   loanId: String!
   multiSourceLoanHistory: MultiSourceLoanHistory!
   nextActivity: LoanActivity
+  prevActivity: LoanActivity
   timestamp: DateTime!
   txHash: Hash!
 }
@@ -553,6 +558,7 @@ type LoanAuctioned implements LoanActivity & LoanEvent & Node {
   loanPayments: [LoanPayment!]!
   multiSourceLoanHistory: MultiSourceLoanHistory!
   nextActivity: LoanActivity
+  prevActivity: LoanActivity
   timestamp: DateTime!
   totalAuctioned: BigInt!
   txHash: Hash!
@@ -651,6 +657,7 @@ type LoanExtended implements LoanActivity & LoanEvent & Node {
   loanId: String!
   multiSourceLoanHistory: MultiSourceLoanHistory!
   nextActivity: LoanActivity
+  prevActivity: LoanActivity
   timestamp: DateTime!
   txHash: Hash!
 }
@@ -676,6 +683,7 @@ type LoanForeclosed implements LoanActivity & LoanEvent & Node {
   loanId: String!
   multiSourceLoanHistory: MultiSourceLoanHistory!
   nextActivity: LoanActivity
+  prevActivity: LoanActivity
   timestamp: DateTime!
   txHash: Hash!
 }
@@ -689,6 +697,7 @@ type LoanInitiated implements LoanActivity & LoanEvent & Node {
   loanId: String!
   multiSourceLoanHistory: MultiSourceLoanHistory!
   nextActivity: LoanActivity
+  prevActivity: LoanActivity
   timestamp: DateTime!
   txHash: Hash!
 }
@@ -716,6 +725,7 @@ type LoanRefinanced implements LoanActivity & LoanEvent & Node {
   loanId: String!
   multiSourceLoanHistory: MultiSourceLoanHistory!
   nextActivity: LoanActivity
+  prevActivity: LoanActivity
   timestamp: DateTime!
   txHash: Hash!
 }
@@ -729,6 +739,7 @@ type LoanRefinancedFromOffers implements LoanActivity & LoanEvent & Node {
   loanId: String!
   multiSourceLoanHistory: MultiSourceLoanHistory!
   nextActivity: LoanActivity
+  prevActivity: LoanActivity
   timestamp: DateTime!
   txHash: Hash!
 }
@@ -754,6 +765,7 @@ type LoanRepaid implements LoanActivity & LoanEvent & Node {
   loanId: String!
   multiSourceLoanHistory: MultiSourceLoanHistory!
   nextActivity: LoanActivity
+  prevActivity: LoanActivity
   timestamp: DateTime!
   totalInterest: BigInt!
   txHash: Hash!
@@ -779,6 +791,7 @@ type LoanSentToAuction implements LoanActivity & LoanEvent & Node {
   loanId: String!
   multiSourceLoanHistory: MultiSourceLoanHistory!
   nextActivity: LoanActivity
+  prevActivity: LoanActivity
   timestamp: DateTime!
   txHash: Hash!
 }
@@ -865,9 +878,11 @@ type MultiSourceLoan implements Loan & Node {
   contractStartTime: DateTime!
   currency: Currency!
   duration: BigInt!
+  durationFromRenegotiationOrStart: BigInt!
   endDate: DateTime!
   id: String!
   indexInBlock: Int!
+  lastRenegotiationDate: DateTime
   loanId: Int!
   nft: NFT!
 
@@ -931,7 +946,7 @@ type Mutation {
   hideRenegotiation(contractAddress: Address = "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9", renegotiationId: String!): Renegotiation!
   markNotificationIdsAsRead(ids: [Int!]): Void
   markNotificationsAsRead: Void
-  publishOrder(orderInput: NFTOrderInput!): SellAndRepayOrderSignatureRequest!
+  publishSellAndRepayOrder(orderInput: NFTOrderInput!): SellAndRepayOrderSignatureRequest!
   removeListing(nftId: Int!): Listing!
   removeListingsOfNftsFromUser(excludeCollections: [String!] = null, onlyCollections: [String!] = null, searchTerm: String = null): Void
   removeRenegotiationRequest(loanId: String!): RenegotiationRequest!
@@ -989,6 +1004,7 @@ input NFTOrderInput {
   expirationTime: BigInt!
   isAsk: Boolean!
   repaymentSignature: Signature = null
+  replaceOrderId: Int = null
   signature: Signature = null
   startTime: BigInt!
   taker: Address = null
@@ -1096,6 +1112,7 @@ interface Offer implements Node {
   hidden: Boolean
   id: String!
   lenderAddress: Address
+  lenderAvailableBalance: BigInt
   maxPrincipal: BigInt!
   maxSeniorRepayment: BigInt!
 
@@ -1688,6 +1705,7 @@ type SingleNFTOffer implements Node & Offer {
   hidden: Boolean
   id: String!
   lenderAddress: Address
+  lenderAvailableBalance: BigInt
   maxPrincipal: BigInt!
   maxSeniorRepayment: BigInt!
 
