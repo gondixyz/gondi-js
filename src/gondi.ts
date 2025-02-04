@@ -248,7 +248,7 @@ export class Gondi {
     return { ...response, ...sellAndRepayOrderInput };
   }
 
-  async makeBuyNowPayLaterOrder(orderInput: Parameters<Api['publishBuyNowPayLaterOrder']>[0]) {
+  async buyNowPayLater(orderInput: Parameters<Api['publishBuyNowPayLaterOrder']>[0]) {
     let response = await this.api.publishBuyNowPayLaterOrder(orderInput);
     while (response.__typename === 'SignatureRequest') {
       const key = response.key as 'signature' | 'emitSignature';
@@ -258,7 +258,9 @@ export class Gondi {
 
     if (response.__typename !== 'BuyNowPayLaterOrder') throw new Error('This should never happen');
 
-    return { ...response, ...orderInput };
+    return this.contracts
+      .PurchaseBundler(this.defaults.Msl)
+      .buy({ emitCalldata: response.emitCalldata });
   }
 
   async cancelOrder(order: { cancelCalldata: Hex; marketPlaceAddress: Address }) {
