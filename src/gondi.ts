@@ -248,6 +248,19 @@ export class Gondi {
     return { ...response, ...sellAndRepayOrderInput };
   }
 
+  async makeBuyNowPayLaterOrder(orderInput: Parameters<Api['publishBuyNowPayLaterOrder']>[0]) {
+    let response = await this.api.publishBuyNowPayLaterOrder(orderInput);
+    while (response.__typename === 'SignatureRequest') {
+      const key = response.key as 'signature' | 'emitSignature';
+      orderInput[key] = await this.wallet.signTypedData(response.typedData as TypedDataDefinition);
+      response = await this.api.publishBuyNowPayLaterOrder(orderInput);
+    }
+
+    if (response.__typename !== 'BuyNowPayLaterOrder') throw new Error('This should never happen');
+
+    return { ...response, ...orderInput };
+  }
+
   async cancelOrder(order: { cancelCalldata: Hex; marketPlaceAddress: Address }) {
     return this.contracts
       .GenericContract(order.marketPlaceAddress)

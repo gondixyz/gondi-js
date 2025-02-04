@@ -1,0 +1,20 @@
+mutation publishBuyNowPayLaterOrder($orderInput: BNPLOrderInput!) {
+  result: publishBuyNowPayLaterOrder(orderInput: $orderInput) {
+    ... on BuyNowPayLaterOrder {
+      id
+      status
+      signature
+      emitCalldata
+      marketPlaceAddress
+    }
+    ... on SignatureRequest {
+      key
+      typedData {
+        types
+        primaryType
+        domain
+        message
+      }
+    }
+  }
+}
