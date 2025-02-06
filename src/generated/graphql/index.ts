@@ -3925,7 +3925,7 @@ export type PublishBuyNowPayLaterOrderMutationVariables = Exact<{
 }>;
 
 
-export type PublishBuyNowPayLaterOrderMutation = { __typename?: 'Mutation', result: { __typename?: 'BuyNowPayLaterOrder', id: string, status: string, signature: Hex, emitCalldata: Hex, marketPlaceAddress: Address } | { __typename?: 'SignatureRequest', key: string, typedData: { __typename?: 'TypedData', types: object, primaryType: string, domain: object, message: object } } };
+export type PublishBuyNowPayLaterOrderMutation = { __typename?: 'Mutation', result: { __typename?: 'BuyNowPayLaterOrder', id: string, status: string, signature: Hex, emitCalldata: Hex, marketPlaceAddress: Address, price: bigint } | { __typename?: 'SignatureRequest', key: string, typedData: { __typename?: 'TypedData', types: object, primaryType: string, domain: object, message: object } } };
 
 export type PublishOrderForCollectionMutationVariables = Exact<{
   orderInput: CollectionOrderInput;
@@ -6818,6 +6818,7 @@ export const PublishBuyNowPayLaterOrderDocument = gql`
       signature
       emitCalldata
       marketPlaceAddress
+      price
     }
     ... on SignatureRequest {
       key

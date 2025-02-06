@@ -6,6 +6,7 @@ mutation publishBuyNowPayLaterOrder($orderInput: BNPLOrderInput!) {
       signature
       emitCalldata
       marketPlaceAddress
+      price
     }
     ... on SignatureRequest {
       key
