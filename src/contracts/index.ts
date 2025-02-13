@@ -1,10 +1,11 @@
 import { Account, Address, Chain, PublicClient, Transport, WalletClient } from 'viem';
 
+import { Erc20 } from '@/contracts/Erc20';
 import { OldERC721Wrapper } from '@/contracts/OldERC721Wrapper';
 import { PurchaseBundler } from '@/contracts/PurchaseBundler';
 import { getContracts } from '@/deploys';
 import { oldErc721Abi } from '@/generated/blockchain/oldERC721';
-import { erc20ABI, erc721ABI } from '@/generated/blockchain/v5';
+import { erc721ABI } from '@/generated/blockchain/v5';
 import { erc1155Abi } from '@/generated/blockchain/v6';
 import { NftStandard } from '@/model';
 import { areSameAddress } from '@/utils/string';
@@ -177,9 +178,8 @@ export class Contracts {
   }
 
   ERC20(address: Address) {
-    return new BaseContract({
+    return new Erc20({
       address,
-      abi: erc20ABI,
       walletClient: this.walletClient,
     });
   }

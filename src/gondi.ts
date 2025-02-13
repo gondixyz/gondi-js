@@ -1,10 +1,17 @@
 import {
+  createClient,
+  Execute,
+  reservoirChains,
+  ReservoirClient,
+} from '@reservoir0x/reservoir-sdk';
+import {
   Account,
   Address,
   createPublicClient,
   createTransport,
   Hash,
   Hex,
+  TransactionRequestBase,
   TypedDataDefinition,
 } from 'viem';
 
@@ -12,6 +19,7 @@ import { Api, Props as ApiProps } from '@/api';
 import { Auction, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Contracts, GondiPublicClient, Wallet } from '@/contracts';
 import {
+  Currency,
   MarketplaceEnum,
   OffersSortField,
   Ordering,
@@ -30,6 +38,7 @@ import {
 } from '@/utils/loan';
 import { min } from '@/utils/number';
 import { FULFILLED, REJECTED } from '@/utils/promises';
+import { isCurrencyApproval, sendTransaction, validateSteps } from '@/utils/reservoir';
 import { areSameAddress } from '@/utils/string';
 import { OptionalNullable } from '@/utils/types';
 
@@ -40,6 +49,7 @@ export class Gondi {
   bcClient: GondiPublicClient;
   api: Api;
   defaults: { Msl: Address; UserVault: Address };
+  reservoirClient: ReservoirClient;
 
   constructor({ wallet, apiClient }: GondiProps) {
     this.wallet = wallet;
@@ -54,6 +64,16 @@ export class Gondi {
       UserVault: this.contracts.UserVaultV6.address,
     };
     this.api = new Api({ wallet, apiClient });
+    this.reservoirClient = createClient({
+      chains: [
+        {
+          id: wallet.chain.id,
+          name: wallet.chain.name,
+          baseApiUrl: reservoirChains.mainnet.baseApiUrl,
+          active: true,
+        },
+      ],
+    });
   }
 
   async makeSingleNftOffer(offer: model.SingleNftOfferInput) {
@@ -968,6 +988,61 @@ export class Gondi {
       repaymentCalldata,
       price,
     });
+  }
+
+  async buyNft({
+    price,
+    currency,
+    orderId,
+  }: {
+    price: bigint;
+    currency: Pick<Currency, 'address' | 'decimals'>;
+    orderId: string;
+  }) {
+    const buyResult = await this.reservoirClient.actions.buyToken({
+      items: [{ orderId }],
+      wallet: this.wallet,
+      expectedPrice: {
+        [currency.address]: {
+          raw: price,
+          currencyAddress: currency.address,
+          currencyDecimals: currency.decimals,
+        },
+      },
+      onProgress: (_steps: Execute['steps']) => void 0,
+      options: {
+        currency: currency.address,
+        excludeEOA: true,
+        skipBalanceCheck: true,
+      },
+      precheck: true,
+    });
+
+    if (buyResult === true) throw new Error('Steps were expected');
+
+    const { steps } = buyResult;
+    validateSteps(steps);
+
+    for (const step of steps) {
+      let skipStep = false;
+      if (isCurrencyApproval(step)) {
+        const {
+          from = this.wallet.account.address,
+          to: toCurrency,
+          data,
+        } = step.items?.[0].data as TransactionRequestBase;
+        if (!data) throw new Error('No data', data);
+
+        const currencyAddress = toCurrency ?? currency.address;
+        const erc20 = this.contracts.ERC20(currencyAddress);
+        const [to, wantedAllowance] = erc20.decodeApproveCalldata(data);
+
+        const currentAllowance = await erc20.contract.read.allowance([from, to]);
+        skipStep = currentAllowance >= wantedAllowance;
+      }
+      if (skipStep) continue;
+      await sendTransaction(this.wallet, this.bcClient, step);
+    }
   }
 }
 
