@@ -22,6 +22,7 @@ interface Contracts {
     v5: Address;
     v6: Address;
   };
+  Seaport: Address;
 }
 
 interface ApiKeys {
@@ -85,6 +86,8 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
           ensureAddress(process.env.GONDI_PURCHASE_BUNDLER_V6) ??
           '0x7a2088a1bFc9d81c55368AE168C2C02570cB814F',
       },
+      Seaport:
+        ensureAddress(process.env.GONDI_SEAPORT) ?? '0x0000000000000068F116a894984e2DB1123eB395',
     };
   }
 
@@ -108,6 +111,7 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
         v5: '0xTODO',
         v6: '0xTODO',
       },
+      Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
     };
   }
 
@@ -130,6 +134,7 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
       v5: '0x2f3d5c443643dd20ac1cdfa47bdd63a3b151a53b',
       v6: '0xd2F1c03010e85520726d981C9B8D97b8054A1445',
     },
+    Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
   };
 };
 
