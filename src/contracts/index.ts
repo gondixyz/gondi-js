@@ -3,6 +3,7 @@ import { Account, Address, Chain, PublicClient, Transport, WalletClient } from '
 import { Erc20 } from '@/contracts/Erc20';
 import { OldERC721Wrapper } from '@/contracts/OldERC721Wrapper';
 import { PurchaseBundler } from '@/contracts/PurchaseBundler';
+import { Seaport } from '@/contracts/Seaport';
 import { getContracts } from '@/deploys';
 import { oldErc721Abi } from '@/generated/blockchain/oldERC721';
 import { erc721ABI } from '@/generated/blockchain/v5';
@@ -44,6 +45,7 @@ export class Contracts {
   UserVaultV6: UserVaultV6;
   PurchaseBundlerV5: PurchaseBundler;
   PurchaseBundlerV6: PurchaseBundler;
+  Seaport: Seaport;
 
   constructor(publicClient: GondiPublicClient, walletClient: Wallet) {
     this.walletClient = walletClient;
@@ -68,6 +70,9 @@ export class Contracts {
       walletClient,
       contractAddress: PurchaseBundlerContract.v6,
       msl: this.MultiSourceLoanV6,
+    });
+    this.Seaport = new Seaport({
+      walletClient,
     });
   }
 
