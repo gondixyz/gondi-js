@@ -53,7 +53,9 @@ export class Seaport extends BaseContract<typeof seaportABI> {
     });
   }
 
-  fulfillAdvancedOrder(advancedOrder: AdvancedOrder) {
-    return this.safeContractWrite.fulfillAdvancedOrder([advancedOrder, [], zeroHash, zeroAddress]);
+  fulfillAdvancedOrder({ advancedOrder, value }: { advancedOrder: AdvancedOrder; value: bigint }) {
+    return this.safeContractWrite.fulfillAdvancedOrder([advancedOrder, [], zeroHash, zeroAddress], {
+      value,
+    });
   }
 }
