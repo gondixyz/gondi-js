@@ -32,8 +32,6 @@ query ownedNfts(
           }
         }
         tokenId
-        price
-        priceCurrencyAddress
         activeLoan {
           id
         }
