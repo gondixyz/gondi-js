@@ -115,6 +115,16 @@ type AuctionWonNotification implements Node & Notification {
   user: User!
 }
 
+input BNPLOrderInput {
+  amounts: [BigInt!]!
+  contractAddress: Address!
+  emitSignature: Signature = null
+  loanDuration: BigInt!
+  offerIds: [String!]!
+  signature: Signature = null
+  tokenId: BigInt!
+}
+
 type Bid implements Node {
   amount: BigInt!
   auction: Auction!
@@ -148,6 +158,48 @@ input BidSortInput {
 }
 
 scalar BigInt
+
+type BigIntCurrencyAmount {
+  amount: BigInt!
+  currency: Currency!
+}
+
+input BigIntInterval {
+  max: BigInt = null
+  min: BigInt = null
+}
+
+type BuyNowPayLaterOrder implements Activity & Node & Order {
+  createdDate: DateTime!
+  currency: Currency!
+  currencyAddress: Address!
+  emitCalldata: Hex!
+  evmOrder: JSON
+  expiration: DateTime!
+  fees: BigInt!
+  hidden: Boolean!
+  id: String!
+  isAsk: Boolean!
+  isPrivate: Boolean!
+  maker: Address!
+  marketPlace: String!
+  marketPlaceAddress: Address!
+  netAmount: BigInt!
+  nft: NFT!
+  nftId: Int!
+  nonce: BigInt!
+  orderType: String!
+  originalId: Hash!
+  price: BigInt!
+  signature: Signature!
+  startTime: DateTime!
+  status: String!
+  taker: Address!
+  timestamp: DateTime!
+  txHash: Hash
+}
+
+union BuyNowPayLaterOrderSignatureRequest = BuyNowPayLaterOrder | SignatureRequest
 
 type Collection implements Node {
   bannerImage: Asset
@@ -268,7 +320,8 @@ type CollectionOrder implements Activity & Node & Order {
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
-  expiration: DateTime
+  evmOrder: JSON
+  expiration: DateTime!
   fees: BigInt!
   hidden: Boolean!
   id: String!
@@ -279,6 +332,7 @@ type CollectionOrder implements Activity & Node & Order {
   netAmount: BigInt!
   nonce: BigInt!
   orderType: String!
+  originalId: Hash!
   price: BigInt!
   signature: Signature!
   startTime: DateTime!
@@ -332,6 +386,8 @@ type CollectionStatistics {
   floorPrice: CurrencyAmount
   floorPrice7d: Float
   floorPrice30d: Float
+  maxAskPrice(currencyAddresses: [Address!] = null): BigIntCurrencyAmount
+  minAskPrice(currencyAddresses: [Address!] = null): BigIntCurrencyAmount
   nftsCount: Float
   numberOfOffers(currencyAddress: Address!): Float!
   numberOfPricedNfts: Int!
@@ -404,33 +460,6 @@ type DelegationEdge {
   node: Delegation!
 }
 
-type ERC4626Deposit implements Node & PoolActivity {
-  assets: BigInt!
-  caller: Address!
-  id: String!
-  indexInBlock: Int!
-  owner: Address!
-  pool: Pool!
-  poolAddress: Address!
-  shares: BigInt!
-  timestamp: DateTime!
-  txHash: Hash!
-}
-
-type ERC4626Withdraw implements Node & PoolActivity {
-  assets: BigInt!
-  caller: Address!
-  id: String!
-  indexInBlock: Int!
-  owner: Address!
-  pool: Pool!
-  poolAddress: Address!
-  receiver: Address!
-  shares: BigInt!
-  timestamp: DateTime!
-  txHash: Hash!
-}
-
 scalar Hash
 
 scalar Hex
@@ -441,7 +470,7 @@ input Interval {
 }
 
 """
-The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf).
 """
 scalar JSON
 
@@ -864,6 +893,18 @@ type LostSourceNotification implements Node & Notification {
   user: User!
 }
 
+enum MarketPlaceType {
+  BLUR
+  CRYPTOPUNKS
+  FOUNDATION
+  LARVA_LABS
+  LOOKS_RARE
+  NATIVE
+  NFTX
+  OPEN_SEA
+  X2Y2
+}
+
 enum MarketplaceEnum {
   GONDI
   NFTFI
@@ -943,9 +984,10 @@ type Mutation {
   hideAllOffers(contractAddress: Address!, minOfferId: String!): [Offer!]!
   hideOffer(contractAddress: Address!, offerId: String!): Offer!
   hideOrder(orderId: Int!): Order!
-  hideRenegotiation(contractAddress: Address = "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9", renegotiationId: String!): Renegotiation!
+  hideRenegotiation(contractAddress: Address = "0xca5a494ca20483e21ec1e41fe1d9461da77595bd", renegotiationId: String!): Renegotiation!
   markNotificationIdsAsRead(ids: [Int!]): Void
   markNotificationsAsRead: Void
+  publishBuyNowPayLaterOrder(orderInput: BNPLOrderInput!): BuyNowPayLaterOrderSignatureRequest!
   publishSellAndRepayOrder(orderInput: NFTOrderInput!): SellAndRepayOrderSignatureRequest!
   removeListing(nftId: Int!): Listing!
   removeListingsOfNftsFromUser(excludeCollections: [String!] = null, onlyCollections: [String!] = null, searchTerm: String = null): Void
@@ -957,7 +999,7 @@ type Mutation {
   setReferral(referrerId: Int!): Void
   showOffer(contractAddress: Address!, offerId: String!): Offer!
   showOrder(orderId: Int!): Order!
-  showRenegotiation(contractAddress: Address = "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9", renegotiationId: String!): Renegotiation!
+  showRenegotiation(contractAddress: Address = "0xca5a494ca20483e21ec1e41fe1d9461da77595bd", renegotiationId: String!): Renegotiation!
 }
 
 type NFT implements Node {
@@ -970,12 +1012,20 @@ type NFT implements Node {
   image: Asset
   isFlagged: Boolean
   listed: Listing
-  marketPlaceOfPrice: String
+
+  """Deprecated."""
+  marketPlaceOfPrice: String @deprecated(reason: "Get it from nftPriceSample")
+  maxNetPrincipalOffer(currencyAddress: Address!): Offer
   name: String
   nftId: String!
+  nftPriceSample(currencyAddresses: [Address!] = null): NFTPriceSample
   owner: Address
-  price: BigInt
-  priceCurrencyAddress: String
+
+  """Deprecated."""
+  price: BigInt @deprecated(reason: "Get it from nftPriceSample")
+
+  """Deprecated."""
+  priceCurrencyAddress: Address @deprecated(reason: "Get it from nftPriceSample")
   rarityRank: Int
   rarityScore: Float
   statistics: NftStatistics!
@@ -1011,6 +1061,17 @@ input NFTOrderInput {
   tokenId: BigInt!
 }
 
+type NFTPriceSample implements Node {
+  currencyAddress: Address!
+  id: String!
+  order: Order!
+  orderId: Int!
+  surveyedId: Int!
+  taker: Address!
+  timestamp: Int!
+  value: BigInt!
+}
+
 type NewCollectionUnlistedOfferNotification implements Node & Notification {
   createdOn: DateTime!
   id: String!
@@ -1043,8 +1104,10 @@ type NewRenegotiationOfferNotification implements Node & Notification {
 
 enum NftSortField {
   COLLECTION
+  LAST_SALE_PRICE
   NAME
   OFFERS_COUNT
+  PRICE
   STATUS
 }
 
@@ -1059,6 +1122,10 @@ type NftStatistics {
   loansTotalVolume(currencyAddress: Address!): BigInt!
   numberOfOffers(currencyAddress: Address!): Float!
   topTraitFloorPrice: CurrencyAmount
+}
+
+input NftTermsFilter {
+  price: BigIntInterval = null
 }
 
 interface Node {
@@ -1208,7 +1275,8 @@ interface Order implements Activity & Node {
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
-  expiration: DateTime
+  evmOrder: JSON
+  expiration: DateTime!
   fees: BigInt!
   hidden: Boolean!
   id: String!
@@ -1219,6 +1287,7 @@ interface Order implements Activity & Node {
   netAmount: BigInt!
   nonce: BigInt!
   orderType: String!
+  originalId: Hash!
   price: BigInt!
   signature: Signature!
   startTime: DateTime!
@@ -1313,141 +1382,6 @@ type PointActivityEdge {
   node: PointActivity!
 }
 
-type Pool implements Node {
-  address: Address!
-  asset: Currency!
-  baseRateAllocator: PoolBaseRateAllocator!
-  collectionFactors: [PoolCollectionFactors!]!
-  currency: Currency!
-  description: String!
-  id: String!
-  poolActivities: [PoolActivity!]!
-  statistics: PoolStatistics!
-}
-
-interface PoolActivity implements Node {
-  id: String!
-  indexInBlock: Int!
-  pool: Pool!
-  poolAddress: Address!
-  timestamp: DateTime!
-  txHash: Hash!
-}
-
-type PoolActivityConnection {
-  edges: [PoolActivityEdge!]!
-  pageInfo: PageInfo!
-  totalCount: Int!
-}
-
-type PoolActivityEdge {
-  cursor: String!
-  node: PoolActivity!
-}
-
-enum PoolActivityType {
-  ERC4626_DEPOSIT
-  ERC4626_WITHDRAW
-  POOL_APR_FACTOR_SET
-  POOL_APR_PREMIUM_SET
-  POOL_BASE_INTEREST_ALLOCATOR_SET
-  POOL_COLLECTION_FACTORS_SET
-  POOL_REALLOCATED
-  QUEUE_DEPLOYED
-  WITHDRAWAL_POSITION_LOCKED
-  WITHDRAWAL_POSITION_MINTED
-  WITHDRAWN_FROM_QUEUE
-}
-
-type PoolAprFactorSet implements Node & PoolActivity {
-  id: String!
-  indexInBlock: Int!
-  pool: Pool!
-  poolAddress: Address!
-  timestamp: DateTime!
-  txHash: Hash!
-}
-
-type PoolAprPremiumSet implements Node & PoolActivity {
-  aprPremium: BigInt!
-  id: String!
-  indexInBlock: Int!
-  pool: Pool!
-  poolAddress: Address!
-  timestamp: DateTime!
-  txHash: Hash!
-}
-
-type PoolBaseInterestAllocatorSet implements Node & PoolActivity {
-  id: String!
-  indexInBlock: Int!
-  pool: Pool!
-  poolAddress: Address!
-  timestamp: DateTime!
-  txHash: Hash!
-}
-
-type PoolBaseRateAllocator implements Node {
-  address: Address!
-  currency: Currency!
-  description: String!
-  id: String!
-  stakeCurrency: Currency!
-}
-
-type PoolCollectionFactors implements Node {
-  collection: Collection!
-  collectionId: Int!
-  duration: BigInt!
-  id: String!
-  offerId: String!
-  pool: Pool!
-  poolAddress: String!
-  principalCurrentFactor: BigInt!
-  principalHistoricalFactor: BigInt!
-}
-
-type PoolCollectionFactorsSet implements Node & PoolActivity {
-  id: String!
-  indexInBlock: Int!
-  pool: Pool!
-  poolAddress: Address!
-  timestamp: DateTime!
-  txHash: Hash!
-}
-
-type PoolConnection {
-  edges: [PoolEdge!]!
-  pageInfo: PageInfo!
-  totalCount: Int!
-}
-
-type PoolEdge {
-  cursor: String!
-  node: Pool!
-}
-
-type PoolReallocated implements Node & PoolActivity {
-  id: String!
-  indexInBlock: Int!
-  pool: Pool!
-  poolAddress: Address!
-  timestamp: DateTime!
-  txHash: Hash!
-}
-
-type PoolStatistics {
-  activeLoansCount: Int!
-  activeOffersCount: Int!
-  balanceAllocatedBaseRate: BigInt!
-  liquid: BigInt!
-  outstandingApr: Float!
-  outstandingPrincipal: BigInt!
-  realizedApr: Float!
-  totalDeposits: BigInt!
-  totalLoanVolume: BigInt!
-}
-
 type Query {
   getCollectionActivitiesCount(collectionId: Int!, currencyAddress: Address, fromTimestamp: Int!): CollectionEventsCountByDayAndCurrency!
   getCollectionBySlug(slug: String!): Collection
@@ -1460,7 +1394,6 @@ type Query {
   getNftBySlugAndTokenId(slug: String!, tokenId: BigInt!): NFT
   getOutstandingLoanStatistics: OutstandingLoanStatistics!
   getPointsFromReferrals: Int!
-  getPoolByShareSymbol(symbol: String!): Pool
   getReferredWallets: Int!
   getSourcesStatistics(currencyAddress: Address!, lenders: [Address!]!, statuses: [LoanStatusType!]!): SourcesStatistics!
   getSourcesStatisticsByCollection(currencyAddress: Address!, lenders: [Address!]!, statuses: [LoanStatusType!]!): [SourceStatisticsFromCollection!]!
@@ -1468,7 +1401,7 @@ type Query {
   getUserPoints: Int!
   listAuctions(after: String, currencyAddress: Address = null, first: Int = 10, sortBy: [AuctionSortInput!] = null, statuses: [AuctionStatus!] = null): AuctionConnection!
   listBids(after: String, auctionId: String = null, bidders: [String!] = null, currencyAddress: Address = null, first: Int = 10, onlyLatest: Boolean! = false, sortBy: [BidSortInput!] = null): BidConnection!
-  listCollections(after: String, collections: [Int!] = null, excludeGondiUserVault: Boolean = false, first: Int = 10, searchTerm: String = null, sortBy: [CollectionSortInput!] = null, standards: [TokenStandardType!] = null, withListings: Boolean = false, withLoans: Boolean = false): CollectionConnection!
+  listCollections(after: String, collections: [Int!] = null, excludeGondiUserVault: Boolean = false, first: Int = 10, searchTerm: String = null, sortBy: [CollectionSortInput!] = null, standards: [TokenStandardType!] = null, withAsks: WithAsksInput = null, withListings: Boolean = false, withLoans: Boolean = false): CollectionConnection!
   listCollectionsWithListings(after: String, collections: [Int!] = null, first: Int! = 10, searchTerm: String = null): CollectionConnection!
   listCollectionsWithLoans(after: String, collections: [Int!] = null, first: Int! = 10, searchTerm: String = null): CollectionConnection!
   listListings(after: String, collectionIds: [Int!] = null, currencyAddress: Address = null, first: Int = 10, marketplaceNames: [MarketplaceEnum!] = null, searchTerm: String = null, userFilter: UserFilter = null, withLoans: Boolean = false): ListingConnection!
@@ -1486,7 +1419,7 @@ type Query {
     """Offer only filter."""
     contractAddress: Address = null
     currencyAddress: Address = null
-    first: Int = null
+    first: Int = 10
     hidden: Boolean = null
 
     """Renegotiation only filter."""
@@ -1505,28 +1438,13 @@ type Query {
     statuses: [OfferStatus!] = null
     terms: TermsFilter = null
   ): SingleNFTOfferCollectionOfferRenegotiationConnection!
-  listNftsFromCollections(after: String, collections: [Int!]!, first: Int = 10, onlyListed: Boolean = null, searchTerm: String = null, traitRanges: [TraitRangeOptionsInput!] = null, traits: [TraitKeyValueOptionsInput!] = null): NFTConnection!
+  listNftsFromCollections(after: String, collections: [Int!] = null, currencyAddresses: [Address!] = null, first: Int = 10, marketplaces: [MarketPlaceType!] = null, onlyListed: Boolean = null, searchTerm: String = null, sortBy: [NftSortInput!] = null, terms: NftTermsFilter = null, traitRanges: [TraitRangeOptionsInput!] = null, traits: [TraitKeyValueOptionsInput!] = null): NFTConnection!
   listNftsFromUser(after: String, collectionAddresses: [Address!] = null, first: Int = 10, includeInStash: Boolean! = false, searchTerm: String = null, sortBy: [NftSortInput!] = null, standards: [TokenStandardType!] = null, withLoans: Boolean = false, withNoWraps: Boolean = false): NFTConnection!
   listNotifications(after: String, first: Int = 50, notificationTypes: [NotificationType!] = null, onlyRead: Boolean! = false, onlyUnread: Boolean! = false): NotificationConnection!
   listOffers(after: String, borrowerAddress: String = null, collections: [Int!] = null, contractAddress: Address = null, currencyAddress: Address = null, first: Int = 10, hidden: Boolean = null, lenders: [String!] = null, nfts: [Int!] = null, onlyCollectionOffers: Boolean = false, onlySingleNftOffers: Boolean = false, sortBy: [OffersSortInput!] = null, statuses: [OfferStatus!] = null, terms: TermsFilter = null, worseOffers: Boolean = true): OfferConnection!
-  listPoolActivities(after: String, first: Int! = 20, ownerAddresses: [Address!] = null, poolAddresses: [Address!] = null, types: [PoolActivityType!] = null): PoolActivityConnection!
-  listPools(addresses: [String!] = null, after: String, first: Int! = 10): PoolConnection!
   listRenegotiations(after: String, collections: [Int!] = null, first: Int = 10, hidden: Boolean = null, isAddNewTranche: Boolean = null, loanId: String = null, sortBy: [OffersSortInput!] = null, statuses: [OfferStatus!] = null, terms: RefinanceTermsFilter = null): RenegotiationConnection!
   listSources(after: String, collections: [Int!] = null, contractAddresses: [Address!] = null, currencyAddress: Address = null, excludeAddresses: [Address!] = null, first: Int! = 10, hideEndLocked: Boolean = null, hideLocked: Boolean = null, includeLost: Boolean = null, lenders: [String!] = null, loanPrincipal: Interval = null, sortBy: [SourceSortInput!] = null, statuses: [LoanStatusType!] = null, terms: TermsFilter = null, withdrawalQueues: [Int!] = null): SourceLostSourceConnection!
-  listWithdrawalPositions(after: String, first: Int! = 10, owner: Address = null, poolAddresses: [Address!] = null): WithdrawalPositionConnection!
-  listWithdrawalQueues(after: String, first: Int! = 10, poolAddresses: [Address!] = null): WithdrawalQueueConnection!
   me: User
-}
-
-type QueueDeployed implements Node & PoolActivity {
-  id: String!
-  index: Int!
-  indexInBlock: Int!
-  pool: Pool!
-  poolAddress: Address!
-  queueAddress: Address!
-  timestamp: DateTime!
-  txHash: Hash!
 }
 
 input RangeInput {
@@ -1636,7 +1554,8 @@ type SellAndRepayOrder implements Activity & Node & Order {
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
-  expiration: DateTime
+  evmOrder: JSON
+  expiration: DateTime!
   fees: BigInt!
   hidden: Boolean!
   id: String!
@@ -1652,6 +1571,7 @@ type SellAndRepayOrder implements Activity & Node & Order {
   nftId: Int!
   nonce: BigInt!
   orderType: String!
+  originalId: Hash!
   price: BigInt!
   repaymentCalldata: Hex!
   signature: Signature!
@@ -1762,7 +1682,8 @@ type SingleNFTOrder implements Activity & Node & Order {
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
-  expiration: DateTime
+  evmOrder: JSON
+  expiration: DateTime!
   fees: BigInt!
   hidden: Boolean!
   id: String!
@@ -1775,6 +1696,7 @@ type SingleNFTOrder implements Activity & Node & Order {
   nftId: Int!
   nonce: BigInt!
   orderType: String!
+  originalId: Hash!
   price: BigInt!
   signature: Signature!
   startTime: DateTime!
@@ -2051,90 +1973,7 @@ type UserStatistics {
 """Represents NULL values"""
 scalar Void
 
-type WithdrawalPosition implements Node {
-  available: BigInt!
-  id: String!
-  nft: NFT!
-  nftId: Int!
-  pending: BigInt!
-  requested: BigInt!
-  shares: BigInt!
-  unlockTime: DateTime
-  withdrawalQueue: WithdrawalQueue!
-  withdrawalQueueId: Int!
-  withdrawn: BigInt!
-}
-
-type WithdrawalPositionConnection {
-  edges: [WithdrawalPositionEdge!]!
-  pageInfo: PageInfo!
-  totalCount: Int!
-}
-
-type WithdrawalPositionEdge {
-  cursor: String!
-  node: WithdrawalPosition!
-}
-
-type WithdrawalPositionLocked implements Node & PoolActivity {
-  contract: Address!
-  id: String!
-  indexInBlock: Int!
-  pool: Pool!
-  poolAddress: Address!
-  timestamp: DateTime!
-  txHash: Hash!
-  unlockTime: DateTime!
-}
-
-type WithdrawalPositionMinted implements Node & PoolActivity {
-  contract: Address!
-  id: String!
-  indexInBlock: Int!
-  pool: Pool!
-  poolAddress: Address!
-  receiver: Address!
-  shares: BigInt!
-  timestamp: DateTime!
-  txHash: Hash!
-}
-
-type WithdrawalQueue implements Node {
-  balance: BigInt!
-  collection: Collection!
-  collectionId: Int!
-  id: String!
-  index: Int!
-  pending: BigInt!
-  pool: Pool!
-  poolAddress: Address!
-  requested: BigInt!
-  requesters: Int!
-  startTime: DateTime!
-  status: String!
-  totalShares: BigInt!
-  totalWithdrawn: BigInt!
-}
-
-type WithdrawalQueueConnection {
-  edges: [WithdrawalQueueEdge!]!
-  pageInfo: PageInfo!
-  totalCount: Int!
-}
-
-type WithdrawalQueueEdge {
-  cursor: String!
-  node: WithdrawalQueue!
-}
-
-type WithdrawnFromQueue implements Node & PoolActivity {
-  available: BigInt!
-  contract: Address!
-  id: String!
-  indexInBlock: Int!
-  pool: Pool!
-  poolAddress: Address!
-  receiver: Address!
-  timestamp: DateTime!
-  txHash: Hash!
+input WithAsksInput {
+  enabled: Boolean = false
+  marketplaces: [MarketPlaceType!] = null
 }
