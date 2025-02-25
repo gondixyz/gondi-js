@@ -73,6 +73,7 @@ export class Gondi {
           active: true,
         },
       ],
+      apiKey: process.env.RESERVOIR_API_KEY,
     });
   }
 
