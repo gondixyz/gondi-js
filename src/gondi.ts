@@ -22,6 +22,7 @@ import {
   Currency,
   MarketplaceEnum,
   OffersSortField,
+  Order,
   Ordering,
   SellAndRepayOrder,
   SingleNftSignedOfferInput,
@@ -38,7 +39,13 @@ import {
 } from '@/utils/loan';
 import { min } from '@/utils/number';
 import { FULFILLED, REJECTED } from '@/utils/promises';
-import { isCurrencyApproval, sendTransaction, validateSteps } from '@/utils/reservoir';
+import {
+  isCurrencyApproval,
+  reservoirApi,
+  sendTransaction,
+  validateBuySteps,
+  validateCancelSteps,
+} from '@/utils/reservoir';
 import { areSameAddress } from '@/utils/string';
 import { OptionalNullable } from '@/utils/types';
 
@@ -74,6 +81,7 @@ export class Gondi {
         },
       ],
       apiKey: process.env.RESERVOIR_API_KEY,
+      maxPollingAttemptsBeforeTimeout: 10,
     });
   }
 
@@ -222,7 +230,27 @@ export class Gondi {
     return { ...response, ...sellAndRepayOrderInput };
   }
 
-  async cancelOrder(order: Pick<SellAndRepayOrder, 'cancelCalldata' | 'marketPlaceAddress'>) {
+  async cancelOrder(
+    order:
+      | Pick<SellAndRepayOrder, 'cancelCalldata' | 'marketPlaceAddress'>
+      | Pick<Order, 'originalId'>,
+  ) {
+    if ('originalId' in order) {
+      const { steps } = await reservoirApi('/execute/cancel/v3', 'post', {
+        orderIds: [order.originalId],
+        forceOnChainCancel: true,
+      });
+
+      validateCancelSteps(steps);
+
+      const txData = steps?.[0]?.items?.[0]?.data as TransactionRequestBase;
+
+      const marketPlaceAddress = txData.to as Address;
+      const calldata = txData.data as Hex;
+
+      return this.contracts.GenericContract(marketPlaceAddress).sendTransactionData(calldata);
+    }
+
     return this.contracts
       .GenericContract(order.marketPlaceAddress)
       .sendTransactionData(order.cancelCalldata);
@@ -1010,6 +1038,7 @@ export class Gondi {
           currencyDecimals: currency.decimals,
         },
       },
+      chainId: this.wallet.chain.id,
       onProgress: (_steps: Execute['steps']) => void 0,
       options: {
         currency: currency.address,
@@ -1022,7 +1051,7 @@ export class Gondi {
     if (buyResult === true) throw new Error('Steps were expected');
 
     const { steps } = buyResult;
-    validateSteps(steps);
+    validateBuySteps(steps);
 
     for (const step of steps) {
       let skipStep = false;
