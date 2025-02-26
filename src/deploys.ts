@@ -8,11 +8,13 @@ interface Contracts {
     v4: Address;
     v5: Address;
     v6: Address;
+    v7: Address;
   };
   AuctionLoanLiquidator: {
     v4: Address;
     v5: Address;
     v6: Address;
+    v7: Address;
   };
   UserVault: {
     v5: Address;
@@ -21,6 +23,7 @@ interface Contracts {
   PurchaseBundler: {
     v5: Address;
     v6: Address;
+    v7: Address;
   };
   Seaport: Address;
 }
@@ -58,6 +61,9 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
         v6:
           ensureAddress(process.env.GONDI_MULTI_SOURCE_LOAN_V6) ??
           '0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1',
+        v7:
+          ensureAddress(process.env.GONDI_MULTI_SOURCE_LOAN_V7) ??
+          '0x95401dc811bb5740090279Ba06cfA8fcF6113778',
       },
       AuctionLoanLiquidator: {
         v4:
@@ -69,6 +75,9 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
         v6:
           ensureAddress(process.env.GONDI_AUCTION_LOAN_LIQUIDATOR_V6) ??
           '0x59b670e9fA9D0A427751Af201D676719a970857b',
+        v7:
+          ensureAddress(process.env.GONDI_AUCTION_LOAN_LIQUIDATOR_V7) ??
+          '0xf5059a5D33d5853360D16C683c16e67980206f36',
       },
       UserVault: {
         v5:
@@ -85,6 +94,8 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
         v6:
           ensureAddress(process.env.GONDI_PURCHASE_BUNDLER_V6) ??
           '0x7a2088a1bFc9d81c55368AE168C2C02570cB814F',
+        v7: ensureAddress(process.env.GONDI_PURCHASE_BUNDLER_V7) ??
+          '0x99bbA657f2BbC93c02D617f8bA121cB8Fc104Acf',
       },
       Seaport:
         ensureAddress(process.env.GONDI_SEAPORT) ?? '0x0000000000000068F116a894984e2DB1123eB395',
@@ -97,11 +108,13 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
         v4: '0x60C20627429668F267b5cF55c6605c665C69887D',
         v5: '0xTODO',
         v6: '0xTODO',
+        v7: '0xTODO',
       },
       AuctionLoanLiquidator: {
         v4: '0x29C73faa2f9180ea5a7B0bEC243ebc63a5B4f280',
         v5: '0xTODO',
         v6: '0xTODO',
+        v7: '0xTODO',
       },
       UserVault: {
         v5: '0xTODO',
@@ -110,6 +123,7 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
       PurchaseBundler: {
         v5: '0xTODO',
         v6: '0xTODO',
+        v7: '0xTODO',
       },
       Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
     };
@@ -120,11 +134,13 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
       v4: '0xCa5a494Ca20483e21ec1E41FE1D9461Da77595Bd',
       v5: '0x478f6F994C6fb3cf3e444a489b3AD9edB8cCaE16',
       v6: '0xf65b99ce6dc5f6c556172bcc0ff27d3665a7d9a8',
+      v7: '0xTODO',
     },
     AuctionLoanLiquidator: {
       v4: '0x237e4421C742d843Fdd96D22294D338507e17091',
       v5: '0x97d34635b605c2f1630d6b4c6c5d222b8a2ca47d',
       v6: '0x2995ae7233fa89b314b5a707465b57a582f440f0',
+      v7: '0xTODO',
     },
     UserVault: {
       v5: '0x14a6Dcebb2Bb73aae1b199CCAadA75247b81976D',
@@ -133,6 +149,7 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
     PurchaseBundler: {
       v5: '0x3b59bffe109e0f33f20887343759a98b48ecdf5f',
       v6: '0x53ceda4c47585df08201955820e23bb261489140',
+      v7: '0xTODO',
     },
     Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
   };

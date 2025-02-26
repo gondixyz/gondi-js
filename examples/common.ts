@@ -7,6 +7,7 @@ dotenv.config();
 
 const RPC = process.env.RPC_URL;
 const MULTI_SOURCE_LOAN_CONTRACT_V6 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ?? '';
+const MULTI_SOURCE_LOAN_CONTRACT_V7 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V7 ?? '';
 const POOL_WETH_ADDRESS = process.env.POOL_WETH ?? '';
 const POOL_USDC_ADDRESS = process.env.POOL_USDC ?? '';
 const WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
@@ -161,6 +162,7 @@ const approveForUser = async (user: Gondi, to: Address) => {
 
 const SEAPORT_CONTRACT_ADDRESS = '0x0000000000000068F116a894984e2DB1123eB395';
 const CONTRACTS = [
+  MULTI_SOURCE_LOAN_CONTRACT_V7,
   MULTI_SOURCE_LOAN_CONTRACT_V6,
   process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? '',
   process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? '',

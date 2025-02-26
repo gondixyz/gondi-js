@@ -44,9 +44,9 @@ export class PurchaseBundler extends BaseContract<typeof purchaseBundlerAbi> {
     ],
   } as const;
 
-  
-async buy({ emitCalldata }: { emitCalldata: Hex }) {
-  const txHash = await this.safeContractWrite.buy([[emitCalldata]]);
+
+async buy({ emitCalldata, value }: { emitCalldata: Hex; value: bigint }) {
+  const txHash = await this.safeContractWrite.buy([[emitCalldata]], { value });
 
   return {
     txHash,

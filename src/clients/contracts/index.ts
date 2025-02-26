@@ -38,27 +38,50 @@ export class Contracts {
   MultiSourceLoanV4: MslV4;
   MultiSourceLoanV5: MslV5;
   MultiSourceLoanV6: MslV6;
+  MultiSourceLoanV7: MslV6;
   AuctionLoanLiquidatorV4: AllV4;
   AuctionLoanLiquidatorV5: AllV5;
   AuctionLoanLiquidatorV6: AllV6;
+  AuctionLoanLiquidatorV7: AllV6;
   UserVaultV5: UserVaultV5;
   UserVaultV6: UserVaultV6;
   PurchaseBundlerV5: PurchaseBundler;
   PurchaseBundlerV6: PurchaseBundler;
   Seaport: Seaport;
+  PurchaseBundlerV7: PurchaseBundler;
 
   constructor(publicClient: GondiPublicClient, walletClient: Wallet) {
     this.walletClient = walletClient;
     this.publicClient = publicClient;
 
-    const { PurchaseBundler: PurchaseBundlerContract } = getContracts(walletClient.chain);
+    const {
+      PurchaseBundler: PurchaseBundlerContract,
+      MultiSourceLoan: MultiSourceLoanContract,
+      AuctionLoanLiquidator: AuctionLoanLiquidatorContract,
+    } = getContracts(walletClient.chain);
 
     this.MultiSourceLoanV4 = new MslV4({ walletClient });
     this.MultiSourceLoanV5 = new MslV5({ walletClient });
-    this.MultiSourceLoanV6 = new MslV6({ walletClient });
+    this.MultiSourceLoanV6 = new MslV6({
+      walletClient,
+      contractAddress: MultiSourceLoanContract.v6,
+      version: '3',
+    });
+    this.MultiSourceLoanV7 = new MslV6({
+      walletClient,
+      contractAddress: MultiSourceLoanContract.v7,
+      version: '3.1',
+    });
     this.AuctionLoanLiquidatorV4 = new AllV4({ walletClient });
     this.AuctionLoanLiquidatorV5 = new AllV5({ walletClient });
-    this.AuctionLoanLiquidatorV6 = new AllV6({ walletClient });
+    this.AuctionLoanLiquidatorV6 = new AllV6({
+      walletClient,
+      contractAddress: AuctionLoanLiquidatorContract.v6,
+    });
+    this.AuctionLoanLiquidatorV7 = new AllV6({
+      walletClient,
+      contractAddress: AuctionLoanLiquidatorContract.v7,
+    });
     this.UserVaultV5 = new UserVaultV5({ walletClient });
     this.UserVaultV6 = new UserVaultV6({ walletClient });
     this.PurchaseBundlerV5 = new PurchaseBundler({
@@ -73,6 +96,11 @@ export class Contracts {
     });
     this.Seaport = new Seaport({
       walletClient,
+    });
+    this.PurchaseBundlerV7 = new PurchaseBundler({
+      walletClient,
+      contractAddress: PurchaseBundlerContract.v7,
+      msl: this.MultiSourceLoanV7,
     });
   }
 
@@ -102,6 +130,9 @@ export class Contracts {
     if (areSameAddress(contractAddress, this.MultiSourceLoanV6.address)) {
       return this.MultiSourceLoanV6;
     }
+    if (areSameAddress(contractAddress, this.MultiSourceLoanV7.address)) {
+      return this.MultiSourceLoanV7;
+    }
     throw new Error(`Invalid Contract Address ${contractAddress}`);
   }
 
@@ -120,6 +151,9 @@ export class Contracts {
     if (areSameAddress(contractAddress, this.MultiSourceLoanV6.address)) {
       return this.AuctionLoanLiquidatorV6;
     }
+    if (areSameAddress(contractAddress, this.MultiSourceLoanV7.address)) {
+      return this.AuctionLoanLiquidatorV7;
+    }
     throw new Error(`Invalid Contract Address ${contractAddress}`);
   }
 
@@ -134,6 +168,9 @@ export class Contracts {
     }
     if (areSameAddress(mslContractAddress, this.MultiSourceLoanV6.address)) {
       return this.PurchaseBundlerV6;
+    }
+    if (areSameAddress(mslContractAddress, this.MultiSourceLoanV7.address)) {
+      return this.PurchaseBundlerV7;
     }
     throw new Error(`Invalid Contract Address ${mslContractAddress}`);
   }

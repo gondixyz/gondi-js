@@ -20,6 +20,7 @@ import { Api, Props as ApiProps } from '@/clients/api';
 import { Contracts, GondiPublicClient, Wallet } from '@/clients/contracts';
 import { Opensea } from '@/clients/opensea';
 import {
+  BnplOrderInput,
   Currency,
   MarketplaceEnum,
   OffersSortField,
@@ -37,7 +38,7 @@ import {
   LoanToMslLoanType,
   renegotiationToMslRenegotiation,
 } from '@/utils/loan';
-import { min } from '@/utils/number';
+import { max, min, mulDivUp } from '@/utils/number';
 import { isNative, isOpensea } from '@/utils/orders';
 import { FULFILLED, REJECTED } from '@/utils/promises';
 import { areSameAddress } from '@/utils/string';
@@ -248,7 +249,32 @@ export class Gondi {
     return { ...response, ...sellAndRepayOrderInput };
   }
 
-  async buyNowPayLater(orderInput: Parameters<Api['publishBuyNowPayLaterOrder']>[0]) {
+  async buyNowPayLater({
+    amounts,
+    contractAddress,
+    loanDuration,
+    offers,
+    tokenId,
+  }: {
+    amounts: bigint[];
+    contractAddress: Address;
+    loanDuration: bigint;
+    offers: OfferFromExecutionOffer[];
+    tokenId: bigint;
+  }) {
+    const orderInput: BnplOrderInput = {
+      amounts,
+      contractAddress,
+      loanDuration,
+      offerIds: offers.map((offer) => offer.id),
+      tokenId,
+    };
+
+    const borrowed = amounts.reduce((acc, amount, index) => {
+      const fee = mulDivUp(offers[index].fee, amount, offers[index].principalAmount);
+      return acc + amount - fee;
+    }, 0n);
+
     let response = await this.api.publishBuyNowPayLaterOrder(orderInput);
     while (response.__typename === 'SignatureRequest') {
       const key = response.key as 'signature' | 'emitSignature';
@@ -258,9 +284,10 @@ export class Gondi {
 
     if (response.__typename !== 'BuyNowPayLaterOrder') throw new Error('This should never happen');
 
-    return this.contracts
-      .PurchaseBundler(this.defaults.Msl)
-      .buy({ emitCalldata: response.emitCalldata });
+    return this.contracts.PurchaseBundler(offers[0].contractAddress).buy({
+      emitCalldata: response.emitCalldata,
+      value: max(0n, response.price - borrowed),
+    });
   }
 
   async cancelOrder(order: { cancelCalldata: Hex; marketPlaceAddress: Address }) {
