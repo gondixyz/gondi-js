@@ -94,10 +94,14 @@ export class BaseContract<TAbi extends Abi> {
     const txHash = await this.wallet.sendTransaction({ data, to: this.address });
     return {
       txHash,
-      waitTxInBlock: () =>
-        this.bcClient.waitForTransactionReceipt({
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
           hash: txHash,
-        }),
+        });
+        if (receipt.status === 'reverted')
+          throw new Error(`Transaction reverted to:${this.address}, data:${data}`);
+        return receipt;
+      },
     };
   }
 }
