@@ -131,8 +131,8 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
       v6: '0x823dE2c44369e94CAc3DA789Ad4b6493e27e4Bfe',
     },
     PurchaseBundler: {
-      v5: '0x2f3d5c443643dd20ac1cdfa47bdd63a3b151a53b',
-      v6: '0xd2F1c03010e85520726d981C9B8D97b8054A1445',
+      v5: '0x3b59bffe109e0f33f20887343759a98b48ecdf5f',
+      v6: '0x53ceda4c47585df08201955820e23bb261489140',
     },
     Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
   };
