@@ -16,7 +16,7 @@ const makeOrder = async () => {
   });
   const { loan, loanId } = await emitLoan.waitTxInBlock();
   try {
-    const signedOrder = await users[1].makeOrder({
+    const signedOrder = await users[1].makeSellAndRepayOrder({
       startTime: BigInt(Math.floor(Date.now() * 1_000)),
       contractAddress: test721Collection.contractAddress,
       tokenId: testTokenId,

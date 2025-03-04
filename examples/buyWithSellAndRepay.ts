@@ -21,7 +21,7 @@ const sellAndRepay = async () => {
   await sleep(2000);
   try {
     const price = 100n;
-    const signedOrder = await owner.makeOrder({
+    const signedOrder = await owner.makeSellAndRepayOrder({
       collectionContractAddress: test721Collection.contractAddress,
       tokenId: testTokenId,
       price,

@@ -16,7 +16,7 @@ const cancelOrder = async () => {
   });
   const { loan, loanId } = await emitLoan.waitTxInBlock();
   try {
-    const order = await users[1].makeOrder({
+    const order = await users[1].makeSellAndRepayOrder({
       collectionContractAddress: test721Collection.contractAddress,
       tokenId: testTokenId,
       price: 1n,

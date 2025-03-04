@@ -207,7 +207,22 @@ export class Gondi {
     return await this.api.saveCollectionOffer(signedOffer);
   }
 
-  async makeOrder(sellAndRepayOrderInput: Parameters<Api['publishSellAndRepayOrder']>[0]) {
+  async makeOrder(orderInput: Parameters<Api['publishOrder']>[0]) {
+    let response = await this.api.publishOrder(orderInput);
+    while (response.__typename === 'SignatureRequest') {
+      const key = response.key as 'signature';
+      orderInput[key] = await this.wallet.signTypedData(response.typedData as TypedDataDefinition);
+      response = await this.api.publishOrder(orderInput);
+    }
+
+    if (response.__typename !== 'SingleNFTOrder') throw new Error('This should never happen');
+
+    return { ...response, ...orderInput };
+  }
+
+  async makeSellAndRepayOrder(
+    sellAndRepayOrderInput: Parameters<Api['publishSellAndRepayOrder']>[0],
+  ) {
     let response = await this.api.publishSellAndRepayOrder(sellAndRepayOrderInput);
     while (response.__typename === 'SignatureRequest') {
       const key = response.key as 'signature' | 'repaymentSignature';

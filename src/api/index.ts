@@ -11,6 +11,7 @@ import {
   ListLoansQueryVariables,
   ListOffersQueryVariables,
   NftOrderInput,
+  SingleNftOrderInput,
   SingleNftSignedOfferInput,
 } from '@/generated/graphql';
 import { RenegotiationOffer } from '@/model';
@@ -90,6 +91,11 @@ export class Api {
       nftCollateralTokenId: response.offer.nft.tokenId,
       ...offerInput,
     };
+  }
+
+  async publishOrder(orderInput: SingleNftOrderInput) {
+    const response = await this.api.publishOrderForNft({ orderInput });
+    return response.result;
   }
 
   async publishSellAndRepayOrder(orderInput: NftOrderInput) {
