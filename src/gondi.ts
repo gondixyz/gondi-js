@@ -11,7 +11,6 @@ import {
   createTransport,
   Hash,
   Hex,
-  TransactionRequestBase,
   TypedDataDefinition,
 } from 'viem';
 
@@ -38,7 +37,6 @@ import {
 } from '@/utils/loan';
 import { min } from '@/utils/number';
 import { FULFILLED, REJECTED } from '@/utils/promises';
-import { isCurrencyApproval, sendTransaction, validateSteps } from '@/utils/reservoir';
 import { areSameAddress } from '@/utils/string';
 import { OptionalNullable } from '@/utils/types';
 
@@ -1028,37 +1026,10 @@ export class Gondi {
       onProgress: (_steps: Execute['steps']) => void 0,
       options: {
         currency: currency.address,
-        excludeEOA: true,
-        skipBalanceCheck: true,
       },
-      precheck: true,
     });
 
-    if (buyResult === true) throw new Error('Steps were expected');
-
-    const { steps } = buyResult;
-    validateSteps(steps);
-
-    for (const step of steps) {
-      let skipStep = false;
-      if (isCurrencyApproval(step)) {
-        const {
-          from = this.wallet.account.address,
-          to: toCurrency,
-          data,
-        } = step.items?.[0].data as TransactionRequestBase;
-        if (!data) throw new Error('No data', data);
-
-        const currencyAddress = toCurrency ?? currency.address;
-        const erc20 = this.contracts.ERC20(currencyAddress);
-        const [to, wantedAllowance] = erc20.decodeApproveCalldata(data);
-
-        const currentAllowance = await erc20.contract.read.allowance([from, to]);
-        skipStep = currentAllowance >= wantedAllowance;
-      }
-      if (skipStep) continue;
-      await sendTransaction(this.wallet, this.bcClient, step);
-    }
+    return buyResult;
   }
 }
 
