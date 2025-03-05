@@ -1,3 +1,23 @@
+# Breaking Changes 0.18.6
+
+### Important
+
+---
+
+This document outlines the breaking changes introduced in our codebase for version 0.18.6. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [Make Order](#replace-makeorder-with-makesellandrepayorder) makeOrder was renamed to makeSellAndRepayOrder
+
+---
+
+## Replace makeOrder with makeSellAndRepayOrder
+
+**Description:**
+
+`makeOrder` was renamed to `makeSellAndRepayOrder`. `makeOrder` now creates a single-nft-order instead of a sell-and-repay order.
+
 # Breaking Changes 0.16.1
 
 ### Important
