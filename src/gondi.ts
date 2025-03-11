@@ -1004,6 +1004,18 @@ export class Gondi {
     });
   }
 
+  async sellAndRepay({
+    mslContractAddress,
+    repaymentCalldata,
+  }: {
+    mslContractAddress: Address;
+    repaymentCalldata: Hex;
+  }) {
+    return await this.contracts.PurchaseBundler(mslContractAddress).sell({
+      repaymentCalldata,
+    });
+  }
+
   async buyNft({
     price,
     currency,
