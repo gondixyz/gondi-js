@@ -90,8 +90,8 @@ export class BaseContract<TAbi extends Abi> {
     });
   }
 
-  async sendTransactionData(data: Hex) {
-    const txHash = await this.wallet.sendTransaction({ data, to: this.address });
+  async sendTransactionData(data: Hex, value?: bigint) {
+    const txHash = await this.wallet.sendTransaction({ data, to: this.address, value });
     return {
       txHash,
       waitTxInBlock: async () => {
