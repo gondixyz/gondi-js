@@ -1,0 +1,34 @@
+name: Manage "Address review" label
+
+on:
+  # Trigger when a pull request review is submitted
+  pull_request_review:
+    types: [submitted]
+
+  # Trigger when someone leaves a new comment on the pull request
+  issue_comment:
+    types: [created]
+
+jobs:
+  manage-address-review-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: Label if review not approved
+        if: >
+          github.event_name == 'pull_request_review' &&
+          github.event.review.state != 'approved'
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: address review
+
+      - name: Label if PR comment
+        if: >
+          github.event_name == 'issue_comment' &&
+          github.event.action == 'created' &&
+          github.event.issue.pull_request != null
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: address review
