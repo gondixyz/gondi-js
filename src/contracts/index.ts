@@ -9,6 +9,7 @@ import { oldErc721Abi } from '@/generated/blockchain/oldERC721';
 import { erc721ABI } from '@/generated/blockchain/v5';
 import { erc1155Abi } from '@/generated/blockchain/v6';
 import { NftStandard } from '@/model';
+import { getAbi } from '@/utils/abi';
 import { areSameAddress } from '@/utils/string';
 
 import { AllV4 } from './AllV4';
@@ -20,7 +21,6 @@ import { MslV5 } from './MslV5';
 import { MslV6 } from './MslV6';
 import { UserVaultV5 } from './UserVaultV5';
 import { UserVaultV6 } from './UserVaultV6';
-
 export type Wallet = WalletClient<Transport, Chain, Account>;
 export type GondiPublicClient = PublicClient<Transport, Chain>;
 
@@ -79,7 +79,7 @@ export class Contracts {
   GenericContract(address: Address) {
     return new BaseContract({
       address,
-      abi: [],
+      abi: getAbi(address, this.walletClient.chain),
       walletClient: this.walletClient,
     });
   }
