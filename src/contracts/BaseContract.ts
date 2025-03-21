@@ -6,6 +6,7 @@ import {
   ContractFunctionName,
   createPublicClient,
   createTransport,
+  decodeFunctionData,
   getContract,
   GetContractReturnType,
   Hash,
@@ -91,7 +92,7 @@ export class BaseContract<TAbi extends Abi> {
   }
 
   async sendTransactionData(data: Hex, value?: bigint) {
-    const txHash = await this.wallet.sendTransaction({ data, to: this.address, value });
+    const txHash = await this.sendTransactionWithAbiValidation(data, value);
     return {
       txHash,
       waitTxInBlock: async () => {
@@ -103,5 +104,22 @@ export class BaseContract<TAbi extends Abi> {
         return receipt;
       },
     };
+  }
+
+  private async sendRawTransaction(data: Hex, value?: bigint) {
+    return this.wallet.sendTransaction({ data, to: this.address, value });
+  }
+
+  private async sendTransactionWithAbiValidation(data: Hex, value?: bigint) {
+    try {
+      const decoded = decodeFunctionData({
+        abi: this.abi,
+        data,
+      });
+      // @ts-expect-error
+      return this.safeContractWrite[decoded.functionName](decoded.args, { value });
+    } catch (e) {
+      return this.sendRawTransaction(data, value);
+    }
   }
 }
