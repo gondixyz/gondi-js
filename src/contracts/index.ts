@@ -1,4 +1,4 @@
-import { Account, Address, Chain, PublicClient, Transport, WalletClient } from 'viem';
+import { Abi, Account, Address, Chain, PublicClient, Transport, WalletClient } from 'viem';
 
 import { Erc20 } from '@/contracts/Erc20';
 import { OldERC721Wrapper } from '@/contracts/OldERC721Wrapper';
@@ -6,10 +6,10 @@ import { PurchaseBundler } from '@/contracts/PurchaseBundler';
 import { Seaport } from '@/contracts/Seaport';
 import { getContracts } from '@/deploys';
 import { oldErc721Abi } from '@/generated/blockchain/oldERC721';
+import { seaportABI } from '@/generated/blockchain/seaport';
 import { erc721ABI } from '@/generated/blockchain/v5';
 import { erc1155Abi } from '@/generated/blockchain/v6';
 import { NftStandard } from '@/model';
-import { getAbi } from '@/utils/abi';
 import { areSameAddress } from '@/utils/string';
 
 import { AllV4 } from './AllV4';
@@ -77,9 +77,17 @@ export class Contracts {
   }
 
   GenericContract(address: Address) {
+    const contracts = getContracts(this.walletClient.chain);
+
+    let abi: Abi = [];
+
+    if (areSameAddress(address, contracts.Seaport)) {
+      abi = seaportABI;
+    }
+
     return new BaseContract({
       address,
-      abi: getAbi(address, this.walletClient.chain),
+      abi,
       walletClient: this.walletClient,
     });
   }
