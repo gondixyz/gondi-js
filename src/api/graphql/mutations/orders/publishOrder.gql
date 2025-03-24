@@ -4,7 +4,6 @@ mutation publishOrderForNft($orderInput: SingleNFTOrderInput!) {
       id
       status
       signature
-      cancelCalldata
       marketPlaceAddress
     }
     ... on SignatureRequest {
