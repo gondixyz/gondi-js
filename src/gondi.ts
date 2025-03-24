@@ -22,7 +22,6 @@ import {
   MarketplaceEnum,
   OffersSortField,
   Ordering,
-  SellAndRepayOrder,
   SingleNftSignedOfferInput,
   TokenStandardType,
 } from '@/generated/graphql';
@@ -235,7 +234,7 @@ export class Gondi {
     return { ...response, ...sellAndRepayOrderInput };
   }
 
-  async cancelOrder(order: Pick<SellAndRepayOrder, 'cancelCalldata' | 'marketPlaceAddress'>) {
+  async cancelOrder(order: { marketPlaceAddress: Address; cancelCalldata: Hex }) {
     return this.contracts
       .GenericContract(order.marketPlaceAddress)
       .sendTransactionData(order.cancelCalldata);
