@@ -6,6 +6,7 @@ import { getSdkApollo } from '@/api/sdk';
 import { zeroAddress } from '@/blockchain';
 import { Wallet } from '@/contracts';
 import {
+  CollectionOrderInput,
   CollectionSignedOfferInput,
   ListListingsQueryVariables,
   ListLoansQueryVariables,
@@ -93,9 +94,16 @@ export class Api {
     };
   }
 
-  async publishOrder(orderInput: SingleNftOrderInput) {
-    const response = await this.api.publishOrderForNft({ orderInput });
-    return response.result;
+  async publishOrder(orderInput: SingleNftOrderInput | CollectionOrderInput) {
+    if ('tokenId' in orderInput) {
+      const response = await this.api.publishOrderForNft({ orderInput });
+      return response.result;
+    }
+    if ('collectionId' in orderInput) {
+      const response = await this.api.publishOrderForCollection({ orderInput });
+      return response.result;
+    }
+    throw new Error('Invalid order input');
   }
 
   async publishSellAndRepayOrder(orderInput: NftOrderInput) {
