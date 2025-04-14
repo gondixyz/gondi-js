@@ -1,0 +1,19 @@
+mutation publishOrderForCollection($orderInput: CollectionOrderInput!) {
+  result: publishOrderForCollection(orderInput: $orderInput) {
+    ... on CollectionOrder {
+      id
+      status
+      signature
+      marketPlaceAddress
+    }
+    ... on SignatureRequest {
+      key
+      typedData {
+        types
+        primaryType
+        domain
+        message
+      }
+    }
+  }
+}

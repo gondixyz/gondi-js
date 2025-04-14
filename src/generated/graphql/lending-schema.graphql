@@ -201,6 +201,7 @@ type BuyNowPayLaterOrder implements Activity & Node & Order {
 
 union BuyNowPayLaterOrderSignatureRequest = BuyNowPayLaterOrder | SignatureRequest
 
+"""An NFT collection."""
 type Collection implements Node {
   bannerImage: Asset
   collectionUrl: String
@@ -317,6 +318,7 @@ type CollectionOfferStatistics {
 
 type CollectionOrder implements Activity & Node & Order {
   collection: Collection!
+  collectionId: Int!
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
@@ -342,6 +344,19 @@ type CollectionOrder implements Activity & Node & Order {
   timestamp: DateTime!
   txHash: Hash
 }
+
+input CollectionOrderInput {
+  amount: BigInt!
+  collectionId: Int!
+  currencyAddress: Address!
+  expirationTime: BigInt!
+  isAsk: Boolean!
+  signature: Signature = null
+  startTime: BigInt!
+  taker: Address = null
+}
+
+union CollectionOrderSignatureRequest = CollectionOrder | SignatureRequest
 
 input CollectionSignedOfferInput {
   aprBps: BigInt!
@@ -437,6 +452,17 @@ type Currency implements Node {
 type CurrencyAmount {
   amount: Float!
   currency: Currency!
+}
+
+type CurrencyConnection {
+  edges: [CurrencyEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type CurrencyEdge {
+  cursor: String!
+  node: Currency!
 }
 
 """Date with time (isoformat)"""
@@ -892,6 +918,9 @@ type LoansData {
   minRemainingTime: BigInt!
 }
 
+"""
+This is the definition of a lost source. Lost sources are the lender/s that have lost a loan because of renegotiation or refinance. 
+"""
 type LostSource implements Node {
   accruedInterest: BigInt!
   activity: LoanActivity!
@@ -939,6 +968,9 @@ enum MarketplaceEnum {
   NFTFI
 }
 
+"""
+This is the definition of a loan. In sources you can find the tranches of the loan.Take into account that the loan fields can change if renegotiation or refinance happens.You can use listLoanEvents to get the history of the loan.
+"""
 type MultiSourceLoan implements Loan & Node {
   activities: [LoanActivity!]!
   address: Address!
@@ -986,6 +1018,7 @@ type MultiSourceLoanEdge {
   node: MultiSourceLoan!
 }
 
+"""A snapshot in time of a loan."""
 type MultiSourceLoanHistory implements Node {
   activity: LoanActivity!
   activityId: String!
@@ -1003,32 +1036,108 @@ type MultiSourceLoanHistory implements Node {
 }
 
 type Mutation {
+  """
+  Lists all NFTs from a user to start receiving loan offers. Can be filtered to only match certain criteria.
+  """
   addListingsOfNftsFromUser(desiredDuration: Int = null, desiredPrincipalAddress: Address = null, excludeCollections: [String!] = null, onlyCollections: [String!] = null, searchTerm: String = null): Void
+
+  """Adds or updates a listing to start receiving loan offers."""
   addOrUpdateListing(desiredDuration: Int = null, desiredPrincipalAddress: Address = null, nftId: Int!): Listing!
+
+  """
+  Adds or updates a renegotiation request.A renegotiation request is only a suggestion for potential lenders to show your intentions and the terms you want.
+  """
   addOrUpdateRenegotiationRequest(desiredAprBps: BigInt = null, desiredDuration: BigInt = null, desiredPrincipalAmount: BigInt = null, loanId: String!): RenegotiationRequest!
+
+  """
+  Adds or updates a top-up request.A top-up request is only a suggestion for potential lenders to show your intentions and the terms you want.
+  """
   addOrUpdateTopUpRequest(desiredAprBps: BigInt = null, desiredTopUp: BigInt = null, loanId: String!): TopUpRequest!
+
+  """
+  This is the first step of the collection offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_signed_collection_offer. Refer to gondi-js examples for more details.
+  """
   generateCollectionOfferToBeSigned(offerInput: CollectionOfferInput!): CollectionOffer!
+
+  """
+  This is the first step of the renegotiation offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_renegotiation_signed_offer. Refer to gondi-js examples for more details.
+  """
   generateRenegotiationOfferToBeSigned(renegotiationInput: RenegotiationOfferInput!): Renegotiation!
+
+  """
+  This is the first step of the single NFT offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_signed_single_nft_offer. Refer to gondi-js examples for more details.
+  """
   generateSingleNftOfferToBeSigned(offerInput: SingleNFTOfferInput!): SingleNFTOffer!
+
+  """Hides all offers from a user for a given contract address. """
   hideAllOffers(contractAddress: Address!, minOfferId: String!): [Offer!]!
+
+  """Hides an offer."""
   hideOffer(contractAddress: Address!, offerId: String!): Offer!
+
+  """Hides an order."""
   hideOrder(orderId: Int!): Order!
+
+  """Hides a renegotiation offer. """
   hideRenegotiation(contractAddress: Address = "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9", renegotiationId: String!): Renegotiation!
   markNotificationIdsAsRead(ids: [Int!]): Void
   markNotificationsAsRead: Void
+
+  """
+  Creates a buy now pay later order. Buy now pay later orders are orders which use a loan offer principal to buy and NFT and start a loan making the borrower the creator of the order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You will have to do this process two times since multiple signatures are required. You should receive an BuyNowPayLaterOrder if everything went well. Refer to gondi-js examples for more details on how to sign it and pay the order.
+  """
   publishBuyNowPayLaterOrder(orderInput: BNPLOrderInput!): BuyNowPayLaterOrderSignatureRequest!
+
+  """
+  Creates a collection order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an CollectionOrder if everything went well. An order can be an ASK or a BID. 
+  """
+  publishOrderForCollection(orderInput: CollectionOrderInput!): CollectionOrderSignatureRequest!
+
+  """
+  Creates a single NFT order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an SingleNFTOrder if everything went well. An order can be an ASK or a BID. Refer to gondi-js examples for more details.
+  """
   publishOrderForNft(orderInput: SingleNFTOrderInput!): SingleNFTOrderSignatureRequest!
+
+  """
+  Creates a sell and repay order. Sell and repay orders are orders to sell an NFT and use that money to repay a loan leaving the rest for the borrower. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You will have to do this process two times since multiple signatures are required. You should receive an SellAndRepayOrder if everything went well. Refer to gondi-js examples for more details on how to sign it and pay the order.
+  """
   publishSellAndRepayOrder(orderInput: NFTOrderInput!): SellAndRepayOrderSignatureRequest!
+
+  """Removes a listing from a user."""
   removeListing(nftId: Int!): Listing!
+
+  """Removes all the listings from a user. Can be filtered."""
   removeListingsOfNftsFromUser(excludeCollections: [String!] = null, onlyCollections: [String!] = null, searchTerm: String = null): Void
+
+  """Removes a renegotiation request."""
   removeRenegotiationRequest(loanId: String!): RenegotiationRequest!
+
+  """Removes a top-up request."""
   removeTopUpRequest(loanId: String!): TopUpRequest!
+
+  """
+  This is the second step of the renegotiation offer flow after generate_renegotiation_offer_to_be_signed. It saves the signed offer. Refer to gondi-js examples for more details.
+  """
   saveRenegotiationSignedOffer(fallbackOfferInput: SingleNFTSignedOfferInput = null, signedRenegotiationInput: SignedRenegotiationOfferInput!): Renegotiation!
+
+  """
+  This is the second step of the collection offer flow after generate_collection_offer_to_be_signed. It saves the signed offer. Refer to gondi-js examples for more details.
+  """
   saveSignedCollectionOffer(signedOfferInput: CollectionSignedOfferInput!): CollectionOffer!
+
+  """
+  This is the second step of the single NFT offer flow after generate_single_nft_offer_to_be_signed. It saves the signed offer. Refer to gondi-js examples for more details.
+  """
   saveSignedSingleNftOffer(signedOfferInput: SingleNFTSignedOfferInput!): SingleNFTOffer!
   setReferral(referrerId: Int!): Void
+
+  """Unhides an offer."""
   showOffer(contractAddress: Address!, offerId: String!): Offer!
+
+  """Unhides an order."""
   showOrder(orderId: Int!): Order!
+
+  """Unhides a renegotiation offer. """
   showRenegotiation(contractAddress: Address = "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9", renegotiationId: String!): Renegotiation!
 }
 
@@ -1565,18 +1674,30 @@ type PoolStatistics {
   totalLoanVolume: BigInt!
 }
 
+"""Query for the lending module"""
 type Query {
+  """Get some general loan stats about the activities for a collection."""
   getCollectionActivitiesCount(collectionId: Int!, currencyAddress: Address, fromTimestamp: Int!): CollectionEventsCountByDayAndCurrency!
+
+  """
+  Get a collection by its slug. Slugs are unique identifiers for collections. 
+  """
   getCollectionBySlug(slug: String!): Collection
+
+  """Get some general loans stats from a collection."""
   getCollectionLoansData(collectionId: Int!, currencyAddress: Address): CollectionLoansData!
   getCollectionsByContractAddress(contractAddress: Address!): [Collection!]!
   getListingById(listingId: Int!): Listing
   getLoanActivitiesStatisticsByMonth(activities: [LoanActivityType!]!, currencyAddress: Address!, lenders: [Address!]!): LoanActivitiesStatisticsByMonth!
+
+  """
+  Get a loan by the contract address and loan id used in the contract on-chain.Unless specified as in this case, loan id is the internal gondi id of the loan and not the id used inside the contract.Internal gondi id is unique between all loans.Note that contract loan id is only unique within a contract version and that Gondi has multiple versions of the MSL (MultiSourceLoan) contract.
+  """
   getLoanById(address: String!, loanId: Int!): Loan
   getNftByContractAddressAndTokenId(contractAddress: Address!, tokenId: BigInt!): NFT
   getNftBySlugAndTokenId(slug: String!, tokenId: BigInt!): NFT
   getOrderCancelCalldata(orderId: Int!): Hex!
-  getOrderSaleCalldata(orderId: Int!): Hex!
+  getOrderSaleCalldata(nftId: Int = null, orderId: Int!): Hex!
   getOutstandingLoanStatistics: OutstandingLoanStatistics!
   getPointsFromReferrals: Int!
   getPoolByShareSymbol(symbol: String!): Pool
@@ -1587,16 +1708,64 @@ type Query {
   getUserPoints: Int!
   listAuctions(after: String, currencyAddress: Address = null, first: Int = 10, sortBy: [AuctionSortInput!] = null, statuses: [AuctionStatus!] = null): AuctionConnection!
   listBids(after: String, auctionId: String = null, bidders: [String!] = null, currencyAddress: Address = null, first: Int = 10, onlyLatest: Boolean! = false, sortBy: [BidSortInput!] = null): BidConnection!
+  listCollectionTraitTypes(after: String, collectionId: Int!, first: Int! = 40): TraitTypeConnection!
+  listCollectionTraitValues(after: String, collectionId: Int!, first: Int! = 40, key: [String!] = null, searchTerm: String = null): TraitValueConnection!
   listCollections(after: String, collections: [Int!] = null, excludeCollections: [Int!] = null, excludeGondiUserVault: Boolean = false, first: Int = 10, searchTerm: String = null, sortBy: [CollectionSortInput!] = null, standards: [TokenStandardType!] = null, withAsks: WithAsksInput = null, withListings: Boolean = false, withLoans: Boolean = false, wrappers: Boolean = null): CollectionConnection!
+
+  """
+  List NFT collections that have at least one listing. Listing an NFT is marking the NFT as available for taking loans and this can only be done by the owner of the NFT.
+  """
   listCollectionsWithListings(after: String, collections: [Int!] = null, first: Int! = 10, searchTerm: String = null): CollectionConnection!
+
+  """List NFT collections that have at least one loan."""
   listCollectionsWithLoans(after: String, collections: [Int!] = null, first: Int! = 10, searchTerm: String = null): CollectionConnection!
+  listCurrencies(after: String, first: Int! = 20): CurrencyConnection!
   listListings(after: String, collectionIds: [Int!] = null, currencyAddress: Address = null, first: Int = 10, marketplaceNames: [MarketplaceEnum!] = null, searchTerm: String = null, userFilter: UserFilter = null, withLoans: Boolean = false): ListingConnection!
   listListingsForSale(after: String, collectionId: Int = null, currencyAddress: Address = null, first: Int = null, forTaker: Address = null, hidden: Boolean = null, maker: Address = null, nftId: Int = null, sortBy: [OrderSortInput!] = null, statuses: [OrderStatusType!] = null): OrderConnection!
 
   """Deprecated."""
   listLoanActivities(after: String, collections: [Int!] = null, currencyAddress: Address = null, first: Int! = 10, fromTimestamp: Int = null, loanId: String = null, sortBy: [LoanActivitySortInput!] = null, types: [LoanActivityType!] = null): LoanActivityConnection! @deprecated(reason: "Use list_loan_events instead.")
+
+  """
+  List all events related to a loan. Useful to track the status changes of a loan.
+  """
   listLoanEvents(after: String, collections: [Int!] = null, currencyAddress: Address = null, first: Int! = 10, fromTimestamp: Int = null, loanId: String = null, sortBy: [LoanEventSortInput!] = null, types: [LoanEventType!] = null): LoanEventConnection!
-  listLoans(after: String, borrowers: [String!] = null, collections: [Int!] = null, contractAddresses: [Address!] = null, currencyAddress: Address = null, excludeAddresses: [Address!] = null, first: Int! = 10, hideEndLocked: Boolean = null, hideLocked: Boolean = null, nfts: [Int!] = null, orderByStatuses: Boolean = true, sortBy: [LoanSortInput!] = null, statuses: [LoanStatusType!] = null, terms: TermsFilter = null, withRenegRequestOnly: Boolean! = false, withTopUpRequestOnly: Boolean! = false): MultiSourceLoanConnection!
+
+  """Lists all loans from gondi."""
+  listLoans(
+    after: String
+    borrowers: [String!] = null
+    collections: [Int!] = null
+    contractAddresses: [Address!] = null
+    currencyAddress: Address = null
+    excludeAddresses: [Address!] = null
+    first: Int! = 10
+
+    """
+    Hide loans that are locked up for refinancing because of being close to expiration.Refinanced loans are locked at the end to avoid lenders to be pulled out at the last moment and lose a default profit.
+    """
+    hideEndLocked: Boolean = null
+
+    """
+    Hide loans that are locked up for refinancingbecause of recently initiated.Refinanced loans are locked at beggining to help lenders accrue some interest.
+    """
+    hideLocked: Boolean = null
+    nfts: [Int!] = null
+    orderByStatuses: Boolean = true
+    sortBy: [LoanSortInput!] = null
+    statuses: [LoanStatusType!] = null
+    terms: TermsFilter = null
+
+    """
+    A renegotiation request is a flag to mark that the borrower would like that someone renegotiate the loan. 
+    """
+    withRenegRequestOnly: Boolean! = false
+
+    """
+    A top up request is a flag to mark that the borrower would like someone to top up the loan.
+    """
+    withTopUpRequestOnly: Boolean! = false
+  ): MultiSourceLoanConnection!
   listNftDelegations(after: String, contractAddress: Address = null, first: Int! = 20, nftId: Int!): DelegationConnection!
   listNftOffersAndRenegotiations(
     after: String
@@ -1632,7 +1801,35 @@ type Query {
   listPoolActivities(after: String, first: Int! = 20, ownerAddresses: [Address!] = null, poolAddresses: [Address!] = null, types: [PoolActivityType!] = null): PoolActivityConnection!
   listPools(addresses: [String!] = null, after: String, first: Int! = 10): PoolConnection!
   listRenegotiations(after: String, collections: [Int!] = null, first: Int = 10, hidden: Boolean = null, isAddNewTranche: Boolean = null, loanId: String = null, sortBy: [OffersSortInput!] = null, statuses: [OfferStatus!] = null, terms: RefinanceTermsFilter = null): RenegotiationConnection!
-  listSources(after: String, collections: [Int!] = null, contractAddresses: [Address!] = null, currencyAddress: Address = null, excludeAddresses: [Address!] = null, first: Int! = 10, hideEndLocked: Boolean = null, hideLocked: Boolean = null, includeLost: Boolean = null, lenders: [String!] = null, loanPrincipal: Interval = null, sortBy: [SourceSortInput!] = null, statuses: [LoanStatusType!] = null, terms: TermsFilter = null, withdrawalQueues: [Int!] = null): SourceLostSourceConnection!
+
+  """
+  List all sources. Sources are the lender/s of a loan. Lost sources on the other hand are the lender/s that have lost a loan because of renegotiation or refinance. When a renegotiation or refinance happens, the sources compromised turn into lost sources and new sources appear.
+  """
+  listSources(
+    after: String
+    collections: [Int!] = null
+    contractAddresses: [Address!] = null
+    currencyAddress: Address = null
+    excludeAddresses: [Address!] = null
+    first: Int! = 10
+    hideEndLocked: Boolean = null
+    hideLocked: Boolean = null
+
+    """
+    Include lost sources in the list. Lost sources are the lender/s that have lost a loan because of renegotiation or refinance. When a renegotiation or refinance happens, the sources compromised turn into lost sources and new sources appear.
+    """
+    includeLost: Boolean = null
+    lenders: [String!] = null
+
+    """
+    Filter by the principal amount of the loan the source is part of. This is different than the principal amount of the source which only includes the amount lended by the source.
+    """
+    loanPrincipal: Interval = null
+    sortBy: [SourceSortInput!] = null
+    statuses: [LoanStatusType!] = null
+    terms: TermsFilter = null
+    withdrawalQueues: [Int!] = null
+  ): SourceLostSourceConnection!
   listWithdrawalPositions(after: String, first: Int! = 10, owner: Address = null, poolAddresses: [Address!] = null): WithdrawalPositionConnection!
   listWithdrawalQueues(after: String, first: Int! = 10, poolAddresses: [Address!] = null): WithdrawalQueueConnection!
   me: User
@@ -1664,6 +1861,9 @@ input RefinanceTermsFilter {
   remainingTime: Interval = null
 }
 
+"""
+A renegotiation when the loan terms change and the borrower accepted. The difference with refinance is that renegotiation does not mean better terms for the borrower, because of that the borrower needs to accept the renegotiation. Also the renegotiation can be made by the same previous lender.Renegotiation can be top ups. A top up is when someone adds more principal to the loan.
+"""
 type Renegotiation implements Node {
   aprBps: BigInt!
   availablePrincipalAmount: BigInt!
@@ -1945,6 +2145,9 @@ input SingleNFTSignedOfferInput {
   signerAddress: Address = null
 }
 
+"""
+This is the definition of a source. Sources are the lender/s of a loan. Take into account that the loan fields can change if renegotiation or refinance happens.If a renegotiation or refinance happens on a loan, the sources compromised turn into LostSource's.
+"""
 type Source implements Node {
   accruedInterest: BigInt!
   aprBps: BigInt!
@@ -2076,8 +2279,10 @@ type TopUpRequestedNotification implements Node & Notification {
   user: User!
 }
 
-type Trait {
+type Trait implements Node {
   collectionId: String!
+  id: String!
+  key: String!
   statistics: CollectionStatistics!
   type: String!
   value: String!
@@ -2120,6 +2325,48 @@ type TraitOrder implements Activity & Node & Order {
 input TraitRangeOptionsInput {
   key: String!
   range: RangeInput!
+}
+
+type TraitType implements Node {
+  collectionId: Int!
+  count: Int!
+  id: String!
+  key: String!
+  max: Float
+  min: Float
+  valueType: String!
+}
+
+type TraitTypeConnection {
+  edges: [TraitTypeEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type TraitTypeEdge {
+  cursor: String!
+  node: TraitType!
+}
+
+type TraitValue implements Node {
+  collectionId: Int!
+  id: String!
+  key: String!
+  rarity: Int!
+  sampleAsset: Asset
+  sampleAssetId: Int
+  value: String!
+}
+
+type TraitValueConnection {
+  edges: [TraitValueEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type TraitValueEdge {
+  cursor: String!
+  node: TraitValue!
 }
 
 type TypedData {

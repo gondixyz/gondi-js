@@ -212,7 +212,8 @@ export class Gondi {
       response = await this.api.publishOrder(orderInput);
     }
 
-    if (response.__typename !== 'SingleNFTOrder') throw new Error('This should never happen');
+    if (response.__typename !== 'SingleNFTOrder' && response.__typename !== 'CollectionOrder')
+      throw new Error('This should never happen');
 
     return { ...response, ...orderInput };
   }
@@ -234,7 +235,7 @@ export class Gondi {
     return { ...response, ...sellAndRepayOrderInput };
   }
 
-  async cancelOrder(order: { marketPlaceAddress: Address; cancelCalldata: Hex }) {
+  async cancelOrder(order: { cancelCalldata: Hex; marketPlaceAddress: Address }) {
     return this.contracts
       .GenericContract(order.marketPlaceAddress)
       .sendTransactionData(order.cancelCalldata);
