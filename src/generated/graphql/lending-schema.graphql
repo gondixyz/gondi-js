@@ -323,6 +323,7 @@ type CollectionOrder implements Activity & Node & Order {
   currency: Currency!
   currencyAddress: Address!
   evmOrder: JSON
+  executions: Int!
   expiration: DateTime!
   fees: BigInt!
   hidden: Boolean!
@@ -332,6 +333,7 @@ type CollectionOrder implements Activity & Node & Order {
   maker: Address!
   marketPlace: String!
   marketPlaceAddress: Address!
+  maxExecutions: Int!
   netAmount: BigInt!
   nonce: BigInt!
   orderType: String!
@@ -351,6 +353,7 @@ input CollectionOrderInput {
   currencyAddress: Address!
   expirationTime: BigInt!
   isAsk: Boolean!
+  maxExecutions: BigInt = null
   signature: Signature = null
   startTime: BigInt!
   taker: Address = null
