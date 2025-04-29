@@ -1127,6 +1127,7 @@ export type MultiSourceLoan = Loan & Node & {
   endDate: Scalars['DateTime'];
   id: Scalars['String'];
   indexInBlock: Scalars['Int'];
+  lastOriginationFee: Scalars['BigInt'];
   lastRenegotiationDate?: Maybe<Scalars['DateTime']>;
   loanId: Scalars['Int'];
   nft: Nft;
@@ -1540,6 +1541,7 @@ export type NftStatistics = {
   lastSale?: Maybe<Sale>;
   loansTotalVolume: Scalars['BigInt'];
   numberOfOffers: Scalars['Float'];
+  /** @deprecated Trait floor price is not available */
   topTraitFloorPrice?: Maybe<CurrencyAmount>;
 };
 
@@ -2073,9 +2075,10 @@ export type Query = {
 
 /** Query for the lending module */
 export type QueryGetCollectionActivitiesCountArgs = {
-  collectionId: Scalars['Int'];
+  collectionId?: InputMaybe<Scalars['Int']>;
   currencyAddress?: InputMaybe<Scalars['Address']>;
   fromTimestamp: Scalars['Int'];
+  slug?: InputMaybe<Scalars['String']>;
 };
 
 
@@ -2211,7 +2214,9 @@ export type QueryListCollectionTraitValuesArgs = {
   collectionId: Scalars['Int'];
   first?: Scalars['Int'];
   key?: InputMaybe<Array<Scalars['String']>>;
+  onlyEnums?: InputMaybe<Scalars['Boolean']>;
   searchTerm?: InputMaybe<Scalars['String']>;
+  sortBy?: InputMaybe<Array<TraitValueSortInput>>;
 };
 
 
@@ -2306,6 +2311,7 @@ export type QueryListLoanEventsArgs = {
   first?: Scalars['Int'];
   fromTimestamp?: InputMaybe<Scalars['Int']>;
   loanId?: InputMaybe<Scalars['String']>;
+  slugs?: InputMaybe<Array<Scalars['String']>>;
   sortBy?: InputMaybe<Array<LoanEventSortInput>>;
   types?: InputMaybe<Array<LoanEventType>>;
 };
@@ -2324,6 +2330,7 @@ export type QueryListLoansArgs = {
   hideLocked?: InputMaybe<Scalars['Boolean']>;
   nfts?: InputMaybe<Array<Scalars['Int']>>;
   orderByStatuses?: InputMaybe<Scalars['Boolean']>;
+  sluggedTokens?: InputMaybe<Array<SluggedTokenInput>>;
   sortBy?: InputMaybe<Array<LoanSortInput>>;
   statuses?: InputMaybe<Array<LoanStatusType>>;
   terms?: InputMaybe<TermsFilter>;
@@ -2415,6 +2422,8 @@ export type QueryListOffersArgs = {
   nfts?: InputMaybe<Array<Scalars['Int']>>;
   onlyCollectionOffers?: InputMaybe<Scalars['Boolean']>;
   onlySingleNftOffers?: InputMaybe<Scalars['Boolean']>;
+  sluggedTokens?: InputMaybe<Array<SluggedTokenInput>>;
+  slugs?: InputMaybe<Array<Scalars['String']>>;
   sortBy?: InputMaybe<Array<OffersSortInput>>;
   statuses?: InputMaybe<Array<OfferStatus>>;
   terms?: InputMaybe<TermsFilter>;
@@ -2831,6 +2840,11 @@ export type SingleNftSignedOfferInput = {
   signerAddress?: InputMaybe<Scalars['Address']>;
 };
 
+export type SluggedTokenInput = {
+  slug: Scalars['String'];
+  tokenId: Scalars['BigInt'];
+};
+
 /** This is the definition of a source. Sources are the lender/s of a loan. Take into account that the loan fields can change if renegotiation or refinance happens.If a renegotiation or refinance happens on a loan, the sources compromised turn into LostSource's. */
 export type Source = Node & {
   __typename?: 'Source';
@@ -2977,6 +2991,7 @@ export type Trait = Node & {
   collectionId: Scalars['String'];
   id: Scalars['String'];
   key: Scalars['String'];
+  /** @deprecated Trait statistics are not available */
   statistics: CollectionStatistics;
   type: Scalars['String'];
   value: Scalars['String'];
@@ -3068,6 +3083,16 @@ export type TraitValueEdge = {
   __typename?: 'TraitValueEdge';
   cursor: Scalars['String'];
   node: TraitValue;
+};
+
+export enum TraitValueSortField {
+  Alphabetical = 'ALPHABETICAL',
+  Rarity = 'RARITY'
+}
+
+export type TraitValueSortInput = {
+  field: TraitValueSortField;
+  order: Ordering;
 };
 
 export type TypedData = {
@@ -3630,6 +3655,14 @@ export type ListOffersQueryVariables = Exact<{
 
 
 export type ListOffersQuery = { __typename?: 'Query', result: { __typename?: 'OfferConnection', pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'OfferEdge', node: { __typename?: 'CollectionOffer', id: string, offerId: bigint, lenderAddress?: Address | null, borrowerAddress?: Address | null, signerAddress?: Address | null, contractAddress: Address, requiresLiquidation?: boolean | null, principalAddress: Address, principalAmount: bigint, aprBps: bigint, fee: bigint, capacity: bigint, expirationTime: bigint, duration: bigint, status: string, offerHash?: Hash | null, signature?: Hex | null, createdDate?: Date | null, repayment: bigint, hidden?: boolean | null, maxSeniorRepayment: bigint, collection: { __typename?: 'Collection', id: string, slug: string, contractData: { __typename?: 'ContractData', contractAddress: Address } }, currency: { __typename?: 'Currency', symbol: string, decimals: number, address: Address }, validators: Array<{ __typename?: 'OfferValidator', arguments: Hex, validator: Address }> } | { __typename?: 'SingleNFTOffer', id: string, offerId: bigint, lenderAddress?: Address | null, borrowerAddress?: Address | null, signerAddress?: Address | null, contractAddress: Address, requiresLiquidation?: boolean | null, principalAddress: Address, principalAmount: bigint, aprBps: bigint, fee: bigint, capacity: bigint, expirationTime: bigint, duration: bigint, status: string, offerHash?: Hash | null, signature?: Hex | null, createdDate?: Date | null, repayment: bigint, hidden?: boolean | null, maxSeniorRepayment: bigint, nft: { __typename?: 'NFT', id: string, tokenId: bigint, collection?: { __typename?: 'Collection', id: string, slug: string, contractData: { __typename?: 'ContractData', contractAddress: Address } } | null }, currency: { __typename?: 'Currency', symbol: string, decimals: number, address: Address }, validators: Array<{ __typename?: 'OfferValidator', arguments: Hex, validator: Address }> } }> } };
+
+export type GetSaleCalldataQueryVariables = Exact<{
+  orderId: Scalars['Int'];
+  nftId?: InputMaybe<Scalars['Int']>;
+}>;
+
+
+export type GetSaleCalldataQuery = { __typename?: 'Query', saleCalldata: Hex };
 
 export type ActiveOfferNotificationKeySpecifier = ('createdOn' | 'id' | 'notificationType' | 'offer' | 'offerId' | 'readOn' | 'user' | ActiveOfferNotificationKeySpecifier)[];
 export type ActiveOfferNotificationFieldPolicy = {
@@ -4370,7 +4403,7 @@ export type LostSourceNotificationFieldPolicy = {
 	readOn?: FieldPolicy<any> | FieldReadFunction<any>,
 	user?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type MultiSourceLoanKeySpecifier = ('activities' | 'address' | 'auction' | 'blendedAprBps' | 'borrowerAddress' | 'contractStartTime' | 'currency' | 'duration' | 'durationFromRenegotiationOrStart' | 'endDate' | 'id' | 'indexInBlock' | 'lastRenegotiationDate' | 'loanId' | 'nft' | 'offer' | 'offerIds' | 'principalAddress' | 'principalAmount' | 'protocolFee' | 'renegotiationCount' | 'renegotiationRequest' | 'repaidActivity' | 'repaymentTime' | 'sources' | 'startTime' | 'status' | 'timestamp' | 'topUpRequest' | 'totalOriginationFee' | 'txHash' | MultiSourceLoanKeySpecifier)[];
+export type MultiSourceLoanKeySpecifier = ('activities' | 'address' | 'auction' | 'blendedAprBps' | 'borrowerAddress' | 'contractStartTime' | 'currency' | 'duration' | 'durationFromRenegotiationOrStart' | 'endDate' | 'id' | 'indexInBlock' | 'lastOriginationFee' | 'lastRenegotiationDate' | 'loanId' | 'nft' | 'offer' | 'offerIds' | 'principalAddress' | 'principalAmount' | 'protocolFee' | 'renegotiationCount' | 'renegotiationRequest' | 'repaidActivity' | 'repaymentTime' | 'sources' | 'startTime' | 'status' | 'timestamp' | 'topUpRequest' | 'totalOriginationFee' | 'txHash' | MultiSourceLoanKeySpecifier)[];
 export type MultiSourceLoanFieldPolicy = {
 	activities?: FieldPolicy<any> | FieldReadFunction<any>,
 	address?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -4384,6 +4417,7 @@ export type MultiSourceLoanFieldPolicy = {
 	endDate?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
+	lastOriginationFee?: FieldPolicy<any> | FieldReadFunction<any>,
 	lastRenegotiationDate?: FieldPolicy<any> | FieldReadFunction<any>,
 	loanId?: FieldPolicy<any> | FieldReadFunction<any>,
 	nft?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -6659,6 +6693,11 @@ export const ListOffersDocument = gql`
   }
 }
     `;
+export const GetSaleCalldataDocument = gql`
+    query getSaleCalldata($orderId: Int!, $nftId: Int) {
+  saleCalldata: getOrderSaleCalldata(orderId: $orderId, nftId: $nftId)
+}
+    `;
 export type Requester<C = {}, E = unknown> = <R, V>(doc: DocumentNode, vars?: V, options?: C) => Promise<R> | AsyncIterable<R>
 export function getSdk<C, E>(requester: Requester<C, E>) {
   return {
@@ -6742,6 +6781,9 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
     },
     listOffers(variables: ListOffersQueryVariables, options?: C): Promise<ListOffersQuery> {
       return requester<ListOffersQuery, ListOffersQueryVariables>(ListOffersDocument, variables, options) as Promise<ListOffersQuery>;
+    },
+    getSaleCalldata(variables: GetSaleCalldataQueryVariables, options?: C): Promise<GetSaleCalldataQuery> {
+      return requester<GetSaleCalldataQuery, GetSaleCalldataQueryVariables>(GetSaleCalldataDocument, variables, options) as Promise<GetSaleCalldataQuery>;
     }
   };
 }

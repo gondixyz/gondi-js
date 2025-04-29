@@ -35,6 +35,7 @@ export const apiDomain = () => process.env.GONDI_URL ?? 'https://api.gondi.xyz';
 
 export class Api {
   api: ReturnType<typeof getSdkApollo>;
+  getSaleCalldata;
   generateSingleNftOfferHash;
   generateCollectionOfferHash;
   generateRenegotiationOfferHash;
@@ -57,7 +58,8 @@ export class Api {
   constructor({ apiClient, wallet }: Props) {
     const gqlClient = apiClient ?? apolloClient(wallet);
     this.api = getSdkApollo(gqlClient);
-    
+
+    this.getSaleCalldata = this.api.getSaleCalldata;
     this.generateSingleNftOfferHash = this.api.generateSingleNftOfferHash;
     this.generateCollectionOfferHash = this.api.generateCollectionOfferHash;
     this.generateRenegotiationOfferHash = this.api.generateRenegotiationOfferHash;

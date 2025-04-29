@@ -1,0 +1,3 @@
+query getSaleCalldata($orderId: Int!, $nftId: Int) {
+  saleCalldata: getOrderSaleCalldata(orderId: $orderId, nftId: $nftId)
+}

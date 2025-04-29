@@ -13,10 +13,12 @@ import {
   Hex,
   TypedDataDefinition,
 } from 'viem';
+import { getAddress } from 'viem';
 
 import { Auction, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Api, Props as ApiProps } from '@/clients/api';
 import { Contracts, GondiPublicClient, Wallet } from '@/clients/contracts';
+import { Opensea } from '@/clients/opensea';
 import {
   Currency,
   MarketplaceEnum,
@@ -27,6 +29,7 @@ import {
 } from '@/generated/graphql';
 import * as model from '@/model';
 import { NftStandard } from '@/model';
+import { isEmptyCalldata } from '@/utils/blockchain';
 import {
   generateFakeRenegotiationInput,
   isLoanVersion,
@@ -35,9 +38,17 @@ import {
   renegotiationToMslRenegotiation,
 } from '@/utils/loan';
 import { min } from '@/utils/number';
+import { isNative, isOpensea } from '@/utils/orders';
 import { FULFILLED, REJECTED } from '@/utils/promises';
 import { areSameAddress } from '@/utils/string';
 import { OptionalNullable } from '@/utils/types';
+
+interface GondiProps {
+  wallet: Wallet;
+  apiClient?: ApiProps['apiClient'];
+  openseaApiKey?: string;
+  reservoirApiKey?: string;
+}
 
 export class Gondi {
   contracts: Contracts;
@@ -45,10 +56,11 @@ export class Gondi {
   account: Account;
   bcClient: GondiPublicClient;
   api: Api;
+  opensea: Opensea;
   defaults: { Msl: Address; UserVault: Address };
   reservoirClient: ReservoirClient;
 
-  constructor({ wallet, apiClient }: GondiProps) {
+  constructor({ wallet, apiClient, openseaApiKey, reservoirApiKey }: GondiProps) {
     this.wallet = wallet;
     this.account = wallet.account;
     this.bcClient = createPublicClient({
@@ -61,6 +73,7 @@ export class Gondi {
       UserVault: this.contracts.UserVaultV6.address,
     };
     this.api = new Api({ wallet, apiClient });
+    this.opensea = new Opensea({ apiKey: openseaApiKey ?? process.env.OPENSEA_API_KEY });
     this.reservoirClient = createClient({
       chains: [
         {
@@ -70,7 +83,7 @@ export class Gondi {
           active: true,
         },
       ],
-      apiKey: process.env.RESERVOIR_API_KEY,
+      apiKey: reservoirApiKey ?? process.env.RESERVOIR_API_KEY,
     });
   }
 
@@ -1043,11 +1056,58 @@ export class Gondi {
 
     return buyResult;
   }
-}
 
-interface GondiProps {
-  wallet: Wallet;
-  apiClient?: ApiProps['apiClient'];
+  async sellNft({
+    order,
+    nft,
+  }: {
+    order: {
+      id: string;
+      originalId: string;
+      marketPlace: string;
+      marketPlaceAddress: Address;
+      price: bigint;
+    };
+    nft: {
+      id: string;
+      tokenId: bigint;
+      collectionAddress: Address;
+    };
+  }) {
+    if (!isNative(order.marketPlace) && !isOpensea(order.marketPlace)) {
+      throw new Error(`Sell not supported for marketplace ${order.marketPlace}`);
+    }
+
+    if (isNative(order.marketPlace)) {
+      const { saleCalldata } = await this.api.getSaleCalldata({
+        orderId: Number(order.id),
+        nftId: Number(nft.tokenId),
+      });
+
+      if (!saleCalldata || isEmptyCalldata(saleCalldata))
+        throw new Error(`No sale calldata available for native order ${order.id}`);
+
+      return this.contracts
+        .GenericContract(order.marketPlaceAddress)
+        .sendTransactionData(saleCalldata, order.price);
+    }
+
+    const fulfillOrder = await this.opensea.fulfillOrder({
+      hash: order.originalId,
+      protocolAddress: order.marketPlaceAddress,
+      fulfiller: { address: this.wallet.account.address },
+      consideration: {
+        contract: nft.collectionAddress,
+        token_id: nft.tokenId.toString(),
+      },
+    });
+
+    return this.contracts
+      .GenericContract(getAddress(fulfillOrder.to))
+      .safeContractWrite[
+        fulfillOrder.functionName
+      ](fulfillOrder.functionArgs, { value: BigInt(fulfillOrder.value) });
+  }
 }
 
 type MakeOfferType =
