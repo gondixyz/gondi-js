@@ -1,10 +1,10 @@
 import { ApolloClient, NormalizedCacheObject } from '@apollo/client';
 import { getAddress } from 'viem';
 
-import { apolloClient } from '@/api/client';
-import { getSdkApollo } from '@/api/sdk';
 import { zeroAddress } from '@/blockchain';
-import { Wallet } from '@/contracts';
+import { apolloClient } from '@/clients/api/client';
+import { getSdkApollo } from '@/clients/api/sdk';
+import { Wallet } from '@/clients/contracts';
 import {
   CollectionOrderInput,
   CollectionSignedOfferInput,
@@ -57,7 +57,7 @@ export class Api {
   constructor({ apiClient, wallet }: Props) {
     const gqlClient = apiClient ?? apolloClient(wallet);
     this.api = getSdkApollo(gqlClient);
-
+    
     this.generateSingleNftOfferHash = this.api.generateSingleNftOfferHash;
     this.generateCollectionOfferHash = this.api.generateCollectionOfferHash;
     this.generateRenegotiationOfferHash = this.api.generateRenegotiationOfferHash;

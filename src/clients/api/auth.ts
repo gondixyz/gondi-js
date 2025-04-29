@@ -8,8 +8,8 @@ import {
 import { gql } from 'graphql-tag';
 import { SiweMessage } from 'siwe';
 
-import { apiDomain } from '@/api';
-import { Wallet } from '@/contracts';
+import { apiDomain } from '@/clients/api';
+import { Wallet } from '@/clients/contracts';
 
 export type Credential = SessionToken;
 

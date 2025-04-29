@@ -1,6 +1,6 @@
 import { Address } from 'viem';
 
-import { Wallet } from '@/contracts';
+import { Wallet } from '@/clients/contracts';
 import { getContracts } from '@/deploys';
 import { userVaultAbi as userVaultABIV6 } from '@/generated/blockchain/v6';
 import {

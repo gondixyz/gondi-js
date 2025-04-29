@@ -1,8 +1,8 @@
 import { Address, decodeAbiParameters, Hex } from 'viem';
 
-import { Wallet } from '@/contracts';
-import { MslV5 } from '@/contracts/MslV5';
-import { MslV6 } from '@/contracts/MslV6';
+import { Wallet } from '@/clients/contracts';
+import { MslV5 } from '@/clients/contracts/MslV5';
+import { MslV6 } from '@/clients/contracts/MslV6';
 import { purchaseBundlerAbi } from '@/generated/blockchain/v6';
 
 import { BaseContract } from './BaseContract';

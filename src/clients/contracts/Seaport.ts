@@ -1,7 +1,7 @@
 import { Address, Hash, Hex } from 'viem';
 
 import { zeroAddress, zeroHash } from '@/blockchain';
-import { Wallet } from '@/contracts';
+import { Wallet } from '@/clients/contracts';
 import { getContracts } from '@/deploys';
 import { seaportABI } from '@/generated/blockchain/seaport';
 

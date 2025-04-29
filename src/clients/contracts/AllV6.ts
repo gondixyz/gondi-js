@@ -1,7 +1,7 @@
 import { Address } from 'viem';
 
 import { Auction, LoanV6 } from '@/blockchain';
-import { Wallet } from '@/contracts';
+import { Wallet } from '@/clients/contracts';
 import { getContracts } from '@/deploys';
 import { auctionWithBuyoutLoanLiquidatorAbi as auctionWithBuyoutLoanLiquidatorABIV6 } from '@/generated/blockchain/v6';
 import { millisToSeconds } from '@/utils/dates';

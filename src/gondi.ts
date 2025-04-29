@@ -14,9 +14,9 @@ import {
   TypedDataDefinition,
 } from 'viem';
 
-import { Api, Props as ApiProps } from '@/api';
 import { Auction, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
-import { Contracts, GondiPublicClient, Wallet } from '@/contracts';
+import { Api, Props as ApiProps } from '@/clients/api';
+import { Contracts, GondiPublicClient, Wallet } from '@/clients/contracts';
 import {
   Currency,
   MarketplaceEnum,

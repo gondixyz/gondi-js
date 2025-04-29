@@ -1,6 +1,6 @@
 import { Address, decodeFunctionData, Hex } from 'viem';
 
-import { Wallet } from '@/contracts';
+import { Wallet } from '@/clients/contracts';
 import { erc20ABI } from '@/generated/blockchain/v5';
 
 import { BaseContract } from './BaseContract';

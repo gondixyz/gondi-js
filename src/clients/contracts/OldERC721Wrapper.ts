@@ -1,7 +1,7 @@
 import { Address } from 'viem';
 
-import { Wallet } from '@/contracts';
-import { BaseContract } from '@/contracts/BaseContract';
+import { Wallet } from '@/clients/contracts';
+import { BaseContract } from '@/clients/contracts/BaseContract';
 import { oldErc721WrapperAbi } from '@/generated/blockchain/oldERC721Wrapper';
 
 export class OldERC721Wrapper extends BaseContract<typeof oldErc721WrapperAbi> {

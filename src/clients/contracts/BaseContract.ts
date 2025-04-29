@@ -17,7 +17,7 @@ import {
   TransactionReceipt,
 } from 'viem';
 
-import { Wallet } from '@/contracts';
+import { Wallet } from '@/clients/contracts';
 
 export class BaseContract<TAbi extends Abi> {
   abi: TAbi;

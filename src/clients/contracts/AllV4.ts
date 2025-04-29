@@ -1,7 +1,7 @@
 import { Address, encodeAbiParameters } from 'viem';
 
 import { LoanV4 } from '@/blockchain';
-import { Wallet } from '@/contracts';
+import { Wallet } from '@/clients/contracts';
 import { getContracts } from '@/deploys';
 import { auctionLoanLiquidatorABI as auctionLoanLiquidatorABIV4 } from '@/generated/blockchain/v4';
 

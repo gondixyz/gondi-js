@@ -1,6 +1,6 @@
 import { Execute } from '@reservoir0x/reservoir-sdk';
 
-import { GondiPublicClient, Wallet } from '@/contracts';
+import { GondiPublicClient, Wallet } from '@/clients/contracts';
 
 type TransactionStep = Execute['steps'][number];
 type MinimalStep = Pick<TransactionStep, 'kind' | 'id' | 'items'>;

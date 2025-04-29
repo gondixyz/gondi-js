@@ -1,7 +1,7 @@
 import { Address } from 'viem';
 
 import { Auction, LoanV5 } from '@/blockchain';
-import { Wallet } from '@/contracts';
+import { Wallet } from '@/clients/contracts';
 import { getContracts } from '@/deploys';
 import { auctionLoanLiquidatorABI as auctionLoanLiquidatorABIV5 } from '@/generated/blockchain/v5';
 

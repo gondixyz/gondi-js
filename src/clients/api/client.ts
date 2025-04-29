@@ -8,9 +8,9 @@ import { setContext } from '@apollo/client/link/context/index.js';
 import { withScalars } from 'apollo-link-scalars';
 import { buildSchema } from 'graphql';
 
-import { apiDomain } from '@/api';
-import { Credential, SessionToken } from '@/api/auth';
-import { Wallet } from '@/contracts';
+import { apiDomain } from '@/clients/api';
+import { Credential, SessionToken } from '@/clients/api/auth';
+import { Wallet } from '@/clients/contracts';
 import lendingSchemaText from '@/generated/graphql/lending-schema.graphql';
 
 const apiUrl = () => `${apiDomain()}/lending/graphql`;

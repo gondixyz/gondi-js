@@ -1,40 +1,41 @@
 import { Address, decodeFunctionData, encodeFunctionData, Hash, Hex } from 'viem';
 
-import { LoanV6, OfferV6, RenegotiationV6, REORG_SAFETY_BUFFER, zeroHash } from '@/blockchain';
-import { Wallet } from '@/contracts';
+import { LoanV5, OfferV5, RenegotiationV5, REORG_SAFETY_BUFFER, zeroHash } from '@/blockchain';
+import { Wallet } from '@/clients/contracts';
 import { getContracts } from '@/deploys';
-import { multiSourceLoanAbi as multiSourceLoanAbiV6 } from '@/generated/blockchain/v6';
+import { multiSourceLoanABI as multiSourceLoanABIV5 } from '@/generated/blockchain/v5';
 import { EmitLoanArgs } from '@/gondi';
-import { millisToSeconds, SECONDS_IN_DAY, secondsToMillis } from '@/utils/dates';
-import { getMslLoanId, getRemainingSeconds, LoanToMslLoanType } from '@/utils/loan';
+import { millisToSeconds, SECONDS_IN_DAY } from '@/utils/dates';
+import { getMslLoanId, getRemainingSeconds } from '@/utils/loan';
 import { bpsToPercentage, sumBy } from '@/utils/number';
 import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 
 import { BaseContract } from './BaseContract';
+import { MslV6 } from './MslV6';
 
-export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
+export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
   constructor({ walletClient }: { walletClient: Wallet }) {
     const {
-      MultiSourceLoan: { v6 },
+      MultiSourceLoan: { v5 },
     } = getContracts(walletClient.chain);
 
     super({
       walletClient,
-      address: v6,
-      abi: multiSourceLoanAbiV6,
+      address: v5,
+      abi: multiSourceLoanABIV5,
     });
   }
 
   private getDomain() {
     return {
       name: CONTRACT_DOMAIN_NAME,
-      version: '3',
+      version: '2',
       chainId: this.wallet.chain.id,
       verifyingContract: this.address,
     };
   }
 
-  async signOffer({ structToSign }: { structToSign: OfferV6 }) {
+  async signOffer({ structToSign }: { structToSign: OfferV5 }) {
     return this.wallet.signTypedData({
       domain: this.getDomain(),
       primaryType: 'LoanOffer',
@@ -43,6 +44,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
           { name: 'offerId', type: 'uint256' },
           { name: 'lender', type: 'address' },
           { name: 'fee', type: 'uint256' },
+          { name: 'borrower', type: 'address' },
           { name: 'capacity', type: 'uint256' },
           { name: 'nftCollateralAddress', type: 'address' },
           { name: 'nftCollateralTokenId', type: 'uint256' },
@@ -51,7 +53,6 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
           { name: 'aprBps', type: 'uint256' },
           { name: 'expirationTime', type: 'uint256' },
           { name: 'duration', type: 'uint256' },
-          { name: 'maxSeniorRepayment', type: 'uint256' },
           { name: 'validators', type: 'OfferValidator[]' },
         ],
         OfferValidator: [
@@ -63,7 +64,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     });
   }
 
-  async signRenegotiationOffer({ structToSign }: { structToSign: RenegotiationV6 }) {
+  async signRenegotiationOffer({ structToSign }: { structToSign: RenegotiationV5 }) {
     return this.wallet.signTypedData({
       domain: this.getDomain(),
       primaryType: 'RenegotiationOffer',
@@ -73,7 +74,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
           { name: 'loanId', type: 'uint256' },
           { name: 'lender', type: 'address' },
           { name: 'fee', type: 'uint256' },
-          { name: 'trancheIndex', type: 'uint256[]' },
+          { name: 'targetPrincipal', type: 'uint256[]' },
           { name: 'principalAmount', type: 'uint256' },
           { name: 'aprBps', type: 'uint256' },
           { name: 'expirationTime', type: 'uint256' },
@@ -131,37 +132,41 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     };
   }
 
-  async cancelAllRenegotiations(_: { minId: bigint }) {
-    throw new Error('Not implemented for V3');
+  async cancelAllRenegotiations({ minId }: { minId: bigint }) {
+    const txHash = await this.safeContractWrite.cancelAllRenegotiationOffers([minId]);
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        const events = this.parseEventLogs('AllRenegotiationOffersCancelled', receipt.logs);
+        if (events.length === 0) throw new Error('Renegotiation offers not cancelled');
+        return { ...events[0].args, ...receipt };
+      },
+    };
   }
 
-  private mapEmitLoanToMslEmitLoanArgs({
-    offerExecution,
-    tokenId,
-    duration,
-    principalReceiver,
-    expirationTime,
-  }: EmitLoanArgs) {
+  private mapEmitLoanToMslEmitLoanArgs({ offerExecution, tokenId, expirationTime }: EmitLoanArgs) {
+    const { offer, amount, lenderOfferSignature } = offerExecution[0];
     const executionData = {
-      offerExecution: offerExecution.map(({ offer, amount, ...rest }) => ({
-        ...rest,
-        amount: amount ?? offer.principalAmount,
-        offer: {
-          ...offer,
-          lender: offer.lenderAddress,
-          validators: offer.offerValidators,
-        },
-      })),
+      offer: {
+        ...offer,
+        lender: offer.lenderAddress,
+        borrower: offer.borrowerAddress,
+        validators: offer.offerValidators,
+      },
       tokenId,
-      duration,
+      amount: amount ?? offer.principalAmount,
       expirationTime: expirationTime ?? BigInt(millisToSeconds(Date.now()) + SECONDS_IN_DAY),
-      principalReceiver: principalReceiver ?? this.wallet.account.address,
       callbackData: '0x' as Hash, // No callback data is expected here, only for BNPL [Levearage call]
     };
 
     return {
       executionData,
+      lender: offer.lenderAddress,
       borrower: this.wallet.account.address,
+      lenderOfferSignature,
       borrowerOfferSignature: '0x' as Hash, // No signature data is expected here, only for BNPL [Levearage call]
     };
   }
@@ -186,12 +191,9 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
             contractAddress: this.contract.address,
           },
           loanId: args.loanId,
-          offerIds: mslEmitArgs.executionData.offerExecution.map(
-            ({ offer }) =>
-              `${this.contract.address.toLowerCase()}.${offer.lender.toLowerCase()}.${
-                offer.offerId
-              }`,
-          ),
+          offerId: `${this.contract.address.toLowerCase()}.${mslEmitArgs.lender.toLowerCase()}.${
+            args.offerId
+          }`,
           ...receipt,
         };
       },
@@ -208,17 +210,17 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     if (delegations.length === 0) throw new Error('At least one delegation must be revoked');
 
     const mslEmitArgs = this.mapEmitLoanToMslEmitLoanArgs(emit);
-    const { tokenId, offerExecution } = mslEmitArgs.executionData;
+    const { tokenId, offer } = mslEmitArgs.executionData;
     const encodedRevokeDelegations = delegations.map((delegation) =>
       encodeFunctionData({
-        abi: multiSourceLoanAbiV6,
+        abi: multiSourceLoanABIV5,
         functionName: 'revokeDelegate',
-        args: [delegation, offerExecution[0].offer.nftCollateralAddress, tokenId],
+        args: [delegation, offer.nftCollateralAddress, tokenId],
       }),
     );
 
     const encodedEmitLoan = encodeFunctionData({
-      abi: multiSourceLoanAbiV6,
+      abi: multiSourceLoanABIV5,
       functionName: 'emitLoan',
       args: [mslEmitArgs],
     });
@@ -260,7 +262,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     };
   }
 
-  async repayLoan({ loan, loanId }: { loan: LoanV6; loanId: bigint }) {
+  async repayLoan({ loan, loanId }: { loan: LoanV5; loanId: bigint }) {
     const signableRepaymentData = {
       loanId,
       callbackData: '0x' as Hash, // No callback data is expected here, only for BNPL [Levearage call]
@@ -286,8 +288,8 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     };
   }
 
-  async getRemainingLockupSeconds({ loan }: { loan: LoanV6 }) {
-    const newestSource = loan.tranche[loan.tranche.length - 1];
+  async getRemainingLockupSeconds({ loan }: { loan: LoanV5 }) {
+    const newestSource = loan.source[0];
     const loanEndDate = loan.startTime + loan.duration;
     const newestSourceDuration = loanEndDate - newestSource.startTime;
 
@@ -302,20 +304,8 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     return lockupTimeSeconds - ellapsedSeconds;
   }
 
-  async isEndLockedUp({
-    loan,
-  }: {
-    loan: LoanToMslLoanType & { durationFromRenegotiationOrStart: bigint };
-  }) {
-    const lockPeriodBps = await this.contract.read.getMinLockPeriod();
-    const lockPercentage = bpsToPercentage(lockPeriodBps);
-
-    const loanEndDate = Number(loan.startTime + loan.duration);
-    const endLockupSeconds = Math.ceil(
-      Number(loan.durationFromRenegotiationOrStart) * lockPercentage,
-    );
-
-    return Date.now() > secondsToMillis(loanEndDate - endLockupSeconds);
+  isEndLockedUp() {
+    return false;
   }
 
   async refinanceBatch({
@@ -324,17 +314,20 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
   }: {
     renegotiationId: bigint;
     refinancings: {
-      loan: LoanV6;
+      loan: LoanV5;
       newAprBps: bigint;
       sources: {
-        source: LoanV6['tranche'][number] & { loanIndex: number };
+        source: LoanV5['source'][number];
         refinancingPrincipal: bigint;
       }[];
     }[];
   }) {
     // Generate multicall encoded function data for (renegotiation offer, loan) pairs
     const data = refinancings.map(({ loan, sources, newAprBps }, index) => {
-      const trancheIndex = sources.map(({ source }) => BigInt(source.loanIndex));
+      const targetPrincipal = loan.source.map(({ principalAmount, loanId }) => {
+        const refinancingSource = sources.find(({ source }) => source.loanId === loanId);
+        return principalAmount - (refinancingSource?.refinancingPrincipal ?? 0n);
+      });
       const refinancingPrincipalAmount = sumBy(sources, 'refinancingPrincipal') ?? 0n;
 
       const offer = {
@@ -342,7 +335,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
         loanId: getMslLoanId(loan),
         lender: this.wallet.account.address,
         fee: 0n,
-        trancheIndex,
+        targetPrincipal,
         principalAmount: refinancingPrincipalAmount,
         aprBps: newAprBps,
         expirationTime: BigInt(millisToSeconds(Date.now())) + REORG_SAFETY_BUFFER,
@@ -352,15 +345,15 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
       const isFullRefinance = refinancingPrincipalAmount === loan.principalAmount;
       if (isFullRefinance) {
         return encodeFunctionData({
-          abi: multiSourceLoanAbiV6,
+          abi: multiSourceLoanABIV5,
           functionName: 'refinanceFull',
           args: [offer, loan, zeroHash],
         });
       }
       return encodeFunctionData({
-        abi: multiSourceLoanAbiV6,
+        abi: multiSourceLoanABIV5,
         functionName: 'refinancePartial',
-        args: [offer, loan],
+        args: [{ ...offer, duration: 0n }, loan],
       });
     });
 
@@ -385,9 +378,9 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     signature,
     loan,
   }: {
-    offer: RenegotiationV6;
+    offer: RenegotiationV5;
     signature: Hash;
-    loan: LoanV6;
+    loan: LoanV5;
   }) {
     return this.executeRenegotiation({
       offer,
@@ -395,77 +388,18 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     });
   }
 
-  async refinancePartialLoan({ offer, loan }: { offer: RenegotiationV6; loan: LoanV6 }) {
+  async refinancePartialLoan({ offer, loan }: { offer: RenegotiationV5; loan: LoanV5 }) {
     return this.executeRenegotiation({
       offer,
       executeRenegotiationTxn: () => this.safeContractWrite.refinancePartial([offer, loan]),
     });
   }
 
-  async addTranche({
-    offer,
-    signature,
-    loan,
-  }: {
-    offer: RenegotiationV6;
-    signature: Hash;
-    loan: LoanV6;
-  }) {
-    return this.executeRenegotiation({
-      offer,
-      executeRenegotiationTxn: () => this.safeContractWrite.addNewTranche([offer, loan, signature]),
-    });
-  }
-
-  async refinanceFromOffers({
-    loan,
-    loanId,
-    executionData,
-  }: {
-    loan: LoanV6;
-    loanId: bigint;
-    executionData: EmitLoanArgs;
-  }) {
-    const mslEmitArgs = this.mapEmitLoanToMslEmitLoanArgs(executionData);
-    const txHash = await this.safeContractWrite.refinanceFromLoanExecutionData([
-      loanId,
-      loan,
-      mslEmitArgs,
-    ]);
-
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const events = this.parseEventLogs('LoanRefinancedFromNewOffers', receipt.logs);
-        if (events.length === 0) throw new Error('LoanRefinancedFromNewOffers not emitted');
-        const args = events[0].args;
-        return {
-          loan: {
-            id: `${this.contract.address.toLowerCase()}.${args.newLoanId}`,
-            ...args.loan,
-            contractAddress: this.contract.address,
-          },
-          loanId: args.newLoanId,
-          offerIds: mslEmitArgs.executionData.offerExecution.map(
-            ({ offer }) =>
-              `${this.contract.address.toLowerCase()}.${offer.lender.toLowerCase()}.${
-                offer.offerId
-              }`,
-          ),
-          ...receipt,
-        };
-      },
-    };
-  }
-
   private async executeRenegotiation({
     offer,
     executeRenegotiationTxn,
   }: {
-    offer: RenegotiationV6;
+    offer: RenegotiationV5;
     executeRenegotiationTxn: () => Promise<Hash>;
   }) {
     const txHash = await executeRenegotiationTxn();
@@ -494,13 +428,21 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     };
   }
 
-  async delegateMulticall(delegations: Parameters<MslV6['delegate']>[0][]) {
+  async addTranche(): ReturnType<MslV6['addTranche']> {
+    throw new Error('Not implemented for V2');
+  }
+
+  async refinanceFromOffers(): ReturnType<MslV6['refinanceFromOffers']> {
+    throw new Error('Not implemented for V2');
+  }
+
+  async delegateMulticall(delegations: Parameters<MslV5['delegate']>[0][]) {
     if (delegations.length === 0) throw new Error('At least one delegation must be revoked');
 
     const txHash = await this.safeContractWrite.multicall([
       delegations.map((delegation) =>
         encodeFunctionData({
-          abi: multiSourceLoanAbiV6,
+          abi: multiSourceLoanABIV5,
           functionName: 'delegate',
           args: [
             delegation.loanId,
@@ -537,7 +479,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     rights = zeroHash,
     enable,
   }: {
-    loan: LoanV6;
+    loan: LoanV5;
     loanId: bigint;
     to: Address;
     rights?: Hash;
@@ -592,7 +534,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     };
   }
 
-  async liquidateLoan({ loan, loanId }: { loan: LoanV6; loanId: bigint }) {
+  async liquidateLoan({ loan, loanId }: { loan: LoanV5; loanId: bigint }) {
     const txHash = await this.safeContractWrite.liquidateLoan([loanId, loan]);
     return {
       txHash,
@@ -614,7 +556,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
 
   decodeRepaymentCalldata(calldata: Hex) {
     const decoded = decodeFunctionData({
-      abi: multiSourceLoanAbiV6,
+      abi: multiSourceLoanABIV5,
       data: calldata,
     });
     if (decoded.functionName !== 'repayLoan') {

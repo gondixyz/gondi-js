@@ -1,9 +1,9 @@
 import { Abi, Account, Address, Chain, PublicClient, Transport, WalletClient } from 'viem';
 
-import { Erc20 } from '@/contracts/Erc20';
-import { OldERC721Wrapper } from '@/contracts/OldERC721Wrapper';
-import { PurchaseBundler } from '@/contracts/PurchaseBundler';
-import { Seaport } from '@/contracts/Seaport';
+import { Erc20 } from '@/clients/contracts/Erc20';
+import { OldERC721Wrapper } from '@/clients/contracts/OldERC721Wrapper';
+import { PurchaseBundler } from '@/clients/contracts/PurchaseBundler';
+import { Seaport } from '@/clients/contracts/Seaport';
 import { getContracts } from '@/deploys';
 import { oldErc721Abi } from '@/generated/blockchain/oldERC721';
 import { seaportABI } from '@/generated/blockchain/seaport';

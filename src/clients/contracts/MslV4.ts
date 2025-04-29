@@ -1,7 +1,7 @@
 import { Address, decodeFunctionData, Hash, Hex, zeroAddress } from 'viem';
 
 import { LoanV4, OfferV4, RenegotiationV4 } from '@/blockchain';
-import { Wallet } from '@/contracts';
+import { Wallet } from '@/clients/contracts';
 import { getContracts } from '@/deploys';
 import { multiSourceLoanABI as multiSourceLoanABIV4 } from '@/generated/blockchain/v4';
 import { EmitLoanArgs } from '@/gondi';

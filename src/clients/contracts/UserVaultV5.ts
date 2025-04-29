@@ -1,7 +1,7 @@
 import { Address } from 'viem';
 
-import { Wallet } from '@/contracts';
-import { UserVaultV6 } from '@/contracts/UserVaultV6';
+import { Wallet } from '@/clients/contracts';
+import { UserVaultV6 } from '@/clients/contracts/UserVaultV6';
 import { getContracts } from '@/deploys';
 import { userVaultABI as userVaultABIV5 } from '@/generated/blockchain/v5';
 import { BurnAndWithdrawArgs, CreateVaultArgs, DepositERC721sArgs } from '@/gondi';
