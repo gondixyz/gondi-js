@@ -987,6 +987,7 @@ type MultiSourceLoan implements Loan & Node {
   endDate: DateTime!
   id: String!
   indexInBlock: Int!
+  lastOriginationFee: BigInt!
   lastRenegotiationDate: DateTime
   loanId: Int!
   nft: NFT!
@@ -1266,7 +1267,7 @@ type NftStatistics {
   lastSale: Sale
   loansTotalVolume(currencyAddress: Address!): BigInt!
   numberOfOffers(currencyAddress: Address!): Float!
-  topTraitFloorPrice: CurrencyAmount
+  topTraitFloorPrice: CurrencyAmount @deprecated(reason: "Trait floor price is not available")
 }
 
 input NftTermsFilter {
@@ -1680,7 +1681,7 @@ type PoolStatistics {
 """Query for the lending module"""
 type Query {
   """Get some general loan stats about the activities for a collection."""
-  getCollectionActivitiesCount(collectionId: Int!, currencyAddress: Address, fromTimestamp: Int!): CollectionEventsCountByDayAndCurrency!
+  getCollectionActivitiesCount(collectionId: Int = null, currencyAddress: Address = null, fromTimestamp: Int!, slug: String = null): CollectionEventsCountByDayAndCurrency!
 
   """
   Get a collection by its slug. Slugs are unique identifiers for collections. 
@@ -1712,7 +1713,7 @@ type Query {
   listAuctions(after: String, currencyAddress: Address = null, first: Int = 10, sortBy: [AuctionSortInput!] = null, statuses: [AuctionStatus!] = null): AuctionConnection!
   listBids(after: String, auctionId: String = null, bidders: [String!] = null, currencyAddress: Address = null, first: Int = 10, onlyLatest: Boolean! = false, sortBy: [BidSortInput!] = null): BidConnection!
   listCollectionTraitTypes(after: String, collectionId: Int!, first: Int! = 40): TraitTypeConnection!
-  listCollectionTraitValues(after: String, collectionId: Int!, first: Int! = 40, key: [String!] = null, searchTerm: String = null): TraitValueConnection!
+  listCollectionTraitValues(after: String, collectionId: Int!, first: Int! = 40, key: [String!] = null, onlyEnums: Boolean = null, searchTerm: String = null, sortBy: [TraitValueSortInput!] = null): TraitValueConnection!
   listCollections(after: String, collections: [Int!] = null, excludeCollections: [Int!] = null, excludeGondiUserVault: Boolean = false, first: Int = 10, searchTerm: String = null, sortBy: [CollectionSortInput!] = null, standards: [TokenStandardType!] = null, withAsks: WithAsksInput = null, withListings: Boolean = false, withLoans: Boolean = false, wrappers: Boolean = null): CollectionConnection!
 
   """
@@ -1732,7 +1733,7 @@ type Query {
   """
   List all events related to a loan. Useful to track the status changes of a loan.
   """
-  listLoanEvents(after: String, collections: [Int!] = null, currencyAddress: Address = null, first: Int! = 10, fromTimestamp: Int = null, loanId: String = null, sortBy: [LoanEventSortInput!] = null, types: [LoanEventType!] = null): LoanEventConnection!
+  listLoanEvents(after: String, collections: [Int!] = null, currencyAddress: Address = null, first: Int! = 10, fromTimestamp: Int = null, loanId: String = null, slugs: [String!] = null, sortBy: [LoanEventSortInput!] = null, types: [LoanEventType!] = null): LoanEventConnection!
 
   """Lists all loans from gondi."""
   listLoans(
@@ -1755,6 +1756,7 @@ type Query {
     hideLocked: Boolean = null
     nfts: [Int!] = null
     orderByStatuses: Boolean = true
+    sluggedTokens: [SluggedTokenInput!] = null
     sortBy: [LoanSortInput!] = null
     statuses: [LoanStatusType!] = null
     terms: TermsFilter = null
@@ -1799,7 +1801,7 @@ type Query {
   listNftsFromCollections(after: String, collections: [Int!] = null, currencyAddresses: [Address!] = null, first: Int = 10, marketplaces: [MarketPlaceType!] = null, onlyListed: Boolean = null, searchTerm: String = null, sortBy: [NftSortInput!] = null, terms: NftTermsFilter = null, traitRanges: [TraitRangeOptionsInput!] = null, traits: [TraitKeyValueOptionsInput!] = null): NFTConnection!
   listNftsFromUser(after: String, collectionAddresses: [Address!] = null, first: Int = 10, includeInStash: Boolean! = false, searchTerm: String = null, sortBy: [NftSortInput!] = null, standards: [TokenStandardType!] = null, withLoans: Boolean = false, withNoWraps: Boolean = false): NFTConnection!
   listNotifications(after: String, first: Int = 50, notificationTypes: [NotificationType!] = null, onlyRead: Boolean! = false, onlyUnread: Boolean! = false): NotificationConnection!
-  listOffers(after: String, borrowerAddress: String = null, collections: [Int!] = null, contractAddress: Address = null, currencyAddress: Address = null, first: Int = 10, hidden: Boolean = null, lenders: [String!] = null, nfts: [Int!] = null, onlyCollectionOffers: Boolean = false, onlySingleNftOffers: Boolean = false, sortBy: [OffersSortInput!] = null, statuses: [OfferStatus!] = null, terms: TermsFilter = null, worseOffers: Boolean = true): OfferConnection!
+  listOffers(after: String, borrowerAddress: String = null, collections: [Int!] = null, contractAddress: Address = null, currencyAddress: Address = null, first: Int = 10, hidden: Boolean = null, lenders: [String!] = null, nfts: [Int!] = null, onlyCollectionOffers: Boolean = false, onlySingleNftOffers: Boolean = false, sluggedTokens: [SluggedTokenInput!] = null, slugs: [String!] = null, sortBy: [OffersSortInput!] = null, statuses: [OfferStatus!] = null, terms: TermsFilter = null, worseOffers: Boolean = true): OfferConnection!
   listOrders(after: String, currencyAddresses: [Address!] = null, first: Int = 10, hidden: Boolean = null, ids: [Int!] = null, maker: [Address!] = null, marketplaceIds: [String!] = null, marketplaces: [MarketPlaceType!] = null, nftIds: [Int!] = null, onlyInvalid: Boolean = null, orderType: OrderType = null, sortBy: [OrderSortInput!] = null, statuses: [OrderStatusType!] = null, taker: Address = null, terms: OrderTermsFilter = null): OrderConnection!
   listPoolActivities(after: String, first: Int! = 20, ownerAddresses: [Address!] = null, poolAddresses: [Address!] = null, types: [PoolActivityType!] = null): PoolActivityConnection!
   listPools(addresses: [String!] = null, after: String, first: Int! = 10): PoolConnection!
@@ -2148,6 +2150,11 @@ input SingleNFTSignedOfferInput {
   signerAddress: Address = null
 }
 
+input SluggedTokenInput {
+  slug: String!
+  tokenId: BigInt!
+}
+
 """
 This is the definition of a source. Sources are the lender/s of a loan. Take into account that the loan fields can change if renegotiation or refinance happens.If a renegotiation or refinance happens on a loan, the sources compromised turn into LostSource's.
 """
@@ -2286,7 +2293,7 @@ type Trait implements Node {
   collectionId: String!
   id: String!
   key: String!
-  statistics: CollectionStatistics!
+  statistics: CollectionStatistics! @deprecated(reason: "Trait statistics are not available")
   type: String!
   value: String!
 }
@@ -2370,6 +2377,16 @@ type TraitValueConnection {
 type TraitValueEdge {
   cursor: String!
   node: TraitValue!
+}
+
+enum TraitValueSortField {
+  ALPHABETICAL
+  RARITY
+}
+
+input TraitValueSortInput {
+  field: TraitValueSortField!
+  order: Ordering!
 }
 
 type TypedData {

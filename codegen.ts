@@ -9,7 +9,7 @@ const config: CodegenConfig = {
   generates: {
     'src/generated/graphql/index.ts': {
       schema: [GONDI_API],
-      documents: ['./src/api/graphql/**/*.gql'],
+      documents: ['./src/clients/api/graphql/**/*.gql'],
       plugins: [
         'typescript',
         'typescript-operations',
