@@ -1102,11 +1102,23 @@ export class Gondi {
       },
     });
 
-    return this.contracts
-      .GenericContract(getAddress(fulfillOrder.to))
-      .safeContractWrite[
-        fulfillOrder.functionName
-      ](fulfillOrder.functionArgs, { value: BigInt(fulfillOrder.value) });
+    const contract = this.contracts.GenericContract(getAddress(fulfillOrder.to));
+    const txHash = await contract.safeContractWrite[fulfillOrder.functionName](
+      fulfillOrder.functionArgs,
+      { value: BigInt(fulfillOrder.value) },
+    );
+
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        const events = contract.parseEventLogs(fulfillOrder.eventName, receipt.logs);
+        if (events.length === 0) throw new Error(`${fulfillOrder.eventName} not set`);
+        return { ...events[0].args, ...receipt };
+      },
+    };
   }
 }
 
