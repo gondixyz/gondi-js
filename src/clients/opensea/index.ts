@@ -72,6 +72,7 @@ export class Opensea {
         ];
 
     return {
+      eventName: 'OrderFulfilled',
       functionName,
       functionArgs,
       to: transaction.to,
