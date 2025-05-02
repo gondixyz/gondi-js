@@ -352,7 +352,6 @@ input CollectionOrderInput {
   collectionId: Int!
   currencyAddress: Address!
   expirationTime: BigInt!
-  isAsk: Boolean!
   maxExecutions: BigInt = null
   signature: Signature = null
   startTime: BigInt!
@@ -1093,7 +1092,7 @@ type Mutation {
   publishBuyNowPayLaterOrder(orderInput: BNPLOrderInput!): BuyNowPayLaterOrderSignatureRequest!
 
   """
-  Creates a collection order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an CollectionOrder if everything went well. An order can be an ASK or a BID. 
+  Creates a collection order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an CollectionOrder if everything went well. An order can only be a BID. Refer to gondi-js examples for more details.
   """
   publishOrderForCollection(orderInput: CollectionOrderInput!): CollectionOrderSignatureRequest!
 
