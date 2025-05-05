@@ -352,6 +352,7 @@ input CollectionOrderInput {
   collectionId: Int!
   currencyAddress: Address!
   expirationTime: BigInt!
+  isAsk: Boolean = null
   maxExecutions: BigInt = null
   signature: Signature = null
   startTime: BigInt!
@@ -1262,7 +1263,7 @@ input NftSortInput {
 }
 
 type NftStatistics {
-  highestBid(currencyAddresses: [Address!]): Order
+  highestBid(currencyAddresses: [Address!] = null): Order
   lastSale: Sale
   loansTotalVolume(currencyAddress: Address!): BigInt!
   numberOfOffers(currencyAddress: Address!): Float!
@@ -2118,7 +2119,7 @@ input SingleNFTOrderInput {
   contractAddress: Address!
   currencyAddress: Address!
   expirationTime: BigInt!
-  isAsk: Boolean!
+  isAsk: Boolean = null
   signature: Signature = null
   startTime: BigInt!
   taker: Address = null
