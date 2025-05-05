@@ -406,6 +406,7 @@ export type CollectionOrderInput = {
   collectionId: Scalars['Int'];
   currencyAddress: Scalars['Address'];
   expirationTime: Scalars['BigInt'];
+  isAsk?: InputMaybe<Scalars['Boolean']>;
   maxExecutions?: InputMaybe<Scalars['BigInt']>;
   signature?: InputMaybe<Scalars['Signature']>;
   startTime: Scalars['BigInt'];
@@ -2808,7 +2809,7 @@ export type SingleNftOrderInput = {
   contractAddress: Scalars['Address'];
   currencyAddress: Scalars['Address'];
   expirationTime: Scalars['BigInt'];
-  isAsk: Scalars['Boolean'];
+  isAsk?: InputMaybe<Scalars['Boolean']>;
   signature?: InputMaybe<Scalars['Signature']>;
   startTime: Scalars['BigInt'];
   taker?: InputMaybe<Scalars['Address']>;
