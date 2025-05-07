@@ -1081,7 +1081,7 @@ export class Gondi {
     if (isNative(order.marketPlace)) {
       const { saleCalldata } = await this.api.getSaleCalldata({
         orderId: Number(order.id),
-        nftId: Number(nft.tokenId),
+        nftId: Number(nft.id),
       });
 
       if (!saleCalldata || isEmptyCalldata(saleCalldata))
