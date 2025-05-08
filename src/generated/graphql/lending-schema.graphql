@@ -1701,7 +1701,7 @@ type Query {
   getNftByContractAddressAndTokenId(contractAddress: Address!, tokenId: BigInt!): NFT
   getNftBySlugAndTokenId(slug: String!, tokenId: BigInt!): NFT
   getOrderCancelCalldata(orderId: Int!): Hex!
-  getOrderSaleCalldata(nftId: Int = null, orderId: Int!): Hex!
+  getOrderSaleCalldata(nftId: Int!, orderId: Int!, taker: Address!): Hex!
   getOutstandingLoanStatistics: OutstandingLoanStatistics!
   getPointsFromReferrals: Int!
   getPoolByShareSymbol(symbol: String!): Pool
