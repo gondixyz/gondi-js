@@ -1063,6 +1063,7 @@ export class Gondi {
   }: {
     order: {
       id: string;
+      currencyAddress: Address;
       originalId: string;
       marketPlace: string;
       marketPlaceAddress: Address;
@@ -1087,9 +1088,10 @@ export class Gondi {
       if (!saleCalldata || isEmptyCalldata(saleCalldata))
         throw new Error(`No sale calldata available for native order ${order.id}`);
 
+      const price = order.currencyAddress === zeroAddress ? order.price : 0n;
       return this.contracts
         .GenericContract(order.marketPlaceAddress)
-        .sendTransactionData(saleCalldata, order.price);
+        .sendTransactionData(saleCalldata, price);
     }
 
     const fulfillOrder = await this.opensea.fulfillOrder({
