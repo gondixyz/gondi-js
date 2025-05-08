@@ -2144,8 +2144,9 @@ export type QueryGetOrderCancelCalldataArgs = {
 
 /** Query for the lending module */
 export type QueryGetOrderSaleCalldataArgs = {
-  nftId?: InputMaybe<Scalars['Int']>;
+  nftId: Scalars['Int'];
   orderId: Scalars['Int'];
+  taker: Scalars['Address'];
 };
 
 
@@ -3658,7 +3659,8 @@ export type ListOffersQuery = { __typename?: 'Query', result: { __typename?: 'Of
 
 export type GetSaleCalldataQueryVariables = Exact<{
   orderId: Scalars['Int'];
-  nftId?: InputMaybe<Scalars['Int']>;
+  nftId: Scalars['Int'];
+  taker: Scalars['Address'];
 }>;
 
 
@@ -6694,8 +6696,12 @@ export const ListOffersDocument = gql`
 }
     `;
 export const GetSaleCalldataDocument = gql`
-    query getSaleCalldata($orderId: Int!, $nftId: Int) {
-  saleCalldata: getOrderSaleCalldata(orderId: $orderId, nftId: $nftId)
+    query getSaleCalldata($orderId: Int!, $nftId: Int!, $taker: Address!) {
+  saleCalldata: getOrderSaleCalldata(
+    orderId: $orderId
+    nftId: $nftId
+    taker: $taker
+  )
 }
     `;
 export type Requester<C = {}, E = unknown> = <R, V>(doc: DocumentNode, vars?: V, options?: C) => Promise<R> | AsyncIterable<R>

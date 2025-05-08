@@ -1083,6 +1083,7 @@ export class Gondi {
       const { saleCalldata } = await this.api.getSaleCalldata({
         orderId: Number(order.id),
         nftId: Number(nft.id),
+        taker: this.wallet.account.address,
       });
 
       if (!saleCalldata || isEmptyCalldata(saleCalldata))
