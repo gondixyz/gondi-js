@@ -51,7 +51,7 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
     };
   }
 
-  async getRemainingLockupSeconds({ auction }: { auction: Auction }) {
+  async getRemainingLockupSeconds({ auction }: { auction: Pick<Auction, 'startTime'> }) {
     const lockupTimeSeconds = await this.contract.read.getTimeForMainLenderToBuy();
     const lockupSeconds = Number(lockupTimeSeconds);
     const ellapsedSeconds = Math.ceil(millisToSeconds(Date.now()) - Number(auction.startTime));
