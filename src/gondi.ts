@@ -977,6 +977,13 @@ export class Gondi {
     return this.contracts.UserVault(userVaultAddress).depositERC1155s(data);
   }
 
+  async depositUserVaultERC20({
+    userVaultAddress = this.defaults.UserVault,
+    ...data
+  }: { userVaultAddress?: Address } & DepositERC20Args) {
+    return this.contracts.UserVault(userVaultAddress).depositERC20(data);
+  }
+
   async burnUserVaultAndWithdraw({
     userVaultAddress = this.defaults.UserVault,
     ...data
@@ -1160,6 +1167,11 @@ export type DepositERC1155sArgs = {
   amounts: bigint[];
 };
 export type DepositERC721sArgs = Omit<DepositERC1155sArgs, 'amounts'>;
+export type DepositERC20Args = {
+  vaultId: bigint;
+  tokenAddress: Address;
+  amount: bigint;
+};
 export type BurnAndWithdrawArgs = {
   vaultId: bigint;
   collections: Address[];

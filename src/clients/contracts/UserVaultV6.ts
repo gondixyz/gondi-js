@@ -6,6 +6,7 @@ import { userVaultAbi as userVaultABIV6 } from '@/generated/blockchain/v6';
 import {
   BurnAndWithdrawArgs,
   CreateVaultArgs,
+  DepositERC20Args,
   DepositERC721sArgs,
   DepositERC1155sArgs,
 } from '@/gondi';
@@ -129,6 +130,22 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
           hash: txHash,
         });
         const events = this.parseEventLogs('ERC1155Deposited', receipt.logs);
+        if (events.length === 0) throw new Error('Deposit not created');
+        return { ...events[0].args, ...receipt };
+      },
+    };
+  }
+
+  async depositERC20({ vaultId, tokenAddress, amount }: DepositERC20Args) {
+    const txHash = await this.safeContractWrite.depositERC20([vaultId, tokenAddress, amount]);
+
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        const events = this.parseEventLogs('ERC20Deposited', receipt.logs);
         if (events.length === 0) throw new Error('Deposit not created');
         return { ...events[0].args, ...receipt };
       },

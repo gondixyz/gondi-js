@@ -97,6 +97,10 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
     throw new Error('Not implemented');
   }
 
+  async depositERC20(): ReturnType<UserVaultV6['depositERC20']> {
+    throw new Error('Not implemented');
+  }
+
   async #mintVault() {
     const txHash = await this.safeContractWrite.mint(undefined);
     const receipt = await this.bcClient.waitForTransactionReceipt({
