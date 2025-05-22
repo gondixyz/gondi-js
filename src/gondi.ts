@@ -950,17 +950,25 @@ export class Gondi {
     };
   }
 
-  async createUserVault({ nfts }: { nfts: CreateVaultArgs }) {
-    return this._createUserVault({ nfts });
+  async createUserVault({
+    nfts,
+    currencies = [],
+  }: {
+    nfts: CreateVaultNfts;
+    currencies?: CreateVaultCurrencies;
+  }) {
+    return this._createUserVault({ nfts, currencies });
   }
   async _createUserVault({
     nfts,
+    currencies = [],
     userVaultAddress = this.defaults.UserVault,
   }: {
-    nfts: CreateVaultArgs;
+    nfts: CreateVaultNfts;
+    currencies?: CreateVaultCurrencies;
     userVaultAddress?: Address;
   }) {
-    return this.contracts.UserVault(userVaultAddress).createVault(nfts);
+    return this.contracts.UserVault(userVaultAddress).createVault(nfts, currencies);
   }
 
   async depositUserVaultERC721s({
@@ -1154,15 +1162,14 @@ type MakeRefinanceOfferProps = {
   | { skipSignature?: never; withFallbackOffer: true; principalAddress: Address; nftId: number }
 );
 
-export type CreateVaultArgs = (
-  | {
-      collection: Address;
-      tokenIds: bigint[];
-      amounts: bigint[];
-      standard: NftStandard;
-    }
-  | { currency: Address; amount: bigint; standard: 'ERC20' }
-)[];
+export type CreateVaultNfts = {
+  collection: Address;
+  tokenIds: bigint[];
+  amounts: bigint[];
+  standard: NftStandard;
+}[];
+export type CreateVaultCurrencies = { currency: Address; amount: bigint }[];
+
 export type DepositERC1155sArgs = {
   vaultId: bigint;
   collection: Address;

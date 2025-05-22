@@ -4,7 +4,12 @@ import { Wallet } from '@/clients/contracts';
 import { UserVaultV6 } from '@/clients/contracts/UserVaultV6';
 import { getContracts } from '@/deploys';
 import { userVaultABI as userVaultABIV5 } from '@/generated/blockchain/v5';
-import { BurnAndWithdrawArgs, CreateVaultArgs, DepositERC721sArgs } from '@/gondi';
+import {
+  BurnAndWithdrawArgs,
+  CreateVaultCurrencies,
+  CreateVaultNfts,
+  DepositERC721sArgs,
+} from '@/gondi';
 
 import { BaseContract } from './BaseContract';
 
@@ -52,14 +57,10 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
     };
   }
 
-  async createVault(tokens: CreateVaultArgs) {
+  async createVault(nfts: CreateVaultNfts, currencies: CreateVaultCurrencies) {
     const { id: vaultId } = await this.#mintVault();
     const receipts = [];
-    const nfts = tokens.filter(
-      (token): token is (typeof tokens)[number] & { standard: 'ERC721' } =>
-        token.standard === 'ERC721',
-    );
-    if (nfts.length !== tokens.length) {
+    if (nfts.length !== nfts.length || currencies.length > 0) {
       throw new Error('Unsupported standars for UserVault');
     }
 

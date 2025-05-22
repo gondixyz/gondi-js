@@ -5,12 +5,12 @@ import { getContracts } from '@/deploys';
 import { userVaultAbi as userVaultABIV6 } from '@/generated/blockchain/v6';
 import {
   BurnAndWithdrawArgs,
-  CreateVaultArgs,
+  CreateVaultCurrencies,
+  CreateVaultNfts,
   DepositERC20Args,
   DepositERC721sArgs,
   DepositERC1155sArgs,
 } from '@/gondi';
-import { NftStandard } from '@/model';
 
 import { BaseContract } from './BaseContract';
 
@@ -72,16 +72,7 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
     };
   }
 
-  async createVault(tokens: CreateVaultArgs) {
-    const nfts = tokens.filter(
-      (token): token is (typeof tokens)[number] & { standard: NftStandard } =>
-        token.standard === 'ERC721' || token.standard === 'ERC1155',
-    );
-    const currencies = tokens.filter(
-      (token): token is (typeof tokens)[number] & { standard: 'ERC20' } =>
-        token.standard === 'ERC20',
-    );
-
+  async createVault(nfts: CreateVaultNfts, currencies: CreateVaultCurrencies) {
     const { id: vaultId } = await this.#mintVault();
     const receipts = [];
 
