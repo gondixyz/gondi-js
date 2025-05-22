@@ -1154,12 +1154,15 @@ type MakeRefinanceOfferProps = {
   | { skipSignature?: never; withFallbackOffer: true; principalAddress: Address; nftId: number }
 );
 
-export type CreateVaultArgs = {
-  collection: Address;
-  tokenIds: bigint[];
-  amounts: bigint[];
-  standard: NftStandard;
-}[];
+export type CreateVaultArgs = (
+  | {
+      collection: Address;
+      tokenIds: bigint[];
+      amounts: bigint[];
+      standard: NftStandard;
+    }
+  | { currency: Address; amount: bigint; standard: 'ERC20' }
+)[];
 export type DepositERC1155sArgs = {
   vaultId: bigint;
   collection: Address;

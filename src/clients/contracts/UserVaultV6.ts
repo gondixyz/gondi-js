@@ -10,6 +10,7 @@ import {
   DepositERC721sArgs,
   DepositERC1155sArgs,
 } from '@/gondi';
+import { NftStandard } from '@/model';
 
 import { BaseContract } from './BaseContract';
 
@@ -71,7 +72,16 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
     };
   }
 
-  async createVault(nfts: CreateVaultArgs) {
+  async createVault(tokens: CreateVaultArgs) {
+    const nfts = tokens.filter(
+      (token): token is (typeof tokens)[number] & { standard: NftStandard } =>
+        token.standard === 'ERC721' || token.standard === 'ERC1155',
+    );
+    const currencies = tokens.filter(
+      (token): token is (typeof tokens)[number] & { standard: 'ERC20' } =>
+        token.standard === 'ERC20',
+    );
+
     const { id: vaultId } = await this.#mintVault();
     const receipts = [];
 
@@ -92,6 +102,13 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
         nft.standard === 'ERC721'
           ? await this.depositERC721s({ vaultId, ...nft })
           : await this.depositERC1155s({ vaultId, ...nft });
+      const receipt = await deposit.waitTxInBlock();
+      receipts.push(receipt);
+    }
+
+    for (const currencyAmount of currencies) {
+      const { currency, amount } = currencyAmount;
+      const deposit = await this.depositERC20({ vaultId, tokenAddress: currency, amount });
       const receipt = await deposit.waitTxInBlock();
       receipts.push(receipt);
     }

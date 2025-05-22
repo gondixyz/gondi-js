@@ -52,14 +52,20 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
     };
   }
 
-  async createVault(nfts: CreateVaultArgs) {
+  async createVault(tokens: CreateVaultArgs) {
     const { id: vaultId } = await this.#mintVault();
     const receipts = [];
-    const erc721Nfts = nfts.filter((nft) => nft.standard === 'ERC721');
+    const nfts = tokens.filter(
+      (token): token is (typeof tokens)[number] & { standard: 'ERC721' } =>
+        token.standard === 'ERC721',
+    );
+    if (nfts.length !== tokens.length) {
+      throw new Error('Unsupported standars for UserVault');
+    }
 
     // Regroup all elements in the same collection in case users send tokenIds as separate elements of the array
-    const groupedNfts: Record<Address, (typeof erc721Nfts)[number]> = {};
-    for (const nft of erc721Nfts) {
+    const groupedNfts: Record<Address, (typeof nfts)[number]> = {};
+    for (const nft of nfts) {
       const { collection, tokenIds } = nft;
       if (groupedNfts[collection]) {
         groupedNfts[collection].tokenIds.push(...tokenIds);
