@@ -98,8 +98,8 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
     }
 
     for (const currencyAmount of currencies) {
-      const { currency, amount } = currencyAmount;
-      const deposit = await this.depositERC20({ vaultId, tokenAddress: currency, amount });
+      const { address, amount } = currencyAmount;
+      const deposit = await this.depositERC20({ vaultId, tokenAddress: address, amount });
       const receipt = await deposit.waitTxInBlock();
       receipts.push(receipt);
     }

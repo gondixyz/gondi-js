@@ -950,6 +950,23 @@ export class Gondi {
     };
   }
 
+  async currencyAllowance({
+    tokenAddress,
+    to = this.defaults.Msl,
+  }: {
+    tokenAddress: Address;
+    amount?: bigint;
+    to?: Address;
+  }) {
+    const erc20 = this.contracts.ERC20(tokenAddress);
+    return await erc20.contract.read.allowance([this.account.address, to]);
+  }
+
+  async currencyBalance({ tokenAddress }: { tokenAddress: Address; amount?: bigint }) {
+    const erc20 = this.contracts.ERC20(tokenAddress);
+    return await erc20.contract.read.balanceOf([this.account.address]);
+  }
+
   async createUserVault({
     nfts,
     currencies = [],
@@ -1168,7 +1185,7 @@ export type CreateVaultNfts = {
   amounts: bigint[];
   standard: NftStandard;
 }[];
-export type CreateVaultCurrencies = { currency: Address; amount: bigint }[];
+export type CreateVaultCurrencies = { address: Address; amount: bigint }[];
 
 export type DepositERC1155sArgs = {
   vaultId: bigint;
