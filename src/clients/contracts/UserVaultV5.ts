@@ -4,7 +4,12 @@ import { Wallet } from '@/clients/contracts';
 import { UserVaultV6 } from '@/clients/contracts/UserVaultV6';
 import { getContracts } from '@/deploys';
 import { userVaultABI as userVaultABIV5 } from '@/generated/blockchain/v5';
-import { BurnAndWithdrawArgs, CreateVaultArgs, DepositERC721sArgs } from '@/gondi';
+import {
+  BurnAndWithdrawArgs,
+  CreateVaultCurrencies,
+  CreateVaultNfts,
+  DepositERC721sArgs,
+} from '@/gondi';
 
 import { BaseContract } from './BaseContract';
 
@@ -52,14 +57,16 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
     };
   }
 
-  async createVault(nfts: CreateVaultArgs) {
+  async createVault(nfts: CreateVaultNfts, currencies: CreateVaultCurrencies) {
     const { id: vaultId } = await this.#mintVault();
     const receipts = [];
-    const erc721Nfts = nfts.filter((nft) => nft.standard === 'ERC721');
+    if (nfts.length !== nfts.length || currencies.length > 0) {
+      throw new Error('Unsupported standars for UserVault');
+    }
 
     // Regroup all elements in the same collection in case users send tokenIds as separate elements of the array
-    const groupedNfts: Record<Address, (typeof erc721Nfts)[number]> = {};
-    for (const nft of erc721Nfts) {
+    const groupedNfts: Record<Address, (typeof nfts)[number]> = {};
+    for (const nft of nfts) {
       const { collection, tokenIds } = nft;
       if (groupedNfts[collection]) {
         groupedNfts[collection].tokenIds.push(...tokenIds);
@@ -94,6 +101,10 @@ export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
   }
 
   async depositERC1155s(): ReturnType<UserVaultV6['depositERC1155s']> {
+    throw new Error('Not implemented');
+  }
+
+  async depositERC20(): ReturnType<UserVaultV6['depositERC20']> {
     throw new Error('Not implemented');
   }
 

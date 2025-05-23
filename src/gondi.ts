@@ -950,17 +950,42 @@ export class Gondi {
     };
   }
 
-  async createUserVault({ nfts }: { nfts: CreateVaultArgs }) {
-    return this._createUserVault({ nfts });
+  async currencyAllowance({
+    tokenAddress,
+    to = this.defaults.Msl,
+  }: {
+    tokenAddress: Address;
+    amount?: bigint;
+    to?: Address;
+  }) {
+    const erc20 = this.contracts.ERC20(tokenAddress);
+    return await erc20.contract.read.allowance([this.account.address, to]);
+  }
+
+  async currencyBalance({ tokenAddress }: { tokenAddress: Address; amount?: bigint }) {
+    const erc20 = this.contracts.ERC20(tokenAddress);
+    return await erc20.contract.read.balanceOf([this.account.address]);
+  }
+
+  async createUserVault({
+    nfts,
+    currencies = [],
+  }: {
+    nfts: CreateVaultNfts;
+    currencies?: CreateVaultCurrencies;
+  }) {
+    return this._createUserVault({ nfts, currencies });
   }
   async _createUserVault({
     nfts,
+    currencies = [],
     userVaultAddress = this.defaults.UserVault,
   }: {
-    nfts: CreateVaultArgs;
+    nfts: CreateVaultNfts;
+    currencies?: CreateVaultCurrencies;
     userVaultAddress?: Address;
   }) {
-    return this.contracts.UserVault(userVaultAddress).createVault(nfts);
+    return this.contracts.UserVault(userVaultAddress).createVault(nfts, currencies);
   }
 
   async depositUserVaultERC721s({
@@ -975,6 +1000,13 @@ export class Gondi {
     ...data
   }: { userVaultAddress?: Address } & DepositERC1155sArgs) {
     return this.contracts.UserVault(userVaultAddress).depositERC1155s(data);
+  }
+
+  async depositUserVaultERC20({
+    userVaultAddress = this.defaults.UserVault,
+    ...data
+  }: { userVaultAddress?: Address } & DepositERC20Args) {
+    return this.contracts.UserVault(userVaultAddress).depositERC20(data);
   }
 
   async burnUserVaultAndWithdraw({
@@ -1147,12 +1179,14 @@ type MakeRefinanceOfferProps = {
   | { skipSignature?: never; withFallbackOffer: true; principalAddress: Address; nftId: number }
 );
 
-export type CreateVaultArgs = {
+export type CreateVaultNfts = {
   collection: Address;
   tokenIds: bigint[];
   amounts: bigint[];
   standard: NftStandard;
 }[];
+export type CreateVaultCurrencies = { address: Address; amount: bigint }[];
+
 export type DepositERC1155sArgs = {
   vaultId: bigint;
   collection: Address;
@@ -1160,6 +1194,11 @@ export type DepositERC1155sArgs = {
   amounts: bigint[];
 };
 export type DepositERC721sArgs = Omit<DepositERC1155sArgs, 'amounts'>;
+export type DepositERC20Args = {
+  vaultId: bigint;
+  tokenAddress: Address;
+  amount: bigint;
+};
 export type BurnAndWithdrawArgs = {
   vaultId: bigint;
   collections: Address[];
