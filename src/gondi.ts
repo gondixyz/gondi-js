@@ -955,14 +955,13 @@ export class Gondi {
     to = this.defaults.Msl,
   }: {
     tokenAddress: Address;
-    amount?: bigint;
     to?: Address;
   }) {
     const erc20 = this.contracts.ERC20(tokenAddress);
     return await erc20.contract.read.allowance([this.account.address, to]);
   }
 
-  async currencyBalance({ tokenAddress }: { tokenAddress: Address; amount?: bigint }) {
+  async currencyBalance({ tokenAddress }: { tokenAddress: Address }) {
     const erc20 = this.contracts.ERC20(tokenAddress);
     return await erc20.contract.read.balanceOf([this.account.address]);
   }
