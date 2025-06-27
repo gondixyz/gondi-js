@@ -256,6 +256,7 @@ export type Collection = Node & {
   nftsCount?: Maybe<Scalars['Int']>;
   slug: Scalars['String'];
   statistics: CollectionStatistics;
+  supply?: Maybe<Scalars['Int']>;
   twitterUsername?: Maybe<Scalars['String']>;
   verified: Scalars['Boolean'];
   wrappedCollection?: Maybe<Collection>;
@@ -312,6 +313,7 @@ export type CollectionOffer = Node & Offer & {
   borrowerAddress?: Maybe<Scalars['Address']>;
   capacity: Scalars['BigInt'];
   collection: Collection;
+  collectionId?: Maybe<Scalars['Int']>;
   consumedCapacity: Scalars['BigInt'];
   contractAddress: Scalars['Address'];
   createdDate?: Maybe<Scalars['DateTime']>;
@@ -331,6 +333,7 @@ export type CollectionOffer = Node & Offer & {
    */
   maxTrancheFloor: Scalars['BigInt'];
   netPrincipal: Scalars['BigInt'];
+  nftId?: Maybe<Scalars['Int']>;
   offerHash?: Maybe<Scalars['Hash']>;
   offerId: Scalars['BigInt'];
   principalAddress: Scalars['Address'];
@@ -406,6 +409,7 @@ export type CollectionOrderInput = {
   collectionId: Scalars['Int'];
   currencyAddress: Scalars['Address'];
   expirationTime: Scalars['BigInt'];
+  fees?: InputMaybe<Array<OrderFee>>;
   isAsk?: InputMaybe<Scalars['Boolean']>;
   maxExecutions?: InputMaybe<Scalars['BigInt']>;
   signature?: InputMaybe<Scalars['Signature']>;
@@ -438,32 +442,50 @@ export type CollectionSignedOfferInput = {
 };
 
 export enum CollectionSortField {
+  FloorPrice = 'FLOOR_PRICE',
+  FloorPrice_7DChange = 'FLOOR_PRICE_7D_CHANGE',
+  FloorPrice_30DChange = 'FLOOR_PRICE_30D_CHANGE',
+  LendersOutstandingPrincipal = 'LENDERS_OUTSTANDING_PRINCIPAL',
   ListingCount = 'LISTING_COUNT',
   LoanCount = 'LOAN_COUNT',
   OfferCount = 'OFFER_COUNT',
   OutstandingPrincipal = 'OUTSTANDING_PRINCIPAL',
+  OwnersTotalValue = 'OWNERS_TOTAL_VALUE',
   TotalLoanVolume = 'TOTAL_LOAN_VOLUME',
   TotalOutstandingPrincipal = 'TOTAL_OUTSTANDING_PRINCIPAL',
   TotalVolume = 'TOTAL_VOLUME',
+  TotalVolume_7D = 'TOTAL_VOLUME_7D',
+  TotalVolume_30D = 'TOTAL_VOLUME_30D',
   TrendingVolume = 'TRENDING_VOLUME'
 }
 
 export type CollectionSortInput = {
   field: CollectionSortField;
+  lenders?: InputMaybe<Array<Scalars['Address']>>;
   order: Ordering;
+  owners?: InputMaybe<Array<Scalars['Address']>>;
   principalAddress?: InputMaybe<Scalars['Address']>;
 };
 
 export type CollectionStatistics = {
   __typename?: 'CollectionStatistics';
+  /** @deprecated Use highest_bid instead. */
   bestOffer?: Maybe<CurrencyAmount>;
   floorPrice?: Maybe<CurrencyAmount>;
   floorPrice7d?: Maybe<Scalars['Float']>;
   floorPrice30d?: Maybe<Scalars['Float']>;
+  floorPriceHistory: Array<FloorPriceHistory>;
+  highestBid?: Maybe<Order>;
   maxAskPrice?: Maybe<BigIntCurrencyAmount>;
   minAskPrice?: Maybe<BigIntCurrencyAmount>;
   nftsCount?: Maybe<Scalars['Float']>;
+  numberOfListings: Scalars['Int'];
+  /**
+   * Deprecated field. Use number_of_offers_for_currencies instead.
+   * @deprecated Use number_of_offers_for_currencies instead.
+   */
   numberOfOffers: Scalars['Float'];
+  numberOfOffersForCurrencies: Scalars['Int'];
   numberOfPricedNfts: Scalars['Int'];
   outstandingLoanCount: Scalars['Int'];
   outstandingNftsCount: Scalars['BigInt'];
@@ -490,6 +512,12 @@ export type CollectionStatistics = {
 };
 
 
+export type CollectionStatisticsFloorPriceHistoryArgs = {
+  fromDate: Scalars['DateTime'];
+  toDate: Scalars['DateTime'];
+};
+
+
 export type CollectionStatisticsMaxAskPriceArgs = {
   currencyAddresses?: InputMaybe<Array<Scalars['Address']>>;
 };
@@ -502,6 +530,11 @@ export type CollectionStatisticsMinAskPriceArgs = {
 
 export type CollectionStatisticsNumberOfOffersArgs = {
   currencyAddress: Scalars['Address'];
+};
+
+
+export type CollectionStatisticsNumberOfOffersForCurrenciesArgs = {
+  currencyAddresses: Array<Scalars['Address']>;
 };
 
 
@@ -637,6 +670,40 @@ export type Erc4626Withdraw = Node & PoolActivity & {
   shares: Scalars['BigInt'];
   timestamp: Scalars['DateTime'];
   txHash: Scalars['Hash'];
+};
+
+export type FloorPriceHistory = {
+  __typename?: 'FloorPriceHistory';
+  timestamp: Scalars['DateTime'];
+  value: Scalars['Float'];
+};
+
+export type ForWalletsInput = {
+  borrowersWallets?: InputMaybe<Array<Scalars['Address']>>;
+  lendersWallets?: InputMaybe<Array<Scalars['Address']>>;
+  ownersWallets?: InputMaybe<Array<Scalars['Address']>>;
+};
+
+export type GlobalSearchResult = {
+  id: Scalars['String'];
+};
+
+export type GlobalSearchResultAccount = GlobalSearchResult & {
+  __typename?: 'GlobalSearchResultAccount';
+  id: Scalars['String'];
+  user: User;
+};
+
+export type GlobalSearchResultCollection = GlobalSearchResult & {
+  __typename?: 'GlobalSearchResultCollection';
+  collection: Collection;
+  id: Scalars['String'];
+};
+
+export type GlobalSearchResultNft = GlobalSearchResult & {
+  __typename?: 'GlobalSearchResultNFT';
+  id: Scalars['String'];
+  nft: Nft;
 };
 
 export type Interval = {
@@ -1127,6 +1194,7 @@ export type MultiSourceLoan = Loan & Node & {
   endDate: Scalars['DateTime'];
   id: Scalars['String'];
   indexInBlock: Scalars['Int'];
+  isEndLockedUp: Scalars['Boolean'];
   lastOriginationFee: Scalars['BigInt'];
   lastRenegotiationDate?: Maybe<Scalars['DateTime']>;
   loanId: Scalars['Int'];
@@ -1145,6 +1213,7 @@ export type MultiSourceLoan = Loan & Node & {
   repaidActivity?: Maybe<LoanRepaid>;
   repaymentTime?: Maybe<Scalars['DateTime']>;
   sources: Array<Source>;
+  startLockDueDate?: Maybe<Scalars['DateTime']>;
   startTime: Scalars['DateTime'];
   status: Scalars['String'];
   timestamp: Scalars['DateTime'];
@@ -1188,56 +1257,56 @@ export type Mutation = {
   __typename?: 'Mutation';
   /** Lists all NFTs from a user to start receiving loan offers. Can be filtered to only match certain criteria. */
   addListingsOfNftsFromUser?: Maybe<Scalars['Void']>;
-  /** Adds or updates a listing to start receiving loan offers. */
+  /** Adds or updates a loan listing to start receiving loan offers. */
   addOrUpdateListing: Listing;
-  /** Adds or updates a renegotiation request.A renegotiation request is only a suggestion for potential lenders to show your intentions and the terms you want. */
+  /** Adds or updates a loan renegotiation request.A renegotiation request is only a suggestion for potential lenders to show your intentions and the terms you want. */
   addOrUpdateRenegotiationRequest: RenegotiationRequest;
-  /** Adds or updates a top-up request.A top-up request is only a suggestion for potential lenders to show your intentions and the terms you want. */
+  /** Adds or updates a loan top-up request.A top-up request is only a suggestion for potential lenders to show your intentions and the terms you want. */
   addOrUpdateTopUpRequest: TopUpRequest;
-  /** This is the first step of the collection offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_signed_collection_offer. Refer to gondi-js examples for more details. */
+  /** This is the first step of the collection loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_signed_collection_offer. Refer to gondi-js examples for more details. */
   generateCollectionOfferToBeSigned: CollectionOffer;
-  /** This is the first step of the renegotiation offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_renegotiation_signed_offer. Refer to gondi-js examples for more details. */
+  /** This is the first step of the renegotiation loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_renegotiation_signed_offer. Refer to gondi-js examples for more details. */
   generateRenegotiationOfferToBeSigned: Renegotiation;
-  /** This is the first step of the single NFT offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_signed_single_nft_offer. Refer to gondi-js examples for more details. */
+  /** This is the first step of the single NFT loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_signed_single_nft_offer. Refer to gondi-js examples for more details. */
   generateSingleNftOfferToBeSigned: SingleNftOffer;
-  /** Hides all offers from a user for a given contract address.  */
+  /** Hides all loan offers from a user for a given contract address.  */
   hideAllOffers: Array<Offer>;
-  /** Hides an offer. */
+  /** Hides a loan offer. */
   hideOffer: Offer;
-  /** Hides an order. */
+  /** Hides a trade order. */
   hideOrder: Order;
-  /** Hides a renegotiation offer.  */
+  /** Hides a loan renegotiation offer.  */
   hideRenegotiation: Renegotiation;
   markNotificationIdsAsRead?: Maybe<Scalars['Void']>;
   markNotificationsAsRead?: Maybe<Scalars['Void']>;
   /** Creates a buy now pay later order. Buy now pay later orders are orders which use a loan offer principal to buy and NFT and start a loan making the borrower the creator of the order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You will have to do this process two times since multiple signatures are required. You should receive an BuyNowPayLaterOrder if everything went well. Refer to gondi-js examples for more details on how to sign it and pay the order. */
   publishBuyNowPayLaterOrder: BuyNowPayLaterOrderSignatureRequest;
-  /** Creates a collection order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an CollectionOrder if everything went well. An order can only be a BID. Refer to gondi-js examples for more details. */
+  /** Creates a collection trade order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an CollectionOrder if everything went well. An order can only be a BID. Refer to gondi-js examples for more details. */
   publishOrderForCollection: CollectionOrderSignatureRequest;
-  /** Creates a single NFT order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an SingleNFTOrder if everything went well. An order can be an ASK or a BID. Refer to gondi-js examples for more details. */
+  /** Creates a single NFT trade order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an SingleNFTOrder if everything went well. An order can be an ASK or a BID. Refer to gondi-js examples for more details. */
   publishOrderForNft: SingleNftOrderSignatureRequest;
-  /** Creates a sell and repay order. Sell and repay orders are orders to sell an NFT and use that money to repay a loan leaving the rest for the borrower. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You will have to do this process two times since multiple signatures are required. You should receive an SellAndRepayOrder if everything went well. Refer to gondi-js examples for more details on how to sign it and pay the order. */
+  /** Creates a sell and repay loan order. Sell and repay orders are orders to sell an NFT and use that money to repay a loan leaving the rest for the borrower. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You will have to do this process two times since multiple signatures are required. You should receive an SellAndRepayOrder if everything went well. Refer to gondi-js examples for more details on how to sign it and pay the order. */
   publishSellAndRepayOrder: SellAndRepayOrderSignatureRequest;
-  /** Removes a listing from a user. */
+  /** Removes a loan listing from a user. */
   removeListing: Listing;
-  /** Removes all the listings from a user. Can be filtered. */
+  /** Removes all the loan listings from a user. Can be filtered. */
   removeListingsOfNftsFromUser?: Maybe<Scalars['Void']>;
-  /** Removes a renegotiation request. */
+  /** Removes a loan renegotiation request. */
   removeRenegotiationRequest: RenegotiationRequest;
-  /** Removes a top-up request. */
+  /** Removes a loan top-up request. */
   removeTopUpRequest: TopUpRequest;
-  /** This is the second step of the renegotiation offer flow after generate_renegotiation_offer_to_be_signed. It saves the signed offer. Refer to gondi-js examples for more details. */
+  /** This is the second step of the renegotiation loan offer flow after generate_renegotiation_offer_to_be_signed. It saves the signed offer. Refer to gondi-js examples for more details. */
   saveRenegotiationSignedOffer: Renegotiation;
-  /** This is the second step of the collection offer flow after generate_collection_offer_to_be_signed. It saves the signed offer. Refer to gondi-js examples for more details. */
+  /** This is the second step of the collection loan offer flow after generate_collection_offer_to_be_signed. It saves the signed offer. Refer to gondi-js examples for more details. */
   saveSignedCollectionOffer: CollectionOffer;
-  /** This is the second step of the single NFT offer flow after generate_single_nft_offer_to_be_signed. It saves the signed offer. Refer to gondi-js examples for more details. */
+  /** This is the second step of the single NFT loan offer flow after generate_single_nft_offer_to_be_signed. It saves the signed offer. Refer to gondi-js examples for more details. */
   saveSignedSingleNftOffer: SingleNftOffer;
   setReferral?: Maybe<Scalars['Void']>;
-  /** Unhides an offer. */
+  /** Unhides a loan offer. */
   showOffer: Offer;
-  /** Unhides an order. */
+  /** Unhides a trade order. */
   showOrder: Order;
-  /** Unhides a renegotiation offer.  */
+  /** Unhides a loan renegotiation offer.  */
   showRenegotiation: Renegotiation;
 };
 
@@ -1402,6 +1471,7 @@ export type Nft = Node & {
   collectionId?: Maybe<Scalars['Int']>;
   createdDate: Scalars['DateTime'];
   description?: Maybe<Scalars['String']>;
+  erc20Balances: Array<BigIntCurrencyAmount>;
   id: Scalars['String'];
   image?: Maybe<Asset>;
   isFlagged?: Maybe<Scalars['Boolean']>;
@@ -1464,6 +1534,7 @@ export type NftOrderInput = {
   contractAddress: Scalars['Address'];
   currencyAddress: Scalars['Address'];
   expirationTime: Scalars['BigInt'];
+  fees?: InputMaybe<Array<OrderFee>>;
   isAsk: Scalars['Boolean'];
   orderToFill?: InputMaybe<Scalars['Int']>;
   repaymentSignature?: InputMaybe<Scalars['Signature']>;
@@ -1519,6 +1590,22 @@ export type NewRenegotiationOfferNotification = Node & Notification & {
   user: User;
 };
 
+export type NftLoansFilterInput = {
+  borrowers?: InputMaybe<Array<Scalars['Address']>>;
+  contracts?: InputMaybe<Array<Scalars['Address']>>;
+  excludeBorrowers?: InputMaybe<Array<Scalars['Address']>>;
+  excludeContracts?: InputMaybe<Array<Scalars['Address']>>;
+};
+
+export type NftOwnersFilterInput = {
+  excludeOwners?: InputMaybe<Array<Scalars['Address']>>;
+  owners?: InputMaybe<Array<Scalars['Address']>>;
+  withInLoan?: InputMaybe<Scalars['Boolean']>;
+  withInStash?: InputMaybe<Scalars['Boolean']>;
+  withInVault?: InputMaybe<Scalars['Boolean']>;
+  withInWallet?: InputMaybe<Scalars['Boolean']>;
+};
+
 export enum NftSortField {
   Collection = 'COLLECTION',
   LastSaleDate = 'LAST_SALE_DATE',
@@ -1540,7 +1627,12 @@ export type NftStatistics = {
   highestBid?: Maybe<Order>;
   lastSale?: Maybe<Sale>;
   loansTotalVolume: Scalars['BigInt'];
+  /**
+   * Deprecated field. Use number_of_offers_for_currencies instead.
+   * @deprecated Use number_of_offers_for_currencies instead.
+   */
   numberOfOffers: Scalars['Float'];
+  numberOfOffersForCurrencies: Scalars['Int'];
   /** @deprecated Trait floor price is not available */
   topTraitFloorPrice?: Maybe<CurrencyAmount>;
 };
@@ -1560,8 +1652,38 @@ export type NftStatisticsNumberOfOffersArgs = {
   currencyAddress: Scalars['Address'];
 };
 
+
+export type NftStatisticsNumberOfOffersForCurrenciesArgs = {
+  currencyAddresses: Array<Scalars['Address']>;
+};
+
 export type NftTermsFilter = {
   price?: InputMaybe<BigIntInterval>;
+};
+
+export type NftWithAsksConfigInput = {
+  currencyAddresses?: InputMaybe<Array<Scalars['Address']>>;
+  forTaker?: InputMaybe<Scalars['Address']>;
+  marketplaces?: InputMaybe<Array<MarketPlaceType>>;
+  price?: InputMaybe<BigIntInterval>;
+  withPrice?: InputMaybe<Scalars['Boolean']>;
+};
+
+export enum NftsSortField {
+  LastSaleDate = 'LAST_SALE_DATE',
+  LastSalePrice = 'LAST_SALE_PRICE',
+  ListingCreatedDate = 'LISTING_CREATED_DATE',
+  Name = 'NAME',
+  OutstandingDebt = 'OUTSTANDING_DEBT',
+  OutstandingLoanDueDate = 'OUTSTANDING_LOAN_DUE_DATE',
+  Price = 'PRICE'
+}
+
+export type NftsSortInput = {
+  currencyAddresses?: InputMaybe<Array<Scalars['Address']>>;
+  field: NftsSortField;
+  forTaker?: InputMaybe<Scalars['Address']>;
+  order: Ordering;
 };
 
 export type Node = {
@@ -1607,6 +1729,7 @@ export type Offer = {
   availablePrincipalAmount: Scalars['BigInt'];
   borrowerAddress?: Maybe<Scalars['Address']>;
   capacity: Scalars['BigInt'];
+  collectionId?: Maybe<Scalars['Int']>;
   consumedCapacity: Scalars['BigInt'];
   contractAddress: Scalars['Address'];
   createdDate?: Maybe<Scalars['DateTime']>;
@@ -1626,6 +1749,7 @@ export type Offer = {
    */
   maxTrancheFloor: Scalars['BigInt'];
   netPrincipal: Scalars['BigInt'];
+  nftId?: Maybe<Scalars['Int']>;
   offerHash?: Maybe<Scalars['Hash']>;
   offerId: Scalars['BigInt'];
   principalAddress: Scalars['Address'];
@@ -1755,6 +1879,21 @@ export type OrderEdge = {
   cursor: Scalars['String'];
   node: Order;
 };
+
+export type OrderFee = {
+  amount: Scalars['BigInt'];
+  taker: Scalars['Address'];
+};
+
+export type OrderForNft = {
+  collectionId: Scalars['Int'];
+  nftId: Scalars['Int'];
+};
+
+export enum OrderSide {
+  Ask = 'ASK',
+  Bid = 'BID'
+}
 
 export enum OrderSortField {
   CreatedDate = 'CREATED_DATE',
@@ -2026,6 +2165,7 @@ export type Query = {
   getNftBySlugAndTokenId?: Maybe<Nft>;
   getOrderCancelCalldata: Scalars['Hex'];
   getOrderSaleCalldata: Scalars['Hex'];
+  getOutstandingDebt: Scalars['BigInt'];
   getOutstandingLoanStatistics: OutstandingLoanStatistics;
   getPointsFromReferrals: Scalars['Int'];
   getPoolByShareSymbol?: Maybe<Pool>;
@@ -2034,6 +2174,7 @@ export type Query = {
   getSourcesStatisticsByCollection: Array<SourceStatisticsFromCollection>;
   getUserPointActivities: PointActivityConnection;
   getUserPoints: Scalars['Int'];
+  globalSearch: Array<GlobalSearchResult>;
   listAuctions: AuctionConnection;
   listBids: BidConnection;
   listCollectionTraitTypes: TraitTypeConnection;
@@ -2057,11 +2198,22 @@ export type Query = {
   listLoans: MultiSourceLoanConnection;
   listNftDelegations: DelegationConnection;
   listNftOffersAndRenegotiations: SingleNftOfferCollectionOfferRenegotiationConnection;
+  listNfts: NftConnection;
+  /**
+   * Deprecated field: use list_nfts instead.
+   * @deprecated Use list_nfts instead.
+   */
   listNftsFromCollections: NftConnection;
+  /**
+   * Deprecated field: use list_nfts instead.
+   * @deprecated Use list_nfts instead.
+   */
   listNftsFromUser: NftConnection;
   listNotifications: NotificationConnection;
   listOffers: OfferConnection;
+  /** This field is deprecated. Use list_orders_v2 instead. This field will be removed in the next major version. */
   listOrders: OrderConnection;
+  listOrdersV2: OrderConnection;
   listPoolActivities: PoolActivityConnection;
   listPools: PoolConnection;
   listRenegotiations: RenegotiationConnection;
@@ -2144,9 +2296,16 @@ export type QueryGetOrderCancelCalldataArgs = {
 
 /** Query for the lending module */
 export type QueryGetOrderSaleCalldataArgs = {
-  nftId: Scalars['Int'];
+  nftId?: InputMaybe<Scalars['Int']>;
   orderId: Scalars['Int'];
-  taker: Scalars['Address'];
+  taker?: InputMaybe<Scalars['Address']>;
+};
+
+
+/** Query for the lending module */
+export type QueryGetOutstandingDebtArgs = {
+  borrowers: Array<Scalars['Address']>;
+  currencyAddress: Scalars['Address'];
 };
 
 
@@ -2180,6 +2339,12 @@ export type QueryGetUserPointActivitiesArgs = {
 
 
 /** Query for the lending module */
+export type QueryGlobalSearchArgs = {
+  searchTerm: Scalars['String'];
+};
+
+
+/** Query for the lending module */
 export type QueryListAuctionsArgs = {
   after?: InputMaybe<Scalars['String']>;
   currencyAddress?: InputMaybe<Scalars['Address']>;
@@ -2193,6 +2358,7 @@ export type QueryListAuctionsArgs = {
 export type QueryListBidsArgs = {
   after?: InputMaybe<Scalars['String']>;
   auctionId?: InputMaybe<Scalars['String']>;
+  auctionStatuses?: InputMaybe<Array<AuctionStatus>>;
   bidders?: InputMaybe<Array<Scalars['String']>>;
   currencyAddress?: InputMaybe<Scalars['Address']>;
   first?: InputMaybe<Scalars['Int']>;
@@ -2206,6 +2372,7 @@ export type QueryListCollectionTraitTypesArgs = {
   after?: InputMaybe<Scalars['String']>;
   collectionId: Scalars['Int'];
   first?: Scalars['Int'];
+  valueType?: InputMaybe<TraitValueType>;
 };
 
 
@@ -2228,6 +2395,7 @@ export type QueryListCollectionsArgs = {
   excludeCollections?: InputMaybe<Array<Scalars['Int']>>;
   excludeGondiUserVault?: InputMaybe<Scalars['Boolean']>;
   first?: InputMaybe<Scalars['Int']>;
+  forWallets?: InputMaybe<ForWalletsInput>;
   searchTerm?: InputMaybe<Scalars['String']>;
   sortBy?: InputMaybe<Array<CollectionSortInput>>;
   standards?: InputMaybe<Array<TokenStandardType>>;
@@ -2268,9 +2436,11 @@ export type QueryListListingsArgs = {
   after?: InputMaybe<Scalars['String']>;
   collectionIds?: InputMaybe<Array<Scalars['Int']>>;
   currencyAddress?: InputMaybe<Scalars['Address']>;
+  excludeSlugs?: InputMaybe<Array<Scalars['String']>>;
   first?: InputMaybe<Scalars['Int']>;
   marketplaceNames?: InputMaybe<Array<MarketplaceEnum>>;
   searchTerm?: InputMaybe<Scalars['String']>;
+  slugs?: InputMaybe<Array<Scalars['String']>>;
   userFilter?: InputMaybe<UserFilter>;
   withLoans?: InputMaybe<Scalars['Boolean']>;
 };
@@ -2312,6 +2482,7 @@ export type QueryListLoanEventsArgs = {
   first?: Scalars['Int'];
   fromTimestamp?: InputMaybe<Scalars['Int']>;
   loanId?: InputMaybe<Scalars['String']>;
+  nfts?: InputMaybe<Array<Scalars['Int']>>;
   slugs?: InputMaybe<Array<Scalars['String']>>;
   sortBy?: InputMaybe<Array<LoanEventSortInput>>;
   types?: InputMaybe<Array<LoanEventType>>;
@@ -2326,12 +2497,15 @@ export type QueryListLoansArgs = {
   contractAddresses?: InputMaybe<Array<Scalars['Address']>>;
   currencyAddress?: InputMaybe<Scalars['Address']>;
   excludeAddresses?: InputMaybe<Array<Scalars['Address']>>;
+  excludeSlugs?: InputMaybe<Array<Scalars['String']>>;
   first?: Scalars['Int'];
   hideEndLocked?: InputMaybe<Scalars['Boolean']>;
   hideLocked?: InputMaybe<Scalars['Boolean']>;
   nfts?: InputMaybe<Array<Scalars['Int']>>;
   orderByStatuses?: InputMaybe<Scalars['Boolean']>;
+  searchTerm?: InputMaybe<Scalars['String']>;
   sluggedTokens?: InputMaybe<Array<SluggedTokenInput>>;
+  slugs?: InputMaybe<Array<Scalars['String']>>;
   sortBy?: InputMaybe<Array<LoanSortInput>>;
   statuses?: InputMaybe<Array<LoanStatusType>>;
   terms?: InputMaybe<TermsFilter>;
@@ -2367,6 +2541,25 @@ export type QueryListNftOffersAndRenegotiationsArgs = {
   sortBy?: InputMaybe<OffersSortInput>;
   statuses?: InputMaybe<Array<OfferStatus>>;
   terms?: InputMaybe<TermsFilter>;
+};
+
+
+/** Query for the lending module */
+export type QueryListNftsArgs = {
+  after?: InputMaybe<Scalars['String']>;
+  excludeSlugs?: InputMaybe<Array<Scalars['String']>>;
+  first?: InputMaybe<Scalars['Int']>;
+  loansFilter?: InputMaybe<NftLoansFilterInput>;
+  ownersFilter?: InputMaybe<NftOwnersFilterInput>;
+  searchTerm?: InputMaybe<Scalars['String']>;
+  slugs?: InputMaybe<Array<Scalars['String']>>;
+  sortBy?: InputMaybe<Array<NftsSortInput>>;
+  standards?: InputMaybe<Array<TokenStandardType>>;
+  traitRanges?: InputMaybe<Array<TraitRangeOptionsInput>>;
+  traits?: InputMaybe<Array<TraitKeyValueOptionsInput>>;
+  withAsksConfig?: InputMaybe<NftWithAsksConfigInput>;
+  withListed?: InputMaybe<Scalars['Boolean']>;
+  withWraps?: InputMaybe<Scalars['Boolean']>;
 };
 
 
@@ -2417,6 +2610,7 @@ export type QueryListOffersArgs = {
   collections?: InputMaybe<Array<Scalars['Int']>>;
   contractAddress?: InputMaybe<Scalars['Address']>;
   currencyAddress?: InputMaybe<Scalars['Address']>;
+  excludeLenders?: InputMaybe<Array<Scalars['Address']>>;
   first?: InputMaybe<Scalars['Int']>;
   hidden?: InputMaybe<Scalars['Boolean']>;
   lenders?: InputMaybe<Array<Scalars['String']>>;
@@ -2435,6 +2629,7 @@ export type QueryListOffersArgs = {
 /** Query for the lending module */
 export type QueryListOrdersArgs = {
   after?: InputMaybe<Scalars['String']>;
+  collectionId?: InputMaybe<Scalars['Int']>;
   currencyAddresses?: InputMaybe<Array<Scalars['Address']>>;
   first?: InputMaybe<Scalars['Int']>;
   hidden?: InputMaybe<Scalars['Boolean']>;
@@ -2442,13 +2637,36 @@ export type QueryListOrdersArgs = {
   maker?: InputMaybe<Array<Scalars['Address']>>;
   marketplaceIds?: InputMaybe<Array<Scalars['String']>>;
   marketplaces?: InputMaybe<Array<MarketPlaceType>>;
-  nftIds?: InputMaybe<Array<Scalars['Int']>>;
+  nftId?: InputMaybe<Scalars['Int']>;
   onlyInvalid?: InputMaybe<Scalars['Boolean']>;
   orderType?: InputMaybe<OrderType>;
   sortBy?: InputMaybe<Array<OrderSortInput>>;
   statuses?: InputMaybe<Array<OrderStatusType>>;
   taker?: InputMaybe<Scalars['Address']>;
   terms?: InputMaybe<OrderTermsFilter>;
+};
+
+
+/** Query for the lending module */
+export type QueryListOrdersV2Args = {
+  after?: InputMaybe<Scalars['String']>;
+  collectionIds?: InputMaybe<Array<Scalars['Int']>>;
+  currencyAddresses?: InputMaybe<Array<Scalars['Address']>>;
+  excludeMaker?: InputMaybe<Array<Scalars['Address']>>;
+  first?: InputMaybe<Scalars['Int']>;
+  hidden?: InputMaybe<Scalars['Boolean']>;
+  ids?: InputMaybe<Array<Scalars['Int']>>;
+  maker?: InputMaybe<Array<Scalars['Address']>>;
+  marketplaceIds?: InputMaybe<Array<Scalars['String']>>;
+  marketplaces?: InputMaybe<Array<MarketPlaceType>>;
+  nft?: InputMaybe<OrderForNft>;
+  onlyInvalid?: InputMaybe<Scalars['Boolean']>;
+  side?: InputMaybe<OrderSide>;
+  sortBy?: InputMaybe<Array<OrderSortInput>>;
+  statuses?: InputMaybe<Array<OrderStatusType>>;
+  taker?: InputMaybe<Scalars['Address']>;
+  terms?: InputMaybe<OrderTermsFilter>;
+  traitIds?: InputMaybe<Array<Scalars['Int']>>;
 };
 
 
@@ -2491,12 +2709,14 @@ export type QueryListSourcesArgs = {
   contractAddresses?: InputMaybe<Array<Scalars['Address']>>;
   currencyAddress?: InputMaybe<Scalars['Address']>;
   excludeAddresses?: InputMaybe<Array<Scalars['Address']>>;
+  excludeSlugs?: InputMaybe<Array<Scalars['String']>>;
   first?: Scalars['Int'];
   hideEndLocked?: InputMaybe<Scalars['Boolean']>;
   hideLocked?: InputMaybe<Scalars['Boolean']>;
   includeLost?: InputMaybe<Scalars['Boolean']>;
   lenders?: InputMaybe<Array<Scalars['String']>>;
   loanPrincipal?: InputMaybe<Interval>;
+  slugs?: InputMaybe<Array<Scalars['String']>>;
   sortBy?: InputMaybe<Array<SourceSortInput>>;
   statuses?: InputMaybe<Array<LoanStatusType>>;
   terms?: InputMaybe<TermsFilter>;
@@ -2544,6 +2764,7 @@ export type RefinanceTermsFilter = {
   maxPrincipal?: InputMaybe<Interval>;
   netPrincipal?: InputMaybe<Interval>;
   principal?: InputMaybe<Interval>;
+  profitLeft?: InputMaybe<Interval>;
   remainingTime?: InputMaybe<Interval>;
 };
 
@@ -2708,6 +2929,7 @@ export type SingleNftOffer = Node & Offer & {
   availablePrincipalAmount: Scalars['BigInt'];
   borrowerAddress?: Maybe<Scalars['Address']>;
   capacity: Scalars['BigInt'];
+  collectionId?: Maybe<Scalars['Int']>;
   consumedCapacity: Scalars['BigInt'];
   contractAddress: Scalars['Address'];
   createdDate?: Maybe<Scalars['DateTime']>;
@@ -2728,6 +2950,7 @@ export type SingleNftOffer = Node & Offer & {
   maxTrancheFloor: Scalars['BigInt'];
   netPrincipal: Scalars['BigInt'];
   nft: Nft;
+  nftId?: Maybe<Scalars['Int']>;
   offerHash?: Maybe<Scalars['Hash']>;
   offerId: Scalars['BigInt'];
   principalAddress: Scalars['Address'];
@@ -2810,6 +3033,7 @@ export type SingleNftOrderInput = {
   contractAddress: Scalars['Address'];
   currencyAddress: Scalars['Address'];
   expirationTime: Scalars['BigInt'];
+  fees?: InputMaybe<Array<OrderFee>>;
   isAsk?: InputMaybe<Scalars['Boolean']>;
   signature?: InputMaybe<Scalars['Signature']>;
   startTime: Scalars['BigInt'];
@@ -2954,6 +3178,7 @@ export type TermsFilter = {
   maxPrincipal?: InputMaybe<Interval>;
   netPrincipal?: InputMaybe<Interval>;
   principal?: InputMaybe<Interval>;
+  profitLeft?: InputMaybe<Interval>;
   remainingTime?: InputMaybe<Interval>;
 };
 
@@ -2993,7 +3218,7 @@ export type Trait = Node & {
   id: Scalars['String'];
   key: Scalars['String'];
   /** @deprecated Trait statistics are not available */
-  statistics: CollectionStatistics;
+  statistics: TraitStatistics;
   type: Scalars['String'];
   value: Scalars['String'];
 };
@@ -3036,6 +3261,13 @@ export type TraitOrder = Activity & Node & Order & {
 export type TraitRangeOptionsInput = {
   key: Scalars['String'];
   range: RangeInput;
+};
+
+export type TraitStatistics = {
+  __typename?: 'TraitStatistics';
+  floorPrice?: Maybe<CurrencyAmount>;
+  highestBid?: Maybe<Order>;
+  rarity: Scalars['Int'];
 };
 
 export type TraitType = Node & {
@@ -3095,6 +3327,11 @@ export type TraitValueSortInput = {
   field: TraitValueSortField;
   order: Ordering;
 };
+
+export enum TraitValueType {
+  Enum = 'ENUM',
+  Range = 'RANGE'
+}
 
 export type TypedData = {
   __typename?: 'TypedData';
@@ -3822,7 +4059,7 @@ export type BuyNowPayLaterOrderFieldPolicy = {
 	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
 	txHash?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type CollectionKeySpecifier = ('bannerImage' | 'collectionUrl' | 'contractData' | 'description' | 'discordUrl' | 'externalUrl' | 'id' | 'image' | 'imageId' | 'maxNetPrincipalOffer' | 'name' | 'nftsCount' | 'slug' | 'statistics' | 'twitterUsername' | 'verified' | 'wrappedCollection' | 'wrappedCollectionId' | 'wrapperCollections' | CollectionKeySpecifier)[];
+export type CollectionKeySpecifier = ('bannerImage' | 'collectionUrl' | 'contractData' | 'description' | 'discordUrl' | 'externalUrl' | 'id' | 'image' | 'imageId' | 'maxNetPrincipalOffer' | 'name' | 'nftsCount' | 'slug' | 'statistics' | 'supply' | 'twitterUsername' | 'verified' | 'wrappedCollection' | 'wrappedCollectionId' | 'wrapperCollections' | CollectionKeySpecifier)[];
 export type CollectionFieldPolicy = {
 	bannerImage?: FieldPolicy<any> | FieldReadFunction<any>,
 	collectionUrl?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3838,6 +4075,7 @@ export type CollectionFieldPolicy = {
 	nftsCount?: FieldPolicy<any> | FieldReadFunction<any>,
 	slug?: FieldPolicy<any> | FieldReadFunction<any>,
 	statistics?: FieldPolicy<any> | FieldReadFunction<any>,
+	supply?: FieldPolicy<any> | FieldReadFunction<any>,
 	twitterUsername?: FieldPolicy<any> | FieldReadFunction<any>,
 	verified?: FieldPolicy<any> | FieldReadFunction<any>,
 	wrappedCollection?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3876,13 +4114,14 @@ export type CollectionLoansDataFieldPolicy = {
 	minPrincipalAmount?: FieldPolicy<any> | FieldReadFunction<any>,
 	minRemainingTime?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type CollectionOfferKeySpecifier = ('aprBps' | 'availablePrincipalAmount' | 'borrowerAddress' | 'capacity' | 'collection' | 'consumedCapacity' | 'contractAddress' | 'createdDate' | 'currency' | 'duration' | 'expirationTime' | 'fee' | 'hidden' | 'id' | 'lenderAddress' | 'lenderAvailableBalance' | 'maxPrincipal' | 'maxSeniorRepayment' | 'maxTrancheFloor' | 'netPrincipal' | 'offerHash' | 'offerId' | 'principalAddress' | 'principalAmount' | 'repayment' | 'requiresLiquidation' | 'signature' | 'signerAddress' | 'statistics' | 'status' | 'validators' | CollectionOfferKeySpecifier)[];
+export type CollectionOfferKeySpecifier = ('aprBps' | 'availablePrincipalAmount' | 'borrowerAddress' | 'capacity' | 'collection' | 'collectionId' | 'consumedCapacity' | 'contractAddress' | 'createdDate' | 'currency' | 'duration' | 'expirationTime' | 'fee' | 'hidden' | 'id' | 'lenderAddress' | 'lenderAvailableBalance' | 'maxPrincipal' | 'maxSeniorRepayment' | 'maxTrancheFloor' | 'netPrincipal' | 'nftId' | 'offerHash' | 'offerId' | 'principalAddress' | 'principalAmount' | 'repayment' | 'requiresLiquidation' | 'signature' | 'signerAddress' | 'statistics' | 'status' | 'validators' | CollectionOfferKeySpecifier)[];
 export type CollectionOfferFieldPolicy = {
 	aprBps?: FieldPolicy<any> | FieldReadFunction<any>,
 	availablePrincipalAmount?: FieldPolicy<any> | FieldReadFunction<any>,
 	borrowerAddress?: FieldPolicy<any> | FieldReadFunction<any>,
 	capacity?: FieldPolicy<any> | FieldReadFunction<any>,
 	collection?: FieldPolicy<any> | FieldReadFunction<any>,
+	collectionId?: FieldPolicy<any> | FieldReadFunction<any>,
 	consumedCapacity?: FieldPolicy<any> | FieldReadFunction<any>,
 	contractAddress?: FieldPolicy<any> | FieldReadFunction<any>,
 	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3898,6 +4137,7 @@ export type CollectionOfferFieldPolicy = {
 	maxSeniorRepayment?: FieldPolicy<any> | FieldReadFunction<any>,
 	maxTrancheFloor?: FieldPolicy<any> | FieldReadFunction<any>,
 	netPrincipal?: FieldPolicy<any> | FieldReadFunction<any>,
+	nftId?: FieldPolicy<any> | FieldReadFunction<any>,
 	offerHash?: FieldPolicy<any> | FieldReadFunction<any>,
 	offerId?: FieldPolicy<any> | FieldReadFunction<any>,
 	principalAddress?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -3946,16 +4186,20 @@ export type CollectionOrderFieldPolicy = {
 	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
 	txHash?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type CollectionStatisticsKeySpecifier = ('bestOffer' | 'floorPrice' | 'floorPrice7d' | 'floorPrice30d' | 'maxAskPrice' | 'minAskPrice' | 'nftsCount' | 'numberOfOffers' | 'numberOfPricedNfts' | 'outstandingLoanCount' | 'outstandingNftsCount' | 'outstandingPrincipal' | 'percentageInOutstandingLoans' | 'repaymentRate' | 'totalLoanVolume' | 'totalLoanVolume1d' | 'totalLoanVolume1m' | 'totalLoanVolume1w' | 'totalLoanVolume1y' | 'totalLoanVolume2m' | 'totalLoanVolume3m' | 'totalLoanVolume4m' | 'totalOutstandingPrincipal' | 'totalVolume' | 'totalVolume1d' | 'totalVolume1m' | 'totalVolume1w' | 'totalVolume1y' | 'totalVolume2m' | 'totalVolume3m' | 'totalVolume4m' | CollectionStatisticsKeySpecifier)[];
+export type CollectionStatisticsKeySpecifier = ('bestOffer' | 'floorPrice' | 'floorPrice7d' | 'floorPrice30d' | 'floorPriceHistory' | 'highestBid' | 'maxAskPrice' | 'minAskPrice' | 'nftsCount' | 'numberOfListings' | 'numberOfOffers' | 'numberOfOffersForCurrencies' | 'numberOfPricedNfts' | 'outstandingLoanCount' | 'outstandingNftsCount' | 'outstandingPrincipal' | 'percentageInOutstandingLoans' | 'repaymentRate' | 'totalLoanVolume' | 'totalLoanVolume1d' | 'totalLoanVolume1m' | 'totalLoanVolume1w' | 'totalLoanVolume1y' | 'totalLoanVolume2m' | 'totalLoanVolume3m' | 'totalLoanVolume4m' | 'totalOutstandingPrincipal' | 'totalVolume' | 'totalVolume1d' | 'totalVolume1m' | 'totalVolume1w' | 'totalVolume1y' | 'totalVolume2m' | 'totalVolume3m' | 'totalVolume4m' | CollectionStatisticsKeySpecifier)[];
 export type CollectionStatisticsFieldPolicy = {
 	bestOffer?: FieldPolicy<any> | FieldReadFunction<any>,
 	floorPrice?: FieldPolicy<any> | FieldReadFunction<any>,
 	floorPrice7d?: FieldPolicy<any> | FieldReadFunction<any>,
 	floorPrice30d?: FieldPolicy<any> | FieldReadFunction<any>,
+	floorPriceHistory?: FieldPolicy<any> | FieldReadFunction<any>,
+	highestBid?: FieldPolicy<any> | FieldReadFunction<any>,
 	maxAskPrice?: FieldPolicy<any> | FieldReadFunction<any>,
 	minAskPrice?: FieldPolicy<any> | FieldReadFunction<any>,
 	nftsCount?: FieldPolicy<any> | FieldReadFunction<any>,
+	numberOfListings?: FieldPolicy<any> | FieldReadFunction<any>,
 	numberOfOffers?: FieldPolicy<any> | FieldReadFunction<any>,
+	numberOfOffersForCurrencies?: FieldPolicy<any> | FieldReadFunction<any>,
 	numberOfPricedNfts?: FieldPolicy<any> | FieldReadFunction<any>,
 	outstandingLoanCount?: FieldPolicy<any> | FieldReadFunction<any>,
 	outstandingNftsCount?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -4059,6 +4303,30 @@ export type ERC4626WithdrawFieldPolicy = {
 	shares?: FieldPolicy<any> | FieldReadFunction<any>,
 	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
 	txHash?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type FloorPriceHistoryKeySpecifier = ('timestamp' | 'value' | FloorPriceHistoryKeySpecifier)[];
+export type FloorPriceHistoryFieldPolicy = {
+	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
+	value?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type GlobalSearchResultKeySpecifier = ('id' | GlobalSearchResultKeySpecifier)[];
+export type GlobalSearchResultFieldPolicy = {
+	id?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type GlobalSearchResultAccountKeySpecifier = ('id' | 'user' | GlobalSearchResultAccountKeySpecifier)[];
+export type GlobalSearchResultAccountFieldPolicy = {
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	user?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type GlobalSearchResultCollectionKeySpecifier = ('collection' | 'id' | GlobalSearchResultCollectionKeySpecifier)[];
+export type GlobalSearchResultCollectionFieldPolicy = {
+	collection?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type GlobalSearchResultNFTKeySpecifier = ('id' | 'nft' | GlobalSearchResultNFTKeySpecifier)[];
+export type GlobalSearchResultNFTFieldPolicy = {
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	nft?: FieldPolicy<any> | FieldReadFunction<any>
 };
 export type LinkedWalletsKeySpecifier = ('id' | 'pending' | 'shouldAccept' | 'walletAddress' | LinkedWalletsKeySpecifier)[];
 export type LinkedWalletsFieldPolicy = {
@@ -4405,7 +4673,7 @@ export type LostSourceNotificationFieldPolicy = {
 	readOn?: FieldPolicy<any> | FieldReadFunction<any>,
 	user?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type MultiSourceLoanKeySpecifier = ('activities' | 'address' | 'auction' | 'blendedAprBps' | 'borrowerAddress' | 'contractStartTime' | 'currency' | 'duration' | 'durationFromRenegotiationOrStart' | 'endDate' | 'id' | 'indexInBlock' | 'lastOriginationFee' | 'lastRenegotiationDate' | 'loanId' | 'nft' | 'offer' | 'offerIds' | 'principalAddress' | 'principalAmount' | 'protocolFee' | 'renegotiationCount' | 'renegotiationRequest' | 'repaidActivity' | 'repaymentTime' | 'sources' | 'startTime' | 'status' | 'timestamp' | 'topUpRequest' | 'totalOriginationFee' | 'txHash' | MultiSourceLoanKeySpecifier)[];
+export type MultiSourceLoanKeySpecifier = ('activities' | 'address' | 'auction' | 'blendedAprBps' | 'borrowerAddress' | 'contractStartTime' | 'currency' | 'duration' | 'durationFromRenegotiationOrStart' | 'endDate' | 'id' | 'indexInBlock' | 'isEndLockedUp' | 'lastOriginationFee' | 'lastRenegotiationDate' | 'loanId' | 'nft' | 'offer' | 'offerIds' | 'principalAddress' | 'principalAmount' | 'protocolFee' | 'renegotiationCount' | 'renegotiationRequest' | 'repaidActivity' | 'repaymentTime' | 'sources' | 'startLockDueDate' | 'startTime' | 'status' | 'timestamp' | 'topUpRequest' | 'totalOriginationFee' | 'txHash' | MultiSourceLoanKeySpecifier)[];
 export type MultiSourceLoanFieldPolicy = {
 	activities?: FieldPolicy<any> | FieldReadFunction<any>,
 	address?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -4419,6 +4687,7 @@ export type MultiSourceLoanFieldPolicy = {
 	endDate?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>,
+	isEndLockedUp?: FieldPolicy<any> | FieldReadFunction<any>,
 	lastOriginationFee?: FieldPolicy<any> | FieldReadFunction<any>,
 	lastRenegotiationDate?: FieldPolicy<any> | FieldReadFunction<any>,
 	loanId?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -4433,6 +4702,7 @@ export type MultiSourceLoanFieldPolicy = {
 	repaidActivity?: FieldPolicy<any> | FieldReadFunction<any>,
 	repaymentTime?: FieldPolicy<any> | FieldReadFunction<any>,
 	sources?: FieldPolicy<any> | FieldReadFunction<any>,
+	startLockDueDate?: FieldPolicy<any> | FieldReadFunction<any>,
 	startTime?: FieldPolicy<any> | FieldReadFunction<any>,
 	status?: FieldPolicy<any> | FieldReadFunction<any>,
 	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -4498,13 +4768,14 @@ export type MutationFieldPolicy = {
 	showOrder?: FieldPolicy<any> | FieldReadFunction<any>,
 	showRenegotiation?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type NFTKeySpecifier = ('activeLoan' | 'collection' | 'collectionId' | 'createdDate' | 'description' | 'id' | 'image' | 'isFlagged' | 'listed' | 'marketPlaceOfPrice' | 'maxNetPrincipalOffer' | 'name' | 'nftId' | 'nftPriceSample' | 'owner' | 'price' | 'priceCurrencyAddress' | 'rarityRank' | 'rarityScore' | 'statistics' | 'tokenId' | 'traits' | 'url' | 'wrappedCount' | 'wrapsNfts' | NFTKeySpecifier)[];
+export type NFTKeySpecifier = ('activeLoan' | 'collection' | 'collectionId' | 'createdDate' | 'description' | 'erc20Balances' | 'id' | 'image' | 'isFlagged' | 'listed' | 'marketPlaceOfPrice' | 'maxNetPrincipalOffer' | 'name' | 'nftId' | 'nftPriceSample' | 'owner' | 'price' | 'priceCurrencyAddress' | 'rarityRank' | 'rarityScore' | 'statistics' | 'tokenId' | 'traits' | 'url' | 'wrappedCount' | 'wrapsNfts' | NFTKeySpecifier)[];
 export type NFTFieldPolicy = {
 	activeLoan?: FieldPolicy<any> | FieldReadFunction<any>,
 	collection?: FieldPolicy<any> | FieldReadFunction<any>,
 	collectionId?: FieldPolicy<any> | FieldReadFunction<any>,
 	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
 	description?: FieldPolicy<any> | FieldReadFunction<any>,
+	erc20Balances?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	image?: FieldPolicy<any> | FieldReadFunction<any>,
 	isFlagged?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -4578,12 +4849,13 @@ export type NewRenegotiationOfferNotificationFieldPolicy = {
 	renegotiationId?: FieldPolicy<any> | FieldReadFunction<any>,
 	user?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type NftStatisticsKeySpecifier = ('highestBid' | 'lastSale' | 'loansTotalVolume' | 'numberOfOffers' | 'topTraitFloorPrice' | NftStatisticsKeySpecifier)[];
+export type NftStatisticsKeySpecifier = ('highestBid' | 'lastSale' | 'loansTotalVolume' | 'numberOfOffers' | 'numberOfOffersForCurrencies' | 'topTraitFloorPrice' | NftStatisticsKeySpecifier)[];
 export type NftStatisticsFieldPolicy = {
 	highestBid?: FieldPolicy<any> | FieldReadFunction<any>,
 	lastSale?: FieldPolicy<any> | FieldReadFunction<any>,
 	loansTotalVolume?: FieldPolicy<any> | FieldReadFunction<any>,
 	numberOfOffers?: FieldPolicy<any> | FieldReadFunction<any>,
+	numberOfOffersForCurrencies?: FieldPolicy<any> | FieldReadFunction<any>,
 	topTraitFloorPrice?: FieldPolicy<any> | FieldReadFunction<any>
 };
 export type NodeKeySpecifier = ('id' | NodeKeySpecifier)[];
@@ -4609,12 +4881,13 @@ export type NotificationEdgeFieldPolicy = {
 	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
 	node?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type OfferKeySpecifier = ('aprBps' | 'availablePrincipalAmount' | 'borrowerAddress' | 'capacity' | 'consumedCapacity' | 'contractAddress' | 'createdDate' | 'currency' | 'duration' | 'expirationTime' | 'fee' | 'hidden' | 'id' | 'lenderAddress' | 'lenderAvailableBalance' | 'maxPrincipal' | 'maxSeniorRepayment' | 'maxTrancheFloor' | 'netPrincipal' | 'offerHash' | 'offerId' | 'principalAddress' | 'principalAmount' | 'repayment' | 'requiresLiquidation' | 'signature' | 'signerAddress' | 'status' | 'validators' | OfferKeySpecifier)[];
+export type OfferKeySpecifier = ('aprBps' | 'availablePrincipalAmount' | 'borrowerAddress' | 'capacity' | 'collectionId' | 'consumedCapacity' | 'contractAddress' | 'createdDate' | 'currency' | 'duration' | 'expirationTime' | 'fee' | 'hidden' | 'id' | 'lenderAddress' | 'lenderAvailableBalance' | 'maxPrincipal' | 'maxSeniorRepayment' | 'maxTrancheFloor' | 'netPrincipal' | 'nftId' | 'offerHash' | 'offerId' | 'principalAddress' | 'principalAmount' | 'repayment' | 'requiresLiquidation' | 'signature' | 'signerAddress' | 'status' | 'validators' | OfferKeySpecifier)[];
 export type OfferFieldPolicy = {
 	aprBps?: FieldPolicy<any> | FieldReadFunction<any>,
 	availablePrincipalAmount?: FieldPolicy<any> | FieldReadFunction<any>,
 	borrowerAddress?: FieldPolicy<any> | FieldReadFunction<any>,
 	capacity?: FieldPolicy<any> | FieldReadFunction<any>,
+	collectionId?: FieldPolicy<any> | FieldReadFunction<any>,
 	consumedCapacity?: FieldPolicy<any> | FieldReadFunction<any>,
 	contractAddress?: FieldPolicy<any> | FieldReadFunction<any>,
 	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -4630,6 +4903,7 @@ export type OfferFieldPolicy = {
 	maxSeniorRepayment?: FieldPolicy<any> | FieldReadFunction<any>,
 	maxTrancheFloor?: FieldPolicy<any> | FieldReadFunction<any>,
 	netPrincipal?: FieldPolicy<any> | FieldReadFunction<any>,
+	nftId?: FieldPolicy<any> | FieldReadFunction<any>,
 	offerHash?: FieldPolicy<any> | FieldReadFunction<any>,
 	offerId?: FieldPolicy<any> | FieldReadFunction<any>,
 	principalAddress?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -4885,7 +5159,7 @@ export type PoolStatisticsFieldPolicy = {
 	totalDeposits?: FieldPolicy<any> | FieldReadFunction<any>,
 	totalLoanVolume?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type QueryKeySpecifier = ('getCollectionActivitiesCount' | 'getCollectionBySlug' | 'getCollectionLoansData' | 'getCollectionsByContractAddress' | 'getListingById' | 'getLoanActivitiesStatisticsByMonth' | 'getLoanById' | 'getNftByContractAddressAndTokenId' | 'getNftBySlugAndTokenId' | 'getOrderCancelCalldata' | 'getOrderSaleCalldata' | 'getOutstandingLoanStatistics' | 'getPointsFromReferrals' | 'getPoolByShareSymbol' | 'getReferredWallets' | 'getSourcesStatistics' | 'getSourcesStatisticsByCollection' | 'getUserPointActivities' | 'getUserPoints' | 'listAuctions' | 'listBids' | 'listCollectionTraitTypes' | 'listCollectionTraitValues' | 'listCollections' | 'listCollectionsWithListings' | 'listCollectionsWithLoans' | 'listCurrencies' | 'listListings' | 'listListingsForSale' | 'listLoanActivities' | 'listLoanEvents' | 'listLoans' | 'listNftDelegations' | 'listNftOffersAndRenegotiations' | 'listNftsFromCollections' | 'listNftsFromUser' | 'listNotifications' | 'listOffers' | 'listOrders' | 'listPoolActivities' | 'listPools' | 'listRenegotiations' | 'listSources' | 'listWithdrawalPositions' | 'listWithdrawalQueues' | 'me' | QueryKeySpecifier)[];
+export type QueryKeySpecifier = ('getCollectionActivitiesCount' | 'getCollectionBySlug' | 'getCollectionLoansData' | 'getCollectionsByContractAddress' | 'getListingById' | 'getLoanActivitiesStatisticsByMonth' | 'getLoanById' | 'getNftByContractAddressAndTokenId' | 'getNftBySlugAndTokenId' | 'getOrderCancelCalldata' | 'getOrderSaleCalldata' | 'getOutstandingDebt' | 'getOutstandingLoanStatistics' | 'getPointsFromReferrals' | 'getPoolByShareSymbol' | 'getReferredWallets' | 'getSourcesStatistics' | 'getSourcesStatisticsByCollection' | 'getUserPointActivities' | 'getUserPoints' | 'globalSearch' | 'listAuctions' | 'listBids' | 'listCollectionTraitTypes' | 'listCollectionTraitValues' | 'listCollections' | 'listCollectionsWithListings' | 'listCollectionsWithLoans' | 'listCurrencies' | 'listListings' | 'listListingsForSale' | 'listLoanActivities' | 'listLoanEvents' | 'listLoans' | 'listNftDelegations' | 'listNftOffersAndRenegotiations' | 'listNfts' | 'listNftsFromCollections' | 'listNftsFromUser' | 'listNotifications' | 'listOffers' | 'listOrders' | 'listOrdersV2' | 'listPoolActivities' | 'listPools' | 'listRenegotiations' | 'listSources' | 'listWithdrawalPositions' | 'listWithdrawalQueues' | 'me' | QueryKeySpecifier)[];
 export type QueryFieldPolicy = {
 	getCollectionActivitiesCount?: FieldPolicy<any> | FieldReadFunction<any>,
 	getCollectionBySlug?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -4898,6 +5172,7 @@ export type QueryFieldPolicy = {
 	getNftBySlugAndTokenId?: FieldPolicy<any> | FieldReadFunction<any>,
 	getOrderCancelCalldata?: FieldPolicy<any> | FieldReadFunction<any>,
 	getOrderSaleCalldata?: FieldPolicy<any> | FieldReadFunction<any>,
+	getOutstandingDebt?: FieldPolicy<any> | FieldReadFunction<any>,
 	getOutstandingLoanStatistics?: FieldPolicy<any> | FieldReadFunction<any>,
 	getPointsFromReferrals?: FieldPolicy<any> | FieldReadFunction<any>,
 	getPoolByShareSymbol?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -4906,6 +5181,7 @@ export type QueryFieldPolicy = {
 	getSourcesStatisticsByCollection?: FieldPolicy<any> | FieldReadFunction<any>,
 	getUserPointActivities?: FieldPolicy<any> | FieldReadFunction<any>,
 	getUserPoints?: FieldPolicy<any> | FieldReadFunction<any>,
+	globalSearch?: FieldPolicy<any> | FieldReadFunction<any>,
 	listAuctions?: FieldPolicy<any> | FieldReadFunction<any>,
 	listBids?: FieldPolicy<any> | FieldReadFunction<any>,
 	listCollectionTraitTypes?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -4921,11 +5197,13 @@ export type QueryFieldPolicy = {
 	listLoans?: FieldPolicy<any> | FieldReadFunction<any>,
 	listNftDelegations?: FieldPolicy<any> | FieldReadFunction<any>,
 	listNftOffersAndRenegotiations?: FieldPolicy<any> | FieldReadFunction<any>,
+	listNfts?: FieldPolicy<any> | FieldReadFunction<any>,
 	listNftsFromCollections?: FieldPolicy<any> | FieldReadFunction<any>,
 	listNftsFromUser?: FieldPolicy<any> | FieldReadFunction<any>,
 	listNotifications?: FieldPolicy<any> | FieldReadFunction<any>,
 	listOffers?: FieldPolicy<any> | FieldReadFunction<any>,
 	listOrders?: FieldPolicy<any> | FieldReadFunction<any>,
+	listOrdersV2?: FieldPolicy<any> | FieldReadFunction<any>,
 	listPoolActivities?: FieldPolicy<any> | FieldReadFunction<any>,
 	listPools?: FieldPolicy<any> | FieldReadFunction<any>,
 	listRenegotiations?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -5054,12 +5332,13 @@ export type SignatureRequestFieldPolicy = {
 	key?: FieldPolicy<any> | FieldReadFunction<any>,
 	typedData?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type SingleNFTOfferKeySpecifier = ('aprBps' | 'availablePrincipalAmount' | 'borrowerAddress' | 'capacity' | 'consumedCapacity' | 'contractAddress' | 'createdDate' | 'currency' | 'duration' | 'expirationTime' | 'fee' | 'hidden' | 'id' | 'lenderAddress' | 'lenderAvailableBalance' | 'maxPrincipal' | 'maxSeniorRepayment' | 'maxTrancheFloor' | 'netPrincipal' | 'nft' | 'offerHash' | 'offerId' | 'principalAddress' | 'principalAmount' | 'repayment' | 'requiresLiquidation' | 'signature' | 'signerAddress' | 'statistics' | 'status' | 'validators' | SingleNFTOfferKeySpecifier)[];
+export type SingleNFTOfferKeySpecifier = ('aprBps' | 'availablePrincipalAmount' | 'borrowerAddress' | 'capacity' | 'collectionId' | 'consumedCapacity' | 'contractAddress' | 'createdDate' | 'currency' | 'duration' | 'expirationTime' | 'fee' | 'hidden' | 'id' | 'lenderAddress' | 'lenderAvailableBalance' | 'maxPrincipal' | 'maxSeniorRepayment' | 'maxTrancheFloor' | 'netPrincipal' | 'nft' | 'nftId' | 'offerHash' | 'offerId' | 'principalAddress' | 'principalAmount' | 'repayment' | 'requiresLiquidation' | 'signature' | 'signerAddress' | 'statistics' | 'status' | 'validators' | SingleNFTOfferKeySpecifier)[];
 export type SingleNFTOfferFieldPolicy = {
 	aprBps?: FieldPolicy<any> | FieldReadFunction<any>,
 	availablePrincipalAmount?: FieldPolicy<any> | FieldReadFunction<any>,
 	borrowerAddress?: FieldPolicy<any> | FieldReadFunction<any>,
 	capacity?: FieldPolicy<any> | FieldReadFunction<any>,
+	collectionId?: FieldPolicy<any> | FieldReadFunction<any>,
 	consumedCapacity?: FieldPolicy<any> | FieldReadFunction<any>,
 	contractAddress?: FieldPolicy<any> | FieldReadFunction<any>,
 	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -5076,6 +5355,7 @@ export type SingleNFTOfferFieldPolicy = {
 	maxTrancheFloor?: FieldPolicy<any> | FieldReadFunction<any>,
 	netPrincipal?: FieldPolicy<any> | FieldReadFunction<any>,
 	nft?: FieldPolicy<any> | FieldReadFunction<any>,
+	nftId?: FieldPolicy<any> | FieldReadFunction<any>,
 	offerHash?: FieldPolicy<any> | FieldReadFunction<any>,
 	offerId?: FieldPolicy<any> | FieldReadFunction<any>,
 	principalAddress?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -5258,6 +5538,12 @@ export type TraitOrderFieldPolicy = {
 	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
 	traitId?: FieldPolicy<any> | FieldReadFunction<any>,
 	txHash?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type TraitStatisticsKeySpecifier = ('floorPrice' | 'highestBid' | 'rarity' | TraitStatisticsKeySpecifier)[];
+export type TraitStatisticsFieldPolicy = {
+	floorPrice?: FieldPolicy<any> | FieldReadFunction<any>,
+	highestBid?: FieldPolicy<any> | FieldReadFunction<any>,
+	rarity?: FieldPolicy<any> | FieldReadFunction<any>
 };
 export type TraitTypeKeySpecifier = ('collectionId' | 'count' | 'id' | 'key' | 'max' | 'min' | 'valueType' | TraitTypeKeySpecifier)[];
 export type TraitTypeFieldPolicy = {
@@ -5584,6 +5870,26 @@ export type StrictTypedTypePolicies = {
 	ERC4626Withdraw?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | ERC4626WithdrawKeySpecifier | (() => undefined | ERC4626WithdrawKeySpecifier),
 		fields?: ERC4626WithdrawFieldPolicy,
+	},
+	FloorPriceHistory?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | FloorPriceHistoryKeySpecifier | (() => undefined | FloorPriceHistoryKeySpecifier),
+		fields?: FloorPriceHistoryFieldPolicy,
+	},
+	GlobalSearchResult?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | GlobalSearchResultKeySpecifier | (() => undefined | GlobalSearchResultKeySpecifier),
+		fields?: GlobalSearchResultFieldPolicy,
+	},
+	GlobalSearchResultAccount?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | GlobalSearchResultAccountKeySpecifier | (() => undefined | GlobalSearchResultAccountKeySpecifier),
+		fields?: GlobalSearchResultAccountFieldPolicy,
+	},
+	GlobalSearchResultCollection?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | GlobalSearchResultCollectionKeySpecifier | (() => undefined | GlobalSearchResultCollectionKeySpecifier),
+		fields?: GlobalSearchResultCollectionFieldPolicy,
+	},
+	GlobalSearchResultNFT?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | GlobalSearchResultNFTKeySpecifier | (() => undefined | GlobalSearchResultNFTKeySpecifier),
+		fields?: GlobalSearchResultNFTFieldPolicy,
 	},
 	LinkedWallets?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | LinkedWalletsKeySpecifier | (() => undefined | LinkedWalletsKeySpecifier),
@@ -5992,6 +6298,10 @@ export type StrictTypedTypePolicies = {
 	TraitOrder?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | TraitOrderKeySpecifier | (() => undefined | TraitOrderKeySpecifier),
 		fields?: TraitOrderFieldPolicy,
+	},
+	TraitStatistics?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | TraitStatisticsKeySpecifier | (() => undefined | TraitStatisticsKeySpecifier),
+		fields?: TraitStatisticsFieldPolicy,
 	},
 	TraitType?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | TraitTypeKeySpecifier | (() => undefined | TraitTypeKeySpecifier),
