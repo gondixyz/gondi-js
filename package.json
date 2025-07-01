@@ -1,6 +1,6 @@
 {
   "name": "gondi",
-  "version": "0.21.1-b1",
+  "version": "0.21.1",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.mjs",
