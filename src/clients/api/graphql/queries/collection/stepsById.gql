@@ -1,0 +1,8 @@
+query collectionStepsById($collectionId: Int!) {
+  steps: getCollectionOfferSteps(collectionId: $collectionId) {
+    aprBpsStep
+    origFeeBpsStep
+    usdcStep
+    wethStep
+  }
+}

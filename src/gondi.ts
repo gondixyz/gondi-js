@@ -571,6 +571,11 @@ export class Gondi {
     }
   }
 
+  async collectionStepsById(props: { collectionId: number }) {
+    const result = await this.api.collectionStepsById(props);
+    return result.steps;
+  }
+
   async ownedNfts(args: Parameters<Api['ownedNfts']>[0]) {
     const result = await this.api.ownedNfts(args);
     const { edges: ownedNfts, pageInfo } = result.ownedNfts;
