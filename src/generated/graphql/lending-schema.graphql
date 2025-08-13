@@ -8,10 +8,10 @@ type ActiveOfferNotification implements Node & Notification {
   user: User!
 }
 
-interface Activity implements Node {
+interface Activity implements Event & Node {
   id: String!
   timestamp: DateTime!
-  txHash: Hash
+  txHash: Hash!
 }
 
 scalar Address
@@ -169,7 +169,7 @@ input BigIntInterval {
   min: BigInt = null
 }
 
-type BuyNowPayLaterOrder implements Activity & Node & Order {
+type BuyNowPayLaterOrder implements Event & Node & Order {
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
@@ -196,7 +196,7 @@ type BuyNowPayLaterOrder implements Activity & Node & Order {
   status: String!
   taker: Address!
   timestamp: DateTime!
-  txHash: Hash
+  updatedDate: DateTime!
 }
 
 union BuyNowPayLaterOrderSignatureRequest = BuyNowPayLaterOrder | SignatureRequest
@@ -215,9 +215,10 @@ type Collection implements Node {
   maxNetPrincipalOffer(currencyAddress: Address!): CollectionOffer
   name: String
   nftsCount: Int
+  royalties: [Royalty!]!
   slug: String!
   statistics: CollectionStatistics!
-  supply: Int
+  supply: BigInt
   twitterUsername: String
   verified: Boolean!
   wrappedCollection: Collection
@@ -257,7 +258,7 @@ type CollectionLoansData {
   minRemainingTime: BigInt!
 }
 
-type CollectionOffer implements Node & Offer {
+type CollectionOffer implements Event & Node & Offer {
   aprBps: BigInt!
   availablePrincipalAmount: BigInt!
   borrowerAddress: Address
@@ -292,6 +293,7 @@ type CollectionOffer implements Node & Offer {
   signerAddress: Address
   statistics: CollectionOfferStatistics!
   status: String!
+  timestamp: DateTime!
   validators: [OfferValidator!]!
 }
 
@@ -319,7 +321,7 @@ type CollectionOfferStatistics {
   consumedCapacity: BigInt!
 }
 
-type CollectionOrder implements Activity & Node & Order {
+type CollectionOrder implements Event & Node & Order {
   collection: Collection!
   collectionId: Int!
   createdDate: DateTime!
@@ -347,7 +349,7 @@ type CollectionOrder implements Activity & Node & Order {
   status: String!
   taker: Address!
   timestamp: DateTime!
-  txHash: Hash
+  updatedDate: DateTime!
 }
 
 input CollectionOrderInput {
@@ -397,6 +399,7 @@ enum CollectionSortField {
   OFFER_COUNT
   OUTSTANDING_PRINCIPAL
   OWNERS_TOTAL_VALUE
+  SALE_LISTING_COUNT
   TOTAL_LOAN_VOLUME
   TOTAL_OUTSTANDING_PRINCIPAL
   TOTAL_VOLUME
@@ -408,6 +411,7 @@ enum CollectionSortField {
 input CollectionSortInput {
   field: CollectionSortField!
   lenders: [Address!] = null
+  marketplaces: [MarketPlaceType!] = null
   order: Ordering!
   owners: [Address!] = null
   principalAddress: Address = null
@@ -418,22 +422,24 @@ type CollectionStatistics {
   floorPrice: CurrencyAmount
   floorPrice7d: Float
   floorPrice30d: Float
-  floorPriceHistory(fromDate: DateTime!, toDate: DateTime!): [FloorPriceHistory!]!
+  floorPriceHistory(fromDate: DateTime!, toDate: DateTime!): [FloatStatHistory!]!
   highestBid: Order
   maxAskPrice(currencyAddresses: [Address!] = null): BigIntCurrencyAmount
   minAskPrice(currencyAddresses: [Address!] = null): BigIntCurrencyAmount
   nftsCount: Float
   numberOfListings: Int!
+  numberOfNftsOwned(walletAddresses: [Address!] = null): Int!
 
   """Deprecated field. Use number_of_offers_for_currencies instead."""
   numberOfOffers(currencyAddress: Address!): Float! @deprecated(reason: "Use number_of_offers_for_currencies instead.")
   numberOfOffersForCurrencies(currencyAddresses: [Address!]!): Int!
-  numberOfPricedNfts: Int!
+  numberOfPricedNfts(marketplaces: [MarketPlaceType!] = null): Int!
   outstandingLoanCount: Int!
   outstandingNftsCount: BigInt!
   outstandingPrincipal(currencyAddress: Address!): BigInt!
   percentageInOutstandingLoans: Float!
   repaymentRate: Float!
+  topBidHistory(fromDate: DateTime!, toDate: DateTime!): [FloatStatHistory!]!
   totalLoanVolume(currencyAddress: Address!): BigInt!
   totalLoanVolume1d(currencyAddress: Address!): BigInt!
   totalLoanVolume1m(currencyAddress: Address!): BigInt!
@@ -468,7 +474,9 @@ type Currency implements Node {
   currentUsdcPrice: Float
   decimals: Int!
   id: String!
+  rateAtTime(timestamp: DateTime!): Float
   symbol: String!
+  usdcPriceAtTime(timestamp: DateTime!): Float
 }
 
 type CurrencyAmount {
@@ -536,7 +544,54 @@ type ERC4626Withdraw implements Node & PoolActivity {
   txHash: Hash!
 }
 
-type FloorPriceHistory {
+interface Event implements Node {
+  id: String!
+  timestamp: DateTime!
+}
+
+type EventConnection {
+  edges: [EventEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type EventEdge {
+  cursor: String!
+  node: Event!
+}
+
+enum EventType {
+  BUY_OFFER
+  CLAIM
+  COLLECTION_BUY_OFFER
+  LOAN_AUCTIONED
+  LOAN_BOUGHT_OUT
+  LOAN_COLLECTION_OFFER
+  LOAN_DEFAULTED
+  LOAN_EXTENDED
+  LOAN_FORECLOSED
+  LOAN_INITIATED
+  LOAN_LISTING
+  LOAN_NFT_OFFER
+  LOAN_PARTIAL_REFINANCED
+  LOAN_PARTIAL_REFINANCED_TRANSFER
+  LOAN_REFINANCED
+  LOAN_REFINANCED_TRANSFER
+  LOAN_RENEGOTIATED
+  LOAN_RENEGOTIATED_PAYMENT
+  LOAN_RENEGOTIATION_OFFER
+  LOAN_REPAID
+  LOAN_SENT_TO_AUCTION
+  LOAN_TOPED_UP
+  LOAN_TOP_UP_OFFER
+  LOAN_TRANCHE_REFINANCED
+  LOAN_TRANCHE_REFINANCED_TRANSFER
+  SALE
+  SALE_LISTING
+  TRANSFER
+}
+
+type FloatStatHistory {
   timestamp: DateTime!
   value: Float!
 }
@@ -638,7 +693,7 @@ type LoanActivitiesStatisticsByMonth {
   outstanding: [BigInt!]!
 }
 
-interface LoanActivity implements LoanEvent & Node {
+interface LoanActivity implements Event & LoanEvent & Node {
   activityType: String!
   eventType: String!
   id: String!
@@ -683,7 +738,7 @@ enum LoanActivityType {
   LOAN_SENT_TO_AUCTION
 }
 
-type LoanAuctioned implements LoanActivity & LoanEvent & Node {
+type LoanAuctioned implements Event & LoanActivity & LoanEvent & Node {
   activityType: String!
   eventType: String!
   id: String!
@@ -723,7 +778,7 @@ type LoanDefaultReminderNotification implements Node & Notification {
   user: User!
 }
 
-type LoanDefaulted implements LoanEvent & Node {
+type LoanDefaulted implements Event & LoanEvent & Node {
   eventType: String!
   id: String!
   loan: Loan!
@@ -741,7 +796,7 @@ type LoanDefaultedNotification implements Node & Notification {
   user: User!
 }
 
-interface LoanEvent implements Node {
+interface LoanEvent implements Event & Node {
   eventType: String!
   id: String!
   loan: Loan!
@@ -783,7 +838,7 @@ enum LoanEventType {
   LOAN_TOPED_UP
 }
 
-type LoanExtended implements LoanActivity & LoanEvent & Node {
+type LoanExtended implements Event & LoanActivity & LoanEvent & Node {
   activityType: String!
   eventType: String!
   id: String!
@@ -809,7 +864,7 @@ type LoanExtendedNotification implements Node & Notification {
   user: User!
 }
 
-type LoanForeclosed implements LoanActivity & LoanEvent & Node {
+type LoanForeclosed implements Event & LoanActivity & LoanEvent & Node {
   activityType: String!
   eventType: String!
   id: String!
@@ -823,7 +878,7 @@ type LoanForeclosed implements LoanActivity & LoanEvent & Node {
   txHash: Hash!
 }
 
-type LoanInitiated implements LoanActivity & LoanEvent & Node {
+type LoanInitiated implements Event & LoanActivity & LoanEvent & Node {
   activityType: String!
   eventType: String!
   id: String!
@@ -835,6 +890,19 @@ type LoanInitiated implements LoanActivity & LoanEvent & Node {
   prevActivity: LoanActivity
   timestamp: DateTime!
   txHash: Hash!
+}
+
+"""Loan listing created event"""
+type LoanListingEvent implements Event & Node {
+  createdDate: DateTime!
+  desiredDuration: Int
+  desiredPrincipalAddress: Address
+  expirationDate: DateTime!
+  id: String!
+  marketplaceName: MarketplaceEnum!
+  nft: NFT!
+  timestamp: DateTime!
+  user: User!
 }
 
 type LoanPayment implements Node {
@@ -849,7 +917,7 @@ type LoanPayment implements Node {
   source: Address!
 }
 
-type LoanRefinanced implements LoanActivity & LoanEvent & Node {
+type LoanRefinanced implements Event & LoanActivity & LoanEvent & Node {
   activityType: String!
   addedNewTranche: Boolean!
   eventType: String!
@@ -865,7 +933,7 @@ type LoanRefinanced implements LoanActivity & LoanEvent & Node {
   txHash: Hash!
 }
 
-type LoanRefinancedFromOffers implements LoanActivity & LoanEvent & Node {
+type LoanRefinancedFromOffers implements Event & LoanActivity & LoanEvent & Node {
   activityType: String!
   eventType: String!
   id: String!
@@ -891,7 +959,7 @@ type LoanRefinancedNotification implements Node & Notification {
   user: User!
 }
 
-type LoanRepaid implements LoanActivity & LoanEvent & Node {
+type LoanRepaid implements Event & LoanActivity & LoanEvent & Node {
   activityType: String!
   eventType: String!
   id: String!
@@ -916,7 +984,13 @@ type LoanRepaidNotification implements Node & Notification {
   user: User!
 }
 
-type LoanSentToAuction implements LoanActivity & LoanEvent & Node {
+enum LoanRequestType {
+  NFT_LISTED_FOR_SALE
+  RENEGOTIATION_REQUEST
+  TOP_UP_REQUEST
+}
+
+type LoanSentToAuction implements Event & LoanActivity & LoanEvent & Node {
   activityType: String!
   eventType: String!
   id: String!
@@ -1051,6 +1125,7 @@ type MultiSourceLoan implements Loan & Node {
   renegotiationCount: Int!
   renegotiationRequest: RenegotiationRequest
   repaidActivity: LoanRepaid
+  repayment: BigInt!
   repaymentTime: DateTime
   sources: [Source!]!
   startLockDueDate: DateTime
@@ -1197,6 +1272,9 @@ type Mutation {
 }
 
 type NFT implements Node {
+  """
+  Active loan of the NFT, which can be of status INITIATED, SENT_TO_AUCTION or DEFAULTED.
+  """
   activeLoan: Loan
   collection: Collection
   collectionId: Int
@@ -1213,7 +1291,7 @@ type NFT implements Node {
   maxNetPrincipalOffer(currencyAddress: Address!): Offer
   name: String
   nftId: String!
-  nftPriceSample(currencyAddresses: [Address!] = null): NFTPriceSample
+  nftPriceSample(currencyAddresses: [Address!] = null, includeUserPrivateListings: Boolean = null): NFTPriceSample
   owner: Address
 
   """Deprecated."""
@@ -1228,6 +1306,12 @@ type NFT implements Node {
   traits: [Trait!]!
   url: String
   wrappedCount: [Int!]!
+
+  "\n        All NFT IDs for the same token_id in all related collections (including itself,\n        naked and wrappers). Useful for finding analog NFTs across naked/wrapper\n        collections. Unrelated to the `wrap_nfts` and `wrapped_count` fields.\n        "
+  wrappersAndNakedNftIds: [Int!]!
+
+  "\n        All NFTs for the same token_id in all related collections (including itself,\n        naked and wrappers). Useful for finding analog NFTs across naked/wrapper\n        collections. Unrelated to the `wrap_nfts` and `wrapped_count` fields.\n        "
+  wrappersAndNakedNfts: [NFT!]!
   wrapsNfts: [NFT!]
 }
 
@@ -1362,6 +1446,7 @@ enum NftsSortField {
   OUTSTANDING_DEBT
   OUTSTANDING_LOAN_DUE_DATE
   PRICE
+  TOKEN_ID
 }
 
 input NftsSortInput {
@@ -1407,7 +1492,7 @@ enum NotificationType {
   SET_NFT_NOTIFICATION
 }
 
-interface Offer implements Node {
+interface Offer implements Event & Node {
   aprBps: BigInt!
   availablePrincipalAmount: BigInt!
   borrowerAddress: Address
@@ -1440,6 +1525,7 @@ interface Offer implements Node {
   signature: Signature
   signerAddress: Address
   status: String!
+  timestamp: DateTime!
   validators: [OfferValidator!]!
 }
 
@@ -1479,6 +1565,15 @@ enum OfferStatus {
   OUTPERFORMED
 }
 
+type OfferSteps implements Node {
+  aprBpsStep: BigInt!
+  collectionId: Int!
+  id: String!
+  origFeeBpsStep: BigInt!
+  usdcStep: BigInt!
+  wethStep: BigInt!
+}
+
 type OfferValidator implements Node {
   arguments: Hex!
   id: String!
@@ -1516,7 +1611,7 @@ input OffersSortInput {
   principalOfInterest: BigInt = null
 }
 
-interface Order implements Activity & Node {
+interface Order implements Event & Node {
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
@@ -1540,7 +1635,7 @@ interface Order implements Activity & Node {
   status: String!
   taker: Address!
   timestamp: DateTime!
-  txHash: Hash
+  updatedDate: DateTime!
 }
 
 type OrderConnection {
@@ -1804,7 +1899,9 @@ type Query {
 
   """Get some general loans stats from a collection."""
   getCollectionLoansData(collectionId: Int!, currencyAddress: Address): CollectionLoansData!
+  getCollectionOfferSteps(collectionId: Int!): OfferSteps!
   getCollectionsByContractAddress(contractAddress: Address!): [Collection!]!
+  getCurrency(address: Address!): Currency
   getListingById(listingId: Int!): Listing
   getLoanActivitiesStatisticsByMonth(activities: [LoanActivityType!]!, currencyAddress: Address!, lenders: [Address!]!): LoanActivitiesStatisticsByMonth!
 
@@ -1829,7 +1926,7 @@ type Query {
   listAuctions(after: String, currencyAddress: Address = null, first: Int = null, sortBy: [AuctionSortInput!] = null, statuses: [AuctionStatus!] = null): AuctionConnection!
   listBids(after: String, auctionId: String = null, auctionStatuses: [AuctionStatus!] = null, bidders: [String!] = null, currencyAddress: Address = null, first: Int = null, onlyLatest: Boolean! = false, sortBy: [BidSortInput!] = null): BidConnection!
   listCollectionTraitTypes(after: String, collectionId: Int!, first: Int! = 40, valueType: TraitValueType = null): TraitTypeConnection!
-  listCollectionTraitValues(after: String, collectionId: Int!, first: Int! = 40, key: [String!] = null, onlyEnums: Boolean = null, searchTerm: String = null, sortBy: [TraitValueSortInput!] = null): TraitValueConnection!
+  listCollectionTraitValues(after: String, collectionId: Int!, first: Int! = 40, key: [String!] = null, nftId: Int = null, onlyEnums: Boolean = null, searchTerm: String = null, sortBy: [TraitValueSortInput!] = null): TraitValueConnection!
   listCollections(after: String, collections: [Int!] = null, excludeCollections: [Int!] = null, excludeGondiUserVault: Boolean = false, first: Int = null, forWallets: ForWalletsInput = null, searchTerm: String = null, sortBy: [CollectionSortInput!] = null, standards: [TokenStandardType!] = null, withAsks: WithAsksInput = null, withListings: Boolean = false, withLoans: Boolean = false, wrappers: Boolean = null): CollectionConnection!
 
   """
@@ -1840,6 +1937,11 @@ type Query {
   """List NFT collections that have at least one loan."""
   listCollectionsWithLoans(after: String, collections: [Int!] = null, first: Int! = 10, searchTerm: String = null): CollectionConnection!
   listCurrencies(after: String, first: Int! = 20): CurrencyConnection!
+
+  """
+  List all activities. Includes loan activities, loan offers, loan renegotiations, trade orders, nft transfers.
+  """
+  listEvents(after: String, collections: [Int!] = null, currencyAddresses: [Address!] = null, eventTypes: [EventType!] = null, first: Int! = 10, nfts: [Int!] = null, toTimestamp: Int = null, traits: [Int!] = null, users: [Address!] = null): EventConnection!
   listListings(after: String, collectionIds: [Int!] = null, currencyAddress: Address = null, excludeSlugs: [String!] = null, first: Int = null, marketplaceNames: [MarketplaceEnum!] = null, searchTerm: String = null, slugs: [String!] = null, userFilter: UserFilter = null, withLoans: Boolean = false): ListingConnection!
   listListingsForSale(after: String, collectionId: Int = null, currencyAddress: Address = null, first: Int = null, forTaker: Address = null, hidden: Boolean = null, maker: Address = null, nftId: Int = null, sortBy: [OrderSortInput!] = null, statuses: [OrderStatusType!] = null): OrderConnection!
 
@@ -1873,22 +1975,15 @@ type Query {
     hideLocked: Boolean = null
     nfts: [Int!] = null
     orderByStatuses: Boolean = true
+
+    """Filter by requests on the loan."""
+    requestStatuses: [LoanRequestType!] = null
     searchTerm: String = null
     sluggedTokens: [SluggedTokenInput!] = null
     slugs: [String!] = null
     sortBy: [LoanSortInput!] = null
     statuses: [LoanStatusType!] = null
     terms: TermsFilter = null
-
-    """
-    A renegotiation request is a flag to mark that the borrower would like that someone renegotiate the loan. 
-    """
-    withRenegRequestOnly: Boolean! = false
-
-    """
-    A top up request is a flag to mark that the borrower would like someone to top up the loan.
-    """
-    withTopUpRequestOnly: Boolean! = false
   ): MultiSourceLoanConnection!
   listNftDelegations(after: String, contractAddress: Address = null, first: Int! = 20, nftId: Int!): DelegationConnection!
   listNftOffersAndRenegotiations(
@@ -1926,6 +2021,7 @@ type Query {
     Filter Nfts by the loans they are part of. You can provide contracts and exclude_contracts to control contract addresses. You can also provide borrowers and exclude_borrowers to control the borrowers of the loans.
     """
     loansFilter: NftLoansFilterInput = null
+    nftIds: [Int!] = null
 
     """
     Filter by the owners of the NFTs. You can provide owners and exclude_owners to control the owners of the NFTs. with_in_wallet will include NFTS of the owners. with_in_loan will include NFTS on loan to the owners (as borrowers). with_in_stash will include NFTS in stashes of the owners. with_in_vault will include NFTS in vaults of the owners.
@@ -1962,7 +2058,7 @@ type Query {
   This field is deprecated. Use list_orders_v2 instead. This field will be removed in the next major version.
   """
   listOrders(after: String, collectionId: Int = null, currencyAddresses: [Address!] = null, first: Int = null, hidden: Boolean = null, ids: [Int!] = null, maker: [Address!] = null, marketplaceIds: [String!] = null, marketplaces: [MarketPlaceType!] = null, nftId: Int = null, onlyInvalid: Boolean = null, orderType: OrderType = null, sortBy: [OrderSortInput!] = null, statuses: [OrderStatusType!] = null, taker: Address = null, terms: OrderTermsFilter = null): OrderConnection!
-  listOrdersV2(after: String, collectionIds: [Int!] = null, currencyAddresses: [Address!] = null, excludeMaker: [Address!] = null, first: Int = null, hidden: Boolean = null, ids: [Int!] = null, maker: [Address!] = null, marketplaceIds: [String!] = null, marketplaces: [MarketPlaceType!] = null, nft: OrderForNft = null, onlyInvalid: Boolean = null, side: OrderSide = null, sortBy: [OrderSortInput!] = null, statuses: [OrderStatusType!] = null, taker: Address = null, terms: OrderTermsFilter = null, traitIds: [Int!] = null): OrderConnection!
+  listOrdersV2(after: String, collectionIds: [Int!] = null, currencyAddresses: [Address!] = null, excludeMaker: [Address!] = null, first: Int = null, hidden: Boolean = null, ids: [Int!] = null, maker: [Address!] = null, marketplaceIds: [String!] = null, marketplaces: [MarketPlaceType!] = null, nfts: [OrderForNft!] = null, onlyInvalid: Boolean = null, side: OrderSide = null, sortBy: [OrderSortInput!] = null, statuses: [OrderStatusType!] = null, taker: Address = null, terms: OrderTermsFilter = null, traitIds: [Int!] = null): OrderConnection!
   listPoolActivities(after: String, first: Int! = 20, ownerAddresses: [Address!] = null, poolAddresses: [Address!] = null, types: [PoolActivityType!] = null): PoolActivityConnection!
   listPools(addresses: [String!] = null, after: String, first: Int! = 10): PoolConnection!
   listRenegotiations(after: String, collections: [Int!] = null, first: Int = null, hidden: Boolean = null, isAddNewTranche: Boolean = null, loanId: String = null, sortBy: [OffersSortInput!] = null, statuses: [OfferStatus!] = null, terms: RefinanceTermsFilter = null): RenegotiationConnection!
@@ -2032,7 +2128,7 @@ input RefinanceTermsFilter {
 """
 A renegotiation when the loan terms change and the borrower accepted. The difference with refinance is that renegotiation does not mean better terms for the borrower, because of that the borrower needs to accept the renegotiation. Also the renegotiation can be made by the same previous lender.Renegotiation can be top ups. A top up is when someone adds more principal to the loan.
 """
-type Renegotiation implements Node {
+type Renegotiation implements Event & Node {
   aprBps: BigInt!
   availablePrincipalAmount: BigInt!
   createdDate: DateTime
@@ -2058,6 +2154,7 @@ type Renegotiation implements Node {
   signerAddress: Address
   status: String!
   strictImprovement: Boolean!
+  timestamp: DateTime!
 }
 
 type RenegotiationConnection {
@@ -2110,17 +2207,24 @@ type RenegotiationRequestedNotification implements Node & Notification {
   user: User!
 }
 
-type Sale implements Activity & Node {
+type Royalty implements Node {
+  beneficiary: Address!
+  id: String!
+  percentage: Float!
+  required: Boolean!
+}
+
+type Sale implements Activity & Event & Node {
   id: String!
   nft: NFT!
   order: Order!
   orderId: String!
-  taker: String!
+  taker: Address!
   timestamp: DateTime!
-  txHash: Hash
+  txHash: Hash!
 }
 
-type SellAndRepayOrder implements Activity & Node & Order {
+type SellAndRepayOrder implements Event & Node & Order {
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
@@ -2149,7 +2253,7 @@ type SellAndRepayOrder implements Activity & Node & Order {
   status: String!
   taker: Address!
   timestamp: DateTime!
-  txHash: Hash
+  updatedDate: DateTime!
 }
 
 union SellAndRepayOrderSignatureRequest = SellAndRepayOrder | SignatureRequest
@@ -2180,7 +2284,7 @@ input SignedRenegotiationOfferInput {
   trancheIndex: [BigInt!] = null
 }
 
-type SingleNFTOffer implements Node & Offer {
+type SingleNFTOffer implements Event & Node & Offer {
   aprBps: BigInt!
   availablePrincipalAmount: BigInt!
   borrowerAddress: Address
@@ -2215,6 +2319,7 @@ type SingleNFTOffer implements Node & Offer {
   signerAddress: Address
   statistics: OfferStatistics!
   status: String!
+  timestamp: DateTime!
   validators: [OfferValidator!]!
 }
 
@@ -2250,7 +2355,7 @@ input SingleNFTOfferInput {
   signerAddress: Address = null
 }
 
-type SingleNFTOrder implements Activity & Node & Order {
+type SingleNFTOrder implements Event & Node & Order {
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
@@ -2276,7 +2381,7 @@ type SingleNFTOrder implements Activity & Node & Order {
   status: String!
   taker: Address!
   timestamp: DateTime!
-  txHash: Hash
+  updatedDate: DateTime!
 }
 
 input SingleNFTOrderInput {
@@ -2445,14 +2550,14 @@ type TopUpRequest implements Node {
 }
 
 type TopUpRequestedNotification implements Node & Notification {
-  aprBps: BigInt!
+  aprBps: BigInt
   createdOn: DateTime!
   id: String!
   loan: MultiSourceLoan!
   loanId: String!
   notificationType: String!
   readOn: DateTime
-  topUp: BigInt!
+  topUp: BigInt
   user: User!
 }
 
@@ -2460,6 +2565,7 @@ type Trait implements Node {
   collectionId: String!
   id: String!
   key: String!
+  sampleAsset: Asset
   statistics: TraitStatistics! @deprecated(reason: "Trait statistics are not available")
   type: String!
   value: String!
@@ -2470,7 +2576,7 @@ input TraitKeyValueOptionsInput {
   values: [String!]!
 }
 
-type TraitOrder implements Activity & Node & Order {
+type TraitOrder implements Event & Node & Order {
   collectionId: Int!
   createdDate: DateTime!
   currency: Currency!
@@ -2496,7 +2602,7 @@ type TraitOrder implements Activity & Node & Order {
   taker: Address!
   timestamp: DateTime!
   traitId: Int!
-  txHash: Hash
+  updatedDate: DateTime!
 }
 
 input TraitRangeOptionsInput {
@@ -2538,6 +2644,7 @@ type TraitValue implements Node {
   rarity: Int!
   sampleAsset: Asset
   sampleAssetId: Int
+  statistics: TraitStatistics!
   value: String!
 }
 
@@ -2567,6 +2674,15 @@ enum TraitValueType {
   RANGE
 }
 
+type Transfer implements Activity & Event & Node {
+  id: String!
+  nft: NFT!
+  receiver: Address!
+  sender: Address!
+  timestamp: DateTime!
+  txHash: Hash!
+}
+
 type TypedData {
   domain: JSON!
   message: JSON!
@@ -2586,7 +2702,6 @@ type UnderfundedOfferNotification implements Node & Notification {
 
 type User implements Node {
   about: String
-  beta: Boolean!
   blockchain: String!
   createdDate: DateTime!
   id: String!
