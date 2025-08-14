@@ -70,6 +70,8 @@ export class Gondi {
     });
     this.contracts = new Contracts(this.bcClient, wallet);
     this.defaults = {
+      // TODO: uncomment this when we launch the new version
+      // Msl: this.contracts.MultiSourceLoanV7.address,
       Msl: this.contracts.MultiSourceLoanV6.address,
       UserVault: this.contracts.UserVaultV6.address,
     };
