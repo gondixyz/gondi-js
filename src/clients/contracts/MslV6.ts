@@ -21,7 +21,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
   }: {
     walletClient: Wallet;
     contractAddress: Address;
-    version: string;
+    version: '3' | '3.1';
   }) {
     super({
       walletClient,
@@ -107,6 +107,10 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
   }
 
   async cancelAllOffers({ minId }: { minId: bigint }) {
+    if (this.version === '3.1') {
+      throw new Error('Not implemented for V3.1');
+    }
+
     const txHash = await this.safeContractWrite.cancelAllOffers([minId]);
 
     return {
