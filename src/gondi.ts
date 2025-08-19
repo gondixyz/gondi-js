@@ -131,9 +131,9 @@ export class Gondi {
 
     const { offerHash, offerId, validators, lenderAddress, signerAddress, borrowerAddress } =
       response.offer;
-    const collateralAddress = response.offer.nft.collection?.contractData?.contractAddress;
+    const collateralAddress = response.offer.collateralAddress;
 
-    if (collateralAddress === undefined) throw new Error('Invalid nft');
+    if (!collateralAddress) throw new Error('Invalid nft');
 
     const structToSign = {
       ...offerInput,
@@ -188,9 +188,9 @@ export class Gondi {
       ],
     };
     const response = await this.api.generateCollectionOfferHash({ offerInput });
-    const collateralAddress = response.offer.collection.contractData?.contractAddress;
+    const collateralAddress = response.offer.collateralAddress;
 
-    if (collateralAddress === undefined) throw new Error('Invalid collection');
+    if (!collateralAddress) throw new Error('Invalid collection');
 
     const { offerHash, offerId, validators, lenderAddress, signerAddress, borrowerAddress } =
       response.offer;
@@ -1265,6 +1265,7 @@ export interface EmitLoanArgs {
     amount?: bigint;
     lenderOfferSignature: Hash;
   }[];
+  nftCollateralAddress: Address;
   tokenId: bigint;
   duration: bigint;
   principalReceiver?: Address;

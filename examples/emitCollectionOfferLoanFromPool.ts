@@ -5,6 +5,7 @@ import {
   setAllowances,
   sleep,
   testCollectionOfferInput,
+  testNftCollateralAddress,
   testTokenId,
   users,
 } from './common';
@@ -38,6 +39,7 @@ const emitAndRepayLoan = async (contract: string) => {
     offerExecution: users[1].offerExecutionFromOffers([offer]),
     duration: offer.duration,
     tokenId: testTokenId,
+    nftCollateralAddress: testNftCollateralAddress,
   });
 
   const { loan, loanId } = await emitLoan.waitTxInBlock();

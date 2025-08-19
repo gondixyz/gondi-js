@@ -2,6 +2,7 @@ import {
   setAllowances,
   test721Collection,
   testCurrency,
+  testNftCollateralAddress,
   testSingleNftOfferInput,
   testTokenId,
   users,
@@ -12,17 +13,19 @@ const cancelOrder = async () => {
   const emitLoan = await users[1].emitLoan({
     offerExecution: users[1].offerExecutionFromOffers([signedOffer]),
     duration: signedOffer.duration,
+    nftCollateralAddress: testNftCollateralAddress,
     tokenId: testTokenId,
   });
   const { loan, loanId } = await emitLoan.waitTxInBlock();
   try {
     const order = await users[1].makeSellAndRepayOrder({
-      collectionContractAddress: test721Collection.contractAddress,
+      contractAddress: test721Collection.contractAddress,
       tokenId: testTokenId,
-      price: 1n,
+      amount: 1n,
       expirationTime: 1n,
       currencyAddress: testCurrency,
       isAsk: true,
+      startTime: 0n,
     });
     console.log(`order placed successfully: ${JSON.stringify(order, null, 4)}`);
     const cancelOrder = await users[1].cancelOrder(order);

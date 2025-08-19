@@ -3,6 +3,7 @@ import { Address, decodeFunctionData, encodeFunctionData, Hash, Hex } from 'viem
 import { LoanV6, OfferV6, RenegotiationV6, REORG_SAFETY_BUFFER, zeroHash } from '@/blockchain';
 import { Wallet } from '@/clients/contracts';
 import { multiSourceLoanAbi as multiSourceLoanAbiV6 } from '@/generated/blockchain/v6';
+import { multiSourceLoanAbi as multiSourceLoanAbiV7 } from '@/generated/blockchain/v7';
 import { EmitLoanArgs } from '@/gondi';
 import { millisToSeconds, SECONDS_IN_DAY, secondsToMillis } from '@/utils/dates';
 import { getMslLoanId, getRemainingSeconds, LoanToMslLoanType } from '@/utils/loan';
@@ -11,7 +12,7 @@ import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 
 import { BaseContract } from './BaseContract';
 
-export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
+export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof multiSourceLoanAbiV7> {
   version: string;
 
   constructor({
@@ -26,7 +27,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
     super({
       walletClient,
       address: contractAddress,
-      abi: multiSourceLoanAbiV6,
+      abi: version === '3' ? multiSourceLoanAbiV6 : multiSourceLoanAbiV7,
     });
     this.version = version;
   }
@@ -147,6 +148,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
 
   private mapEmitLoanToMslEmitLoanArgs({
     offerExecution,
+    nftCollateralAddress,
     tokenId,
     duration,
     principalReceiver,
@@ -162,6 +164,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
           validators: offer.offerValidators,
         },
       })),
+      nftCollateralAddress,
       tokenId,
       duration,
       expirationTime: expirationTime ?? BigInt(millisToSeconds(Date.now()) + SECONDS_IN_DAY),

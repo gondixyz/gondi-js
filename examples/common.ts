@@ -51,8 +51,9 @@ export const localChain = {
 export const secret = '0'.repeat(64);
 export const transport = http(localChain.rpcUrls.default.http[0]);
 export const testTokenId = BigInt(process.env.TEST_TOKEN_ID ?? 0);
+export const testNftCollateralAddress = process.env.TEST_COLLECTION as unknown as Address;
 export const test721Collection = {
-  contractAddress: process.env.TEST_COLLECTION as unknown as Address,
+  contractAddress: testNftCollateralAddress,
 };
 export const zeroHash = '0x' + '0'.repeat(64);
 export const testCurrency = process.env.TEST_PRINCIPAL_CURRENCY as unknown as Address;
