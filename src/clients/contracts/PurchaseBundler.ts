@@ -44,6 +44,24 @@ export class PurchaseBundler extends BaseContract<typeof purchaseBundlerAbi> {
     ],
   } as const;
 
+  async buy({ emitCalldata, value }: { emitCalldata: Hex; value: bigint }) {
+    const txHash = await this.safeContractWrite.buy([[emitCalldata]], { value });
+
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        const events = this.parseEventLogs('BNPLLoansStarted', receipt.logs);
+        if (events.length !== 1) {
+          throw new Error('Buy not executed');
+        }
+        return receipt;
+      },
+    };
+  }
+
   async sell({ repaymentCalldata }: { repaymentCalldata: Hex }) {
     const txHash = await this.safeContractWrite.sell([[repaymentCalldata]]);
 

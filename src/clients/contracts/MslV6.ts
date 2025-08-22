@@ -2,8 +2,8 @@ import { Address, decodeFunctionData, encodeFunctionData, Hash, Hex } from 'viem
 
 import { LoanV6, OfferV6, RenegotiationV6, REORG_SAFETY_BUFFER, zeroHash } from '@/blockchain';
 import { Wallet } from '@/clients/contracts';
-import { getContracts } from '@/deploys';
 import { multiSourceLoanAbi as multiSourceLoanAbiV6 } from '@/generated/blockchain/v6';
+import { multiSourceLoanAbi as multiSourceLoanAbiV7 } from '@/generated/blockchain/v7';
 import { EmitLoanArgs } from '@/gondi';
 import { millisToSeconds, SECONDS_IN_DAY, secondsToMillis } from '@/utils/dates';
 import { getMslLoanId, getRemainingSeconds, LoanToMslLoanType } from '@/utils/loan';
@@ -12,23 +12,30 @@ import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 
 import { BaseContract } from './BaseContract';
 
-export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
-  constructor({ walletClient }: { walletClient: Wallet }) {
-    const {
-      MultiSourceLoan: { v6 },
-    } = getContracts(walletClient.chain);
+export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof multiSourceLoanAbiV7> {
+  version: string;
 
+  constructor({
+    walletClient,
+    contractAddress,
+    version,
+  }: {
+    walletClient: Wallet;
+    contractAddress: Address;
+    version: '3' | '3.1';
+  }) {
     super({
       walletClient,
-      address: v6,
-      abi: multiSourceLoanAbiV6,
+      address: contractAddress,
+      abi: version === '3' ? multiSourceLoanAbiV6 : multiSourceLoanAbiV7,
     });
+    this.version = version;
   }
 
   private getDomain() {
     return {
       name: CONTRACT_DOMAIN_NAME,
-      version: '3',
+      version: this.version,
       chainId: this.wallet.chain.id,
       verifyingContract: this.address,
     };
@@ -101,6 +108,10 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
   }
 
   async cancelAllOffers({ minId }: { minId: bigint }) {
+    if (this.version === '3.1') {
+      throw new Error('Not implemented for V3.1');
+    }
+
     const txHash = await this.safeContractWrite.cancelAllOffers([minId]);
 
     return {
@@ -137,6 +148,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
 
   private mapEmitLoanToMslEmitLoanArgs({
     offerExecution,
+    nftCollateralAddress,
     tokenId,
     duration,
     principalReceiver,
@@ -152,6 +164,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
           validators: offer.offerValidators,
         },
       })),
+      nftCollateralAddress,
       tokenId,
       duration,
       expirationTime: expirationTime ?? BigInt(millisToSeconds(Date.now()) + SECONDS_IN_DAY),
@@ -614,7 +627,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6> {
 
   decodeRepaymentCalldata(calldata: Hex) {
     const decoded = decodeFunctionData({
-      abi: multiSourceLoanAbiV6,
+      abi: this.abi,
       data: calldata,
     });
     if (decoded.functionName !== 'repayLoan') {

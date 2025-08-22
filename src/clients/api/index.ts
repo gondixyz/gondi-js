@@ -6,6 +6,7 @@ import { apolloClient } from '@/clients/api/client';
 import { getSdkApollo } from '@/clients/api/sdk';
 import { Wallet } from '@/clients/contracts';
 import {
+  BnplOrderInput,
   CollectionOrderInput,
   CollectionSignedOfferInput,
   ListListingsQueryVariables,
@@ -112,6 +113,11 @@ export class Api {
 
   async publishSellAndRepayOrder(orderInput: NftOrderInput) {
     const response = await this.api.publishSellAndRepayOrder({ orderInput });
+    return response.result;
+  }
+
+  async publishBuyNowPayLaterOrder(orderInput: BnplOrderInput) {
+    const response = await this.api.publishBuyNowPayLaterOrder({ orderInput });
     return response.result;
   }
 

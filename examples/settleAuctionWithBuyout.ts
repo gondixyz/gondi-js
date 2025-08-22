@@ -6,6 +6,7 @@ import {
   generateBlock,
   setAllowances,
   sleep,
+  testNftCollateralAddress,
   testSingleNftOfferInput as offer,
   testTokenId,
   users,
@@ -38,6 +39,7 @@ const settleAuctionWithBuyout = async (
     ),
     duration: signedOffer.duration,
     tokenId: testTokenId,
+    nftCollateralAddress: testNftCollateralAddress,
   });
   const { loan, loanId } = await emitLoan.waitTxInBlock();
   console.log(`loan emitted: ${contractVersionString}`);

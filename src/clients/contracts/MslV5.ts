@@ -556,7 +556,7 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
 
   decodeRepaymentCalldata(calldata: Hex) {
     const decoded = decodeFunctionData({
-      abi: multiSourceLoanABIV5,
+      abi: this.abi,
       data: calldata,
     });
     if (decoded.functionName !== 'repayLoan') {

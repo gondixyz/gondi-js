@@ -3,6 +3,7 @@ import {
   sleep,
   test721Collection,
   testCurrency,
+  testNftCollateralAddress,
   testSingleNftOfferInput,
   testTokenId,
   users,
@@ -15,6 +16,7 @@ const sellAndRepay = async () => {
   const emitLoan = await owner.emitLoan({
     offerExecution: owner.offerExecutionFromOffers([signedOffer]),
     duration: signedOffer.duration,
+    nftCollateralAddress: testNftCollateralAddress,
     tokenId: testTokenId,
   });
   const { loan, loanId } = await emitLoan.waitTxInBlock();
@@ -22,12 +24,13 @@ const sellAndRepay = async () => {
   try {
     const price = 100n;
     const signedOrder = await owner.makeSellAndRepayOrder({
-      collectionContractAddress: test721Collection.contractAddress,
+      contractAddress: test721Collection.contractAddress,
       tokenId: testTokenId,
-      price,
+      amount: price,
       expirationTime: loan.startTime + 60n * 10n,
       currencyAddress: testCurrency,
       isAsk: true,
+      startTime: 0n,
       // taker: lender.wallet.account.address,
     });
     await lender.buyWithSellAndRepay({

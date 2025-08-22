@@ -20,6 +20,7 @@ import { Api, Props as ApiProps } from '@/clients/api';
 import { Contracts, GondiPublicClient, Wallet } from '@/clients/contracts';
 import { Opensea } from '@/clients/opensea';
 import {
+  BnplOrderInput,
   Currency,
   MarketplaceEnum,
   OffersSortField,
@@ -37,7 +38,7 @@ import {
   LoanToMslLoanType,
   renegotiationToMslRenegotiation,
 } from '@/utils/loan';
-import { min } from '@/utils/number';
+import { max, min, mulDivUp } from '@/utils/number';
 import { isNative, isOpensea } from '@/utils/orders';
 import { FULFILLED, REJECTED } from '@/utils/promises';
 import { areSameAddress } from '@/utils/string';
@@ -69,6 +70,8 @@ export class Gondi {
     });
     this.contracts = new Contracts(this.bcClient, wallet);
     this.defaults = {
+      // TODO: uncomment this when we launch the new version
+      // Msl: this.contracts.MultiSourceLoanV7.address,
       Msl: this.contracts.MultiSourceLoanV6.address,
       UserVault: this.contracts.UserVaultV6.address,
     };
@@ -128,9 +131,9 @@ export class Gondi {
 
     const { offerHash, offerId, validators, lenderAddress, signerAddress, borrowerAddress } =
       response.offer;
-    const collateralAddress = response.offer.nft.collection?.contractData?.contractAddress;
+    const collateralAddress = response.offer.collateralAddress;
 
-    if (collateralAddress === undefined) throw new Error('Invalid nft');
+    if (!collateralAddress) throw new Error('Invalid nft');
 
     const structToSign = {
       ...offerInput,
@@ -185,9 +188,9 @@ export class Gondi {
       ],
     };
     const response = await this.api.generateCollectionOfferHash({ offerInput });
-    const collateralAddress = response.offer.collection.contractData?.contractAddress;
+    const collateralAddress = response.offer.collateralAddress;
 
-    if (collateralAddress === undefined) throw new Error('Invalid collection');
+    if (!collateralAddress) throw new Error('Invalid collection');
 
     const { offerHash, offerId, validators, lenderAddress, signerAddress, borrowerAddress } =
       response.offer;
@@ -246,6 +249,47 @@ export class Gondi {
     if (response.__typename !== 'SellAndRepayOrder') throw new Error('This should never happen');
 
     return { ...response, ...sellAndRepayOrderInput };
+  }
+
+  async buyNowPayLater({
+    amounts,
+    contractAddress,
+    loanDuration,
+    offers,
+    tokenId,
+  }: {
+    amounts: bigint[];
+    contractAddress: Address;
+    loanDuration: bigint;
+    offers: OfferFromExecutionOffer[];
+    tokenId: bigint;
+  }) {
+    const orderInput: BnplOrderInput = {
+      amounts,
+      contractAddress,
+      loanDuration,
+      offerIds: offers.map((offer) => offer.id),
+      tokenId,
+    };
+
+    const borrowed = amounts.reduce((acc, amount, index) => {
+      const fee = mulDivUp(offers[index].fee, amount, offers[index].principalAmount);
+      return acc + amount - fee;
+    }, 0n);
+
+    let response = await this.api.publishBuyNowPayLaterOrder(orderInput);
+    while (response.__typename === 'SignatureRequest') {
+      const key = response.key as 'signature' | 'emitSignature';
+      orderInput[key] = await this.wallet.signTypedData(response.typedData as TypedDataDefinition);
+      response = await this.api.publishBuyNowPayLaterOrder(orderInput);
+    }
+
+    if (response.__typename !== 'BuyNowPayLaterOrder') throw new Error('This should never happen');
+
+    return this.contracts.PurchaseBundler(offers[0].contractAddress).buy({
+      emitCalldata: response.emitCalldata,
+      value: max(0n, response.price - borrowed),
+    });
   }
 
   async cancelOrder(order: { cancelCalldata: Hex; marketPlaceAddress: Address }) {
@@ -1226,6 +1270,7 @@ export interface EmitLoanArgs {
     amount?: bigint;
     lenderOfferSignature: Hash;
   }[];
+  nftCollateralAddress: Address;
   tokenId: bigint;
   duration: bigint;
   principalReceiver?: Address;

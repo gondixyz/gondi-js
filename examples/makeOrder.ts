@@ -2,6 +2,7 @@ import {
   setAllowances,
   test721Collection,
   testCurrency,
+  testNftCollateralAddress,
   testSingleNftOfferInput,
   testTokenId,
   users,
@@ -12,6 +13,7 @@ const makeOrder = async () => {
   const emitLoan = await users[1].emitLoan({
     offerExecution: users[1].offerExecutionFromOffers([signedOffer]),
     duration: signedOffer.duration,
+    nftCollateralAddress: testNftCollateralAddress,
     tokenId: testTokenId,
   });
   const { loan, loanId } = await emitLoan.waitTxInBlock();

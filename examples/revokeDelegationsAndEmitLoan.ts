@@ -1,6 +1,12 @@
 import { Address, isAddress } from 'viem';
 
-import { setAllowances, testSingleNftOfferInput, testTokenId, users } from './common';
+import {
+  setAllowances,
+  testNftCollateralAddress,
+  testSingleNftOfferInput,
+  testTokenId,
+  users,
+} from './common';
 
 const revokeAndEmitLoan = async (contract?: Address) => {
   const signedOffer = await users[0]._makeSingleNftOffer(testSingleNftOfferInput, contract);
@@ -11,6 +17,7 @@ const revokeAndEmitLoan = async (contract?: Address) => {
     offerExecution: users[1].offerExecutionFromOffers([signedOffer]),
     duration: signedOffer.duration,
     tokenId: testTokenId,
+    nftCollateralAddress: testNftCollateralAddress,
   });
   const { loan, loanId } = await emitLoan.waitTxInBlock();
   console.log(`loan emitted: ${contractVersionString}`);
@@ -51,6 +58,7 @@ const revokeAndEmitLoan = async (contract?: Address) => {
     delegations: [delegateTo],
     emit: {
       offerExecution: users[1].offerExecutionFromOffers([newSignedOffer]),
+      nftCollateralAddress: testNftCollateralAddress,
       duration: newSignedOffer.duration,
       tokenId: testTokenId,
     },

@@ -4,6 +4,7 @@ import { Address, isAddress } from 'viem';
 import {
   generateBlock,
   setAllowances,
+  testNftCollateralAddress,
   testSingleNftOfferInput as offer,
   testTokenId,
   users,
@@ -18,6 +19,7 @@ const emitRefiFromOfferAndRepay = async (lender: Gondi, borrower: Gondi, contrac
     offerExecution: borrower.offerExecutionFromOffers([signedOffer]),
     duration: signedOffer.duration,
     tokenId: testTokenId,
+    nftCollateralAddress: testNftCollateralAddress,
   });
   const { loan, loanId } = await emitLoan.waitTxInBlock();
   console.log(`loan emitted: ${contractVersionString}`);
@@ -35,6 +37,7 @@ const emitRefiFromOfferAndRepay = async (lender: Gondi, borrower: Gondi, contrac
       executionData: {
         offerExecution: borrower.offerExecutionFromOffers([signedOfferForRefi]),
         duration: signedOffer.duration,
+        nftCollateralAddress: testNftCollateralAddress,
         tokenId: testTokenId,
       },
     });

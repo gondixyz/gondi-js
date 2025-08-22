@@ -5,6 +5,7 @@ import {
   generateBlock,
   setAllowances,
   sleep,
+  testNftCollateralAddress,
   testSingleNftOfferInput,
   testTokenId,
   users,
@@ -25,6 +26,7 @@ const emitRenegotiateAndRepayLoan = async (lender: Gondi, borrower: Gondi, contr
     offerExecution: borrower.offerExecutionFromOffers([signedOffer]),
     duration: signedOffer.duration,
     tokenId: testTokenId,
+    nftCollateralAddress: testNftCollateralAddress,
   });
   const { loan, loanId } = await emitLoan.waitTxInBlock();
   console.log(`loan emitted: ${contractVersionString}`);

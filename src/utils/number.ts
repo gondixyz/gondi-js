@@ -43,3 +43,18 @@ export const min: MinFunction = <T extends number | bigint>(a?: T, b?: T) => {
   if (b === undefined) return a;
   return a < b ? a : b;
 };
+
+type MaxFunction = {
+  <T extends number | bigint>(a: T, b: T): T;
+  <T extends number | bigint>(a: T, b?: T): T;
+  <T extends number | bigint>(a?: T, b?: T): T | undefined;
+};
+export const max: MaxFunction = <T extends number | bigint>(a?: T, b?: T) => {
+  if (a === undefined) return b;
+  if (b === undefined) return a;
+  return a < b ? b : a;
+};
+
+export const mulDivUp = (a: bigint, b: bigint, c: bigint) => (a * b - 1n) / c + 1n;
+
+export const mulDivDown = (a: bigint, b: bigint, c: bigint) => (a * b) / c;

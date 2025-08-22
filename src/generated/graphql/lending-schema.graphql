@@ -263,6 +263,7 @@ type CollectionOffer implements Event & Node & Offer {
   availablePrincipalAmount: BigInt!
   borrowerAddress: Address
   capacity: BigInt!
+  collateralAddress: Address
   collection: Collection!
   collectionId: Int
   consumedCapacity: BigInt!
@@ -1497,6 +1498,7 @@ interface Offer implements Event & Node {
   availablePrincipalAmount: BigInt!
   borrowerAddress: Address
   capacity: BigInt!
+  collateralAddress: Address
   collectionId: Int
   consumedCapacity: BigInt!
   contractAddress: Address!
@@ -2289,6 +2291,7 @@ type SingleNFTOffer implements Event & Node & Offer {
   availablePrincipalAmount: BigInt!
   borrowerAddress: Address
   capacity: BigInt!
+  collateralAddress: Address
   collectionId: Int
   consumedCapacity: BigInt!
   contractAddress: Address!

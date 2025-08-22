@@ -313,6 +313,7 @@ export type CollectionOffer = Event & Node & Offer & {
   availablePrincipalAmount: Scalars['BigInt'];
   borrowerAddress?: Maybe<Scalars['Address']>;
   capacity: Scalars['BigInt'];
+  collateralAddress?: Maybe<Scalars['Address']>;
   collection: Collection;
   collectionId?: Maybe<Scalars['Int']>;
   consumedCapacity: Scalars['BigInt'];
@@ -1852,6 +1853,7 @@ export type Offer = {
   availablePrincipalAmount: Scalars['BigInt'];
   borrowerAddress?: Maybe<Scalars['Address']>;
   capacity: Scalars['BigInt'];
+  collateralAddress?: Maybe<Scalars['Address']>;
   collectionId?: Maybe<Scalars['Int']>;
   consumedCapacity: Scalars['BigInt'];
   contractAddress: Scalars['Address'];
@@ -3103,6 +3105,7 @@ export type SingleNftOffer = Event & Node & Offer & {
   availablePrincipalAmount: Scalars['BigInt'];
   borrowerAddress?: Maybe<Scalars['Address']>;
   capacity: Scalars['BigInt'];
+  collateralAddress?: Maybe<Scalars['Address']>;
   collectionId?: Maybe<Scalars['Int']>;
   consumedCapacity: Scalars['BigInt'];
   contractAddress: Scalars['Address'];
@@ -3874,7 +3877,7 @@ export type GenerateCollectionOfferHashMutationVariables = Exact<{
 }>;
 
 
-export type GenerateCollectionOfferHashMutation = { __typename?: 'Mutation', offer: { __typename?: 'CollectionOffer', offerHash?: Hash | null, offerId: bigint, lenderAddress?: Address | null, signerAddress?: Address | null, borrowerAddress?: Address | null, validators: Array<{ __typename?: 'OfferValidator', validator: Address, arguments: Hex }>, collection: { __typename?: 'Collection', contractData: { __typename?: 'ContractData', contractAddress: Address } } } };
+export type GenerateCollectionOfferHashMutation = { __typename?: 'Mutation', offer: { __typename?: 'CollectionOffer', offerHash?: Hash | null, offerId: bigint, lenderAddress?: Address | null, signerAddress?: Address | null, borrowerAddress?: Address | null, collateralAddress?: Address | null, validators: Array<{ __typename?: 'OfferValidator', validator: Address, arguments: Hex }>, collection: { __typename?: 'Collection', contractData: { __typename?: 'ContractData', contractAddress: Address } } } };
 
 export type SaveCollectionOfferMutationVariables = Exact<{
   offer: CollectionSignedOfferInput;
@@ -3896,7 +3899,7 @@ export type GenerateSingleNftOfferHashMutationVariables = Exact<{
 }>;
 
 
-export type GenerateSingleNftOfferHashMutation = { __typename?: 'Mutation', offer: { __typename?: 'SingleNFTOffer', offerHash?: Hash | null, offerId: bigint, lenderAddress?: Address | null, signerAddress?: Address | null, borrowerAddress?: Address | null, validators: Array<{ __typename?: 'OfferValidator', validator: Address, arguments: Hex }>, nft: { __typename?: 'NFT', tokenId: bigint, collection?: { __typename?: 'Collection', contractData: { __typename?: 'ContractData', contractAddress: Address } } | null } } };
+export type GenerateSingleNftOfferHashMutation = { __typename?: 'Mutation', offer: { __typename?: 'SingleNFTOffer', offerHash?: Hash | null, offerId: bigint, lenderAddress?: Address | null, signerAddress?: Address | null, borrowerAddress?: Address | null, collateralAddress?: Address | null, validators: Array<{ __typename?: 'OfferValidator', validator: Address, arguments: Hex }>, nft: { __typename?: 'NFT', tokenId: bigint, collection?: { __typename?: 'Collection', contractData: { __typename?: 'ContractData', contractAddress: Address } } | null } } };
 
 export type SaveSingleNftOfferMutationVariables = Exact<{
   offer: SingleNftSignedOfferInput;
@@ -3919,6 +3922,13 @@ export type HideOrderMutationVariables = Exact<{
 
 
 export type HideOrderMutation = { __typename?: 'Mutation', hideOrder: { __typename?: 'BuyNowPayLaterOrder', id: string } | { __typename?: 'CollectionOrder', id: string } | { __typename?: 'SellAndRepayOrder', id: string } | { __typename?: 'SingleNFTOrder', id: string } | { __typename?: 'TraitOrder', id: string } };
+
+export type PublishBuyNowPayLaterOrderMutationVariables = Exact<{
+  orderInput: BnplOrderInput;
+}>;
+
+
+export type PublishBuyNowPayLaterOrderMutation = { __typename?: 'Mutation', result: { __typename?: 'BuyNowPayLaterOrder', id: string, status: string, signature: Hex, emitCalldata: Hex, marketPlaceAddress: Address, price: bigint } | { __typename?: 'SignatureRequest', key: string, typedData: { __typename?: 'TypedData', types: object, primaryType: string, domain: object, message: object } } };
 
 export type PublishOrderForCollectionMutationVariables = Exact<{
   orderInput: CollectionOrderInput;
@@ -4308,12 +4318,13 @@ export type CollectionLoansDataFieldPolicy = {
 	minPrincipalAmount?: FieldPolicy<any> | FieldReadFunction<any>,
 	minRemainingTime?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type CollectionOfferKeySpecifier = ('aprBps' | 'availablePrincipalAmount' | 'borrowerAddress' | 'capacity' | 'collection' | 'collectionId' | 'consumedCapacity' | 'contractAddress' | 'createdDate' | 'currency' | 'duration' | 'expirationTime' | 'fee' | 'hidden' | 'id' | 'lenderAddress' | 'lenderAvailableBalance' | 'maxPrincipal' | 'maxSeniorRepayment' | 'maxTrancheFloor' | 'netPrincipal' | 'nftId' | 'offerHash' | 'offerId' | 'principalAddress' | 'principalAmount' | 'repayment' | 'requiresLiquidation' | 'signature' | 'signerAddress' | 'statistics' | 'status' | 'timestamp' | 'validators' | CollectionOfferKeySpecifier)[];
+export type CollectionOfferKeySpecifier = ('aprBps' | 'availablePrincipalAmount' | 'borrowerAddress' | 'capacity' | 'collateralAddress' | 'collection' | 'collectionId' | 'consumedCapacity' | 'contractAddress' | 'createdDate' | 'currency' | 'duration' | 'expirationTime' | 'fee' | 'hidden' | 'id' | 'lenderAddress' | 'lenderAvailableBalance' | 'maxPrincipal' | 'maxSeniorRepayment' | 'maxTrancheFloor' | 'netPrincipal' | 'nftId' | 'offerHash' | 'offerId' | 'principalAddress' | 'principalAmount' | 'repayment' | 'requiresLiquidation' | 'signature' | 'signerAddress' | 'statistics' | 'status' | 'timestamp' | 'validators' | CollectionOfferKeySpecifier)[];
 export type CollectionOfferFieldPolicy = {
 	aprBps?: FieldPolicy<any> | FieldReadFunction<any>,
 	availablePrincipalAmount?: FieldPolicy<any> | FieldReadFunction<any>,
 	borrowerAddress?: FieldPolicy<any> | FieldReadFunction<any>,
 	capacity?: FieldPolicy<any> | FieldReadFunction<any>,
+	collateralAddress?: FieldPolicy<any> | FieldReadFunction<any>,
 	collection?: FieldPolicy<any> | FieldReadFunction<any>,
 	collectionId?: FieldPolicy<any> | FieldReadFunction<any>,
 	consumedCapacity?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -5111,12 +5122,13 @@ export type NotificationEdgeFieldPolicy = {
 	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
 	node?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type OfferKeySpecifier = ('aprBps' | 'availablePrincipalAmount' | 'borrowerAddress' | 'capacity' | 'collectionId' | 'consumedCapacity' | 'contractAddress' | 'createdDate' | 'currency' | 'duration' | 'expirationTime' | 'fee' | 'hidden' | 'id' | 'lenderAddress' | 'lenderAvailableBalance' | 'maxPrincipal' | 'maxSeniorRepayment' | 'maxTrancheFloor' | 'netPrincipal' | 'nftId' | 'offerHash' | 'offerId' | 'principalAddress' | 'principalAmount' | 'repayment' | 'requiresLiquidation' | 'signature' | 'signerAddress' | 'status' | 'timestamp' | 'validators' | OfferKeySpecifier)[];
+export type OfferKeySpecifier = ('aprBps' | 'availablePrincipalAmount' | 'borrowerAddress' | 'capacity' | 'collateralAddress' | 'collectionId' | 'consumedCapacity' | 'contractAddress' | 'createdDate' | 'currency' | 'duration' | 'expirationTime' | 'fee' | 'hidden' | 'id' | 'lenderAddress' | 'lenderAvailableBalance' | 'maxPrincipal' | 'maxSeniorRepayment' | 'maxTrancheFloor' | 'netPrincipal' | 'nftId' | 'offerHash' | 'offerId' | 'principalAddress' | 'principalAmount' | 'repayment' | 'requiresLiquidation' | 'signature' | 'signerAddress' | 'status' | 'timestamp' | 'validators' | OfferKeySpecifier)[];
 export type OfferFieldPolicy = {
 	aprBps?: FieldPolicy<any> | FieldReadFunction<any>,
 	availablePrincipalAmount?: FieldPolicy<any> | FieldReadFunction<any>,
 	borrowerAddress?: FieldPolicy<any> | FieldReadFunction<any>,
 	capacity?: FieldPolicy<any> | FieldReadFunction<any>,
+	collateralAddress?: FieldPolicy<any> | FieldReadFunction<any>,
 	collectionId?: FieldPolicy<any> | FieldReadFunction<any>,
 	consumedCapacity?: FieldPolicy<any> | FieldReadFunction<any>,
 	contractAddress?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -5583,12 +5595,13 @@ export type SignatureRequestFieldPolicy = {
 	key?: FieldPolicy<any> | FieldReadFunction<any>,
 	typedData?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type SingleNFTOfferKeySpecifier = ('aprBps' | 'availablePrincipalAmount' | 'borrowerAddress' | 'capacity' | 'collectionId' | 'consumedCapacity' | 'contractAddress' | 'createdDate' | 'currency' | 'duration' | 'expirationTime' | 'fee' | 'hidden' | 'id' | 'lenderAddress' | 'lenderAvailableBalance' | 'maxPrincipal' | 'maxSeniorRepayment' | 'maxTrancheFloor' | 'netPrincipal' | 'nft' | 'nftId' | 'offerHash' | 'offerId' | 'principalAddress' | 'principalAmount' | 'repayment' | 'requiresLiquidation' | 'signature' | 'signerAddress' | 'statistics' | 'status' | 'timestamp' | 'validators' | SingleNFTOfferKeySpecifier)[];
+export type SingleNFTOfferKeySpecifier = ('aprBps' | 'availablePrincipalAmount' | 'borrowerAddress' | 'capacity' | 'collateralAddress' | 'collectionId' | 'consumedCapacity' | 'contractAddress' | 'createdDate' | 'currency' | 'duration' | 'expirationTime' | 'fee' | 'hidden' | 'id' | 'lenderAddress' | 'lenderAvailableBalance' | 'maxPrincipal' | 'maxSeniorRepayment' | 'maxTrancheFloor' | 'netPrincipal' | 'nft' | 'nftId' | 'offerHash' | 'offerId' | 'principalAddress' | 'principalAmount' | 'repayment' | 'requiresLiquidation' | 'signature' | 'signerAddress' | 'statistics' | 'status' | 'timestamp' | 'validators' | SingleNFTOfferKeySpecifier)[];
 export type SingleNFTOfferFieldPolicy = {
 	aprBps?: FieldPolicy<any> | FieldReadFunction<any>,
 	availablePrincipalAmount?: FieldPolicy<any> | FieldReadFunction<any>,
 	borrowerAddress?: FieldPolicy<any> | FieldReadFunction<any>,
 	capacity?: FieldPolicy<any> | FieldReadFunction<any>,
+	collateralAddress?: FieldPolicy<any> | FieldReadFunction<any>,
 	collectionId?: FieldPolicy<any> | FieldReadFunction<any>,
 	consumedCapacity?: FieldPolicy<any> | FieldReadFunction<any>,
 	contractAddress?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -6724,6 +6737,7 @@ export const GenerateCollectionOfferHashDocument = gql`
     lenderAddress
     signerAddress
     borrowerAddress
+    collateralAddress
     validators {
       validator
       arguments
@@ -6764,6 +6778,7 @@ export const GenerateSingleNftOfferHashDocument = gql`
     lenderAddress
     signerAddress
     borrowerAddress
+    collateralAddress
     validators {
       validator
       arguments
@@ -6806,6 +6821,29 @@ export const HideOrderDocument = gql`
     mutation hideOrder($id: Int!) {
   hideOrder(orderId: $id) {
     id
+  }
+}
+    `;
+export const PublishBuyNowPayLaterOrderDocument = gql`
+    mutation publishBuyNowPayLaterOrder($orderInput: BNPLOrderInput!) {
+  result: publishBuyNowPayLaterOrder(orderInput: $orderInput) {
+    ... on BuyNowPayLaterOrder {
+      id
+      status
+      signature
+      emitCalldata
+      marketPlaceAddress
+      price
+    }
+    ... on SignatureRequest {
+      key
+      typedData {
+        types
+        primaryType
+        domain
+        message
+      }
+    }
   }
 }
     `;
@@ -7343,6 +7381,9 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
     },
     hideOrder(variables: HideOrderMutationVariables, options?: C): Promise<HideOrderMutation> {
       return requester<HideOrderMutation, HideOrderMutationVariables>(HideOrderDocument, variables, options) as Promise<HideOrderMutation>;
+    },
+    publishBuyNowPayLaterOrder(variables: PublishBuyNowPayLaterOrderMutationVariables, options?: C): Promise<PublishBuyNowPayLaterOrderMutation> {
+      return requester<PublishBuyNowPayLaterOrderMutation, PublishBuyNowPayLaterOrderMutationVariables>(PublishBuyNowPayLaterOrderDocument, variables, options) as Promise<PublishBuyNowPayLaterOrderMutation>;
     },
     publishOrderForCollection(variables: PublishOrderForCollectionMutationVariables, options?: C): Promise<PublishOrderForCollectionMutation> {
       return requester<PublishOrderForCollectionMutation, PublishOrderForCollectionMutationVariables>(PublishOrderForCollectionDocument, variables, options) as Promise<PublishOrderForCollectionMutation>;

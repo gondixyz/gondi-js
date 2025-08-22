@@ -1,7 +1,13 @@
 import { Gondi } from 'gondi';
 import { Address, getContract } from 'viem';
 
-import { approveNFT, approveToken, testSingleNftOfferInput, users } from '../common';
+import {
+  approveNFT,
+  approveToken,
+  testNftCollateralAddress,
+  testSingleNftOfferInput,
+  users,
+} from '../common';
 import erc721AbiWithMint from './erc721withMint';
 
 // This script will mint and emit loans to the blockchain
@@ -132,6 +138,7 @@ const makeOffers = async (collection: SomeCollection) => {
         );
         emitLoanArgs.push({
           offerExecution: users[1].offerExecutionFromOffers([signedOffer]),
+          nftCollateralAddress: testNftCollateralAddress,
           duration: signedOffer.duration,
           tokenId: BigInt(
             COLLECTION_TOKEN_ID_BASE[collection] + TOKEN_ID_TO_MINT_FROM + baseIndex + k,

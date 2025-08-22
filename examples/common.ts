@@ -7,6 +7,7 @@ dotenv.config();
 
 const RPC = process.env.RPC_URL;
 const MULTI_SOURCE_LOAN_CONTRACT_V6 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ?? '';
+const MULTI_SOURCE_LOAN_CONTRACT_V7 = process.env.MULTI_SOURCE_LOAN_CONTRACT_V7 ?? '';
 const POOL_WETH_ADDRESS = process.env.POOL_WETH ?? '';
 const POOL_USDC_ADDRESS = process.env.POOL_USDC ?? '';
 const WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
@@ -50,8 +51,9 @@ export const localChain = {
 export const secret = '0'.repeat(64);
 export const transport = http(localChain.rpcUrls.default.http[0]);
 export const testTokenId = BigInt(process.env.TEST_TOKEN_ID ?? 0);
+export const testNftCollateralAddress = process.env.TEST_COLLECTION as unknown as Address;
 export const test721Collection = {
-  contractAddress: process.env.TEST_COLLECTION as unknown as Address,
+  contractAddress: testNftCollateralAddress,
 };
 export const zeroHash = '0x' + '0'.repeat(64);
 export const testCurrency = process.env.TEST_PRINCIPAL_CURRENCY as unknown as Address;
@@ -161,6 +163,7 @@ const approveForUser = async (user: Gondi, to: Address) => {
 
 const SEAPORT_CONTRACT_ADDRESS = '0x0000000000000068F116a894984e2DB1123eB395';
 const CONTRACTS = [
+  MULTI_SOURCE_LOAN_CONTRACT_V7,
   MULTI_SOURCE_LOAN_CONTRACT_V6,
   process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? '',
   process.env.MULTI_SOURCE_LOAN_CONTRACT_V4 ?? '',

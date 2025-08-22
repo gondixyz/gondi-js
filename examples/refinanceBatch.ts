@@ -6,6 +6,7 @@ import {
   generateBlock,
   setAllowances,
   sleep,
+  testNftCollateralAddress,
   testSingleNftOfferInput,
   testTokenId,
   users,
@@ -47,6 +48,7 @@ const emitLoansRefinanceBatchAndRepay = async (contract?: Address) => {
     offerExecution: borrower.offerExecutionFromOffers([signedOffer]),
     duration: signedOffer.duration,
     tokenId: testTokenId,
+    nftCollateralAddress: testNftCollateralAddress,
   });
   const { loan, loanId } = await emitLoan.waitTxInBlock();
 
@@ -64,6 +66,7 @@ const emitLoansRefinanceBatchAndRepay = async (contract?: Address) => {
       offerExecution: borrower.offerExecutionFromOffers([signedOfferTwo]),
       duration: signedOfferTwo.duration,
       tokenId: testTokenId,
+      nftCollateralAddress: testNftCollateralAddress,
     });
     const { loan: loanTwo, loanId: loanIdTwo } = await emitLoanTwo.waitTxInBlock();
     console.log(`both loans emitted: ${contractVersionString}`);
