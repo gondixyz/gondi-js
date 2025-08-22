@@ -1,3 +1,23 @@
+# Breaking Changes 0.22.0
+
+### Important
+
+---
+
+This document outlines the breaking changes introduced in our codebase for version 0.22.0. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [Emit Loan](#emit-loan) emitLoan now expects a new argument `nftCollateralAddress`
+
+---
+
+## Emit Loan
+
+**Description:**
+
+`emitLoan` now expects a new argument `nftCollateralAddress`. It should be the address of the NFT collateral.
+
 # Breaking Changes 0.18.6
 
 ### Important
