@@ -4020,6 +4020,13 @@ export type CollectionIdBySlugQueryVariables = Exact<{
 
 export type CollectionIdBySlugQuery = { __typename?: 'Query', collection?: { __typename?: 'Collection', id: string } | null };
 
+export type CollectionStepsByIdQueryVariables = Exact<{
+  collectionId: Scalars['Int'];
+}>;
+
+
+export type CollectionStepsByIdQuery = { __typename?: 'Query', steps: { __typename?: 'OfferSteps', aprBpsStep: bigint, origFeeBpsStep: bigint, usdcStep: bigint, wethStep: bigint } };
+
 export type ListListingsQueryVariables = Exact<{
   collections?: InputMaybe<Array<Scalars['Int']> | Scalars['Int']>;
   userFilter?: InputMaybe<UserFilter>;
@@ -7054,6 +7061,16 @@ export const CollectionIdBySlugDocument = gql`
   }
 }
     `;
+export const CollectionStepsByIdDocument = gql`
+    query collectionStepsById($collectionId: Int!) {
+  steps: getCollectionOfferSteps(collectionId: $collectionId) {
+    aprBpsStep
+    origFeeBpsStep
+    usdcStep
+    wethStep
+  }
+}
+    `;
 export const ListListingsDocument = gql`
     query listListings($collections: [Int!], $userFilter: UserFilter, $marketplaceNames: [MarketplaceEnum!], $first: Int = 24, $after: String) {
   result: listListings(
@@ -7403,6 +7420,9 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
     },
     collectionIdBySlug(variables: CollectionIdBySlugQueryVariables, options?: C): Promise<CollectionIdBySlugQuery> {
       return requester<CollectionIdBySlugQuery, CollectionIdBySlugQueryVariables>(CollectionIdBySlugDocument, variables, options) as Promise<CollectionIdBySlugQuery>;
+    },
+    collectionStepsById(variables: CollectionStepsByIdQueryVariables, options?: C): Promise<CollectionStepsByIdQuery> {
+      return requester<CollectionStepsByIdQuery, CollectionStepsByIdQueryVariables>(CollectionStepsByIdDocument, variables, options) as Promise<CollectionStepsByIdQuery>;
     },
     listListings(variables?: ListListingsQueryVariables, options?: C): Promise<ListListingsQuery> {
       return requester<ListListingsQuery, ListListingsQueryVariables>(ListListingsDocument, variables, options) as Promise<ListListingsQuery>;
