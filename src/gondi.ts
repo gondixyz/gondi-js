@@ -42,7 +42,7 @@ import { max, min, mulDivUp } from '@/utils/number';
 import { isNative, isOpensea } from '@/utils/orders';
 import { FULFILLED, REJECTED } from '@/utils/promises';
 import { areSameAddress } from '@/utils/string';
-import { OptionalNullable } from '@/utils/types';
+import { isDefined, OptionalNullable } from '@/utils/types';
 
 interface GondiProps {
   wallet: Wallet;
@@ -257,12 +257,14 @@ export class Gondi {
     loanDuration,
     offers,
     tokenId,
+    repaymentCalldata,
   }: {
     amounts: bigint[];
     contractAddress: Address;
     loanDuration: bigint;
     offers: OfferFromExecutionOffer[];
     tokenId: bigint;
+    repaymentCalldata?: Hex | null | undefined;
   }) {
     const orderInput: BnplOrderInput = {
       amounts,
@@ -285,6 +287,14 @@ export class Gondi {
     }
 
     if (response.__typename !== 'BuyNowPayLaterOrder') throw new Error('This should never happen');
+
+    if (isDefined(repaymentCalldata)) {
+      return this.contracts.PurchaseBundler(offers[0].contractAddress).executeSellWithLoan({
+        emitCalldata: response.emitCalldata,
+        price: response.price,
+        repaymentCalldata,
+      });
+    }
 
     return this.contracts.PurchaseBundler(offers[0].contractAddress).buy({
       emitCalldata: response.emitCalldata,
