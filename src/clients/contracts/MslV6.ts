@@ -223,16 +223,19 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
 
     const mslEmitArgs = this.mapEmitLoanToMslEmitLoanArgs(emit);
     const { tokenId, offerExecution } = mslEmitArgs.executionData;
-    const encodedRevokeDelegations = delegations.map((delegation) =>
-      encodeFunctionData({
-        abi: multiSourceLoanAbiV6,
+    const encodedRevokeDelegations = delegations.map((delegation) => {
+      const args = [delegation, offerExecution[0].offer.nftCollateralAddress, tokenId];
+      if (this.version === '3.1') args.push(zeroHash);
+      return encodeFunctionData({
+        abi: this.abi,
         functionName: 'revokeDelegate',
-        args: [delegation, offerExecution[0].offer.nftCollateralAddress, tokenId],
-      }),
-    );
+        // @ts-ignore
+        args,
+      });
+    });
 
     const encodedEmitLoan = encodeFunctionData({
-      abi: multiSourceLoanAbiV6,
+      abi: this.abi,
       functionName: 'emitLoan',
       args: [mslEmitArgs],
     });
@@ -366,13 +369,13 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
       const isFullRefinance = refinancingPrincipalAmount === loan.principalAmount;
       if (isFullRefinance) {
         return encodeFunctionData({
-          abi: multiSourceLoanAbiV6,
+          abi: this.abi,
           functionName: 'refinanceFull',
           args: [offer, loan, zeroHash],
         });
       }
       return encodeFunctionData({
-        abi: multiSourceLoanAbiV6,
+        abi: this.abi,
         functionName: 'refinancePartial',
         args: [offer, loan],
       });
@@ -514,7 +517,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
     const txHash = await this.safeContractWrite.multicall([
       delegations.map((delegation) =>
         encodeFunctionData({
-          abi: multiSourceLoanAbiV6,
+          abi: this.abi,
           functionName: 'delegate',
           args: [
             delegation.loanId,
@@ -590,7 +593,10 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
     collection: Address;
     tokenId: bigint;
   }) {
-    const txHash = await this.safeContractWrite.revokeDelegate([to, collection, tokenId]);
+    const args = [to, collection, tokenId];
+    if (this.version === '3.1') args.push(zeroHash);
+    // @ts-ignore
+    const txHash = await this.safeContractWrite.revokeDelegate(args);
 
     return {
       txHash,
