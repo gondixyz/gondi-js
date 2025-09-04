@@ -165,6 +165,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
         },
       })),
       nftCollateralAddress,
+      loanId: 0n, // This is only checked for refi from offers not borrower initiated
       tokenId,
       duration,
       expirationTime: expirationTime ?? BigInt(millisToSeconds(Date.now()) + SECONDS_IN_DAY),
