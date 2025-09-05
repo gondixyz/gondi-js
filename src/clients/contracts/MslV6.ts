@@ -224,13 +224,10 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
     const mslEmitArgs = this.mapEmitLoanToMslEmitLoanArgs(emit);
     const { tokenId, offerExecution } = mslEmitArgs.executionData;
     const encodedRevokeDelegations = delegations.map((delegation) => {
-      const args = [delegation, offerExecution[0].offer.nftCollateralAddress, tokenId];
-      if (this.version === '3.1') args.push(zeroHash);
       return encodeFunctionData({
         abi: this.abi,
         functionName: 'revokeDelegate',
-        // @ts-ignore
-        args,
+        args: [delegation, offerExecution[0].offer.nftCollateralAddress, tokenId, zeroHash],
       });
     });
 
@@ -593,10 +590,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
     collection: Address;
     tokenId: bigint;
   }) {
-    const args = [to, collection, tokenId];
-    if (this.version === '3.1') args.push(zeroHash);
-    // @ts-ignore
-    const txHash = await this.safeContractWrite.revokeDelegate(args);
+    const txHash = await this.safeContractWrite.revokeDelegate([to, collection, tokenId, zeroHash]);
 
     return {
       txHash,
