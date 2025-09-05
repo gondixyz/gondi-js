@@ -1,11 +1,17 @@
 import { Address } from 'viem';
 
-import { FulfillmentDataResponse } from './types';
+import {
+  FulfillmentDataResponse,
+  InputDataFulfillAdvancedOrder,
+  InputDataMatchAdvancedOrders,
+} from './types';
 
 type ConstructorArgs = {
   apiUrl?: string;
   apiKey?: string;
 };
+
+const NULL_CONDUIT = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
 export class Opensea {
   apiUrl: string;
@@ -57,19 +63,33 @@ export class Opensea {
       throw new Error(`Invalid function name: ${functionName}`);
     }
 
-    const functionArgs = isMatchAdvancedOrders
-      ? [
-          transaction.input_data.orders,
-          transaction.input_data.criteriaResolvers,
-          transaction.input_data.fulfillments,
-          transaction.input_data.recipient,
-        ]
-      : [
-          transaction.input_data.advancedOrder,
-          transaction.input_data.criteriaResolvers,
-          transaction.input_data.fulfillerConduitKey,
-          transaction.input_data.recipient,
-        ];
+    let functionArgs: any[] = [];
+    if (isMatchAdvancedOrders) {
+      const inputData = transaction.input_data as InputDataMatchAdvancedOrders;
+
+      // Opensea response may return to use a conduit
+      // We change to null conduit key to use seaport for allowances
+      for (const order of inputData.orders) {
+        // We assume that our orders are the ones without signature
+        if (order['signature'] === '0x') {
+          order['parameters']['conduitKey'] = NULL_CONDUIT;
+        }
+      }
+      functionArgs = [
+        inputData.orders,
+        inputData.criteriaResolvers,
+        inputData.fulfillments,
+        inputData.recipient,
+      ];
+    } else {
+      const inputData = transaction.input_data as InputDataFulfillAdvancedOrder;
+      functionArgs = [
+        inputData.advancedOrder,
+        inputData.criteriaResolvers,
+        NULL_CONDUIT, // Null conduit key means the fulfiller uses the seaport contract for allowances
+        inputData.recipient,
+      ];
+    }
 
     return {
       eventName: 'OrderFulfilled',
