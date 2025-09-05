@@ -165,6 +165,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
         },
       })),
       nftCollateralAddress,
+      loanId: 0n, // This is only checked for refi from offers not borrower initiated
       tokenId,
       duration,
       expirationTime: expirationTime ?? BigInt(millisToSeconds(Date.now()) + SECONDS_IN_DAY),
@@ -222,16 +223,16 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
 
     const mslEmitArgs = this.mapEmitLoanToMslEmitLoanArgs(emit);
     const { tokenId, offerExecution } = mslEmitArgs.executionData;
-    const encodedRevokeDelegations = delegations.map((delegation) =>
-      encodeFunctionData({
-        abi: multiSourceLoanAbiV6,
+    const encodedRevokeDelegations = delegations.map((delegation) => {
+      return encodeFunctionData({
+        abi: this.abi,
         functionName: 'revokeDelegate',
-        args: [delegation, offerExecution[0].offer.nftCollateralAddress, tokenId],
-      }),
-    );
+        args: [delegation, offerExecution[0].offer.nftCollateralAddress, tokenId, zeroHash],
+      });
+    });
 
     const encodedEmitLoan = encodeFunctionData({
-      abi: multiSourceLoanAbiV6,
+      abi: this.abi,
       functionName: 'emitLoan',
       args: [mslEmitArgs],
     });
@@ -365,13 +366,13 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
       const isFullRefinance = refinancingPrincipalAmount === loan.principalAmount;
       if (isFullRefinance) {
         return encodeFunctionData({
-          abi: multiSourceLoanAbiV6,
+          abi: this.abi,
           functionName: 'refinanceFull',
           args: [offer, loan, zeroHash],
         });
       }
       return encodeFunctionData({
-        abi: multiSourceLoanAbiV6,
+        abi: this.abi,
         functionName: 'refinancePartial',
         args: [offer, loan],
       });
@@ -513,7 +514,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
     const txHash = await this.safeContractWrite.multicall([
       delegations.map((delegation) =>
         encodeFunctionData({
-          abi: multiSourceLoanAbiV6,
+          abi: this.abi,
           functionName: 'delegate',
           args: [
             delegation.loanId,
@@ -589,7 +590,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
     collection: Address;
     tokenId: bigint;
   }) {
-    const txHash = await this.safeContractWrite.revokeDelegate([to, collection, tokenId]);
+    const txHash = await this.safeContractWrite.revokeDelegate([to, collection, tokenId, zeroHash]);
 
     return {
       txHash,
