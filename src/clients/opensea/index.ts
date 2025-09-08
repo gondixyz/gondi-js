@@ -1,9 +1,9 @@
 import { Address } from 'viem';
 
 import {
+  FulfillAdvancedOrderTransaction,
   FulfillmentDataResponse,
-  InputDataFulfillAdvancedOrder,
-  InputDataMatchAdvancedOrders,
+  MatchAdvancedOrdersTransaction,
 } from './types';
 
 type ConstructorArgs = {
@@ -55,17 +55,20 @@ export class Opensea {
       consideration,
     });
 
-    const functionName = transaction.function.split('(')[0];
-    const isMatchAdvancedOrders = functionName === 'matchAdvancedOrders';
-    const isFulfillAdvancedOrder = functionName === 'fulfillAdvancedOrder';
+    const isMatchAdvancedOrders = (
+      transaction: FulfillmentDataResponse['fulfillment_data']['transaction'],
+    ): transaction is MatchAdvancedOrdersTransaction => {
+      return transaction.function.split('(')[0] === 'matchAdvancedOrders';
+    };
+    const isFulfillAdvancedOrder = (
+      transaction: FulfillmentDataResponse['fulfillment_data']['transaction'],
+    ): transaction is FulfillAdvancedOrderTransaction => {
+      return transaction.function.split('(')[0] === 'fulfillAdvancedOrder';
+    };
 
-    if (!isMatchAdvancedOrders && !isFulfillAdvancedOrder) {
-      throw new Error(`Invalid function name: ${functionName}`);
-    }
-
-    let functionArgs: any[] = [];
-    if (isMatchAdvancedOrders) {
-      const inputData = transaction.input_data as InputDataMatchAdvancedOrders;
+    let functionArgs: unknown[] = [];
+    if (isMatchAdvancedOrders(transaction)) {
+      const inputData = transaction.input_data;
 
       // Opensea response may return to use a conduit
       // We change to null conduit key to use seaport for allowances
@@ -81,19 +84,21 @@ export class Opensea {
         inputData.fulfillments,
         inputData.recipient,
       ];
-    } else {
-      const inputData = transaction.input_data as InputDataFulfillAdvancedOrder;
+    } else if (isFulfillAdvancedOrder(transaction)) {
+      const inputData = transaction.input_data;
       functionArgs = [
         inputData.advancedOrder,
         inputData.criteriaResolvers,
         NULL_CONDUIT, // Null conduit key means the fulfiller uses the seaport contract for allowances
         inputData.recipient,
       ];
+    } else {
+      throw new Error(`Invalid function name: ${transaction.function}`);
     }
 
     return {
       eventName: 'OrderFulfilled',
-      functionName,
+      functionName: transaction.function,
       functionArgs,
       to: transaction.to,
       value: transaction.value,

@@ -62,24 +62,29 @@ export type InputDataFulfillAdvancedOrder = {
   recipient: string;
 };
 
+export type MatchAdvancedOrdersTransaction = {
+  function: 'matchAdvancedOrders(((address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256),uint120,uint120,bytes,bytes)[],(uint256,uint8,uint256,uint256,bytes32[])[],((uint256,uint256)[],(uint256,uint256)[])[],address)';
+  chain: number;
+  to: string;
+  value: string | number;
+  input_data: InputDataMatchAdvancedOrders;
+};
+
+export type FulfillAdvancedOrderTransaction = {
+  function: `fulfillAdvancedOrder(${string})`;
+  chain: number;
+  to: string;
+  value: number;
+  input_data: InputDataFulfillAdvancedOrder;
+};
+
 export type FulfillmentDataResponse = {
   protocol: string;
   fulfillment_data: {
     transaction:
-      | {
-          function: 'matchAdvancedOrders(((address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256),uint120,uint120,bytes,bytes)[],(uint256,uint8,uint256,uint256,bytes32[])[],((uint256,uint256)[],(uint256,uint256)[])[],address)';
-          chain: number;
-          to: string;
-          value: string | number;
-          input_data: InputDataMatchAdvancedOrders;
-        }
-      | {
-          function: `fulfillAdvancedOrder(${string})`;
-          chain: number;
-          to: string;
-          value: number;
-          input_data: InputDataFulfillAdvancedOrder;
-        };
+      | MatchAdvancedOrdersTransaction
+      | FulfillAdvancedOrderTransaction
+      | { function: string };
     orders: {
       parameters: {
         offerer: string;
