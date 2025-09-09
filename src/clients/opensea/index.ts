@@ -51,6 +51,7 @@ export class Opensea {
       consideration,
     });
 
+    const functionName = transaction.function.split('(')[0];
     let functionArgs = [];
     if (isMatchAdvancedOrders(transaction)) {
       const inputData = transaction.input_data;
@@ -83,7 +84,7 @@ export class Opensea {
 
     return {
       eventName: 'OrderFulfilled',
-      functionName: transaction.function,
+      functionName,
       functionArgs,
       to: transaction.to,
       value: transaction.value,
