@@ -1,10 +1,6 @@
 import { Address } from 'viem';
 
-import {
-  FulfillAdvancedOrderTransaction,
-  FulfillmentDataResponse,
-  MatchAdvancedOrdersTransaction,
-} from './types';
+import { FulfillmentDataResponse, isFulfillAdvancedOrder, isMatchAdvancedOrders } from './types';
 
 type ConstructorArgs = {
   apiUrl?: string;
@@ -55,18 +51,7 @@ export class Opensea {
       consideration,
     });
 
-    const isMatchAdvancedOrders = (
-      transaction: FulfillmentDataResponse['fulfillment_data']['transaction'],
-    ): transaction is MatchAdvancedOrdersTransaction => {
-      return transaction.function.split('(')[0] === 'matchAdvancedOrders';
-    };
-    const isFulfillAdvancedOrder = (
-      transaction: FulfillmentDataResponse['fulfillment_data']['transaction'],
-    ): transaction is FulfillAdvancedOrderTransaction => {
-      return transaction.function.split('(')[0] === 'fulfillAdvancedOrder';
-    };
-
-    let functionArgs: unknown[] = [];
+    let functionArgs = [];
     if (isMatchAdvancedOrders(transaction)) {
       const inputData = transaction.input_data;
 

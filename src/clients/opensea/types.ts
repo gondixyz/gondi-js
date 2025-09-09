@@ -117,3 +117,15 @@ export type FulfillmentDataResponse = {
     }[];
   };
 };
+
+export const isMatchAdvancedOrders = (
+  transaction: FulfillmentDataResponse['fulfillment_data']['transaction'],
+): transaction is MatchAdvancedOrdersTransaction => {
+  return transaction.function.split('(')[0] === 'matchAdvancedOrders';
+};
+
+export const isFulfillAdvancedOrder = (
+  transaction: FulfillmentDataResponse['fulfillment_data']['transaction'],
+): transaction is FulfillAdvancedOrderTransaction => {
+  return transaction.function.split('(')[0] === 'fulfillAdvancedOrder';
+};
