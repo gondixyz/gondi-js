@@ -71,7 +71,7 @@ export type MatchAdvancedOrdersTransaction = {
 };
 
 export type FulfillAdvancedOrderTransaction = {
-  function: `fulfillAdvancedOrder(${string})`;
+  function: `fulfillAdvancedOrder(((address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256),uint120,uint120,bytes,bytes),(uint256,uint8,uint256,uint256,bytes32[])[],bytes32,address)`;
   chain: number;
   to: string;
   value: number;

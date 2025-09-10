@@ -1,13 +1,13 @@
 import { Address } from 'viem';
 
+import { zeroHash } from '@/blockchain';
+
 import { FulfillmentDataResponse, isFulfillAdvancedOrder, isMatchAdvancedOrders } from './types';
 
 type ConstructorArgs = {
   apiUrl?: string;
   apiKey?: string;
 };
-
-const NULL_CONDUIT = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
 export class Opensea {
   apiUrl: string;
@@ -61,7 +61,7 @@ export class Opensea {
       for (const order of inputData.orders) {
         // We assume that our orders are the ones without signature
         if (order['signature'] === '0x') {
-          order['parameters']['conduitKey'] = NULL_CONDUIT;
+          order['parameters']['conduitKey'] = zeroHash;
         }
       }
       functionArgs = [
@@ -75,7 +75,7 @@ export class Opensea {
       functionArgs = [
         inputData.advancedOrder,
         inputData.criteriaResolvers,
-        NULL_CONDUIT, // Null conduit key means the fulfiller uses the seaport contract for allowances
+        zeroHash, // Null conduit key means the fulfiller uses the seaport contract for allowances
         inputData.recipient,
       ];
     } else {
