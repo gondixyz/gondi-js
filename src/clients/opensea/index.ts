@@ -1,6 +1,8 @@
 import { Address } from 'viem';
 
-import { FulfillmentDataResponse } from './types';
+import { zeroHash } from '@/blockchain';
+
+import { FulfillmentDataResponse, isFulfillAdvancedOrder, isMatchAdvancedOrders } from './types';
 
 type ConstructorArgs = {
   apiUrl?: string;
@@ -50,26 +52,35 @@ export class Opensea {
     });
 
     const functionName = transaction.function.split('(')[0];
-    const isMatchAdvancedOrders = functionName === 'matchAdvancedOrders';
-    const isFulfillAdvancedOrder = functionName === 'fulfillAdvancedOrder';
+    let functionArgs = [];
+    if (isMatchAdvancedOrders(transaction)) {
+      const inputData = transaction.input_data;
 
-    if (!isMatchAdvancedOrders && !isFulfillAdvancedOrder) {
-      throw new Error(`Invalid function name: ${functionName}`);
+      // Opensea response may return to use a conduit
+      // We change to null conduit key to use seaport for allowances
+      for (const order of inputData.orders) {
+        // We assume that our orders are the ones without signature
+        if (order['signature'] === '0x') {
+          order['parameters']['conduitKey'] = zeroHash;
+        }
+      }
+      functionArgs = [
+        inputData.orders,
+        inputData.criteriaResolvers,
+        inputData.fulfillments,
+        inputData.recipient,
+      ];
+    } else if (isFulfillAdvancedOrder(transaction)) {
+      const inputData = transaction.input_data;
+      functionArgs = [
+        inputData.advancedOrder,
+        inputData.criteriaResolvers,
+        zeroHash, // Null conduit key means the fulfiller uses the seaport contract for allowances
+        inputData.recipient,
+      ];
+    } else {
+      throw new Error(`Invalid function name: ${transaction.function}`);
     }
-
-    const functionArgs = isMatchAdvancedOrders
-      ? [
-          transaction.input_data.orders,
-          transaction.input_data.criteriaResolvers,
-          transaction.input_data.fulfillments,
-          transaction.input_data.recipient,
-        ]
-      : [
-          transaction.input_data.advancedOrder,
-          transaction.input_data.criteriaResolvers,
-          transaction.input_data.fulfillerConduitKey,
-          transaction.input_data.recipient,
-        ];
 
     return {
       eventName: 'OrderFulfilled',
