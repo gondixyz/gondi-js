@@ -1210,11 +1210,18 @@ export class Gondi {
       // first transfers the offers to the fulfiller
       // and then the fulfiller transfers the considerations
       // meaning that the fulfiller needs to be able to transfer the currency
-      await this.approveToken({
+      const isApproved = await this.isApprovedToken({
         tokenAddress: order.currencyAddress,
         amount: fulfillOrder.fee,
         to: order.marketPlaceAddress,
       });
+      if (!isApproved) {
+        await this.approveToken({
+          tokenAddress: order.currencyAddress,
+          amount: fulfillOrder.fee,
+          to: order.marketPlaceAddress,
+        });
+      }
     }
 
     const contract = this.contracts.GenericContract(getAddress(fulfillOrder.to));
