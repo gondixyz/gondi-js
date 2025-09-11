@@ -17,6 +17,10 @@ export const sumBy = <T extends string, O extends ObjectT<T>>(
   return array.reduce((acc, item) => acc + Number(item[key]), 0) as ObjectValue<T, O>;
 };
 
+export const sumBigInt = (...a: bigint[]) => {
+  return a.reduce<bigint>((sum, cur) => sum + cur, 0n);
+};
+
 export const maxBy = <T extends string, O extends ObjectT<T>>(
   array: readonly O[],
   key: T,
