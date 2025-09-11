@@ -124,8 +124,12 @@ export const isMatchAdvancedOrders = (
   return transaction.function.split('(')[0] === 'matchAdvancedOrders';
 };
 
+export const isFulfillAdvancedOrderFunctionName = (functionName: string) => {
+  return functionName.split('(')[0] === 'fulfillAdvancedOrder';
+};
+
 export const isFulfillAdvancedOrder = (
   transaction: FulfillmentDataResponse['fulfillment_data']['transaction'],
 ): transaction is FulfillAdvancedOrderTransaction => {
-  return transaction.function.split('(')[0] === 'fulfillAdvancedOrder';
+  return isFulfillAdvancedOrderFunctionName(transaction.function);
 };

@@ -44,6 +44,8 @@ import { FULFILLED, REJECTED } from '@/utils/promises';
 import { areSameAddress } from '@/utils/string';
 import { isDefined, OptionalNullable } from '@/utils/types';
 
+import { isFulfillAdvancedOrderFunctionName } from './clients/opensea/types';
+
 interface GondiProps {
   wallet: Wallet;
   apiClient?: ApiProps['apiClient'];
@@ -1198,6 +1200,22 @@ export class Gondi {
         token_id: nft.tokenId.toString(),
       },
     });
+
+    if (
+      isFulfillAdvancedOrderFunctionName(fulfillOrder.functionName) &&
+      order.currencyAddress !== zeroAddress &&
+      fulfillOrder.fee > 0n
+    ) {
+      // This approval is needed since fulfillAdvancedOrder
+      // first transfers the offers to the fulfiller
+      // and then the fulfiller transfers the considerations
+      // meaning that the fulfiller needs to be able to transfer the currency
+      this.approveToken({
+        tokenAddress: order.currencyAddress,
+        amount: fulfillOrder.fee,
+        to: order.marketPlaceAddress,
+      });
+    }
 
     const contract = this.contracts.GenericContract(getAddress(fulfillOrder.to));
     const txHash = await contract.safeContractWrite[fulfillOrder.functionName](

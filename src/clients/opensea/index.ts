@@ -1,6 +1,7 @@
 import { Address } from 'viem';
 
 import { zeroHash } from '@/blockchain';
+import { max, sumBigInt } from '@/utils/number';
 
 import { FulfillmentDataResponse, isFulfillAdvancedOrder, isMatchAdvancedOrders } from './types';
 
@@ -53,6 +54,7 @@ export class Opensea {
 
     const functionName = transaction.function.split('(')[0];
     let functionArgs = [];
+    let fee = 0n;
     if (isMatchAdvancedOrders(transaction)) {
       const inputData = transaction.input_data;
 
@@ -72,6 +74,13 @@ export class Opensea {
       ];
     } else if (isFulfillAdvancedOrder(transaction)) {
       const inputData = transaction.input_data;
+      fee = sumBigInt(
+        ...inputData.advancedOrder.parameters.consideration
+          .filter((consideration) => consideration.itemType === 1)
+          .map((consideration) =>
+            max(BigInt(consideration.startAmount), BigInt(consideration.endAmount)),
+          ),
+      );
       functionArgs = [
         inputData.advancedOrder,
         inputData.criteriaResolvers,
@@ -88,6 +97,7 @@ export class Opensea {
       functionArgs,
       to: transaction.to,
       value: transaction.value,
+      fee,
     };
   }
 
