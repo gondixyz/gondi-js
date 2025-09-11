@@ -1210,7 +1210,7 @@ export class Gondi {
       // first transfers the offers to the fulfiller
       // and then the fulfiller transfers the considerations
       // meaning that the fulfiller needs to be able to transfer the currency
-      this.approveToken({
+      await this.approveToken({
         tokenAddress: order.currencyAddress,
         amount: fulfillOrder.fee,
         to: order.marketPlaceAddress,

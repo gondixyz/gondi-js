@@ -74,9 +74,10 @@ export class Opensea {
       ];
     } else if (isFulfillAdvancedOrder(transaction)) {
       const inputData = transaction.input_data;
+      const ERC20_ITEM_TYPE = 1;
       fee = sumBigInt(
         ...inputData.advancedOrder.parameters.consideration
-          .filter((consideration) => consideration.itemType === 1)
+          .filter((consideration) => consideration.itemType === ERC20_ITEM_TYPE)
           .map((consideration) =>
             max(BigInt(consideration.startAmount), BigInt(consideration.endAmount)),
           ),
