@@ -138,13 +138,13 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
       v4: '0xCa5a494Ca20483e21ec1E41FE1D9461Da77595Bd',
       v5: '0x478f6F994C6fb3cf3e444a489b3AD9edB8cCaE16',
       v6: '0xf65b99ce6dc5f6c556172bcc0ff27d3665a7d9a8',
-      v7: '0xTODO',
+      v7: '0xf41B389E0C1950dc0B16C9498eaE77131CC08A56',
     },
     AuctionLoanLiquidator: {
       v4: '0x237e4421C742d843Fdd96D22294D338507e17091',
       v5: '0x97d34635b605c2f1630d6b4c6c5d222b8a2ca47d',
       v6: '0x2995ae7233fa89b314b5a707465b57a582f440f0',
-      v7: '0xTODO',
+      v7: '0x2995ae7233fa89b314b5a707465b57a582f440f0',
     },
     UserVault: {
       v5: '0x14a6Dcebb2Bb73aae1b199CCAadA75247b81976D',
@@ -153,7 +153,7 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
     PurchaseBundler: {
       v5: '0x3b59bffe109e0f33f20887343759a98b48ecdf5f',
       v6: '0x53ceda4c47585df08201955820e23bb261489140',
-      v7: '0xTODO',
+      v7: '0xfd31a0cd628f0bab2cc174c3abd6bfc2d01aca61',
     },
     Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
     Aave: '0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2',
