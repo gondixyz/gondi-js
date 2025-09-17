@@ -8,12 +8,12 @@ import {
 import { gql } from 'graphql-tag';
 import { SiweMessage } from 'siwe';
 
-import { apiDomain } from '@/clients/api';
+import { baseApiDomain } from '@/clients/api';
 import { Wallet } from '@/clients/contracts';
 
 export type Credential = SessionToken;
 
-const authApiUrl = () => `${apiDomain()}/graphql`;
+const authApiUrl = () => `${baseApiDomain()}/graphql`;
 
 export const getAuthClient = async () => {
   const link = ApolloLink.from([

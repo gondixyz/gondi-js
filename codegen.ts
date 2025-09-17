@@ -1,7 +1,7 @@
 import type { CodegenConfig } from '@graphql-codegen/cli';
 import { generate } from '@graphql-codegen/cli';
 
-const GONDI_API = process.env.GONDI_API ?? 'https://api.gondi.xyz/lending/graphql';
+const GONDI_API = process.env.GONDI_API ?? 'https://api2.gondi.xyz/graphql';
 
 console.log('Using schema', GONDI_API);
 

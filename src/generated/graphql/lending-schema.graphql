@@ -1156,7 +1156,9 @@ type MultiSourceLoanHistory implements Node {
   borrowerAddress: String!
   currency: Currency!
   duration: BigInt!
+  durationFromRenegotiationOrStart: BigInt!
   id: String!
+  lastRenegotiationDate: DateTime
   loanId: Int!
   nft: NFT!
   offerIds: [String!]!
@@ -1184,6 +1186,9 @@ type Mutation {
   Adds or updates a loan top-up request.A top-up request is only a suggestion for potential lenders to show your intentions and the terms you want.
   """
   addOrUpdateTopUpRequest(desiredAprBps: BigInt = null, desiredTopUp: BigInt = null, loanId: String!): TopUpRequest!
+
+  """Follow a collection for user feed."""
+  followCollection(collectionId: Int!): Void
 
   """
   This is the first step of the collection loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_signed_collection_offer. Refer to gondi-js examples for more details.
@@ -1270,6 +1275,9 @@ type Mutation {
 
   """Unhides a loan renegotiation offer. """
   showRenegotiation(contractAddress: Address = "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9", renegotiationId: String!): Renegotiation!
+
+  """Unfollow a collection for user feed."""
+  unfollowCollection(collectionId: Int!): Void
 }
 
 type NFT implements Node {
@@ -1440,6 +1448,7 @@ input NftWithAsksConfigInput {
 }
 
 enum NftsSortField {
+  HIGHEST_BID
   LAST_SALE_DATE
   LAST_SALE_PRICE
   LISTING_CREATED_DATE
@@ -1927,8 +1936,11 @@ type Query {
   globalSearch(searchTerm: String!): [GlobalSearchResult!]!
   listAuctions(after: String, currencyAddress: Address = null, first: Int = null, sortBy: [AuctionSortInput!] = null, statuses: [AuctionStatus!] = null): AuctionConnection!
   listBids(after: String, auctionId: String = null, auctionStatuses: [AuctionStatus!] = null, bidders: [String!] = null, currencyAddress: Address = null, first: Int = null, onlyLatest: Boolean! = false, sortBy: [BidSortInput!] = null): BidConnection!
-  listCollectionTraitTypes(after: String, collectionId: Int!, first: Int! = 40, valueType: TraitValueType = null): TraitTypeConnection!
-  listCollectionTraitValues(after: String, collectionId: Int!, first: Int! = 40, key: [String!] = null, nftId: Int = null, onlyEnums: Boolean = null, searchTerm: String = null, sortBy: [TraitValueSortInput!] = null): TraitValueConnection!
+
+  """List collections for feed."""
+  listCollectionFollows(after: String, first: Int! = 20): CollectionConnection!
+  listCollectionTraitTypes(after: String, collectionIds: [Int!] = null, first: Int! = 40, valueType: TraitValueType = null): TraitTypeConnection!
+  listCollectionTraitValues(after: String, collectionIds: [Int!] = null, first: Int! = 40, key: [String!] = null, nftId: Int = null, onlyEnums: Boolean = null, searchTerm: String = null, sortBy: [TraitValueSortInput!] = null): TraitValueConnection!
   listCollections(after: String, collections: [Int!] = null, excludeCollections: [Int!] = null, excludeGondiUserVault: Boolean = false, first: Int = null, forWallets: ForWalletsInput = null, searchTerm: String = null, sortBy: [CollectionSortInput!] = null, standards: [TokenStandardType!] = null, withAsks: WithAsksInput = null, withListings: Boolean = false, withLoans: Boolean = false, wrappers: Boolean = null): CollectionConnection!
 
   """
@@ -1943,7 +1955,7 @@ type Query {
   """
   List all activities. Includes loan activities, loan offers, loan renegotiations, trade orders, nft transfers.
   """
-  listEvents(after: String, collections: [Int!] = null, currencyAddresses: [Address!] = null, eventTypes: [EventType!] = null, first: Int! = 10, nfts: [Int!] = null, toTimestamp: Int = null, traits: [Int!] = null, users: [Address!] = null): EventConnection!
+  listEvents(after: String, collections: [Int!] = null, currencyAddresses: [Address!] = null, eventTypes: [EventType!] = null, first: Int! = 10, nfts: [Int!] = null, toTimestamp: Int = null, topEvents: Boolean = null, traits: [Int!] = null, users: [Address!] = null): EventConnection!
   listListings(after: String, collectionIds: [Int!] = null, currencyAddress: Address = null, excludeSlugs: [String!] = null, first: Int = null, marketplaceNames: [MarketplaceEnum!] = null, searchTerm: String = null, slugs: [String!] = null, userFilter: UserFilter = null, withLoans: Boolean = false): ListingConnection!
   listListingsForSale(after: String, collectionId: Int = null, currencyAddress: Address = null, first: Int = null, forTaker: Address = null, hidden: Boolean = null, maker: Address = null, nftId: Int = null, sortBy: [OrderSortInput!] = null, statuses: [OrderStatusType!] = null): OrderConnection!
 
@@ -1987,6 +1999,7 @@ type Query {
     statuses: [LoanStatusType!] = null
     terms: TermsFilter = null
   ): MultiSourceLoanConnection!
+  listNames(walletAddresses: [Address!]!): [String]!
   listNftDelegations(after: String, contractAddress: Address = null, first: Int! = 20, nftId: Int!): DelegationConnection!
   listNftOffersAndRenegotiations(
     after: String
@@ -2054,7 +2067,7 @@ type Query {
   """Deprecated field: use list_nfts instead."""
   listNftsFromUser(after: String, collectionAddresses: [Address!] = null, first: Int = null, includeInStash: Boolean! = false, searchTerm: String = null, sortBy: [NftSortInput!] = null, standards: [TokenStandardType!] = null, withLoans: Boolean = false, withNoWraps: Boolean = false): NFTConnection! @deprecated(reason: "Use list_nfts instead.")
   listNotifications(after: String, first: Int = null, notificationTypes: [NotificationType!] = null, onlyRead: Boolean! = false, onlyUnread: Boolean! = false): NotificationConnection!
-  listOffers(after: String, borrowerAddress: String = null, collections: [Int!] = null, contractAddress: Address = null, currencyAddress: Address = null, excludeLenders: [Address!] = null, first: Int = null, hidden: Boolean = null, lenders: [String!] = null, nfts: [Int!] = null, onlyCollectionOffers: Boolean = false, onlySingleNftOffers: Boolean = false, sluggedTokens: [SluggedTokenInput!] = null, slugs: [String!] = null, sortBy: [OffersSortInput!] = null, statuses: [OfferStatus!] = null, terms: TermsFilter = null, worseOffers: Boolean = true): OfferConnection!
+  listOffers(after: String, borrowerAddress: String = null, collections: [Int!] = null, contractAddresses: [Address!] = null, currencyAddress: Address = null, excludeLenders: [Address!] = null, first: Int = null, hidden: Boolean = null, lenders: [String!] = null, nfts: [Int!] = null, onlyCollectionOffers: Boolean = false, onlySingleNftOffers: Boolean = false, sluggedTokens: [SluggedTokenInput!] = null, slugs: [String!] = null, sortBy: [OffersSortInput!] = null, statuses: [OfferStatus!] = null, terms: TermsFilter = null, worseOffers: Boolean = true): OfferConnection!
 
   """
   This field is deprecated. Use list_orders_v2 instead. This field will be removed in the next major version.
@@ -2711,12 +2724,12 @@ type User implements Node {
   linkedWallets: [LinkedWallets!]!
   mail: String
   mailValidationDate: DateTime
-  originalProfilePicture: String
+  originalProfilePicture: String @deprecated(reason: "DEPRECATED")
   profilePictureId: Int
-  size64ProfilePicture: String
-  size128ProfilePicture: String
-  size256ProfilePicture: String
-  size512ProfilePicture: String
+  size64ProfilePicture: String @deprecated(reason: "DEPRECATED")
+  size128ProfilePicture: String @deprecated(reason: "DEPRECATED")
+  size256ProfilePicture: String @deprecated(reason: "DEPRECATED")
+  size512ProfilePicture: String @deprecated(reason: "DEPRECATED")
   statistics: UserStatistics!
   twitterHandle: String
   updatedAt: DateTime

@@ -32,7 +32,8 @@ const mapPageInfo = ({ endCursor, hasNextPage }: PageInfo) =>
       { hasNextPage, cursor: endCursor! }
     : { hasNextPage, cursor: null };
 
-export const apiDomain = () => process.env.GONDI_URL ?? 'https://api.gondi.xyz';
+export const baseApiDomain = () => process.env.GONDI_BASE_URL ?? 'https://api.gondi.xyz';
+export const lendingApiDomain = () => process.env.GONDI_LENDING_URL ?? 'https://api2.gondi.xyz';
 
 export class Api {
   api: ReturnType<typeof getSdkApollo>;
