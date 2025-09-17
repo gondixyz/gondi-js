@@ -91,8 +91,16 @@ export class BaseContract<TAbi extends Abi> {
     });
   }
 
-  async sendTransactionData(data: Hex, value?: bigint) {
-    const txHash = await this.sendTransactionWithAbiValidation(data, value);
+  async sendTransactionData(
+    data: Hex,
+    value?: bigint,
+    options: { revertIfSimulationFails?: boolean } = { revertIfSimulationFails: false },
+  ) {
+    const txHash = await this.sendTransactionWithAbiValidation(
+      data,
+      value,
+      options.revertIfSimulationFails,
+    );
     return {
       txHash,
       waitTxInBlock: async () => {
@@ -110,7 +118,11 @@ export class BaseContract<TAbi extends Abi> {
     return this.wallet.sendTransaction({ data, to: this.address, value });
   }
 
-  private async sendTransactionWithAbiValidation(data: Hex, value?: bigint) {
+  private async sendTransactionWithAbiValidation(
+    data: Hex,
+    value?: bigint,
+    revertIfSimulationFails = false,
+  ) {
     try {
       const decoded = decodeFunctionData({
         abi: this.abi,
@@ -119,6 +131,9 @@ export class BaseContract<TAbi extends Abi> {
       // @ts-expect-error
       return this.safeContractWrite[decoded.functionName](decoded.args, { value });
     } catch (e) {
+      if (revertIfSimulationFails) {
+        throw e;
+      }
       return this.sendRawTransaction(data, value);
     }
   }
