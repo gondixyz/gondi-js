@@ -27,6 +27,7 @@ interface Contracts {
   };
   Seaport: Address;
   Aave: Address;
+  Cryptopunks: Address;
 }
 
 interface ApiKeys {
@@ -102,6 +103,8 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
       Seaport:
         ensureAddress(process.env.GONDI_SEAPORT) ?? '0x0000000000000068F116a894984e2DB1123eB395',
       Aave: ensureAddress(process.env.GONDI_AAVE) ?? '0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2',
+      Cryptopunks:
+        ensureAddress(process.env.CRYPTOPUNKS) ?? '0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb',
     };
   }
 
@@ -130,6 +133,7 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
       },
       Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
       Aave: '0xTODO',
+      Cryptopunks: '0xTODO',
     };
   }
 
@@ -157,6 +161,7 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
     },
     Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
     Aave: '0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2',
+    Cryptopunks: '0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb',
   };
 };
 

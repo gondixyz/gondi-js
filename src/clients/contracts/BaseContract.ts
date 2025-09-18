@@ -111,15 +111,16 @@ export class BaseContract<TAbi extends Abi> {
   }
 
   private async sendTransactionWithAbiValidation(data: Hex, value?: bigint) {
+    let decoded;
     try {
-      const decoded = decodeFunctionData({
+      decoded = decodeFunctionData({
         abi: this.abi,
         data,
       });
-      // @ts-expect-error
-      return this.safeContractWrite[decoded.functionName](decoded.args, { value });
     } catch (e) {
       return this.sendRawTransaction(data, value);
     }
+    // @ts-expect-error
+    return this.safeContractWrite[decoded.functionName](decoded.args, { value });
   }
 }
