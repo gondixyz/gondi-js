@@ -137,7 +137,6 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
     };
   }
 
-  // MAINNET
   return {
     MultiSourceLoan: {
       v4: '0xCa5a494Ca20483e21ec1E41FE1D9461Da77595Bd',

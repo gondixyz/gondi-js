@@ -112,8 +112,7 @@ export class Contracts {
 
     if (areSameAddress(address, contracts.Seaport)) {
       abi = seaportABI;
-    }
-    if (areSameAddress(address, contracts.Cryptopunks)) {
+    } else if (areSameAddress(address, contracts.Cryptopunks)) {
       abi = cryptopunksABI;
     }
 
