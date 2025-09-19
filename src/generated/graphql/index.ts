@@ -154,6 +154,7 @@ export type BnplOrderInput = {
   amounts: Array<Scalars['BigInt']>;
   contractAddress: Scalars['Address'];
   emitSignature?: InputMaybe<Scalars['Signature']>;
+  extraSeaportData?: InputMaybe<Scalars['Hex']>;
   loanDuration: Scalars['BigInt'];
   offerIds: Array<Scalars['String']>;
   signature?: InputMaybe<Scalars['Signature']>;
@@ -237,7 +238,7 @@ export type BuyNowPayLaterOrder = Event & Node & Order & {
   updatedDate: Scalars['DateTime'];
 };
 
-export type BuyNowPayLaterOrderSignatureRequest = BuyNowPayLaterOrder | SignatureRequest;
+export type BuyNowPayLaterOrderSignatureRequestExtraSeaportData = BuyNowPayLaterOrder | ExtraSeaportData | SignatureRequest;
 
 /** An NFT collection. */
 export type Collection = Node & {
@@ -755,6 +756,11 @@ export enum EventType {
   SaleListing = 'SALE_LISTING',
   Transfer = 'TRANSFER'
 }
+
+export type ExtraSeaportData = {
+  __typename?: 'ExtraSeaportData';
+  extraData: Scalars['Hex'];
+};
 
 export type FloatStatHistory = {
   __typename?: 'FloatStatHistory';
@@ -1385,7 +1391,7 @@ export type Mutation = {
   markNotificationIdsAsRead?: Maybe<Scalars['Void']>;
   markNotificationsAsRead?: Maybe<Scalars['Void']>;
   /** Creates a buy now pay later order. Buy now pay later orders are orders which use a loan offer principal to buy and NFT and start a loan making the borrower the creator of the order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You will have to do this process two times since multiple signatures are required. You should receive an BuyNowPayLaterOrder if everything went well. Refer to gondi-js examples for more details on how to sign it and pay the order. */
-  publishBuyNowPayLaterOrder: BuyNowPayLaterOrderSignatureRequest;
+  publishBuyNowPayLaterOrder: BuyNowPayLaterOrderSignatureRequestExtraSeaportData;
   /** Creates a collection trade order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an CollectionOrder if everything went well. An order can only be a BID. Refer to gondi-js examples for more details. */
   publishOrderForCollection: CollectionOrderSignatureRequest;
   /** Creates a single NFT trade order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an SingleNFTOrder if everything went well. An order can be an ASK or a BID. Refer to gondi-js examples for more details. */
@@ -1588,6 +1594,12 @@ export type Nft = Node & {
    */
   marketPlaceOfPrice?: Maybe<Scalars['String']>;
   maxNetPrincipalOffer?: Maybe<Offer>;
+  /**
+   *
+   *         Naked NFT for the same token_id.
+   *
+   */
+  nakedNft: Nft;
   name?: Maybe<Scalars['String']>;
   nftId: Scalars['String'];
   nftPriceSample?: Maybe<NftPriceSample>;
@@ -3928,7 +3940,7 @@ export type PublishBuyNowPayLaterOrderMutationVariables = Exact<{
 }>;
 
 
-export type PublishBuyNowPayLaterOrderMutation = { __typename?: 'Mutation', result: { __typename?: 'BuyNowPayLaterOrder', id: string, status: string, signature: Hex, emitCalldata: Hex, marketPlaceAddress: Address, price: bigint } | { __typename?: 'SignatureRequest', key: string, typedData: { __typename?: 'TypedData', types: object, primaryType: string, domain: object, message: object } } };
+export type PublishBuyNowPayLaterOrderMutation = { __typename?: 'Mutation', result: { __typename?: 'BuyNowPayLaterOrder', id: string, status: string, signature: Hex, emitCalldata: Hex, marketPlaceAddress: Address, price: bigint } | { __typename?: 'ExtraSeaportData', extraData: Hex } | { __typename?: 'SignatureRequest', key: string, typedData: { __typename?: 'TypedData', types: object, primaryType: string, domain: object, message: object } } };
 
 export type PublishOrderForCollectionMutationVariables = Exact<{
   orderInput: CollectionOrderInput;
@@ -4530,6 +4542,10 @@ export type EventEdgeFieldPolicy = {
 	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
 	node?: FieldPolicy<any> | FieldReadFunction<any>
 };
+export type ExtraSeaportDataKeySpecifier = ('extraData' | ExtraSeaportDataKeySpecifier)[];
+export type ExtraSeaportDataFieldPolicy = {
+	extraData?: FieldPolicy<any> | FieldReadFunction<any>
+};
 export type FloatStatHistoryKeySpecifier = ('timestamp' | 'value' | FloatStatHistoryKeySpecifier)[];
 export type FloatStatHistoryFieldPolicy = {
 	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -5007,7 +5023,7 @@ export type MutationFieldPolicy = {
 	showOrder?: FieldPolicy<any> | FieldReadFunction<any>,
 	showRenegotiation?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type NFTKeySpecifier = ('activeLoan' | 'collection' | 'collectionId' | 'createdDate' | 'description' | 'erc20Balances' | 'id' | 'image' | 'isFlagged' | 'listed' | 'marketPlaceOfPrice' | 'maxNetPrincipalOffer' | 'name' | 'nftId' | 'nftPriceSample' | 'owner' | 'price' | 'priceCurrencyAddress' | 'rarityRank' | 'rarityScore' | 'statistics' | 'tokenId' | 'traits' | 'url' | 'wrappedCount' | 'wrappersAndNakedNftIds' | 'wrappersAndNakedNfts' | 'wrapsNfts' | NFTKeySpecifier)[];
+export type NFTKeySpecifier = ('activeLoan' | 'collection' | 'collectionId' | 'createdDate' | 'description' | 'erc20Balances' | 'id' | 'image' | 'isFlagged' | 'listed' | 'marketPlaceOfPrice' | 'maxNetPrincipalOffer' | 'nakedNft' | 'name' | 'nftId' | 'nftPriceSample' | 'owner' | 'price' | 'priceCurrencyAddress' | 'rarityRank' | 'rarityScore' | 'statistics' | 'tokenId' | 'traits' | 'url' | 'wrappedCount' | 'wrappersAndNakedNftIds' | 'wrappersAndNakedNfts' | 'wrapsNfts' | NFTKeySpecifier)[];
 export type NFTFieldPolicy = {
 	activeLoan?: FieldPolicy<any> | FieldReadFunction<any>,
 	collection?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -5021,6 +5037,7 @@ export type NFTFieldPolicy = {
 	listed?: FieldPolicy<any> | FieldReadFunction<any>,
 	marketPlaceOfPrice?: FieldPolicy<any> | FieldReadFunction<any>,
 	maxNetPrincipalOffer?: FieldPolicy<any> | FieldReadFunction<any>,
+	nakedNft?: FieldPolicy<any> | FieldReadFunction<any>,
 	name?: FieldPolicy<any> | FieldReadFunction<any>,
 	nftId?: FieldPolicy<any> | FieldReadFunction<any>,
 	nftPriceSample?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -6158,6 +6175,10 @@ export type StrictTypedTypePolicies = {
 		keyFields?: false | EventEdgeKeySpecifier | (() => undefined | EventEdgeKeySpecifier),
 		fields?: EventEdgeFieldPolicy,
 	},
+	ExtraSeaportData?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | ExtraSeaportDataKeySpecifier | (() => undefined | ExtraSeaportDataKeySpecifier),
+		fields?: ExtraSeaportDataFieldPolicy,
+	},
 	FloatStatHistory?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | FloatStatHistoryKeySpecifier | (() => undefined | FloatStatHistoryKeySpecifier),
 		fields?: FloatStatHistoryFieldPolicy,
@@ -6843,6 +6864,9 @@ export const PublishBuyNowPayLaterOrderDocument = gql`
         domain
         message
       }
+    }
+    ... on ExtraSeaportData {
+      extraData
     }
   }
 }

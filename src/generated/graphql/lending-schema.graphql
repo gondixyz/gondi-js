@@ -119,6 +119,7 @@ input BNPLOrderInput {
   amounts: [BigInt!]!
   contractAddress: Address!
   emitSignature: Signature = null
+  extraSeaportData: Hex = null
   loanDuration: BigInt!
   offerIds: [String!]!
   signature: Signature = null
@@ -199,7 +200,7 @@ type BuyNowPayLaterOrder implements Event & Node & Order {
   updatedDate: DateTime!
 }
 
-union BuyNowPayLaterOrderSignatureRequest = BuyNowPayLaterOrder | SignatureRequest
+union BuyNowPayLaterOrderSignatureRequestExtraSeaportData = BuyNowPayLaterOrder | ExtraSeaportData | SignatureRequest
 
 """An NFT collection."""
 type Collection implements Node {
@@ -590,6 +591,10 @@ enum EventType {
   SALE
   SALE_LISTING
   TRANSFER
+}
+
+type ExtraSeaportData {
+  extraData: Hex!
 }
 
 type FloatStatHistory {
@@ -1217,7 +1222,7 @@ type Mutation {
   """
   Creates a buy now pay later order. Buy now pay later orders are orders which use a loan offer principal to buy and NFT and start a loan making the borrower the creator of the order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You will have to do this process two times since multiple signatures are required. You should receive an BuyNowPayLaterOrder if everything went well. Refer to gondi-js examples for more details on how to sign it and pay the order.
   """
-  publishBuyNowPayLaterOrder(orderInput: BNPLOrderInput!): BuyNowPayLaterOrderSignatureRequest!
+  publishBuyNowPayLaterOrder(orderInput: BNPLOrderInput!): BuyNowPayLaterOrderSignatureRequestExtraSeaportData!
 
   """
   Creates a collection trade order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an CollectionOrder if everything went well. An order can only be a BID. Refer to gondi-js examples for more details.
@@ -1290,6 +1295,9 @@ type NFT implements Node {
   """Deprecated."""
   marketPlaceOfPrice: String @deprecated(reason: "Get it from nftPriceSample")
   maxNetPrincipalOffer(currencyAddress: Address!): Offer
+
+  "\n        Naked NFT for the same token_id.\n        "
+  nakedNft: NFT!
   name: String
   nftId: String!
   nftPriceSample(currencyAddresses: [Address!] = null, includeUserPrivateListings: Boolean = null): NFTPriceSample

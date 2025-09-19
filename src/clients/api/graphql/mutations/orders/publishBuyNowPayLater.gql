@@ -17,5 +17,8 @@ mutation publishBuyNowPayLaterOrder($orderInput: BNPLOrderInput!) {
         message
       }
     }
+    ... on ExtraSeaportData {
+      extraData
+    }
   }
 }
