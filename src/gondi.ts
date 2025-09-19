@@ -1240,6 +1240,10 @@ export class Gondi {
       },
     };
   }
+
+  async getProtocolFee({ mslContractAddress }: { mslContractAddress: Address }) {
+    return this.contracts.Msl(mslContractAddress).getProtocolFee();
+  }
 }
 
 type MakeOfferType =
