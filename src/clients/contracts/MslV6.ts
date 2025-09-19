@@ -636,4 +636,8 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
     }
     return decoded.args[0];
   }
+
+  async getProtocolFee() {
+    return await this.contract.read.getProtocolFee();
+  }
 }

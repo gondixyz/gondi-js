@@ -403,4 +403,8 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
     }
     return decoded.args[0];
   }
+
+  async getProtocolFee(): ReturnType<MslV6['getProtocolFee']> {
+    throw new Error('Not implemented for V1');
+  }
 }
