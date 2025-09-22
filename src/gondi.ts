@@ -285,8 +285,7 @@ export class Gondi {
     while (response.__typename !== 'BuyNowPayLaterOrder') {
       if (response.__typename === 'ExtraSeaportData') {
         orderInput.extraSeaportData = response.extraData;
-      }
-      if (response.__typename === 'SignatureRequest') {
+      } else if (response.__typename === 'SignatureRequest') {
         const key = response.key as 'signature' | 'emitSignature';
         orderInput[key] = await this.wallet.signTypedData(
           response.typedData as TypedDataDefinition,
