@@ -5,6 +5,7 @@ import { OldERC721Wrapper } from '@/clients/contracts/OldERC721Wrapper';
 import { PurchaseBundler } from '@/clients/contracts/PurchaseBundler';
 import { Seaport } from '@/clients/contracts/Seaport';
 import { getContracts } from '@/deploys';
+import { cryptopunksABI } from '@/generated/blockchain/cryptopunks';
 import { oldErc721Abi } from '@/generated/blockchain/oldERC721';
 import { seaportABI } from '@/generated/blockchain/seaport';
 import { erc721ABI } from '@/generated/blockchain/v5';
@@ -111,6 +112,8 @@ export class Contracts {
 
     if (areSameAddress(address, contracts.Seaport)) {
       abi = seaportABI;
+    } else if (areSameAddress(address, contracts.Cryptopunks)) {
+      abi = cryptopunksABI;
     }
 
     return new BaseContract({
