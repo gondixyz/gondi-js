@@ -8,16 +8,10 @@ import { millisToSeconds } from '@/utils/dates';
 import { BaseContract } from './BaseContract';
 
 export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorABIV6> {
-  constructor({
-    walletClient,
-    contractAddress,
-  }: {
-    walletClient: Wallet;
-    contractAddress: Address;
-  }) {
+  constructor({ walletClient, address }: { walletClient: Wallet; address: Address }) {
     super({
       walletClient,
-      address: contractAddress,
+      address,
       abi: auctionWithBuyoutLoanLiquidatorABIV6,
     });
   }

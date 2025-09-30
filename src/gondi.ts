@@ -316,11 +316,11 @@ export class Gondi {
   }
 
   async makeRefinanceOffer({ renegotiation, contractAddress, ...props }: MakeRefinanceOfferProps) {
-    const { isV4, isV5 } = isLoanVersion(contractAddress, this.wallet.chain.id);
+    const { isV1, isV2 } = isLoanVersion(contractAddress, this.wallet.chain.id);
     if (props.skipSignature && props.withFallbackOffer) {
       throw new Error('skipSignature and withFallbackOffer cannot be true at the same time');
     }
-    if (props.withFallbackOffer && (isV4 || isV5)) {
+    if (props.withFallbackOffer && (isV1 || isV2)) {
       throw new Error('Unsupported contract address for withFallbackOffer argument');
     }
 
@@ -640,8 +640,8 @@ export class Gondi {
   private getDefaults() {
     const contracts = getContracts(this.wallet.chain);
     return {
-      Msl: contracts.MultiSourceLoan.v7,
-      UserVault: contracts.UserVault.v6,
+      Msl: contracts.MultiSourceLoan['3.1'],
+      UserVault: contracts.UserVault['3'],
     };
   }
 

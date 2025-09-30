@@ -12,17 +12,17 @@ export class PurchaseBundler extends BaseContract<typeof purchaseBundlerAbi> {
   msl: MslV5 | MslV6;
 
   constructor({
-    contractAddress,
+    address,
     walletClient,
     msl,
   }: {
-    contractAddress: Address;
+    address: Address;
     msl: MslV5 | MslV6;
     walletClient: Wallet;
   }) {
     super({
       walletClient,
-      address: contractAddress,
+      address,
       abi: purchaseBundlerAbi,
     });
     this.msl = msl;

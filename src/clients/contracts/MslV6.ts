@@ -17,18 +17,21 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
 
   constructor({
     walletClient,
-    contractAddress,
+    address,
     version,
   }: {
     walletClient: Wallet;
-    contractAddress: Address;
-    version: '3' | '3.1';
+    address: Address;
+    version: string;
   }) {
     super({
       walletClient,
-      address: contractAddress,
+      address,
       abi: version === '3' ? multiSourceLoanAbiV6 : multiSourceLoanAbiV7,
     });
+    if (version !== '3' && version !== '3.1') {
+      throw new Error(`Invalid version ${version}`);
+    }
     this.version = version;
   }
 

@@ -3,7 +3,7 @@ import { Abi, Account, Address, Chain, PublicClient, Transport, WalletClient } f
 import { Erc20 } from '@/clients/contracts/Erc20';
 import { OldERC721Wrapper } from '@/clients/contracts/OldERC721Wrapper';
 import { PurchaseBundler } from '@/clients/contracts/PurchaseBundler';
-import { getContracts } from '@/deploys';
+import { getContracts, getVersionFromMslAddress, getVersionFromUserVaultAddress } from '@/deploys';
 import { cryptopunksABI } from '@/generated/blockchain/cryptopunks';
 import { oldErc721Abi } from '@/generated/blockchain/oldERC721';
 import { seaportABI } from '@/generated/blockchain/seaport';
@@ -41,6 +41,31 @@ export class Contracts {
     this.publicClient = publicClient;
   }
 
+  _Msls = {
+    '1': MslV4,
+    '2': MslV5,
+    '3': MslV6,
+    '3.1': MslV6,
+  };
+
+  _Alls = {
+    '1': AllV4,
+    '2': AllV5,
+    '3': AllV6,
+    '3.1': AllV6,
+  };
+
+  _PBs = {
+    '2': PurchaseBundler,
+    '3': PurchaseBundler,
+    '3.1': PurchaseBundler,
+  };
+
+  _UserVaults = {
+    '2': UserVaultV5,
+    '3': UserVaultV6,
+  };
+
   GenericContract(address: Address) {
     const contracts = getContracts(this.walletClient.chain);
 
@@ -59,33 +84,15 @@ export class Contracts {
     });
   }
 
-  Msl(contractAddress: Address) {
-    const contracts = getContracts(this.walletClient.chain);
+  Msl(address: Address) {
+    const version = getVersionFromMslAddress(this.walletClient.chain, address);
+    const Msl = this._Msls[version];
 
-    if (areSameAddress(contractAddress, contracts.MultiSourceLoan.v4)) {
-      return new MslV4({ walletClient: this.walletClient });
-    }
-    if (areSameAddress(contractAddress, contracts.MultiSourceLoan.v5)) {
-      return new MslV5({ walletClient: this.walletClient });
-    }
-    if (areSameAddress(contractAddress, contracts.MultiSourceLoan.v6)) {
-      return new MslV6({
-        walletClient: this.walletClient,
-        contractAddress: contracts.MultiSourceLoan.v6,
-        version: '3',
-      });
-    }
-    if (areSameAddress(contractAddress, contracts.MultiSourceLoan.v7)) {
-      return new MslV6({
-        walletClient: this.walletClient,
-        contractAddress: contracts.MultiSourceLoan.v7,
-        version: '3.1',
-      });
-    }
-
-    throw new Error(
-      `Invalid Contract Address ${contractAddress} for chain ${this.walletClient.chain.id}`,
-    );
+    return new Msl({
+      walletClient: this.walletClient,
+      address,
+      version,
+    });
   }
 
   /**
@@ -93,29 +100,15 @@ export class Contracts {
    * @param contractAddress The contract address of the MSL contract
    * @returns The corresponding AuctionLoanLiquidator contract
    */
-  All(contractAddress: Address) {
+  All(mslContractAddress: Address) {
+    const version = getVersionFromMslAddress(this.walletClient.chain, mslContractAddress);
+    const All = this._Alls[version];
     const contracts = getContracts(this.walletClient.chain);
 
-    if (areSameAddress(contractAddress, contracts.MultiSourceLoan.v4)) {
-      return new AllV4({ walletClient: this.walletClient });
-    }
-    if (areSameAddress(contractAddress, contracts.MultiSourceLoan.v5)) {
-      return new AllV5({ walletClient: this.walletClient });
-    }
-
-    if (areSameAddress(contractAddress, contracts.MultiSourceLoan.v6)) {
-      return new AllV6({
-        walletClient: this.walletClient,
-        contractAddress: contracts.AuctionLoanLiquidator.v6,
-      });
-    }
-    if (areSameAddress(contractAddress, contracts.MultiSourceLoan.v7)) {
-      return new AllV6({
-        walletClient: this.walletClient,
-        contractAddress: contracts.AuctionLoanLiquidator.v7,
-      });
-    }
-    throw new Error(`Invalid Contract Address ${contractAddress}`);
+    return new All({
+      walletClient: this.walletClient,
+      address: contracts.AuctionLoanLiquidator[version],
+    });
   }
 
   /**
@@ -124,7 +117,10 @@ export class Contracts {
    * @returns The corresponding PurchaseBundler contract
    */
   PurchaseBundler(mslContractAddress: Address) {
-    const contracts = getContracts(this.walletClient.chain);
+    const version = getVersionFromMslAddress(this.walletClient.chain, mslContractAddress);
+    if (version === '1') {
+      throw new Error('V1 has no support for PurchaseBundler');
+    }
 
     const msl = this.Msl(mslContractAddress);
     if (msl instanceof MslV4) {
@@ -132,41 +128,24 @@ export class Contracts {
       throw new Error('MslV4 is not supported for PurchaseBundler');
     }
 
-    if (areSameAddress(mslContractAddress, contracts.MultiSourceLoan.v5)) {
-      return new PurchaseBundler({
-        walletClient: this.walletClient,
-        contractAddress: contracts.PurchaseBundler.v5,
-        msl,
-      });
-    }
-    if (areSameAddress(mslContractAddress, contracts.MultiSourceLoan.v6)) {
-      return new PurchaseBundler({
-        walletClient: this.walletClient,
-        contractAddress: contracts.PurchaseBundler.v6,
-        msl,
-      });
-    }
-    if (areSameAddress(mslContractAddress, contracts.MultiSourceLoan.v7)) {
-      return new PurchaseBundler({
-        walletClient: this.walletClient,
-        contractAddress: contracts.PurchaseBundler.v7,
-        msl,
-      });
-    }
-    throw new Error(`Invalid Contract Address ${mslContractAddress}`);
-  }
-
-  UserVault(contractAddress: Address) {
+    const PurchaseBundler = this._PBs[version];
     const contracts = getContracts(this.walletClient.chain);
 
-    if (areSameAddress(contractAddress, contracts.UserVault.v5)) {
-      return new UserVaultV5({ walletClient: this.walletClient });
-    }
-    if (areSameAddress(contractAddress, contracts.UserVault.v6)) {
-      return new UserVaultV6({ walletClient: this.walletClient });
-    }
+    return new PurchaseBundler({
+      walletClient: this.walletClient,
+      address: contracts.PurchaseBundler[version],
+      msl,
+    });
+  }
 
-    throw new Error(`Invalid Contract Address ${contractAddress}`);
+  UserVault(address: Address) {
+    const version = getVersionFromUserVaultAddress(this.walletClient.chain, address);
+    const UserVault = this._UserVaults[version];
+
+    return new UserVault({
+      walletClient: this.walletClient,
+      address,
+    });
   }
 
   Nft(address: Address, standard: NftStandard) {
