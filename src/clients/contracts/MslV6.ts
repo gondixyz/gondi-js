@@ -13,7 +13,7 @@ import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 import { BaseContract } from './BaseContract';
 
 export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof multiSourceLoanAbiV7> {
-  version: string;
+  version: '3' | '3.1';
 
   constructor({
     walletClient,

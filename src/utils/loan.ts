@@ -1,4 +1,4 @@
-import { Address, isAddress } from 'viem';
+import { isAddress } from 'viem';
 
 import { LoanV4, LoanV5, LoanV6, zeroAddress } from '@/blockchain';
 import { getContracts } from '@/deploys';
@@ -70,40 +70,6 @@ export const loanToMslLoan = (loan: LoanToMslLoanType) => {
   };
 };
 
-export const generateFakeRenegotiationInput = ({
-  loanId,
-  loan,
-  trancheIndex,
-  address,
-}: {
-  loanId: string;
-  loan: LoanToMslLoanType;
-  trancheIndex: boolean;
-  address: Address;
-}) => {
-  const mslLoan = loanToMslLoan(loan);
-  const options = trancheIndex
-    ? {
-        trancheIndex: mslLoan.source.map((_, i) => BigInt(i)),
-        targetPrincipal: [],
-      }
-    : {
-        trancheIndex: [],
-        targetPrincipal: mslLoan.source.map(() => 0n),
-      };
-  return {
-    loanId,
-    lenderAddress: address,
-    signerAddress: address,
-    expirationTime: BigInt(millisToSeconds(Date.now())),
-    aprBps: 0n,
-    feeAmount: 0n,
-    duration: mslLoan.duration,
-    principalAmount: mslLoan.principalAmount,
-    ...options,
-  };
-};
-
 export const getMslLoanId = (loan: LoanToMslLoanType) => {
   const mslLoan = loanToMslLoan(loan);
   return maxBy(mslLoan.source, 'loanId') ?? 0n;
@@ -118,11 +84,12 @@ export const getRemainingSeconds = (loan: Pick<LoanToMslLoanType, 'startTime' | 
 
 export const isLoanVersion = (contractAddress: string, chainId: number) => {
   const {
-    MultiSourceLoan: { v4, v5, v6 },
+    MultiSourceLoan: { v4, v5, v6, v7 },
   } = getContracts({ id: chainId });
   return {
     isV4: areSameAddress(contractAddress, v4),
     isV5: areSameAddress(contractAddress, v5),
     isV6: areSameAddress(contractAddress, v6),
+    isV7: areSameAddress(contractAddress, v7),
   };
 };

@@ -14,6 +14,8 @@ import { BaseContract } from './BaseContract';
 import { MslV6 } from './MslV6';
 
 export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
+  version = '2' as const;
+
   constructor({ walletClient }: { walletClient: Wallet }) {
     const {
       MultiSourceLoan: { v5 },
@@ -29,7 +31,7 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
   private getDomain() {
     return {
       name: CONTRACT_DOMAIN_NAME,
-      version: '2',
+      version: this.version,
       chainId: this.wallet.chain.id,
       verifyingContract: this.address,
     };

@@ -1,9 +1,4 @@
-import {
-  createClient,
-  Execute,
-  reservoirChains,
-  ReservoirClient,
-} from '@reservoir0x/reservoir-sdk';
+import { createClient, Execute, reservoirChains } from '@reservoir0x/reservoir-sdk';
 import {
   Account,
   Address,
@@ -19,6 +14,7 @@ import { Auction, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Api, Props as ApiProps } from '@/clients/api';
 import { Contracts, GondiPublicClient, Wallet } from '@/clients/contracts';
 import { Opensea } from '@/clients/opensea';
+import { getContracts } from '@/deploys';
 import {
   BnplOrderInput,
   Currency,
@@ -32,16 +28,13 @@ import * as model from '@/model';
 import { NftStandard } from '@/model';
 import { isEmptyCalldata } from '@/utils/blockchain';
 import {
-  generateFakeRenegotiationInput,
   isLoanVersion,
   loanToMslLoan,
   LoanToMslLoanType,
   renegotiationToMslRenegotiation,
 } from '@/utils/loan';
-import { max, min, mulDivUp } from '@/utils/number';
+import { max, mulDivUp } from '@/utils/number';
 import { isNative, isOpensea } from '@/utils/orders';
-import { FULFILLED, REJECTED } from '@/utils/promises';
-import { areSameAddress } from '@/utils/string';
 import { isDefined, OptionalNullable } from '@/utils/types';
 
 import { isFulfillAdvancedOrderFunctionName } from './clients/opensea/types';
@@ -58,10 +51,9 @@ export class Gondi {
   wallet: Wallet;
   account: Account;
   bcClient: GondiPublicClient;
-  api: Api;
-  opensea: Opensea;
-  defaults: { Msl: Address; UserVault: Address };
-  reservoirClient: ReservoirClient;
+  apiClient: Api;
+  openseaClient: Opensea;
+  reservoirApiKey?: string;
 
   constructor({ wallet, apiClient, openseaApiKey, reservoirApiKey }: GondiProps) {
     this.wallet = wallet;
@@ -71,25 +63,9 @@ export class Gondi {
       transport: () => createTransport(wallet.transport),
     });
     this.contracts = new Contracts(this.bcClient, wallet);
-    this.defaults = {
-      // TODO: uncomment this when we launch the new version
-      // Msl: this.contracts.MultiSourceLoanV7.address,
-      Msl: this.contracts.MultiSourceLoanV6.address,
-      UserVault: this.contracts.UserVaultV6.address,
-    };
-    this.api = new Api({ wallet, apiClient });
-    this.opensea = new Opensea({ apiKey: openseaApiKey ?? process.env.OPENSEA_API_KEY });
-    this.reservoirClient = createClient({
-      chains: [
-        {
-          id: wallet.chain.id,
-          name: wallet.chain.name,
-          baseApiUrl: reservoirChains.mainnet.baseApiUrl,
-          active: true,
-        },
-      ],
-      apiKey: reservoirApiKey ?? process.env.RESERVOIR_API_KEY,
-    });
+    this.apiClient = new Api({ wallet, apiClient });
+    this.openseaClient = new Opensea({ apiKey: openseaApiKey ?? process.env.OPENSEA_API_KEY });
+    this.reservoirApiKey = reservoirApiKey ?? process.env.RESERVOIR_API_KEY;
   }
 
   async makeSingleNftOffer(offer: model.SingleNftOfferInput) {
@@ -116,7 +92,7 @@ export class Gondi {
     mslContractAddress?: Address,
     skipSave?: boolean,
   ) {
-    const contract = this.contracts.Msl(mslContractAddress ?? this.defaults.Msl);
+    const contract = this.contracts.Msl(mslContractAddress ?? this.getDefaults().Msl);
     const contractAddress = contract.address;
 
     const offerInput = {
@@ -129,7 +105,7 @@ export class Gondi {
       offerValidators: [], // This is ignored by the API but it was required in the mutation
     };
 
-    const response = await this.api.generateSingleNftOfferHash({ offerInput });
+    const response = await this.apiClient.generateSingleNftOfferHash({ offerInput });
 
     const { offerHash, offerId, validators, lenderAddress, signerAddress, borrowerAddress } =
       response.offer;
@@ -162,7 +138,7 @@ export class Gondi {
     };
 
     if (skipSave) return signedOffer;
-    return await this.api.saveSingleNftOffer(signedOffer);
+    return await this.apiClient.saveSingleNftOffer(signedOffer);
   }
 
   async makeCollectionOffer(offer: model.CollectionOfferInput) {
@@ -171,7 +147,7 @@ export class Gondi {
 
   /** @internal */
   async _makeCollectionOffer(offer: model.CollectionOfferInput, mslContractAddress?: Address) {
-    const contract = this.contracts.Msl(mslContractAddress ?? this.defaults.Msl);
+    const contract = this.contracts.Msl(mslContractAddress ?? this.getDefaults().Msl);
     const contractAddress = contract.address;
 
     const offerInput = {
@@ -189,7 +165,7 @@ export class Gondi {
         },
       ],
     };
-    const response = await this.api.generateCollectionOfferHash({ offerInput });
+    const response = await this.apiClient.generateCollectionOfferHash({ offerInput });
     const collateralAddress = response.offer.collateralAddress;
 
     if (!collateralAddress) throw new Error('Invalid collection');
@@ -219,15 +195,15 @@ export class Gondi {
       offerId,
       signature,
     };
-    return await this.api.saveCollectionOffer(signedOffer);
+    return await this.apiClient.saveCollectionOffer(signedOffer);
   }
 
   async makeOrder(orderInput: Parameters<Api['publishOrder']>[0]) {
-    let response = await this.api.publishOrder(orderInput);
+    let response = await this.apiClient.publishOrder(orderInput);
     while (response.__typename === 'SignatureRequest') {
       const key = response.key as 'signature';
       orderInput[key] = await this.wallet.signTypedData(response.typedData as TypedDataDefinition);
-      response = await this.api.publishOrder(orderInput);
+      response = await this.apiClient.publishOrder(orderInput);
     }
 
     if (response.__typename !== 'SingleNFTOrder' && response.__typename !== 'CollectionOrder')
@@ -239,13 +215,13 @@ export class Gondi {
   async makeSellAndRepayOrder(
     sellAndRepayOrderInput: Parameters<Api['publishSellAndRepayOrder']>[0],
   ) {
-    let response = await this.api.publishSellAndRepayOrder(sellAndRepayOrderInput);
+    let response = await this.apiClient.publishSellAndRepayOrder(sellAndRepayOrderInput);
     while (response.__typename === 'SignatureRequest') {
       const key = response.key as 'signature' | 'repaymentSignature';
       sellAndRepayOrderInput[key] = await this.wallet.signTypedData(
         response.typedData as TypedDataDefinition,
       );
-      response = await this.api.publishSellAndRepayOrder(sellAndRepayOrderInput);
+      response = await this.apiClient.publishSellAndRepayOrder(sellAndRepayOrderInput);
     }
 
     if (response.__typename !== 'SellAndRepayOrder') throw new Error('This should never happen');
@@ -281,7 +257,7 @@ export class Gondi {
       return acc + amount - fee;
     }, 0n);
 
-    let response = await this.api.publishBuyNowPayLaterOrder(orderInput);
+    let response = await this.apiClient.publishBuyNowPayLaterOrder(orderInput);
     while (response.__typename !== 'BuyNowPayLaterOrder') {
       if (response.__typename === 'ExtraSeaportData') {
         orderInput.extraSeaportData = response.extraData;
@@ -291,7 +267,7 @@ export class Gondi {
           response.typedData as TypedDataDefinition,
         );
       }
-      response = await this.api.publishBuyNowPayLaterOrder(orderInput);
+      response = await this.apiClient.publishBuyNowPayLaterOrder(orderInput);
     }
 
     if (response.__typename !== 'BuyNowPayLaterOrder') throw new Error('This should never happen');
@@ -329,11 +305,11 @@ export class Gondi {
   }
 
   async hideOffer({ id, contractAddress }: { id: bigint; contractAddress: Address }) {
-    return this.api.hideOffer({ contract: contractAddress, id: id.toString() });
+    return this.apiClient.hideOffer({ contract: contractAddress, id: id.toString() });
   }
 
   async unhideOffer({ id, contractAddress }: { id: bigint; contractAddress: Address }) {
-    return this.api.unhideOffer({
+    return this.apiClient.unhideOffer({
       contract: contractAddress,
       id: id.toString(),
     });
@@ -355,7 +331,7 @@ export class Gondi {
       targetPrincipal: renegotiation.targetPrincipal ?? [],
       trancheIndex: renegotiation.trancheIndex ?? [],
     };
-    const response = await this.api.generateRenegotiationOfferHash({
+    const response = await this.apiClient.generateRenegotiationOfferHash({
       renegotiationInput,
     });
 
@@ -410,10 +386,10 @@ export class Gondi {
         capacity: 0n,
       };
       const fallbackOffer = await this._makeSingleNftOffer(offerInput, contractAddress, true);
-      return await this.api.saveRefinanceOffer(renegotiationOffer, fallbackOffer);
+      return await this.apiClient.saveRefinanceOffer(renegotiationOffer, fallbackOffer);
     }
 
-    return await this.api.saveRefinanceOffer(renegotiationOffer);
+    return await this.apiClient.saveRefinanceOffer(renegotiationOffer);
   }
 
   async cancelRefinanceOffer({ id, contractAddress }: { id: bigint; contractAddress: Address }) {
@@ -423,7 +399,7 @@ export class Gondi {
   }
 
   async hideRenegotiationOffer({ id, contractAddress }: { id: bigint; contractAddress: Address }) {
-    return this.api.hideRenegotiationOffer({
+    return this.apiClient.hideRenegotiationOffer({
       id: id.toString(),
       contractAddress,
     });
@@ -436,18 +412,18 @@ export class Gondi {
     id: bigint;
     contractAddress: Address;
   }) {
-    return this.api.unhideRenegotiationOffer({
+    return this.apiClient.unhideRenegotiationOffer({
       id: id.toString(),
       contractAddress,
     });
   }
 
   async hideOrder({ id }: { id: number }) {
-    return this.api.hideOrder({ id });
+    return this.apiClient.hideOrder({ id });
   }
 
   async showOrder({ id }: { id: number }) {
-    return this.api.showOrder({ id });
+    return this.apiClient.showOrder({ id });
   }
 
   async cancelAllRenegotiations({
@@ -531,7 +507,7 @@ export class Gondi {
     filterBy = {},
   }: model.ListOffersProps) {
     const { status, nft, collection, borrower, ...fields } = filterBy;
-    return await this.api.listOffers({
+    return await this.apiClient.listOffers({
       first: limit,
       after: cursor,
       sortBy,
@@ -544,7 +520,7 @@ export class Gondi {
   }
 
   async loans({ limit = 20, cursor, ...rest }: model.ListLoansProps) {
-    return await this.api.listLoans({
+    return await this.apiClient.listLoans({
       first: limit,
       after: cursor,
       ...rest,
@@ -552,11 +528,11 @@ export class Gondi {
   }
 
   async list({ nft }: { nft: number }) {
-    return await this.api.listNft({ nftId: nft });
+    return await this.apiClient.listNft({ nftId: nft });
   }
 
   async unlist({ nft }: { nft: number }) {
-    return await this.api.unlistNft({ nftId: nft });
+    return await this.apiClient.unlistNft({ nftId: nft });
   }
 
   async listings({
@@ -566,7 +542,7 @@ export class Gondi {
     limit = 20,
     cursor,
   }: model.ListListingsProps) {
-    return await this.api.listListings({
+    return await this.apiClient.listListings({
       collections,
       userFilter: user,
       marketplaceNames: marketPlaces,
@@ -582,8 +558,9 @@ export class Gondi {
     ) & { tokenId: bigint },
   ) {
     let result;
-    if (props.slug) result = await this.api.nftIdBySlugTokenId(props);
-    if (props.contractAddress) result = await this.api.nftIdByContractAddressAndTokenId(props);
+    if (props.slug) result = await this.apiClient.nftIdBySlugTokenId(props);
+    if (props.contractAddress)
+      result = await this.apiClient.nftIdByContractAddressAndTokenId(props);
     if (!result?.nft) {
       throw new Error(`invalid nft ${props}`);
     }
@@ -599,7 +576,7 @@ export class Gondi {
     const { statsCurrency: currency = zeroAddress, collections, standards, cursor } = props;
     const {
       collections: { edges, pageInfo },
-    } = await this.api.collections({ currency, collections, standards, after: cursor });
+    } = await this.apiClient.collections({ currency, collections, standards, after: cursor });
     return { collections: edges.map((edge) => edge.node), pageInfo };
   }
 
@@ -618,14 +595,14 @@ export class Gondi {
   ) {
     let result;
     if (props.slug) {
-      result = await this.api.collectionIdBySlug(props);
+      result = await this.apiClient.collectionIdBySlug(props);
       if (!result?.collection) {
         throw new Error(`invalid collection ${props}`);
       }
       return Number(result.collection.id);
     }
     if (props.contractAddress) {
-      result = await this.api.collectionsIdByContractAddress(props);
+      result = await this.apiClient.collectionsIdByContractAddress(props);
       if (!result?.collections) {
         throw new Error(`invalid collection ${props}`);
       }
@@ -634,12 +611,12 @@ export class Gondi {
   }
 
   async collectionStepsById(props: { collectionId: number }) {
-    const result = await this.api.collectionStepsById(props);
+    const result = await this.apiClient.collectionStepsById(props);
     return result.steps;
   }
 
   async ownedNfts(args: Parameters<Api['ownedNfts']>[0]) {
-    const result = await this.api.ownedNfts(args);
+    const result = await this.apiClient.ownedNfts(args);
     const { edges: ownedNfts, pageInfo } = result.ownedNfts;
     return { ownedNfts: ownedNfts.map((edge) => edge.node), pageInfo };
   }
@@ -660,113 +637,12 @@ export class Gondi {
     });
   }
 
-  private contractToVersion(contract: Address) {
-    if (areSameAddress(contract, this.contracts.MultiSourceLoanV4.address)) return 'v4';
-    if (areSameAddress(contract, this.contracts.MultiSourceLoanV5.address)) return 'v5';
-    return 'v6';
-  }
-
-  private async generateRenegotiationId({
-    loanId,
-    loan,
-  }: {
-    loanId: string;
-    loan: LoanToMslLoanType;
-  }) {
-    const renegotiationInput = generateFakeRenegotiationInput({
-      loanId,
-      loan,
-      trancheIndex: areSameAddress(loan.contractAddress, this.contracts.MultiSourceLoanV6.address),
-      address: this.account.address,
-    });
-    const { offer } = await this.api.generateRenegotiationOfferHash({ renegotiationInput });
-    return offer.renegotiationId;
-  }
-
-  async refinanceBatch({
-    aprBpsImprovementPercentage,
-    refinancings,
-  }: {
-    aprBpsImprovementPercentage: number; // e.g. 0.05
-    refinancings: {
-      loan: LoanToMslLoanType & { loanReferenceId: string };
-      source: ReturnType<typeof loanToMslLoan>['source'][number] & { loanIndex: number };
-      refinancingPrincipal: bigint;
-    }[];
-  }) {
-    const refisByContract: {
-      v4: {
-        [tokenLoanId: string]: Parameters<
-          Contracts['MultiSourceLoanV4']['refinanceBatch']
-        >[0]['refinancings'][number] & { loanReferenceId: string };
-      };
-      v5: {
-        [tokenLoanId: string]: Parameters<
-          Contracts['MultiSourceLoanV5']['refinanceBatch']
-        >[0]['refinancings'][number] & { loanReferenceId: string };
-      };
-      v6: {
-        [tokenLoanId: string]: Parameters<
-          Contracts['MultiSourceLoanV6']['refinanceBatch']
-        >[0]['refinancings'][number] & { loanReferenceId: string };
-      };
-    } = { v4: {}, v5: {}, v6: {} };
-
-    // Group sources by contract and loanId, so that we only have one refinance per loan.
-    refinancings.forEach(({ loan, source, refinancingPrincipal }) => {
-      const tokenLoanId = `${loan.nftCollateralAddress}-${loan.nftCollateralTokenId}`;
-      const version = this.contractToVersion(loan.contractAddress);
-      const currentLoanRefinancings = refisByContract[version][tokenLoanId];
-
-      const currentSourceNewAprBps = BigInt(
-        Math.floor(Number(source.aprBps) * (1 - aprBpsImprovementPercentage)),
-      );
-      const newAprBps = min(currentLoanRefinancings?.newAprBps, currentSourceNewAprBps);
-
-      refisByContract[version][tokenLoanId] = {
-        loan: loanToMslLoan(loan),
-        loanReferenceId: loan.loanReferenceId,
-        newAprBps,
-        sources: [...(currentLoanRefinancings?.sources ?? []), { source, refinancingPrincipal }],
-      };
-    });
-
-    // Generate renegotiationId for each contract version and call the refinanceBatch implementations.
-    const versions = ['v4', 'v5', 'v6'] as const;
-    const results = [];
-    for (const version of versions) {
-      const refinancings = Object.values(refisByContract[version]);
-
-      if (refinancings.length > 0) {
-        const renegotiationId = await this.generateRenegotiationId({
-          loan: refinancings[0].loan,
-          loanId: refinancings[0].loanReferenceId,
-        });
-
-        try {
-          // TODO: improve this
-          const refinanceBatch =
-            version === 'v4'
-              ? await this.contracts.MultiSourceLoanV4.refinanceBatch({
-                  refinancings: Object.values(refisByContract.v4),
-                  renegotiationId,
-                })
-              : version === 'v5'
-                ? await this.contracts.MultiSourceLoanV5.refinanceBatch({
-                    refinancings: Object.values(refisByContract.v5),
-                    renegotiationId,
-                  })
-                : await this.contracts.MultiSourceLoanV6.refinanceBatch({
-                    refinancings: Object.values(refisByContract.v6),
-                    renegotiationId,
-                  });
-          results.push({ status: FULFILLED, value: refinanceBatch });
-        } catch (reason) {
-          results.push({ status: REJECTED, reason, value: refinancings });
-        }
-      }
-    }
-    return results;
+  private getDefaults() {
+    const contracts = getContracts(this.wallet.chain);
+    return {
+      Msl: contracts.MultiSourceLoan.v7,
+      UserVault: contracts.UserVault.v6,
+    };
   }
 
   async refinanceFullLoan({
@@ -858,13 +734,14 @@ export class Gondi {
     to,
     collection,
     tokenId,
-    contract = this.defaults.Msl,
+    contract: externalContract,
   }: {
     to: Address;
     collection: Address;
     tokenId: bigint;
     contract?: Address;
   }) {
+    const contract = externalContract ?? this.getDefaults().Msl;
     return this.contracts.Msl(contract).revokeDelegate({ to, collection, tokenId });
   }
 
@@ -944,26 +821,28 @@ export class Gondi {
   async isApprovedNFTForAll({
     nftAddress,
     standard,
-    to = this.defaults.Msl,
+    to: externalTo,
   }: {
     nftAddress: Address;
     standard: Parameters<Contracts['Nft']>[1];
     to?: Address;
   }) {
     const nft = this.contracts.Nft(nftAddress, standard);
+    const to = externalTo ?? this.getDefaults().Msl;
     return nft.contract.read.isApprovedForAll([this.account.address, to]);
   }
 
   async approveNFTForAll({
     nftAddress,
     standard,
-    to = this.defaults.Msl,
+    to: externalTo,
   }: {
     nftAddress: Address;
     standard: Parameters<Contracts['Nft']>[1];
     to?: Address;
   }) {
     const nft = this.contracts.Nft(nftAddress, standard);
+    const to = externalTo ?? this.getDefaults().Msl;
     const txHash = await nft.safeContractWrite.setApprovalForAll([to, true]);
 
     return {
@@ -982,26 +861,28 @@ export class Gondi {
   async isApprovedToken({
     tokenAddress,
     amount,
-    to = this.defaults.Msl,
+    to: externalTo,
   }: {
     tokenAddress: Address;
     amount: bigint;
     to?: Address;
   }) {
     const erc20 = this.contracts.ERC20(tokenAddress);
+    const to = externalTo ?? this.getDefaults().Msl;
     return (await erc20.contract.read.allowance([this.account.address, to])) >= amount;
   }
 
   async approveToken({
     tokenAddress,
     amount = model.MAX_NUMBER,
-    to = this.defaults.Msl,
+    to: externalTo,
   }: {
     tokenAddress: Address;
     amount?: bigint;
     to?: Address;
   }) {
     const erc20 = this.contracts.ERC20(tokenAddress);
+    const to = externalTo ?? this.getDefaults().Msl;
     const txHash = await erc20.safeContractWrite.approve([to, amount]);
 
     return {
@@ -1019,12 +900,13 @@ export class Gondi {
 
   async currencyAllowance({
     tokenAddress,
-    to = this.defaults.Msl,
+    to: externalTo,
   }: {
     tokenAddress: Address;
     to?: Address;
   }) {
     const erc20 = this.contracts.ERC20(tokenAddress);
+    const to = externalTo ?? this.getDefaults().Msl;
     return await erc20.contract.read.allowance([this.account.address, to]);
   }
 
@@ -1045,45 +927,50 @@ export class Gondi {
   async _createUserVault({
     nfts,
     currencies = [],
-    userVaultAddress = this.defaults.UserVault,
+    userVaultAddress,
   }: {
     nfts: CreateVaultNfts;
     currencies?: CreateVaultCurrencies;
     userVaultAddress?: Address;
   }) {
-    return this.contracts.UserVault(userVaultAddress).createVault(nfts, currencies);
+    const userVault = userVaultAddress ?? this.getDefaults().UserVault;
+    return this.contracts.UserVault(userVault).createVault(nfts, currencies);
   }
 
   async depositUserVaultERC721s({
-    userVaultAddress = this.defaults.UserVault,
+    userVaultAddress,
     ...data
   }: { userVaultAddress?: Address } & DepositERC721sArgs) {
-    return this.contracts.UserVault(userVaultAddress).depositERC721s(data);
+    const userVault = userVaultAddress ?? this.getDefaults().UserVault;
+    return this.contracts.UserVault(userVault).depositERC721s(data);
   }
 
   async depositUserVaultERC1155s({
-    userVaultAddress = this.defaults.UserVault,
+    userVaultAddress,
     ...data
   }: { userVaultAddress?: Address } & DepositERC1155sArgs) {
-    return this.contracts.UserVault(userVaultAddress).depositERC1155s(data);
+    const userVault = userVaultAddress ?? this.getDefaults().UserVault;
+    return this.contracts.UserVault(userVault).depositERC1155s(data);
   }
 
   async depositUserVaultERC20({
-    userVaultAddress = this.defaults.UserVault,
+    userVaultAddress,
     ...data
   }: { userVaultAddress?: Address } & DepositERC20Args) {
-    return this.contracts.UserVault(userVaultAddress).depositERC20(data);
+    const userVault = userVaultAddress ?? this.getDefaults().UserVault;
+    return this.contracts.UserVault(userVault).depositERC20(data);
   }
 
   async burnUserVaultAndWithdraw({
-    userVaultAddress = this.defaults.UserVault,
+    userVaultAddress,
     ...data
   }: { userVaultAddress?: Address } & BurnAndWithdrawArgs) {
-    return this.contracts.UserVault(userVaultAddress).burnAndWithdraw(data);
+    const userVault = userVaultAddress ?? this.getDefaults().UserVault;
+    return this.contracts.UserVault(userVault).burnAndWithdraw(data);
   }
 
   async wrapOldERC721({ collection, tokenId }: wrapOldERC721Args) {
-    const wrapperAddress = await this.api.getWrapperAddress(collection);
+    const wrapperAddress = await this.apiClient.getWrapperAddress(collection);
     const wrapper = this.contracts.OldERC721Wrapper(wrapperAddress);
     const naked = this.contracts.OldERC721(collection.contractData.contractAddress);
     const stashAddress = await wrapper.contract.read.stashAddress([this.wallet.account.address]);
@@ -1098,7 +985,7 @@ export class Gondi {
   }
 
   async unwrapOldERC721({ collection, tokenId }: wrapOldERC721Args) {
-    const wrapperAddress = await this.api.getWrapperAddress(collection);
+    const wrapperAddress = await this.apiClient.getWrapperAddress(collection);
     const wrapper = this.contracts.OldERC721Wrapper(wrapperAddress);
 
     return await wrapper.unwrap(tokenId);
@@ -1140,7 +1027,19 @@ export class Gondi {
     currency: Pick<Currency, 'address' | 'decimals'>;
     orderId: string;
   }) {
-    const buyResult = await this.reservoirClient.actions.buyToken({
+    const reservoirClient = createClient({
+      chains: [
+        {
+          id: this.wallet.chain.id,
+          name: this.wallet.chain.name,
+          // TODO: change this to the correct chain or remove reservoir directly.
+          baseApiUrl: reservoirChains.mainnet.baseApiUrl,
+          active: true,
+        },
+      ],
+      apiKey: this.reservoirApiKey,
+    });
+    const buyResult = await reservoirClient.actions.buyToken({
       items: [{ orderId }],
       wallet: this.wallet,
       expectedPrice: {
@@ -1182,7 +1081,7 @@ export class Gondi {
     }
 
     if (isNative(order.marketPlace)) {
-      const { saleCalldata } = await this.api.getSaleCalldata({
+      const { saleCalldata } = await this.apiClient.getSaleCalldata({
         orderId: Number(order.id),
         nftId: Number(nft.id),
         taker: this.wallet.account.address,
@@ -1197,7 +1096,7 @@ export class Gondi {
         .sendTransactionData(saleCalldata, price);
     }
 
-    const fulfillOrder = await this.opensea.fulfillOrder({
+    const fulfillOrder = await this.openseaClient.fulfillOrder({
       hash: order.originalId,
       protocolAddress: order.marketPlaceAddress,
       fulfiller: { address: this.wallet.account.address },
