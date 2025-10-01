@@ -1,3 +1,23 @@
+# Breaking Changes 0.23.0
+
+### Important
+
+---
+
+This document outlines the breaking changes introduced in our codebase for version 0.23.0. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [Refinance batch](#refinance-bath) refinanceBatch has been removed from sdk.
+
+---
+
+## Refinance batch
+
+**Description:**
+
+`refinanceBatch` has been removed from sdk.
+
 # Breaking Changes 0.22.0
 
 ### Important
