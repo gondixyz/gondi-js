@@ -3,8 +3,7 @@ import { Abi, Account, Address, Chain, PublicClient, Transport, WalletClient } f
 import { Erc20 } from '@/clients/contracts/Erc20';
 import { OldERC721Wrapper } from '@/clients/contracts/OldERC721Wrapper';
 import { PurchaseBundler } from '@/clients/contracts/PurchaseBundler';
-import { Seaport } from '@/clients/contracts/Seaport';
-import { getContracts } from '@/deploys';
+import { getContracts, getVersionFromMslAddress, getVersionFromUserVaultAddress } from '@/deploys';
 import { cryptopunksABI } from '@/generated/blockchain/cryptopunks';
 import { oldErc721Abi } from '@/generated/blockchain/oldERC721';
 import { seaportABI } from '@/generated/blockchain/seaport';
@@ -22,6 +21,7 @@ import { MslV5 } from './MslV5';
 import { MslV6 } from './MslV6';
 import { UserVaultV5 } from './UserVaultV5';
 import { UserVaultV6 } from './UserVaultV6';
+
 export type Wallet = WalletClient<Transport, Chain, Account>;
 export type GondiPublicClient = PublicClient<Transport, Chain>;
 
@@ -36,74 +36,35 @@ export class Contracts {
   publicClient: GondiPublicClient;
   walletClient: Wallet;
 
-  MultiSourceLoanV4: MslV4;
-  MultiSourceLoanV5: MslV5;
-  MultiSourceLoanV6: MslV6;
-  MultiSourceLoanV7: MslV6;
-  AuctionLoanLiquidatorV4: AllV4;
-  AuctionLoanLiquidatorV5: AllV5;
-  AuctionLoanLiquidatorV6: AllV6;
-  AuctionLoanLiquidatorV7: AllV6;
-  UserVaultV5: UserVaultV5;
-  UserVaultV6: UserVaultV6;
-  PurchaseBundlerV5: PurchaseBundler;
-  PurchaseBundlerV6: PurchaseBundler;
-  Seaport: Seaport;
-  PurchaseBundlerV7: PurchaseBundler;
-
   constructor(publicClient: GondiPublicClient, walletClient: Wallet) {
     this.walletClient = walletClient;
     this.publicClient = publicClient;
-
-    const {
-      PurchaseBundler: PurchaseBundlerContract,
-      MultiSourceLoan: MultiSourceLoanContract,
-      AuctionLoanLiquidator: AuctionLoanLiquidatorContract,
-    } = getContracts(walletClient.chain);
-
-    this.MultiSourceLoanV4 = new MslV4({ walletClient });
-    this.MultiSourceLoanV5 = new MslV5({ walletClient });
-    this.MultiSourceLoanV6 = new MslV6({
-      walletClient,
-      contractAddress: MultiSourceLoanContract.v6,
-      version: '3',
-    });
-    this.MultiSourceLoanV7 = new MslV6({
-      walletClient,
-      contractAddress: MultiSourceLoanContract.v7,
-      version: '3.1',
-    });
-    this.AuctionLoanLiquidatorV4 = new AllV4({ walletClient });
-    this.AuctionLoanLiquidatorV5 = new AllV5({ walletClient });
-    this.AuctionLoanLiquidatorV6 = new AllV6({
-      walletClient,
-      contractAddress: AuctionLoanLiquidatorContract.v6,
-    });
-    this.AuctionLoanLiquidatorV7 = new AllV6({
-      walletClient,
-      contractAddress: AuctionLoanLiquidatorContract.v7,
-    });
-    this.UserVaultV5 = new UserVaultV5({ walletClient });
-    this.UserVaultV6 = new UserVaultV6({ walletClient });
-    this.PurchaseBundlerV5 = new PurchaseBundler({
-      walletClient,
-      contractAddress: PurchaseBundlerContract.v5,
-      msl: this.MultiSourceLoanV5,
-    });
-    this.PurchaseBundlerV6 = new PurchaseBundler({
-      walletClient,
-      contractAddress: PurchaseBundlerContract.v6,
-      msl: this.MultiSourceLoanV6,
-    });
-    this.Seaport = new Seaport({
-      walletClient,
-    });
-    this.PurchaseBundlerV7 = new PurchaseBundler({
-      walletClient,
-      contractAddress: PurchaseBundlerContract.v7,
-      msl: this.MultiSourceLoanV7,
-    });
   }
+
+  _Msls = {
+    '1': MslV4,
+    '2': MslV5,
+    '3': MslV6,
+    '3.1': MslV6,
+  };
+
+  _Alls = {
+    '1': AllV4,
+    '2': AllV5,
+    '3': AllV6,
+    '3.1': AllV6,
+  };
+
+  _PBs = {
+    '2': PurchaseBundler,
+    '3': PurchaseBundler,
+    '3.1': PurchaseBundler,
+  };
+
+  _UserVaults = {
+    '2': UserVaultV5,
+    '3': UserVaultV6,
+  };
 
   GenericContract(address: Address) {
     const contracts = getContracts(this.walletClient.chain);
@@ -123,20 +84,15 @@ export class Contracts {
     });
   }
 
-  Msl(contractAddress: Address) {
-    if (areSameAddress(contractAddress, this.MultiSourceLoanV4.address)) {
-      return this.MultiSourceLoanV4;
-    }
-    if (areSameAddress(contractAddress, this.MultiSourceLoanV5.address)) {
-      return this.MultiSourceLoanV5;
-    }
-    if (areSameAddress(contractAddress, this.MultiSourceLoanV6.address)) {
-      return this.MultiSourceLoanV6;
-    }
-    if (areSameAddress(contractAddress, this.MultiSourceLoanV7.address)) {
-      return this.MultiSourceLoanV7;
-    }
-    throw new Error(`Invalid Contract Address ${contractAddress}`);
+  Msl(address: Address) {
+    const version = getVersionFromMslAddress(this.walletClient.chain, address);
+    const Msl = this._Msls[version];
+
+    return new Msl({
+      walletClient: this.walletClient,
+      address,
+      version,
+    });
   }
 
   /**
@@ -144,20 +100,15 @@ export class Contracts {
    * @param contractAddress The contract address of the MSL contract
    * @returns The corresponding AuctionLoanLiquidator contract
    */
-  All(contractAddress: Address) {
-    if (areSameAddress(contractAddress, this.MultiSourceLoanV4.address)) {
-      return this.AuctionLoanLiquidatorV4;
-    }
-    if (areSameAddress(contractAddress, this.MultiSourceLoanV5.address)) {
-      return this.AuctionLoanLiquidatorV5;
-    }
-    if (areSameAddress(contractAddress, this.MultiSourceLoanV6.address)) {
-      return this.AuctionLoanLiquidatorV6;
-    }
-    if (areSameAddress(contractAddress, this.MultiSourceLoanV7.address)) {
-      return this.AuctionLoanLiquidatorV7;
-    }
-    throw new Error(`Invalid Contract Address ${contractAddress}`);
+  All(mslContractAddress: Address) {
+    const version = getVersionFromMslAddress(this.walletClient.chain, mslContractAddress);
+    const All = this._Alls[version];
+    const contracts = getContracts(this.walletClient.chain);
+
+    return new All({
+      walletClient: this.walletClient,
+      address: contracts.AuctionLoanLiquidator[version],
+    });
   }
 
   /**
@@ -166,27 +117,35 @@ export class Contracts {
    * @returns The corresponding PurchaseBundler contract
    */
   PurchaseBundler(mslContractAddress: Address) {
-    if (areSameAddress(mslContractAddress, this.MultiSourceLoanV5.address)) {
-      return this.PurchaseBundlerV5;
+    const version = getVersionFromMslAddress(this.walletClient.chain, mslContractAddress);
+    if (version === '1') {
+      throw new Error('V1 has no support for PurchaseBundler');
     }
-    if (areSameAddress(mslContractAddress, this.MultiSourceLoanV6.address)) {
-      return this.PurchaseBundlerV6;
+
+    const msl = this.Msl(mslContractAddress);
+    if (msl instanceof MslV4) {
+      // Enforce type cast, this should never happen.
+      throw new Error('MslV4 is not supported for PurchaseBundler');
     }
-    if (areSameAddress(mslContractAddress, this.MultiSourceLoanV7.address)) {
-      return this.PurchaseBundlerV7;
-    }
-    throw new Error(`Invalid Contract Address ${mslContractAddress}`);
+
+    const PurchaseBundler = this._PBs[version];
+    const contracts = getContracts(this.walletClient.chain);
+
+    return new PurchaseBundler({
+      walletClient: this.walletClient,
+      address: contracts.PurchaseBundler[version],
+      msl,
+    });
   }
 
-  UserVault(contractAddress: Address) {
-    if (areSameAddress(contractAddress, this.UserVaultV5.address)) {
-      return this.UserVaultV5;
-    }
-    if (areSameAddress(contractAddress, this.UserVaultV6.address)) {
-      return this.UserVaultV6;
-    }
+  UserVault(address: Address) {
+    const version = getVersionFromUserVaultAddress(this.walletClient.chain, address);
+    const UserVault = this._UserVaults[version];
 
-    throw new Error(`Invalid Contract Address ${contractAddress}`);
+    return new UserVault({
+      walletClient: this.walletClient,
+      address,
+    });
   }
 
   Nft(address: Address, standard: NftStandard) {

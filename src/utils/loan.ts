@@ -1,7 +1,7 @@
 import { Address, isAddress } from 'viem';
 
 import { LoanV4, LoanV5, LoanV6, zeroAddress } from '@/blockchain';
-import { getContracts } from '@/deploys';
+import { getVersionFromMslAddress } from '@/deploys';
 import * as model from '@/model';
 import { millisToSeconds, secondsToMillis, toDate } from '@/utils/dates';
 import { maxBy } from '@/utils/number';
@@ -70,40 +70,6 @@ export const loanToMslLoan = (loan: LoanToMslLoanType) => {
   };
 };
 
-export const generateFakeRenegotiationInput = ({
-  loanId,
-  loan,
-  trancheIndex,
-  address,
-}: {
-  loanId: string;
-  loan: LoanToMslLoanType;
-  trancheIndex: boolean;
-  address: Address;
-}) => {
-  const mslLoan = loanToMslLoan(loan);
-  const options = trancheIndex
-    ? {
-        trancheIndex: mslLoan.source.map((_, i) => BigInt(i)),
-        targetPrincipal: [],
-      }
-    : {
-        trancheIndex: [],
-        targetPrincipal: mslLoan.source.map(() => 0n),
-      };
-  return {
-    loanId,
-    lenderAddress: address,
-    signerAddress: address,
-    expirationTime: BigInt(millisToSeconds(Date.now())),
-    aprBps: 0n,
-    feeAmount: 0n,
-    duration: mslLoan.duration,
-    principalAmount: mslLoan.principalAmount,
-    ...options,
-  };
-};
-
 export const getMslLoanId = (loan: LoanToMslLoanType) => {
   const mslLoan = loanToMslLoan(loan);
   return maxBy(mslLoan.source, 'loanId') ?? 0n;
@@ -116,13 +82,12 @@ export const getRemainingSeconds = (loan: Pick<LoanToMslLoanType, 'startTime' | 
   return millisToSeconds(finishDate.getTime() - now.getTime());
 };
 
-export const isLoanVersion = (contractAddress: string, chainId: number) => {
-  const {
-    MultiSourceLoan: { v4, v5, v6 },
-  } = getContracts({ id: chainId });
+export const isLoanVersion = (address: Address, chainId: number) => {
+  const version = getVersionFromMslAddress({ id: chainId }, address);
   return {
-    isV4: areSameAddress(contractAddress, v4),
-    isV5: areSameAddress(contractAddress, v5),
-    isV6: areSameAddress(contractAddress, v6),
+    isV1: version === '1',
+    isV2: version === '2',
+    isV3: version === '3',
+    isV3_1: version === '3.1',
   };
 };

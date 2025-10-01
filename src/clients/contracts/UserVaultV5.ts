@@ -2,7 +2,6 @@ import { Address } from 'viem';
 
 import { Wallet } from '@/clients/contracts';
 import { UserVaultV6 } from '@/clients/contracts/UserVaultV6';
-import { getContracts } from '@/deploys';
 import { userVaultABI as userVaultABIV5 } from '@/generated/blockchain/v5';
 import {
   BurnAndWithdrawArgs,
@@ -14,12 +13,10 @@ import {
 import { BaseContract } from './BaseContract';
 
 export class UserVaultV5 extends BaseContract<typeof userVaultABIV5> {
-  constructor({ walletClient }: { walletClient: Wallet }) {
-    const { UserVault } = getContracts(walletClient.chain);
-
+  constructor({ walletClient, address }: { walletClient: Wallet; address: Address }) {
     super({
       walletClient,
-      address: UserVault.v5,
+      address,
       abi: userVaultABIV5,
     });
   }

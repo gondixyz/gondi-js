@@ -13,22 +13,25 @@ import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 import { BaseContract } from './BaseContract';
 
 export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof multiSourceLoanAbiV7> {
-  version: string;
+  version: '3' | '3.1';
 
   constructor({
     walletClient,
-    contractAddress,
+    address,
     version,
   }: {
     walletClient: Wallet;
-    contractAddress: Address;
-    version: '3' | '3.1';
+    address: Address;
+    version: string;
   }) {
     super({
       walletClient,
-      address: contractAddress,
+      address,
       abi: version === '3' ? multiSourceLoanAbiV6 : multiSourceLoanAbiV7,
     });
+    if (version !== '3' && version !== '3.1') {
+      throw new Error(`Invalid version ${version}`);
+    }
     this.version = version;
   }
 

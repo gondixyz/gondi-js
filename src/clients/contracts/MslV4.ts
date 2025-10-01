@@ -2,7 +2,6 @@ import { Address, decodeFunctionData, Hash, Hex, zeroAddress } from 'viem';
 
 import { LoanV4, OfferV4, RenegotiationV4 } from '@/blockchain';
 import { Wallet } from '@/clients/contracts';
-import { getContracts } from '@/deploys';
 import { multiSourceLoanABI as multiSourceLoanABIV4 } from '@/generated/blockchain/v4';
 import { EmitLoanArgs } from '@/gondi';
 import { millisToSeconds, SECONDS_IN_MIN } from '@/utils/dates';
@@ -15,14 +14,12 @@ import { MslV5 } from './MslV5';
 import { MslV6 } from './MslV6';
 
 export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
-  constructor({ walletClient }: { walletClient: Wallet }) {
-    const {
-      MultiSourceLoan: { v4 },
-    } = getContracts(walletClient.chain);
+  version = '1' as const;
 
+  constructor({ walletClient, address }: { walletClient: Wallet; address: Address }) {
     super({
       walletClient,
-      address: v4,
+      address,
       abi: multiSourceLoanABIV4,
     });
   }
@@ -30,7 +27,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
   private getDomain() {
     return {
       name: CONTRACT_DOMAIN_NAME,
-      version: '1',
+      version: this.version,
       chainId: this.wallet.chain.id,
       verifyingContract: this.address,
     };
