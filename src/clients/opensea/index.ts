@@ -1,4 +1,5 @@
 import { Address } from 'viem';
+import { mainnet } from 'viem/chains';
 
 import { zeroHash } from '@/blockchain';
 import { max, sumBigInt } from '@/utils/number';
@@ -19,11 +20,17 @@ export class Opensea {
     this.apiKey = apiKey;
   }
 
+  private openseaBlockchainByChainId: Record<number, string> = {
+    [mainnet.id]: 'ethereum',
+    [999]: 'hyperevm',
+  } as const;
+
   async fulfillOrder({
     hash,
     protocolAddress: protocol_address,
     fulfiller,
     consideration: considerationInput,
+    chainId,
   }: {
     hash: string;
     protocolAddress: Address;
@@ -32,6 +39,7 @@ export class Opensea {
       contract: Address;
       token_id: string;
     };
+    chainId: number;
   }) {
     const consideration = considerationInput
       ? {
@@ -46,7 +54,7 @@ export class Opensea {
       offer: {
         hash,
         protocol_address,
-        chain: 'ethereum',
+        chain: this.openseaBlockchainByChainId[chainId],
       },
       fulfiller,
       consideration,
