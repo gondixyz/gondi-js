@@ -137,29 +137,29 @@ const contractsByChain: Record<number, Contracts> = {
   // HyperEVM
   [999]: {
     MultiSourceLoan: {
-      '1': '0xTODO',
-      '2': '0xTODO',
-      '3': '0xTODO',
-      '3.1': '0xTODO',
+      '1': zeroAddress,
+      '2': zeroAddress,
+      '3': zeroAddress,
+      '3.1': '0x6ad675624ec8320e5806858cd5db101a0b927fd9',
     },
     AuctionLoanLiquidator: {
-      '1': '0xTODO',
-      '2': '0xTODO',
-      '3': '0xTODO',
-      '3.1': '0xTODO',
+      '1': zeroAddress,
+      '2': zeroAddress,
+      '3': zeroAddress,
+      '3.1': '0xb166ec953fef89c6ee2e39e60fbd49b19cf4c6ad',
     },
     UserVault: {
-      '2': '0xTODO',
-      '3': '0xTODO',
+      '2': zeroAddress,
+      '3': '0x3f26ff30061d5a6777a01d7843b5f2b81f60a7ee',
     },
     PurchaseBundler: {
-      '2': '0xTODO',
-      '3': '0xTODO',
-      '3.1': '0xTODO',
+      '2': zeroAddress,
+      '3': zeroAddress,
+      '3.1': '0xfaaff69da43b8195e5b0945c4fea4476e4264157',
     },
-    Seaport: '0xTODO',
-    Aave: '0xTODO',
-    Cryptopunks: '0xTODO',
+    Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
+    Aave: zeroAddress,
+    Cryptopunks: zeroAddress,
   },
 };
 
