@@ -1104,6 +1104,7 @@ export class Gondi {
         contract: nft.collectionAddress,
         token_id: nft.tokenId.toString(),
       },
+      chainId: this.wallet.chain.id,
     });
 
     if (
