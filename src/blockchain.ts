@@ -10,6 +10,7 @@ import type {
   auctionLoanLiquidatorAbi as auctionLoanLiquidatorABIV6,
   multiSourceLoanAbi as multiSourceLoanABIV6,
 } from '@/generated/blockchain/v6';
+import type { multiSourceLoanAbi as multiSourceLoanABIV7 } from '@/generated/blockchain/v7';
 
 type RepayAbiTypeV4 = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof multiSourceLoanABIV4, 'repayLoan'>['inputs']
@@ -29,6 +30,9 @@ type EmitAbiTypeV5 = AbiParametersToPrimitiveTypes<
 >;
 type EmitAbiTypeV6 = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof multiSourceLoanABIV6, 'emitLoan'>['inputs']
+>;
+type EmitAbiTypeV7 = AbiParametersToPrimitiveTypes<
+  ExtractAbiFunction<typeof multiSourceLoanABIV7, 'emitLoan'>['inputs']
 >;
 
 type RefiAbiTypeV4 = AbiParametersToPrimitiveTypes<
@@ -67,6 +71,11 @@ export type OfferV6 = EmitAbiTypeV6[0]['executionData']['offerExecution'][number
 export type RenegotiationV4 = RefiAbiTypeV4[0];
 export type RenegotiationV5 = RefiAbiTypeV5[0];
 export type RenegotiationV6 = RefiAbiTypeV6[0];
+
+export type SignableRepaymentDataV6 = RepayAbiTypeV6[0]['data'];
+
+export type ExecutionDataV6 = EmitAbiTypeV6[0]['executionData'];
+export type ExecutionDataV7 = EmitAbiTypeV7[0]['executionData'];
 
 type AuctionV5 = PlaceBidAbiTypeV5[2];
 type AuctionV6 = PlaceBidAbiTypeV6[2];

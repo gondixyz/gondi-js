@@ -1,6 +1,7 @@
 import { Abi, Account, Address, Chain, PublicClient, Transport, WalletClient } from 'viem';
 
 import { Erc20 } from '@/clients/contracts/Erc20';
+import { FlashLoanRenegotiation } from '@/clients/contracts/FlashLoanRenegotiation';
 import { OldERC721Wrapper } from '@/clients/contracts/OldERC721Wrapper';
 import { PurchaseBundler } from '@/clients/contracts/PurchaseBundler';
 import { getContracts, getVersionFromMslAddress, getVersionFromUserVaultAddress } from '@/deploys';
@@ -193,6 +194,14 @@ export class Contracts {
     return new Erc20({
       address,
       walletClient: this.walletClient,
+    });
+  }
+
+  FlashLoanRenegotiation(address: Address, msl: MslV6) {
+    return new FlashLoanRenegotiation({
+      walletClient: this.walletClient,
+      address,
+      msl,
     });
   }
 }

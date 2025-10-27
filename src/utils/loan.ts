@@ -3,10 +3,12 @@ import { Address, isAddress } from 'viem';
 import { LoanV4, LoanV5, LoanV6, zeroAddress } from '@/blockchain';
 import { getVersionFromMslAddress } from '@/deploys';
 import * as model from '@/model';
-import { millisToSeconds, secondsToMillis, toDate } from '@/utils/dates';
-import { maxBy } from '@/utils/number';
+import { millisToSeconds, SECONDS_PER_YEAR, secondsToMillis, toDate } from '@/utils/dates';
+import { maxBy, mulDivUp, sumBigInt } from '@/utils/number';
 import { areSameAddress } from '@/utils/string';
 import { Optional } from '@/utils/types';
+
+export const BPS = 10000n;
 
 export const renegotiationToMslRenegotiation = (
   renegotiation: model.RenegotiationOffer,
@@ -90,4 +92,30 @@ export const isLoanVersion = (address: Address, chainId: number) => {
     isV3: version === '3',
     isV3_1: version === '3.1',
   };
+};
+
+interface TrancheOwed {
+  principalAmount: bigint;
+  accruedInterest: bigint;
+  aprBps: bigint;
+  startTime: bigint;
+}
+
+const getInterest = (amount: bigint, aprBps: bigint, duration: bigint) => {
+  return mulDivUp(amount, aprBps * duration, BPS * BigInt(SECONDS_PER_YEAR));
+};
+
+export const getTotalOwed = (
+  loan: { tranche: readonly TrancheOwed[] } | { source: readonly TrancheOwed[] },
+  bufferSeconds: bigint,
+) => {
+  const now = BigInt(millisToSeconds(Date.now()));
+  return sumBigInt(
+    ...('tranche' in loan ? loan.tranche : loan.source).map(
+      (source) =>
+        source.principalAmount +
+        source.accruedInterest +
+        getInterest(source.principalAmount, source.aprBps, now - source.startTime + bufferSeconds),
+    ),
+  );
 };
