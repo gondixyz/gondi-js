@@ -520,10 +520,15 @@ export class Gondi {
       withSignature: true,
     });
 
-    return this.contracts.FlashLoanRenegotiation(contractAddress, nextMsl).smartRenegotiation({
+    const emitCalldata = await nextMsl.encodeEmitLoan({
+      emitArgs: executionData,
+      withSignature: true,
+    });
+
+    return this.contracts.PositionMigrator(contractAddress, nextMsl).smartRenegotiation({
       targetContract: previousMsl.address,
       repaymentCalldata,
-      executionData,
+      emitCalldata,
     });
   }
 

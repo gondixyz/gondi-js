@@ -227,7 +227,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
     throw new Error('Not implemented for V3');
   }
 
-  mapEmitLoanToMslEmitLoanArgs({
+  private mapEmitLoanToMslEmitLoanArgs({
     offerExecution,
     nftCollateralAddress,
     tokenId,
@@ -742,6 +742,26 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
       abi: this.abi,
       functionName: 'repayLoan',
       args: [repayLoanArgs],
+    });
+  }
+
+  async encodeEmitLoan({
+    emitArgs,
+    withSignature,
+  }: {
+    emitArgs: EmitLoanArgs;
+    withSignature: boolean;
+  }) {
+    const emitLoanArgs = this.mapEmitLoanToMslEmitLoanArgs(emitArgs);
+    if (withSignature) {
+      emitLoanArgs.borrowerOfferSignature = await this.signExecutionData({
+        structToSign: emitLoanArgs.executionData,
+      });
+    }
+    return encodeFunctionData({
+      abi: this.abi,
+      functionName: 'emitLoan',
+      args: [emitLoanArgs],
     });
   }
 }
