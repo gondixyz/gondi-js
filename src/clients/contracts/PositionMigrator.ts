@@ -14,6 +14,11 @@ type SmartMigrateArgs = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof positionMigratorAbi, 'smartMigrate'>['inputs']
 >[0];
 
+/**
+ * This contract allows migration from one position to another.
+ * We will use this to migrate V3.0 loans to V3.1 and also support
+ * capital efficient refinance from offers
+ */
 export class PositionMigrator extends BaseContract<typeof positionMigratorAbi> {
   msl: MslV6;
 
