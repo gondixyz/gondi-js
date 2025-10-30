@@ -525,7 +525,10 @@ export class Gondi {
       withSignature: true,
     });
 
+    const currentBalance = await this.currencyBalance({ tokenAddress: loan.principalAddress });
+
     return this.contracts.PositionMigrator(contractAddress, nextMsl).smartRenegotiation({
+      currentBalance,
       targetContract: previousMsl.address,
       repaymentCalldata,
       emitCalldata,

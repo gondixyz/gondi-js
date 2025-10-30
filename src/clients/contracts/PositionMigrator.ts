@@ -7,6 +7,7 @@ import { getContracts } from '@/deploys';
 import { positionMigratorAbi } from '@/generated/blockchain/positionMigrator';
 import { SECONDS_IN_HOUR } from '@/utils/dates';
 import { getTotalOwed } from '@/utils/loan';
+import { max } from '@/utils/number';
 
 import { BaseContract } from './BaseContract';
 
@@ -75,10 +76,12 @@ export class PositionMigrator extends BaseContract<typeof positionMigratorAbi> {
     this.msl = msl;
   }
   async smartRenegotiation({
+    currentBalance,
     targetContract,
     repaymentCalldata,
     emitCalldata,
   }: {
+    currentBalance: bigint;
     targetContract: Address;
     repaymentCalldata: Hex;
     emitCalldata: Hex;
@@ -91,7 +94,7 @@ export class PositionMigrator extends BaseContract<typeof positionMigratorAbi> {
       pool: Aave,
       recipient: this.wallet.account.address,
       assets: [repaymentArgs.loan.principalAddress],
-      amounts: [totalOwed],
+      amounts: [max(0n, totalOwed - currentBalance)],
     };
 
     const migrationArgs = {
