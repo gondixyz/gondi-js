@@ -2,6 +2,7 @@ import { Abi, Account, Address, Chain, PublicClient, Transport, WalletClient } f
 
 import { Erc20 } from '@/clients/contracts/Erc20';
 import { OldERC721Wrapper } from '@/clients/contracts/OldERC721Wrapper';
+import { PositionMigrator } from '@/clients/contracts/PositionMigrator';
 import { PurchaseBundler } from '@/clients/contracts/PurchaseBundler';
 import { getContracts, getVersionFromMslAddress, getVersionFromUserVaultAddress } from '@/deploys';
 import { cryptopunksABI } from '@/generated/blockchain/cryptopunks';
@@ -193,6 +194,14 @@ export class Contracts {
     return new Erc20({
       address,
       walletClient: this.walletClient,
+    });
+  }
+
+  PositionMigrator(address: Address, msl: MslV6) {
+    return new PositionMigrator({
+      walletClient: this.walletClient,
+      address,
+      msl,
     });
   }
 }

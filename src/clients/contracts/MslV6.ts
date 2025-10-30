@@ -1,16 +1,31 @@
 import { Address, decodeFunctionData, encodeFunctionData, Hash, Hex } from 'viem';
 
-import { LoanV6, OfferV6, RenegotiationV6, REORG_SAFETY_BUFFER, zeroHash } from '@/blockchain';
+import {
+  ExecutionDataV6,
+  ExecutionDataV7,
+  LoanV6,
+  OfferV6,
+  RenegotiationV6,
+  REORG_SAFETY_BUFFER,
+  SignableRepaymentDataV6,
+  zeroHash,
+} from '@/blockchain';
 import { Wallet } from '@/clients/contracts';
 import { multiSourceLoanAbi as multiSourceLoanAbiV6 } from '@/generated/blockchain/v6';
 import { multiSourceLoanAbi as multiSourceLoanAbiV7 } from '@/generated/blockchain/v7';
 import { EmitLoanArgs } from '@/gondi';
+import { filterFalsy } from '@/utils/array';
 import { millisToSeconds, SECONDS_IN_DAY, secondsToMillis } from '@/utils/dates';
 import { getMslLoanId, getRemainingSeconds, LoanToMslLoanType } from '@/utils/loan';
 import { bpsToPercentage, sumBy } from '@/utils/number';
 import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 
 import { BaseContract } from './BaseContract';
+
+type RepayArgs = {
+  loan: LoanV6;
+  signableRepaymentData: SignableRepaymentDataV6;
+};
 
 export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof multiSourceLoanAbiV7> {
   version: '3' | '3.1';
@@ -94,6 +109,69 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
     });
   }
 
+  async signRepaymentData({ structToSign }: { structToSign: SignableRepaymentDataV6 }) {
+    return this.wallet.signTypedData({
+      domain: this.getDomain(),
+      primaryType: 'SignableRepaymentData',
+      types: {
+        SignableRepaymentData: [
+          { name: 'loanId', type: 'uint256' },
+          { name: 'callbackData', type: 'bytes' },
+          { name: 'shouldDelegate', type: 'bool' },
+        ],
+      },
+      message: structToSign,
+    });
+  }
+
+  async signExecutionData<T extends ExecutionDataV6 | ExecutionDataV7>({
+    structToSign,
+  }: {
+    structToSign: T;
+  }) {
+    return this.wallet.signTypedData({
+      domain: this.getDomain(),
+      primaryType: 'ExecutionData',
+      types: {
+        ExecutionData: filterFalsy([
+          { name: 'offerExecution', type: 'OfferExecution[]' },
+          this.version === '3.1' && { name: 'loanId', type: 'uint256' },
+          this.version === '3.1' && { name: 'nftCollateralAddress', type: 'address' },
+          { name: 'tokenId', type: 'uint256' },
+          { name: 'duration', type: 'uint256' },
+          { name: 'expirationTime', type: 'uint256' },
+          { name: 'principalReceiver', type: 'address' },
+          { name: 'callbackData', type: 'bytes' },
+        ]),
+        OfferExecution: [
+          { name: 'offer', type: 'LoanOffer' },
+          { name: 'amount', type: 'uint256' },
+          { name: 'lenderOfferSignature', type: 'bytes' },
+        ],
+        LoanOffer: [
+          { name: 'offerId', type: 'uint256' },
+          { name: 'lender', type: 'address' },
+          { name: 'fee', type: 'uint256' },
+          { name: 'capacity', type: 'uint256' },
+          { name: 'nftCollateralAddress', type: 'address' },
+          { name: 'nftCollateralTokenId', type: 'uint256' },
+          { name: 'principalAddress', type: 'address' },
+          { name: 'principalAmount', type: 'uint256' },
+          { name: 'aprBps', type: 'uint256' },
+          { name: 'expirationTime', type: 'uint256' },
+          { name: 'duration', type: 'uint256' },
+          { name: 'maxSeniorRepayment', type: 'uint256' },
+          { name: 'validators', type: 'OfferValidator[]' },
+        ],
+        OfferValidator: [
+          { name: 'validator', type: 'address' },
+          { name: 'arguments', type: 'bytes' },
+        ],
+      },
+      message: structToSign,
+    });
+  }
+
   async cancelOffer({ id }: { id: bigint }) {
     const txHash = await this.safeContractWrite.cancelOffer([id]);
     return {
@@ -156,6 +234,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
     duration,
     principalReceiver,
     expirationTime,
+    callbackData,
   }: EmitLoanArgs) {
     const executionData = {
       offerExecution: offerExecution.map(({ offer, amount, ...rest }) => ({
@@ -173,13 +252,13 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
       duration,
       expirationTime: expirationTime ?? BigInt(millisToSeconds(Date.now()) + SECONDS_IN_DAY),
       principalReceiver: principalReceiver ?? this.wallet.account.address,
-      callbackData: '0x' as Hash, // No callback data is expected here, only for BNPL [Levearage call]
+      callbackData: callbackData ?? ('0x' as Hash), // Tipically, no callback data is expected here, only for BNPL [PB call]
     };
 
     return {
       executionData,
       borrower: this.wallet.account.address,
-      borrowerOfferSignature: '0x' as Hash, // No signature data is expected here, only for BNPL [Levearage call]
+      borrowerOfferSignature: '0x' as Hash, // Typically, no signature data is expected here, only for BNPL [PB call]
     };
   }
 
@@ -642,5 +721,47 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
 
   async getProtocolFee() {
     return await this.contract.read.getProtocolFee();
+  }
+
+  async encodeRepayLoan({
+    repayArgs,
+    withSignature,
+  }: {
+    repayArgs: RepayArgs;
+    withSignature: boolean;
+  }) {
+    const repayLoanArgs = {
+      data: repayArgs.signableRepaymentData,
+      loan: repayArgs.loan,
+      borrowerSignature: withSignature
+        ? await this.signRepaymentData({ structToSign: repayArgs.signableRepaymentData })
+        : '0x',
+    };
+
+    return encodeFunctionData({
+      abi: this.abi,
+      functionName: 'repayLoan',
+      args: [repayLoanArgs],
+    });
+  }
+
+  async encodeEmitLoan({
+    emitArgs,
+    withSignature,
+  }: {
+    emitArgs: EmitLoanArgs;
+    withSignature: boolean;
+  }) {
+    const emitLoanArgs = this.mapEmitLoanToMslEmitLoanArgs(emitArgs);
+    if (withSignature) {
+      emitLoanArgs.borrowerOfferSignature = await this.signExecutionData({
+        structToSign: emitLoanArgs.executionData,
+      });
+    }
+    return encodeFunctionData({
+      abi: this.abi,
+      functionName: 'emitLoan',
+      args: [emitLoanArgs],
+    });
   }
 }

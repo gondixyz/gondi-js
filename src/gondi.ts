@@ -484,6 +484,57 @@ export class Gondi {
     });
   }
 
+  async efficientRefinanceFromOffers({
+    contractAddress,
+    loan,
+    loanId,
+    executionData,
+  }: {
+    contractAddress: Address;
+    loan: LoanToMslLoanType;
+    loanId: bigint;
+    executionData: EmitLoanArgs;
+  }) {
+    const previousMsl = this.contracts.Msl(loan.contractAddress);
+    const nextMsl = this.contracts.Msl(
+      executionData.offerExecution[0]?.offer?.contractAddress ?? zeroAddress,
+    );
+
+    if (previousMsl.version === '1' || previousMsl.version === '2') {
+      throw new Error('Unsupported contract address for capital efficient refinance');
+    }
+
+    if (nextMsl.version === '1' || nextMsl.version === '2' || nextMsl.version === '3') {
+      throw new Error('Unsupported contract address for capital efficient refinance');
+    }
+
+    const repaymentCalldata = await previousMsl.encodeRepayLoan({
+      repayArgs: {
+        signableRepaymentData: {
+          loanId,
+          callbackData: '0x',
+          shouldDelegate: false,
+        },
+        loan: loanToMslLoan(loan),
+      },
+      withSignature: true,
+    });
+
+    const emitCalldata = await nextMsl.encodeEmitLoan({
+      emitArgs: executionData,
+      withSignature: true,
+    });
+
+    const currentBalance = await this.currencyBalance({ tokenAddress: loan.principalAddress });
+
+    return this.contracts.PositionMigrator(contractAddress, nextMsl).smartRenegotiation({
+      currentBalance,
+      targetContract: previousMsl.address,
+      repaymentCalldata,
+      emitCalldata,
+    });
+  }
+
   async repayLoan({
     loan,
     loanId,
@@ -1218,4 +1269,5 @@ export interface EmitLoanArgs {
   duration: bigint;
   principalReceiver?: Address;
   expirationTime?: bigint;
+  callbackData?: Hex;
 }
