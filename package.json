@@ -1,6 +1,6 @@
 {
   "name": "gondi",
-  "version": "0.24.0",
+  "version": "0.24.1",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.mjs",
@@ -74,11 +74,11 @@
     "graphql": "^16.8.1",
     "graphql-tag": "^2.12.6",
     "siwe": "^2.1.4",
-    "viem": "~2.21.25"
+    "viem": "^2.28.2"
   },
   "peerDependencies": {
     "@apollo/client": "~3.9.10",
-    "viem": "~2.21.0"
+    "viem": "^2.28.2"
   },
   "packageManager": "yarn@4.2.1"
 }
