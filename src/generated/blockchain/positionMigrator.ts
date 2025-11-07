@@ -6,6 +6,16 @@ export const positionMigratorAbi = [
         "name": "_name",
         "type": "string",
         "internalType": "string"
+      },
+      {
+        "name": "addressManager",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "aaveAddressProvider",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "nonpayable"
@@ -69,7 +79,7 @@ export const positionMigratorAbi = [
         "internalType": "uint256[]"
       },
       {
-        "name": "",
+        "name": "initiator",
         "type": "address",
         "internalType": "address"
       },
@@ -87,6 +97,25 @@ export const positionMigratorAbi = [
       }
     ],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "getNonce",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "nonce",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -108,17 +137,17 @@ export const positionMigratorAbi = [
       {
         "name": "args",
         "type": "tuple",
-        "internalType": "struct IFlashLoanRenegotiation.SmartMigrationArgs",
+        "internalType": "struct IPositionMigrator.SmartMigrationArgs",
         "components": [
           {
             "name": "migrationArgs",
             "type": "tuple",
-            "internalType": "struct IFlashLoanRenegotiation.PositionMigrationArgs",
+            "internalType": "struct IPositionMigrator.PositionMigrationArgs",
             "components": [
               {
                 "name": "close",
                 "type": "tuple",
-                "internalType": "struct IFlashLoanRenegotiation.Position",
+                "internalType": "struct IPositionMigrator.Position",
                 "components": [
                   {
                     "name": "contractAddress",
@@ -140,7 +169,7 @@ export const positionMigratorAbi = [
               {
                 "name": "open",
                 "type": "tuple",
-                "internalType": "struct IFlashLoanRenegotiation.Position",
+                "internalType": "struct IPositionMigrator.Position",
                 "components": [
                   {
                     "name": "contractAddress",
@@ -162,7 +191,7 @@ export const positionMigratorAbi = [
               {
                 "name": "borrowArgs",
                 "type": "tuple",
-                "internalType": "struct IFlashLoanRenegotiation.AaveBorrowArgs",
+                "internalType": "struct IPositionMigrator.AaveBorrowArgs",
                 "components": [
                   {
                     "name": "pool",
@@ -187,9 +216,19 @@ export const positionMigratorAbi = [
                 ]
               },
               {
+                "name": "approvalContract",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
                 "name": "migrator",
                 "type": "address",
                 "internalType": "address"
+              },
+              {
+                "name": "nonce",
+                "type": "uint256",
+                "internalType": "uint256"
               }
             ]
           },
@@ -252,7 +291,22 @@ export const positionMigratorAbi = [
   },
   {
     "type": "error",
+    "name": "InvalidNonceError",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidPoolFlowError",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "InvalidSignatureError",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotWhitelistedAddressError",
     "inputs": []
   },
   {

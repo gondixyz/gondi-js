@@ -1,5 +1,5 @@
 import { AbiParametersToPrimitiveTypes, ExtractAbiFunction } from 'abitype';
-import { Address, Hex } from 'viem';
+import { Address, Hex, zeroAddress } from 'viem';
 
 import { Wallet } from '@/clients/contracts';
 import { MslV6 } from '@/clients/contracts/MslV6';
@@ -41,7 +41,9 @@ export class PositionMigrator extends BaseContract<typeof positionMigratorAbi> {
           { name: 'close', type: 'Position' },
           { name: 'open', type: 'Position' },
           { name: 'borrowArgs', type: 'AaveBorrowArgs' },
+          { name: 'approvalContract', type: 'address' },
           { name: 'migrator', type: 'address' },
+          { name: 'nonce', type: 'uint256' },
         ],
         AaveBorrowArgs: [
           { name: 'pool', type: 'address' },
@@ -109,7 +111,9 @@ export class PositionMigrator extends BaseContract<typeof positionMigratorAbi> {
         value: 0n,
       },
       borrowArgs,
+      approvalContract: zeroAddress, // unused
       migrator: this.wallet.account.address,
+      nonce: await this.contract.read.getNonce([this.wallet.account.address]),
     };
 
     const txHash = await this.safeContractWrite.smartMigrate([
