@@ -1,4 +1,5 @@
-import { getAddress } from 'viem';
+import { LoanStatusType } from 'gondi';
+import { Address, getAddress, isAddress } from 'viem';
 
 import {
   setAllowances,
@@ -9,12 +10,14 @@ import {
   users,
 } from './common';
 
-const MSL_V3 = getAddress(process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ?? '');
 const MSL_V3_1 = getAddress(process.env.MULTI_SOURCE_LOAN_CONTRACT_V7 ?? '');
 const MIGRATOR = getAddress(process.env.MIGRATOR_CONTRACT ?? '');
 
-const migrateMSL = async () => {
-  const signedOfferV3 = await users[0]._makeSingleNftOffer(testSingleNftOfferInput, MSL_V3);
+const migrateMSL = async (contractAddress: Address) => {
+  const signedOfferV3 = await users[0]._makeSingleNftOffer(
+    testSingleNftOfferInput,
+    contractAddress,
+  );
   const contractVersionString = `msl: ${signedOfferV3.contractAddress}`;
   console.log(`offer placed successfully: ${contractVersionString}`);
 
@@ -47,7 +50,23 @@ const migrateMSL = async () => {
     });
     await newLoan.waitTxInBlock();
     console.log(`loan migrated successfully`);
-  } catch {
+
+    await sleep(3000);
+
+    const data = await users[1].loans({
+      limit: 20,
+      borrowers: [users[1].wallet.account.address],
+      statuses: [LoanStatusType.LoanInitiated],
+    });
+
+    const repayLoan = await users[1].repayLoan({
+      loan: data.loans[0],
+      loanId: BigInt(data.loans[0].loanId),
+    });
+    await repayLoan.waitTxInBlock();
+    console.log(`loan repaid: ${contractVersionString}`);
+  } catch (err) {
+    console.log('Error:', err);
     const repayLoan = await users[1].repayLoan({
       loanId,
       loan: {
@@ -63,7 +82,15 @@ const migrateMSL = async () => {
 async function main() {
   try {
     await setAllowances();
-    await migrateMSL();
+    const contracts = [
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V5 ?? '',
+      process.env.MULTI_SOURCE_LOAN_CONTRACT_V6 ?? '',
+    ];
+    for (const contract of contracts) {
+      if (isAddress(contract)) {
+        await migrateMSL(contract);
+      }
+    }
   } catch (e) {
     console.log('Error:');
     console.log(e);

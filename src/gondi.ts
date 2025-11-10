@@ -500,7 +500,7 @@ export class Gondi {
       executionData.offerExecution[0]?.offer?.contractAddress ?? zeroAddress,
     );
 
-    if (previousMsl.version === '1' || previousMsl.version === '2') {
+    if (previousMsl.version === '1') {
       throw new Error('Unsupported contract address for capital efficient refinance');
     }
 
@@ -529,7 +529,7 @@ export class Gondi {
 
     return this.contracts.PositionMigrator(contractAddress, nextMsl).smartRenegotiation({
       currentBalance,
-      targetContract: previousMsl.address,
+      previousMsl,
       repaymentCalldata,
       emitCalldata,
     });
