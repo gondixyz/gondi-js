@@ -498,6 +498,8 @@ export class Gondi {
     loan: LoanToMslLoanType;
     loanId: bigint;
     executionData: EmitLoanArgs;
+    // TODO: We should refactor onStepChange, it should be not only correctly typed, but we shouldn't control
+    // at this level which codes are sent, it should be done internally on each fn.
     onStepChange?: OnStepChange<ObjectValues<typeof EFFICIENT_RENEGOTIATION_CODES>>;
   }) {
     const previousMsl = this.contracts.Msl(loan.contractAddress);
