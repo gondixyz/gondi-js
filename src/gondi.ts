@@ -36,7 +36,7 @@ import {
 } from '@/utils/loan';
 import { max, mulDivUp } from '@/utils/number';
 import { isNative, isOpensea } from '@/utils/orders';
-import { isDefined, OptionalNullable } from '@/utils/types';
+import { isDefined, ObjectValues, OptionalNullable } from '@/utils/types';
 
 import { isFulfillAdvancedOrderFunctionName } from './clients/opensea/types';
 
@@ -47,9 +47,7 @@ interface GondiProps {
   reservoirApiKey?: string;
 }
 
-export type Step = 'TX' | 'SIGNATURE';
-
-export type OnStepChange = (step: Step, code: string) => void;
+export type OnStepChange<T extends string> = (step: T) => void;
 
 export class Gondi {
   contracts: Contracts;
@@ -500,7 +498,7 @@ export class Gondi {
     loan: LoanToMslLoanType;
     loanId: bigint;
     executionData: EmitLoanArgs;
-    onStepChange?: OnStepChange;
+    onStepChange?: OnStepChange<ObjectValues<typeof EFFICIENT_RENEGOTIATION_CODES>>;
   }) {
     const previousMsl = this.contracts.Msl(loan.contractAddress);
     const nextMsl = this.contracts.Msl(
@@ -525,15 +523,13 @@ export class Gondi {
         loan: loanToMslLoan(loan),
       },
       withSignature: true,
-      onSignature: () =>
-        onStepChange?.('SIGNATURE', EFFICIENT_RENEGOTIATION_CODES.REPAYMENT_SIGNATURE),
+      onSignature: () => onStepChange?.(EFFICIENT_RENEGOTIATION_CODES.REPAYMENT_SIGNATURE),
     });
 
     const emitCalldata = await nextMsl.encodeEmitLoan({
       emitArgs: executionData,
       withSignature: true,
-      onSignature: () =>
-        onStepChange?.('SIGNATURE', EFFICIENT_RENEGOTIATION_CODES.EMISSION_SIGNATURE),
+      onSignature: () => onStepChange?.(EFFICIENT_RENEGOTIATION_CODES.EMISSION_SIGNATURE),
     });
 
     const currentBalance = await this.currencyBalance({ tokenAddress: loan.principalAddress });

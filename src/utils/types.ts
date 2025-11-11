@@ -4,3 +4,5 @@ export type OptionalNullable<T, K extends keyof T> = Omit<T, K> & {
 };
 export const isDefined = <T>(value: T | null | undefined): value is T =>
   value !== null && value !== undefined;
+
+export type ObjectValues<T> = T[keyof T];

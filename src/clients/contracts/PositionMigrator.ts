@@ -11,6 +11,7 @@ import { OnStepChange } from '@/gondi';
 import { SECONDS_IN_HOUR } from '@/utils/dates';
 import { getTotalOwed } from '@/utils/loan';
 import { max } from '@/utils/number';
+import { ObjectValues } from '@/utils/types';
 
 import { BaseContract } from './BaseContract';
 
@@ -91,7 +92,7 @@ export class PositionMigrator extends BaseContract<typeof positionMigratorAbi> {
     previousMsl: MslV5 | MslV6;
     repaymentCalldata: Hex;
     emitCalldata: Hex;
-    onStepChange?: OnStepChange;
+    onStepChange?: OnStepChange<ObjectValues<typeof EFFICIENT_RENEGOTIATION_CODES>>;
   }) {
     const { Aave } = getContracts(this.wallet.chain);
 
@@ -121,11 +122,11 @@ export class PositionMigrator extends BaseContract<typeof positionMigratorAbi> {
       nonce: await this.contract.read.getNonce([this.wallet.account.address]),
     };
 
-    onStepChange?.('SIGNATURE', EFFICIENT_RENEGOTIATION_CODES.MIGRATION_SIGNATURE);
+    onStepChange?.(EFFICIENT_RENEGOTIATION_CODES.MIGRATION_SIGNATURE);
 
     const migrationSignature = await this.signMigrationArgs({ structToSign: migrationArgs });
 
-    onStepChange?.('TX', EFFICIENT_RENEGOTIATION_CODES.MIGRATION_TX);
+    onStepChange?.(EFFICIENT_RENEGOTIATION_CODES.MIGRATION_TX);
 
     const txHash = await this.safeContractWrite.smartMigrate([
       {
