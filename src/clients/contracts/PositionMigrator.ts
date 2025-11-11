@@ -2,6 +2,7 @@ import { AbiParametersToPrimitiveTypes, ExtractAbiFunction } from 'abitype';
 import { Address, Hex, zeroAddress } from 'viem';
 
 import { Wallet } from '@/clients/contracts';
+import { MslV5 } from '@/clients/contracts/MslV5';
 import { MslV6 } from '@/clients/contracts/MslV6';
 import { getContracts } from '@/deploys';
 import { positionMigratorAbi } from '@/generated/blockchain/positionMigrator';
@@ -79,18 +80,18 @@ export class PositionMigrator extends BaseContract<typeof positionMigratorAbi> {
   }
   async smartRenegotiation({
     currentBalance,
-    targetContract,
+    previousMsl,
     repaymentCalldata,
     emitCalldata,
   }: {
     currentBalance: bigint;
-    targetContract: Address;
+    previousMsl: MslV5 | MslV6;
     repaymentCalldata: Hex;
     emitCalldata: Hex;
   }) {
     const { Aave } = getContracts(this.wallet.chain);
 
-    const repaymentArgs = this.msl.decodeRepaymentCalldata(repaymentCalldata);
+    const repaymentArgs = previousMsl.decodeRepaymentCalldata(repaymentCalldata);
     const totalOwed = getTotalOwed(repaymentArgs.loan, BigInt(SECONDS_IN_HOUR));
     const borrowArgs = {
       pool: Aave,
@@ -101,7 +102,7 @@ export class PositionMigrator extends BaseContract<typeof positionMigratorAbi> {
 
     const migrationArgs = {
       close: {
-        contractAddress: targetContract,
+        contractAddress: previousMsl.address,
         callData: repaymentCalldata,
         value: 0n,
       },

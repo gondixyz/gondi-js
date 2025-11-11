@@ -72,6 +72,8 @@ export type RenegotiationV4 = RefiAbiTypeV4[0];
 export type RenegotiationV5 = RefiAbiTypeV5[0];
 export type RenegotiationV6 = RefiAbiTypeV6[0];
 
+export type SignableRepaymentDataV5 = RepayAbiTypeV5[0]['data'];
+
 export type SignableRepaymentDataV6 = RepayAbiTypeV6[0]['data'];
 
 export type ExecutionDataV6 = EmitAbiTypeV6[0]['executionData'];

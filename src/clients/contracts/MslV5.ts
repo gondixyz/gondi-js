@@ -1,6 +1,13 @@
 import { Address, decodeFunctionData, encodeFunctionData, Hash, Hex } from 'viem';
 
-import { LoanV5, OfferV5, RenegotiationV5, REORG_SAFETY_BUFFER, zeroHash } from '@/blockchain';
+import {
+  LoanV5,
+  OfferV5,
+  RenegotiationV5,
+  REORG_SAFETY_BUFFER,
+  SignableRepaymentDataV5,
+  zeroHash,
+} from '@/blockchain';
 import { Wallet } from '@/clients/contracts';
 import { multiSourceLoanABI as multiSourceLoanABIV5 } from '@/generated/blockchain/v5';
 import { EmitLoanArgs } from '@/gondi';
@@ -11,6 +18,11 @@ import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
 
 import { BaseContract } from './BaseContract';
 import { MslV6 } from './MslV6';
+
+type RepayArgs = {
+  loan: LoanV5;
+  signableRepaymentData: SignableRepaymentDataV5;
+};
 
 export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
   version = '2' as const;
@@ -564,5 +576,42 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
 
   async getProtocolFee(): ReturnType<MslV6['getProtocolFee']> {
     throw new Error('Not implemented for V2');
+  }
+
+  async signRepaymentData({ structToSign }: { structToSign: SignableRepaymentDataV5 }) {
+    return this.wallet.signTypedData({
+      domain: this.getDomain(),
+      primaryType: 'SignableRepaymentData',
+      types: {
+        SignableRepaymentData: [
+          { name: 'loanId', type: 'uint256' },
+          { name: 'callbackData', type: 'bytes' },
+          { name: 'shouldDelegate', type: 'bool' },
+        ],
+      },
+      message: structToSign,
+    });
+  }
+
+  async encodeRepayLoan({
+    repayArgs,
+    withSignature,
+  }: {
+    repayArgs: RepayArgs;
+    withSignature: boolean;
+  }) {
+    const repayLoanArgs = {
+      data: repayArgs.signableRepaymentData,
+      loan: repayArgs.loan,
+      borrowerSignature: withSignature
+        ? await this.signRepaymentData({ structToSign: repayArgs.signableRepaymentData })
+        : '0x',
+    };
+
+    return encodeFunctionData({
+      abi: this.abi,
+      functionName: 'repayLoan',
+      args: [repayLoanArgs],
+    });
   }
 }
