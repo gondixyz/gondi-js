@@ -596,14 +596,14 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
   async encodeRepayLoan({
     repayArgs,
     withSignature,
-    onSignature,
+    onStepChange,
   }: {
     repayArgs: RepayArgs;
     withSignature: boolean;
-    onSignature?: () => void;
+    onStepChange?: () => void;
   }) {
-    if (onSignature && withSignature) {
-      onSignature();
+    if (onStepChange && withSignature) {
+      onStepChange();
     }
 
     const repayLoanArgs = {

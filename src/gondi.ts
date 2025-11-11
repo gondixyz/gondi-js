@@ -523,13 +523,13 @@ export class Gondi {
         loan: loanToMslLoan(loan),
       },
       withSignature: true,
-      onSignature: () => onStepChange?.(EFFICIENT_RENEGOTIATION_CODES.REPAYMENT_SIGNATURE),
+      onStepChange: () => onStepChange?.(EFFICIENT_RENEGOTIATION_CODES.REPAYMENT_SIGNATURE),
     });
 
     const emitCalldata = await nextMsl.encodeEmitLoan({
       emitArgs: executionData,
       withSignature: true,
-      onSignature: () => onStepChange?.(EFFICIENT_RENEGOTIATION_CODES.EMISSION_SIGNATURE),
+      onStepChange: () => onStepChange?.(EFFICIENT_RENEGOTIATION_CODES.EMISSION_SIGNATURE),
     });
 
     const currentBalance = await this.currencyBalance({ tokenAddress: loan.principalAddress });
