@@ -14,6 +14,7 @@ import { Auction, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Api, Props as ApiProps } from '@/clients/api';
 import { Contracts, GondiPublicClient, Wallet } from '@/clients/contracts';
 import { Opensea } from '@/clients/opensea';
+import { EFFICIENT_RENEGOTIATION_CODES } from '@/codes';
 import { getContracts } from '@/deploys';
 import {
   BnplOrderInput,
@@ -35,7 +36,7 @@ import {
 } from '@/utils/loan';
 import { max, mulDivUp } from '@/utils/number';
 import { isNative, isOpensea } from '@/utils/orders';
-import { isDefined, OptionalNullable } from '@/utils/types';
+import { isDefined, ObjectValues, OptionalNullable } from '@/utils/types';
 
 import { isFulfillAdvancedOrderFunctionName } from './clients/opensea/types';
 
@@ -45,6 +46,8 @@ interface GondiProps {
   openseaApiKey?: string;
   reservoirApiKey?: string;
 }
+
+export type OnStepChange<T extends string> = (step: T) => void;
 
 export class Gondi {
   contracts: Contracts;
@@ -489,11 +492,15 @@ export class Gondi {
     loan,
     loanId,
     executionData,
+    onStepChange,
   }: {
     contractAddress: Address;
     loan: LoanToMslLoanType;
     loanId: bigint;
     executionData: EmitLoanArgs;
+    // TODO: We should refactor onStepChange, it should be not only correctly typed, but we shouldn't control
+    // at this level which codes are sent, it should be done internally on each fn.
+    onStepChange?: OnStepChange<ObjectValues<typeof EFFICIENT_RENEGOTIATION_CODES>>;
   }) {
     const previousMsl = this.contracts.Msl(loan.contractAddress);
     const nextMsl = this.contracts.Msl(
@@ -518,11 +525,13 @@ export class Gondi {
         loan: loanToMslLoan(loan),
       },
       withSignature: true,
+      onStepChange: () => onStepChange?.(EFFICIENT_RENEGOTIATION_CODES.REPAYMENT_SIGNATURE),
     });
 
     const emitCalldata = await nextMsl.encodeEmitLoan({
       emitArgs: executionData,
       withSignature: true,
+      onStepChange: () => onStepChange?.(EFFICIENT_RENEGOTIATION_CODES.EMISSION_SIGNATURE),
     });
 
     const currentBalance = await this.currencyBalance({ tokenAddress: loan.principalAddress });
@@ -532,6 +541,7 @@ export class Gondi {
       previousMsl,
       repaymentCalldata,
       emitCalldata,
+      onStepChange,
     });
   }
 
