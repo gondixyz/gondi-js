@@ -14,6 +14,7 @@ import { Auction, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Api, Props as ApiProps } from '@/clients/api';
 import { Contracts, GondiPublicClient, Wallet } from '@/clients/contracts';
 import { Opensea } from '@/clients/opensea';
+import { EFFICIENT_RENEGOTIATION_CODES } from '@/codes';
 import { getContracts } from '@/deploys';
 import {
   BnplOrderInput,
@@ -45,6 +46,10 @@ interface GondiProps {
   openseaApiKey?: string;
   reservoirApiKey?: string;
 }
+
+export type Step = 'TX' | 'SIGNATURE';
+
+export type OnStepChange = (step: Step, code: string) => void;
 
 export class Gondi {
   contracts: Contracts;
@@ -489,11 +494,13 @@ export class Gondi {
     loan,
     loanId,
     executionData,
+    onStepChange,
   }: {
     contractAddress: Address;
     loan: LoanToMslLoanType;
     loanId: bigint;
     executionData: EmitLoanArgs;
+    onStepChange?: OnStepChange;
   }) {
     const previousMsl = this.contracts.Msl(loan.contractAddress);
     const nextMsl = this.contracts.Msl(
@@ -518,11 +525,15 @@ export class Gondi {
         loan: loanToMslLoan(loan),
       },
       withSignature: true,
+      onSignature: () =>
+        onStepChange?.('SIGNATURE', EFFICIENT_RENEGOTIATION_CODES.REPAYMENT_SIGNATURE),
     });
 
     const emitCalldata = await nextMsl.encodeEmitLoan({
       emitArgs: executionData,
       withSignature: true,
+      onSignature: () =>
+        onStepChange?.('SIGNATURE', EFFICIENT_RENEGOTIATION_CODES.EMISSION_SIGNATURE),
     });
 
     const currentBalance = await this.currencyBalance({ tokenAddress: loan.principalAddress });
@@ -532,6 +543,7 @@ export class Gondi {
       previousMsl,
       repaymentCalldata,
       emitCalldata,
+      onStepChange,
     });
   }
 
