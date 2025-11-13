@@ -124,14 +124,12 @@ export class PositionMigrator extends BaseContract<typeof positionMigratorAbi> {
 
     onStepChange?.(EFFICIENT_RENEGOTIATION_CODES.MIGRATION_SIGNATURE);
 
-    const migrationSignature = await this.signMigrationArgs({ structToSign: migrationArgs });
-
     onStepChange?.(EFFICIENT_RENEGOTIATION_CODES.MIGRATION_TX);
 
     const txHash = await this.safeContractWrite.smartMigrate([
       {
         migrationArgs,
-        migratorSignature: migrationSignature,
+        migratorSignature: '0x',
       },
     ]);
 
