@@ -6,7 +6,7 @@ query listLoans(
   $sortBy: [LoanSortInput!] = []
   $terms: TermsFilter
   $orderByStatuses: Boolean
-  $loansCurrencyAddress: Address
+  $loansCurrencyAddresses: [Address!]
   $first: Int = 24
   $after: String
 ) {
@@ -18,7 +18,7 @@ query listLoans(
     sortBy: $sortBy
     terms: $terms
     orderByStatuses: $orderByStatuses
-    currencyAddress: $loansCurrencyAddress
+    currencyAddresses: $loansCurrencyAddresses
     first: $first
     after: $after
   ) {

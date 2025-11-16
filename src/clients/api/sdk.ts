@@ -4,7 +4,7 @@ import {
   OperationVariables,
   QueryOptions,
 } from '@apollo/client/core/index.js';
-import { DocumentNode } from 'graphql';
+import { type DocumentNode } from 'graphql';
 
 import { getSdk, Requester } from '@/generated/graphql';
 
