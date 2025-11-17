@@ -1,4 +1,3 @@
-// import { createClient, Execute, reservoirChains } from '@reservoir0x/reservoir-sdk';
 import {
   Account,
   Address,
@@ -1078,46 +1077,6 @@ export class Gondi {
       repaymentCalldata,
     });
   }
-
-  // async buyNft({
-  //   price,
-  //   currency,
-  //   orderId,
-  // }: {
-  //   price: bigint;
-  //   currency: Pick<Currency, 'address' | 'decimals'>;
-  //   orderId: string;
-  // }) {
-  //   const reservoirClient = createClient({
-  //     chains: [
-  //       {
-  //         id: this.wallet.chain.id,
-  //         name: this.wallet.chain.name,
-  //         // TODO: change this to the correct chain or remove reservoir directly.
-  //         baseApiUrl: reservoirChains.mainnet.baseApiUrl,
-  //         active: true,
-  //       },
-  //     ],
-  //     apiKey: this.reservoirApiKey,
-  //   });
-  //   const buyResult = await reservoirClient.actions.buyToken({
-  //     items: [{ orderId }],
-  //     wallet: this.wallet,
-  //     expectedPrice: {
-  //       [currency.address]: {
-  //         raw: price,
-  //         currencyAddress: currency.address,
-  //         currencyDecimals: currency.decimals,
-  //       },
-  //     },
-  //     onProgress: (_steps: Execute['steps']) => void 0,
-  //     options: {
-  //       currency: currency.address,
-  //     },
-  //   });
-
-  //   return buyResult;
-  // }
 
   async sellNft({
     order,
