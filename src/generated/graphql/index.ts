@@ -208,7 +208,8 @@ export type BigIntInterval = {
 };
 
 export enum BlockchainEnum {
-  Ethereum = 'ETHEREUM'
+  Ethereum = 'ETHEREUM',
+  Hyperliquid = 'HYPERLIQUID'
 }
 
 export type BuyNowPayLaterOrder = Event & Node & Order & {
@@ -414,7 +415,7 @@ export type CollectionOrder = Event & Node & Order & {
 };
 
 export type CollectionOrderInput = {
-  amount: Scalars['BigInt'];
+  amount?: InputMaybe<Scalars['BigInt']>;
   collectionId: Scalars['Int'];
   currencyAddress: Scalars['Address'];
   expirationTime: Scalars['BigInt'];
@@ -723,6 +724,7 @@ export type DealInput = {
   makerNfts: Array<Scalars['Int']>;
   makerNftsAmounts: Array<Scalars['BigInt']>;
   signature?: InputMaybe<Scalars['Signature']>;
+  startTime: Scalars['BigInt'];
   taker: Scalars['Address'];
   takerErc20s: Array<Scalars['Address']>;
   takerErc20sAmounts: Array<Scalars['BigInt']>;
@@ -1482,15 +1484,15 @@ export type Mutation = {
   hideRenegotiation: Renegotiation;
   markNotificationIdsAsRead?: Maybe<Scalars['Void']>;
   markNotificationsAsRead?: Maybe<Scalars['Void']>;
-  /** Creates a buy now pay later order. Buy now pay later orders are orders which use a loan offer principal to buy and NFT and start a loan making the borrower the creator of the order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You will have to do this process two times since multiple signatures are required. You should receive an BuyNowPayLaterOrder if everything went well. Refer to gondi-js examples for more details on how to sign it and pay the order. */
+  /** Creates a buy now pay later order. Buy now pay later orders are orders which use a loan offer principal to buy and NFT and start a loan making the borrower the creator of the order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You will have to do this process two times since multiple signatures are required. You should receive an BuyNowPayLaterOrder if everything went well. Refer to gondi-js examples for more details Platform fees are calculated automatically.on how to sign it and pay the order. */
   publishBuyNowPayLaterOrder: BuyNowPayLaterOrderSignatureRequestExtraSeaportData;
   /** Creates a deal order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive a Deal if everything went well. */
   publishDealOrder: DealSignatureRequest;
-  /** Creates a collection trade order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an CollectionOrder if everything went well. An order can only be a BID. Refer to gondi-js examples for more details. */
+  /** Creates a collection trade order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an CollectionOrder if everything went well. An order can only be a BID. Platform fees are added to the fees array if not present.Refer to gondi-js examples for more details. */
   publishOrderForCollection: CollectionOrderSignatureRequest;
-  /** Creates a single NFT trade order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an SingleNFTOrder if everything went well. An order can be an ASK or a BID. Refer to gondi-js examples for more details. */
+  /** Creates a single NFT trade order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an SingleNFTOrder if everything went well. An order can be an ASK or a BID. Platform fees are added to the fees array if not present.Refer to gondi-js examples for more details. */
   publishOrderForNft: SingleNftOrderSignatureRequest;
-  /** Creates a sell and repay loan order. Sell and repay orders are orders to sell an NFT and use that money to repay a loan leaving the rest for the borrower. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You will have to do this process two times since multiple signatures are required. You should receive an SellAndRepayOrder if everything went well. Refer to gondi-js examples for more details on how to sign it and pay the order. */
+  /** Creates a sell and repay loan order. Sell and repay orders are orders to sell an NFT and use that money to repay a loan leaving the rest for the borrower. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You will have to do this process two times since multiple signatures are required. You should receive an SellAndRepayOrder if everything went well. Refer to gondi-js examples for more details Platform fees are added to the fees array if not present.on how to sign it and pay the order. */
   publishSellAndRepayOrder: SellAndRepayOrderSignatureRequest;
   /** Removes a loan listing from a user. */
   removeListing: Listing;
@@ -1781,7 +1783,7 @@ export type NftEdge = {
 };
 
 export type NftOrderInput = {
-  amount: Scalars['BigInt'];
+  amount?: InputMaybe<Scalars['BigInt']>;
   contractAddress: Scalars['Address'];
   currencyAddress: Scalars['Address'];
   expirationTime: Scalars['BigInt'];
@@ -3050,7 +3052,9 @@ export type QueryListOrdersV2Args = {
 
 /** Query for the lending module */
 export type QueryListPlatformFeesArgs = {
+  blockchain: BlockchainEnum;
   collectionId: Scalars['Int'];
+  marketplace?: InputMaybe<MarketPlaceType>;
   operation: PlatformFeeOperationType;
 };
 
@@ -3473,7 +3477,7 @@ export type SingleNftOrder = Event & Node & Order & {
 };
 
 export type SingleNftOrderInput = {
-  amount: Scalars['BigInt'];
+  amount?: InputMaybe<Scalars['BigInt']>;
   contractAddress: Scalars['Address'];
   currencyAddress: Scalars['Address'];
   expirationTime: Scalars['BigInt'];

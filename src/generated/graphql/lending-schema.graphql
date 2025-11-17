@@ -172,6 +172,7 @@ input BigIntInterval {
 
 enum BlockchainEnum {
   ETHEREUM
+  HYPERLIQUID
 }
 
 type BuyNowPayLaterOrder implements Event & Node & Order {
@@ -360,7 +361,7 @@ type CollectionOrder implements Event & Node & Order {
 }
 
 input CollectionOrderInput {
-  amount: BigInt!
+  amount: BigInt = null
   collectionId: Int!
   currencyAddress: Address!
   expirationTime: BigInt!
@@ -547,6 +548,7 @@ input DealInput {
   makerNfts: [Int!]!
   makerNftsAmounts: [BigInt!]!
   signature: Signature
+  startTime: BigInt!
   taker: Address!
   takerErc20s: [Address!]!
   takerErc20sAmounts: [BigInt!]!
@@ -1295,7 +1297,7 @@ type Mutation {
   markNotificationsAsRead: Void
 
   """
-  Creates a buy now pay later order. Buy now pay later orders are orders which use a loan offer principal to buy and NFT and start a loan making the borrower the creator of the order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You will have to do this process two times since multiple signatures are required. You should receive an BuyNowPayLaterOrder if everything went well. Refer to gondi-js examples for more details on how to sign it and pay the order.
+  Creates a buy now pay later order. Buy now pay later orders are orders which use a loan offer principal to buy and NFT and start a loan making the borrower the creator of the order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You will have to do this process two times since multiple signatures are required. You should receive an BuyNowPayLaterOrder if everything went well. Refer to gondi-js examples for more details Platform fees are calculated automatically.on how to sign it and pay the order.
   """
   publishBuyNowPayLaterOrder(orderInput: BNPLOrderInput!): BuyNowPayLaterOrderSignatureRequestExtraSeaportData!
 
@@ -1305,17 +1307,17 @@ type Mutation {
   publishDealOrder(dealInput: DealInput!): DealSignatureRequest!
 
   """
-  Creates a collection trade order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an CollectionOrder if everything went well. An order can only be a BID. Refer to gondi-js examples for more details.
+  Creates a collection trade order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an CollectionOrder if everything went well. An order can only be a BID. Platform fees are added to the fees array if not present.Refer to gondi-js examples for more details.
   """
   publishOrderForCollection(orderInput: CollectionOrderInput!): CollectionOrderSignatureRequest!
 
   """
-  Creates a single NFT trade order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an SingleNFTOrder if everything went well. An order can be an ASK or a BID. Refer to gondi-js examples for more details.
+  Creates a single NFT trade order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an SingleNFTOrder if everything went well. An order can be an ASK or a BID. Platform fees are added to the fees array if not present.Refer to gondi-js examples for more details.
   """
   publishOrderForNft(orderInput: SingleNFTOrderInput!): SingleNFTOrderSignatureRequest!
 
   """
-  Creates a sell and repay loan order. Sell and repay orders are orders to sell an NFT and use that money to repay a loan leaving the rest for the borrower. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You will have to do this process two times since multiple signatures are required. You should receive an SellAndRepayOrder if everything went well. Refer to gondi-js examples for more details on how to sign it and pay the order.
+  Creates a sell and repay loan order. Sell and repay orders are orders to sell an NFT and use that money to repay a loan leaving the rest for the borrower. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You will have to do this process two times since multiple signatures are required. You should receive an SellAndRepayOrder if everything went well. Refer to gondi-js examples for more details Platform fees are added to the fees array if not present.on how to sign it and pay the order.
   """
   publishSellAndRepayOrder(orderInput: NFTOrderInput!): SellAndRepayOrderSignatureRequest!
 
@@ -1419,7 +1421,7 @@ type NFTEdge {
 }
 
 input NFTOrderInput {
-  amount: BigInt!
+  amount: BigInt = null
   contractAddress: Address!
   currencyAddress: Address!
   expirationTime: BigInt!
@@ -2196,7 +2198,7 @@ type Query {
   """
   listOrders(after: String, collectionId: Int = null, currencyAddresses: [Address!] = null, first: Int = null, hidden: Boolean = null, ids: [Int!] = null, maker: [Address!] = null, marketplaceIds: [String!] = null, marketplaces: [MarketPlaceType!] = null, nftId: Int = null, onlyInvalid: Boolean = null, orderType: OrderType = null, sortBy: [OrderSortInput!] = null, statuses: [OrderStatusType!] = null, taker: Address = null, terms: OrderTermsFilter = null): OrderConnection!
   listOrdersV2(after: String, collectionIds: [Int!] = null, currencyAddresses: [Address!] = null, excludeMaker: [Address!] = null, first: Int = null, hidden: Boolean = null, ids: [Int!] = null, maker: [Address!] = null, marketplaceIds: [String!] = null, marketplaces: [MarketPlaceType!] = null, nfts: [OrderForNft!] = null, onlyInvalid: Boolean = null, side: OrderSide = null, sortBy: [OrderSortInput!] = null, statuses: [OrderStatusType!] = null, taker: Address = null, terms: OrderTermsFilter = null, traitIds: [Int!] = null): OrderConnection!
-  listPlatformFees(collectionId: Int!, operation: PlatformFeeOperationType!): [PlatformFee!]!
+  listPlatformFees(blockchain: BlockchainEnum!, collectionId: Int!, marketplace: MarketPlaceType = null, operation: PlatformFeeOperationType!): [PlatformFee!]!
   listPoolActivities(after: String, first: Int! = 20, ownerAddresses: [Address!] = null, poolAddresses: [Address!] = null, types: [PoolActivityType!] = null): PoolActivityConnection!
   listPools(addresses: [String!] = null, after: String, first: Int! = 10): PoolConnection!
   listRenegotiations(after: String, blockchains: [BlockchainEnum!] = null, collections: [Int!] = null, first: Int = null, hidden: Boolean = null, isAddNewTranche: Boolean = null, loanId: String = null, sortBy: [OffersSortInput!] = null, statuses: [OfferStatus!] = null, terms: RefinanceTermsFilter = null): RenegotiationConnection!
@@ -2555,7 +2557,7 @@ type SingleNFTOrder implements Event & Node & Order {
 }
 
 input SingleNFTOrderInput {
-  amount: BigInt!
+  amount: BigInt = null
   contractAddress: Address!
   currencyAddress: Address!
   expirationTime: BigInt!
