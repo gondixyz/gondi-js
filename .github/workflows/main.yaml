@@ -13,23 +13,19 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Enable Corepack before setting up Node
-        run: corepack enable
 
-      - uses: actions/setup-node@v4
+      - uses: oven-sh/setup-bun@v1
         with:
-          node-version-file: '.npmrc'
-          cache: 'yarn'
-          registry-url: 'https://registry.npmjs.org'
+          bun-version: latest
 
       - name: Install dependencies
-        run: yarn
+        run: bun install
 
       - name: Build
-        run: yarn build
+        run: bun run build
 
       - name: Lint
-        run: yarn lint
+        run: bun run lint
 
       # Set package.json version as env var
       - name: Set version
@@ -57,13 +53,13 @@ jobs:
       # Publish to NPM if version is not published
       - name: NPM Publish
         run: |
-          npx can-npm-publish --verbose && yarn npm publish || echo "Does not publish"
+          npx can-npm-publish --verbose && npm publish || echo "Does not publish"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_SECRET }}
 
       # Generate docs
       - name: Generate docs
-        run: yarn docs
+        run: bun run docs
 
       - name: Publish docs
         uses: JamesIves/github-pages-deploy-action@v4.3.3

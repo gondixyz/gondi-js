@@ -11,19 +11,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Enable Corepack before setting up Node
-        run: corepack enable
 
-      - uses: actions/setup-node@v4
+      - uses: oven-sh/setup-bun@v1
         with:
-          node-version-file: '.npmrc'
-          cache: 'yarn'
+          bun-version: latest
 
       - name: Install dependencies
-        run: yarn
+        run: bun install
 
       - name: Build
-        run: yarn build
+        run: bun run build
 
       - name: Lint
-        run: yarn lint
+        run: bun run lint
