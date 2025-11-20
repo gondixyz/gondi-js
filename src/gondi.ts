@@ -217,11 +217,15 @@ export class Gondi {
     sellAndRepayOrderInput: Parameters<Api['publishSellAndRepayOrder']>[0],
   ) {
     let response = await this.apiClient.publishSellAndRepayOrder(sellAndRepayOrderInput);
-    while (response.__typename === 'SignatureRequest') {
-      const key = response.key as 'signature' | 'repaymentSignature';
-      sellAndRepayOrderInput[key] = await this.wallet.signTypedData(
-        response.typedData as TypedDataDefinition,
-      );
+    while (response.__typename !== 'SellAndRepayOrder') {
+      if (response.__typename === 'ExtraSeaportData') {
+        sellAndRepayOrderInput.extraSeaportData = response.extraData;
+      } else if (response.__typename === 'SignatureRequest') {
+        const key = response.key as 'signature' | 'repaymentSignature';
+        sellAndRepayOrderInput[key] = await this.wallet.signTypedData(
+          response.typedData as TypedDataDefinition,
+        );
+      }
       response = await this.apiClient.publishSellAndRepayOrder(sellAndRepayOrderInput);
     }
 
