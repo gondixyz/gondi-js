@@ -1319,7 +1319,7 @@ type Mutation {
   """
   Creates a sell and repay loan order. Sell and repay orders are orders to sell an NFT and use that money to repay a loan leaving the rest for the borrower. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You will have to do this process two times since multiple signatures are required. You should receive an SellAndRepayOrder if everything went well. Refer to gondi-js examples for more details Platform fees are added to the fees array if not present.on how to sign it and pay the order.
   """
-  publishSellAndRepayOrder(orderInput: NFTOrderInput!): SellAndRepayOrderSignatureRequest!
+  publishSellAndRepayOrder(orderInput: NFTOrderInput!): SellAndRepayOrderSignatureRequestExtraSeaportData!
 
   """Removes a loan listing from a user."""
   removeListing(nftId: Int!): Listing!
@@ -1425,6 +1425,7 @@ input NFTOrderInput {
   contractAddress: Address!
   currencyAddress: Address!
   expirationTime: BigInt!
+  extraSeaportData: Hex = null
   fees: [OrderFee!] = null
   isAsk: Boolean!
   orderToFill: Int = null
@@ -2127,7 +2128,7 @@ type Query {
     collections: [Int!] = null
 
     """Offer only filter."""
-    contractAddress: Address = null
+    contractAddresses: [Address!] = null
     currencyAddresses: [Address!] = null
     first: Int = null
     hidden: Boolean = null
@@ -2426,7 +2427,7 @@ type SellAndRepayOrder implements Event & Node & Order {
   updatedDate: DateTime!
 }
 
-union SellAndRepayOrderSignatureRequest = SellAndRepayOrder | SignatureRequest
+union SellAndRepayOrderSignatureRequestExtraSeaportData = ExtraSeaportData | SellAndRepayOrder | SignatureRequest
 
 scalar Signature
 

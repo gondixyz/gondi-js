@@ -1493,7 +1493,7 @@ export type Mutation = {
   /** Creates a single NFT trade order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an SingleNFTOrder if everything went well. An order can be an ASK or a BID. Platform fees are added to the fees array if not present.Refer to gondi-js examples for more details. */
   publishOrderForNft: SingleNftOrderSignatureRequest;
   /** Creates a sell and repay loan order. Sell and repay orders are orders to sell an NFT and use that money to repay a loan leaving the rest for the borrower. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You will have to do this process two times since multiple signatures are required. You should receive an SellAndRepayOrder if everything went well. Refer to gondi-js examples for more details Platform fees are added to the fees array if not present.on how to sign it and pay the order. */
-  publishSellAndRepayOrder: SellAndRepayOrderSignatureRequest;
+  publishSellAndRepayOrder: SellAndRepayOrderSignatureRequestExtraSeaportData;
   /** Removes a loan listing from a user. */
   removeListing: Listing;
   /** Removes all the loan listings from a user. Can be filtered. */
@@ -1787,6 +1787,7 @@ export type NftOrderInput = {
   contractAddress: Scalars['Address'];
   currencyAddress: Scalars['Address'];
   expirationTime: Scalars['BigInt'];
+  extraSeaportData?: InputMaybe<Scalars['Hex']>;
   fees?: InputMaybe<Array<OrderFee>>;
   isAsk: Scalars['Boolean'];
   orderToFill?: InputMaybe<Scalars['Int']>;
@@ -2896,7 +2897,7 @@ export type QueryListNftOffersAndRenegotiationsArgs = {
   after?: InputMaybe<Scalars['String']>;
   blockchains?: InputMaybe<Array<BlockchainEnum>>;
   collections?: InputMaybe<Array<Scalars['Int']>>;
-  contractAddress?: InputMaybe<Scalars['Address']>;
+  contractAddresses?: InputMaybe<Array<Scalars['Address']>>;
   currencyAddresses?: InputMaybe<Array<Scalars['Address']>>;
   first?: InputMaybe<Scalars['Int']>;
   hidden?: InputMaybe<Scalars['Boolean']>;
@@ -3341,7 +3342,7 @@ export type SellAndRepayOrder = Event & Node & Order & {
   updatedDate: Scalars['DateTime'];
 };
 
-export type SellAndRepayOrderSignatureRequest = SellAndRepayOrder | SignatureRequest;
+export type SellAndRepayOrderSignatureRequestExtraSeaportData = ExtraSeaportData | SellAndRepayOrder | SignatureRequest;
 
 export type SignatureRequest = {
   __typename?: 'SignatureRequest';
@@ -4241,7 +4242,7 @@ export type PublishSellAndRepayOrderMutationVariables = Exact<{
 }>;
 
 
-export type PublishSellAndRepayOrderMutation = { __typename?: 'Mutation', result: { __typename?: 'SellAndRepayOrder', id: string, status: string, signature: Hex, repaymentCalldata: Hex, marketPlaceAddress: Address } | { __typename?: 'SignatureRequest', key: string, typedData: { __typename?: 'TypedData', types: object, primaryType: string, domain: object, message: object } } };
+export type PublishSellAndRepayOrderMutation = { __typename?: 'Mutation', result: { __typename?: 'ExtraSeaportData', extraData: Hex } | { __typename?: 'SellAndRepayOrder', id: string, status: string, signature: Hex, repaymentCalldata: Hex, marketPlaceAddress: Address } | { __typename?: 'SignatureRequest', key: string, typedData: { __typename?: 'TypedData', types: object, primaryType: string, domain: object, message: object } } };
 
 export type ShowOrderMutationVariables = Exact<{
   id: Scalars['Int'];
@@ -7353,6 +7354,9 @@ export const PublishSellAndRepayOrderDocument = gql`
       signature
       repaymentCalldata
       marketPlaceAddress
+    }
+    ... on ExtraSeaportData {
+      extraData
     }
     ... on SignatureRequest {
       key
