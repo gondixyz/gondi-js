@@ -11,7 +11,7 @@ import {
 } from './common';
 
 const users = wallets.map((wallet) =>
-  Gondi.create({ wallet, onStepChange: (step) => console.log(step) }),
+  Gondi.create({ wallet, onStepChange: async (step) => console.log(step) }),
 );
 
 const MSL_V3_1 = getAddress(process.env.MULTI_SOURCE_LOAN_CONTRACT_V7 ?? '');

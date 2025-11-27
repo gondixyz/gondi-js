@@ -34,7 +34,7 @@ import {
 import { max, mulDivUp } from '@/utils/number';
 import { isNative, isOpensea } from '@/utils/orders';
 import { isDefined, OptionalNullable } from '@/utils/types';
-import { WalletWithSteps } from '@/WalletWithSteps';
+import { wrapWalletWithSteps } from '@/WalletWithSteps';
 
 import { isFulfillAdvancedOrderFunctionName } from './clients/opensea/types';
 
@@ -58,7 +58,7 @@ type Step =
       functionNameOrSelector: string; // can be a function name or a function selector
     };
 
-export type OnStepChange = (step: Step) => void;
+export type OnStepChange = (step: Step) => Promise<void>;
 
 export class Gondi {
   contracts: Contracts;
@@ -85,16 +85,12 @@ export class Gondi {
   static create(
     props: GondiProps & {
       onStepChange?: OnStepChange;
-      transactionSuccessDelay?: number;
-      signatureSuccessDelay?: number;
     },
   ) {
-    const { wallet, onStepChange, transactionSuccessDelay, signatureSuccessDelay } = props;
-    const walletWithSteps = WalletWithSteps.create({
+    const { wallet, onStepChange } = props;
+    const walletWithSteps = wrapWalletWithSteps({
       wallet,
       onStepChange,
-      transactionSuccessDelay,
-      signatureSuccessDelay,
     });
     return new Gondi({ ...props, wallet: walletWithSteps });
   }
