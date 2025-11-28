@@ -9,11 +9,11 @@ import {
 } from 'viem';
 import { getAddress } from 'viem';
 
+import { addStepCallback } from '@/addStepCallback';
 import { Auction, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Api, Props as ApiProps } from '@/clients/api';
 import { Contracts, GondiPublicClient, Wallet } from '@/clients/contracts';
 import { Opensea } from '@/clients/opensea';
-import { EFFICIENT_RENEGOTIATION_CODES } from '@/codes';
 import { getContracts } from '@/deploys';
 import {
   BnplOrderInput,
@@ -34,7 +34,7 @@ import {
 } from '@/utils/loan';
 import { max, mulDivUp } from '@/utils/number';
 import { isNative, isOpensea } from '@/utils/orders';
-import { isDefined, ObjectValues, OptionalNullable } from '@/utils/types';
+import { isDefined, OptionalNullable } from '@/utils/types';
 
 import { isFulfillAdvancedOrderFunctionName } from './clients/opensea/types';
 
@@ -45,7 +45,21 @@ interface GondiProps {
   reservoirApiKey?: string;
 }
 
-export type OnStepChange<T extends string> = (step: T) => void;
+type Step = { id: number } & (
+  | {
+      type: 'signature';
+      primaryType: string;
+      status: 'waiting' | 'success';
+    }
+  | {
+      type: 'transaction';
+      status: 'waiting' | 'broadcasted' | 'success';
+      to: Address;
+      functionNameOrSelector: string; // can be a function name or a function selector
+    }
+);
+
+export type OnStepChange = (step: Step) => Promise<void>;
 
 export class Gondi {
   contracts: Contracts;
@@ -54,9 +68,8 @@ export class Gondi {
   bcClient: GondiPublicClient;
   apiClient: Api;
   openseaClient: Opensea;
-  reservoirApiKey?: string;
 
-  constructor({ wallet, apiClient, openseaApiKey, reservoirApiKey }: GondiProps) {
+  constructor({ wallet, apiClient, openseaApiKey }: GondiProps) {
     this.wallet = wallet;
     this.account = wallet.account;
     this.bcClient = createPublicClient({
@@ -66,7 +79,21 @@ export class Gondi {
     this.contracts = new Contracts(this.bcClient, wallet);
     this.apiClient = new Api({ wallet, apiClient });
     this.openseaClient = new Opensea({ apiKey: openseaApiKey ?? process.env.OPENSEA_API_KEY });
-    this.reservoirApiKey = reservoirApiKey ?? process.env.RESERVOIR_API_KEY;
+  }
+
+  static create(
+    props: GondiProps & {
+      onStepChange: OnStepChange;
+      executionId?: number | null;
+    },
+  ) {
+    const { wallet, onStepChange, executionId } = props;
+    const walletWithSteps = addStepCallback({
+      wallet,
+      onStepChange,
+      executionId,
+    });
+    return new Gondi({ ...props, wallet: walletWithSteps });
   }
 
   async makeSingleNftOffer(offer: model.SingleNftOfferInput) {
@@ -494,15 +521,11 @@ export class Gondi {
     loan,
     loanId,
     executionData,
-    onStepChange,
   }: {
     contractAddress: Address;
     loan: LoanToMslLoanType;
     loanId: bigint;
     executionData: EmitLoanArgs;
-    // TODO: We should refactor onStepChange, it should be not only correctly typed, but we shouldn't control
-    // at this level which codes are sent, it should be done internally on each fn.
-    onStepChange?: OnStepChange<ObjectValues<typeof EFFICIENT_RENEGOTIATION_CODES>>;
   }) {
     const previousMsl = this.contracts.Msl(loan.contractAddress);
     const nextMsl = this.contracts.Msl(
@@ -527,13 +550,11 @@ export class Gondi {
         loan: loanToMslLoan(loan),
       },
       withSignature: true,
-      onStepChange: () => onStepChange?.(EFFICIENT_RENEGOTIATION_CODES.REPAYMENT_SIGNATURE),
     });
 
     const emitCalldata = await nextMsl.encodeEmitLoan({
       emitArgs: executionData,
       withSignature: true,
-      onStepChange: () => onStepChange?.(EFFICIENT_RENEGOTIATION_CODES.EMISSION_SIGNATURE),
     });
 
     const currentBalance = await this.currencyBalance({ tokenAddress: loan.principalAddress });
@@ -543,7 +564,6 @@ export class Gondi {
       previousMsl,
       repaymentCalldata,
       emitCalldata,
-      onStepChange,
     });
   }
 

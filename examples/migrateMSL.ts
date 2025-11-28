@@ -1,4 +1,4 @@
-import { LoanStatusType } from 'gondi';
+import { Gondi, LoanStatusType } from 'gondi';
 import { Address, getAddress, isAddress } from 'viem';
 
 import {
@@ -7,8 +7,12 @@ import {
   testNftCollateralAddress,
   testSingleNftOfferInput,
   testTokenId,
-  users,
+  wallets,
 } from './common';
+
+const users = wallets.map((wallet) =>
+  Gondi.create({ wallet, onStepChange: async (step) => console.log(step) }),
+);
 
 const MSL_V3_1 = getAddress(process.env.MULTI_SOURCE_LOAN_CONTRACT_V7 ?? '');
 const MIGRATOR = getAddress(process.env.MIGRATOR_CONTRACT ?? '');

@@ -4,14 +4,11 @@ import { Address, Hex, zeroAddress } from 'viem';
 import { Wallet } from '@/clients/contracts';
 import { MslV5 } from '@/clients/contracts/MslV5';
 import { MslV6 } from '@/clients/contracts/MslV6';
-import { EFFICIENT_RENEGOTIATION_CODES } from '@/codes';
 import { getContracts } from '@/deploys';
 import { positionMigratorAbi } from '@/generated/blockchain/positionMigrator';
-import { OnStepChange } from '@/gondi';
 import { SECONDS_IN_HOUR } from '@/utils/dates';
 import { getTotalOwed } from '@/utils/loan';
 import { max } from '@/utils/number';
-import { ObjectValues } from '@/utils/types';
 
 import { BaseContract } from './BaseContract';
 
@@ -86,13 +83,11 @@ export class PositionMigrator extends BaseContract<typeof positionMigratorAbi> {
     previousMsl,
     repaymentCalldata,
     emitCalldata,
-    onStepChange,
   }: {
     currentBalance: bigint;
     previousMsl: MslV5 | MslV6;
     repaymentCalldata: Hex;
     emitCalldata: Hex;
-    onStepChange?: OnStepChange<ObjectValues<typeof EFFICIENT_RENEGOTIATION_CODES>>;
   }) {
     const { Aave } = getContracts(this.wallet.chain);
 
@@ -121,10 +116,6 @@ export class PositionMigrator extends BaseContract<typeof positionMigratorAbi> {
       migrator: this.wallet.account.address,
       nonce: await this.contract.read.getNonce([this.wallet.account.address]),
     };
-
-    onStepChange?.(EFFICIENT_RENEGOTIATION_CODES.MIGRATION_SIGNATURE);
-
-    onStepChange?.(EFFICIENT_RENEGOTIATION_CODES.MIGRATION_TX);
 
     const txHash = await this.safeContractWrite.smartMigrate([
       {
