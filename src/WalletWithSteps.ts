@@ -3,14 +3,18 @@ import { Address, createPublicClient, createTransport } from 'viem';
 import { Wallet } from '@/clients/contracts';
 import { type OnStepChange } from '@/gondi';
 
-export const wrapWalletWithSteps = (props: { wallet: Wallet; onStepChange?: OnStepChange }) => {
-  const { wallet, onStepChange } = props;
+export const wrapWalletWithSteps = (props: {
+  wallet: Wallet;
+  onStepChange?: OnStepChange;
+  executionId?: number | null;
+}) => {
+  const { wallet, onStepChange, executionId } = props;
   const bcClient = createPublicClient({
     chain: wallet.chain,
     transport: () => createTransport(wallet.transport),
   });
 
-  let id = 0;
+  let id = executionId ?? 0;
 
   const originalSignTypedData = wallet.signTypedData.bind(wallet);
   const originalWriteContract = wallet.writeContract.bind(wallet);
@@ -65,27 +69,26 @@ export const wrapWalletWithSteps = (props: { wallet: Wallet; onStepChange?: OnSt
   };
 
   const signTypedData: Wallet['signTypedData'] = async (typedData) => {
-    id++;
     const primaryType = String(typedData.primaryType);
     await sendWaitingSignatureStep(id, primaryType);
     const signature = await originalSignTypedData(typedData);
     await sendSuccessSignatureStep(id, primaryType);
+    id++;
     return signature;
   };
 
   const writeContract: Wallet['writeContract'] = async (params) => {
-    id++;
     const { address: to, functionName } = params;
     await sendWaitingTransactionStep(id, to, functionName);
     const txHash = await originalWriteContract(params);
     await sendPendingTransactionStep(id, to, functionName);
     await bcClient.waitForTransactionReceipt({ hash: txHash });
     await sendSuccessTransactionStep(id, to, functionName);
+    id++;
     return txHash;
   };
 
   const sendTransaction: Wallet['sendTransaction'] = async (params) => {
-    id++;
     const { to, data } = params;
     if (!to || !data) throw new Error('to and data are required');
     const selector = data.slice(0, 10);
@@ -94,6 +97,7 @@ export const wrapWalletWithSteps = (props: { wallet: Wallet; onStepChange?: OnSt
     await sendPendingTransactionStep(id, to, selector);
     await bcClient.waitForTransactionReceipt({ hash: txHash });
     await sendSuccessTransactionStep(id, to, selector);
+    id++;
     return txHash;
   };
 

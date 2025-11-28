@@ -86,12 +86,14 @@ export class Gondi {
   static create(
     props: GondiProps & {
       onStepChange?: OnStepChange;
+      executionId?: number | null;
     },
   ) {
-    const { wallet, onStepChange } = props;
+    const { wallet, onStepChange, executionId } = props;
     const walletWithSteps = wrapWalletWithSteps({
       wallet,
       onStepChange,
+      executionId,
     });
     return new Gondi({ ...props, wallet: walletWithSteps });
   }
