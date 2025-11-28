@@ -10,28 +10,33 @@ export const wrapWalletWithSteps = (props: { wallet: Wallet; onStepChange?: OnSt
     transport: () => createTransport(wallet.transport),
   });
 
+  let id = 0;
+
   const originalSignTypedData = wallet.signTypedData.bind(wallet);
   const originalWriteContract = wallet.writeContract.bind(wallet);
   const originalSendTransaction = wallet.sendTransaction.bind(wallet);
 
-  const sendWaitingSignatureStep = (primaryType: string) => {
+  const sendWaitingSignatureStep = (id: number, primaryType: string) => {
     return onStepChange?.({
+      id,
       type: 'signature',
       status: 'waiting',
       primaryType,
     });
   };
 
-  const sendSuccessSignatureStep = (primaryType: string) => {
+  const sendSuccessSignatureStep = (id: number, primaryType: string) => {
     return onStepChange?.({
+      id,
       type: 'signature',
       status: 'success',
       primaryType,
     });
   };
 
-  const sendWaitingTransactionStep = (to: Address, functionNameOrSelector: string) => {
+  const sendWaitingTransactionStep = (id: number, to: Address, functionNameOrSelector: string) => {
     return onStepChange?.({
+      id,
       type: 'transaction',
       status: 'waiting',
       to,
@@ -39,17 +44,19 @@ export const wrapWalletWithSteps = (props: { wallet: Wallet; onStepChange?: OnSt
     });
   };
 
-  const sendPendingTransactionStep = (to: Address, functionNameOrSelector: string) => {
+  const sendPendingTransactionStep = (id: number, to: Address, functionNameOrSelector: string) => {
     return onStepChange?.({
+      id,
       type: 'transaction',
-      status: 'pending',
+      status: 'broadcasted',
       to,
       functionNameOrSelector,
     });
   };
 
-  const sendSuccessTransactionStep = (to: Address, functionNameOrSelector: string) => {
+  const sendSuccessTransactionStep = (id: number, to: Address, functionNameOrSelector: string) => {
     return onStepChange?.({
+      id,
       type: 'transaction',
       status: 'success',
       to,
@@ -58,32 +65,35 @@ export const wrapWalletWithSteps = (props: { wallet: Wallet; onStepChange?: OnSt
   };
 
   const signTypedData: Wallet['signTypedData'] = async (typedData) => {
+    id++;
     const primaryType = String(typedData.primaryType);
-    await sendWaitingSignatureStep(primaryType);
+    await sendWaitingSignatureStep(id, primaryType);
     const signature = await originalSignTypedData(typedData);
-    await sendSuccessSignatureStep(primaryType);
+    await sendSuccessSignatureStep(id, primaryType);
     return signature;
   };
 
   const writeContract: Wallet['writeContract'] = async (params) => {
+    id++;
     const { address: to, functionName } = params;
-    await sendWaitingTransactionStep(to, functionName);
+    await sendWaitingTransactionStep(id, to, functionName);
     const txHash = await originalWriteContract(params);
-    await sendPendingTransactionStep(to, functionName);
+    await sendPendingTransactionStep(id, to, functionName);
     await bcClient.waitForTransactionReceipt({ hash: txHash });
-    await sendSuccessTransactionStep(to, functionName);
+    await sendSuccessTransactionStep(id, to, functionName);
     return txHash;
   };
 
   const sendTransaction: Wallet['sendTransaction'] = async (params) => {
+    id++;
     const { to, data } = params;
     if (!to || !data) throw new Error('to and data are required');
     const selector = data.slice(0, 10);
-    await sendWaitingTransactionStep(to, selector);
+    await sendWaitingTransactionStep(id, to, selector);
     const txHash = await originalSendTransaction(params);
-    await sendPendingTransactionStep(to, selector);
+    await sendPendingTransactionStep(id, to, selector);
     await bcClient.waitForTransactionReceipt({ hash: txHash });
-    await sendSuccessTransactionStep(to, selector);
+    await sendSuccessTransactionStep(id, to, selector);
     return txHash;
   };
 

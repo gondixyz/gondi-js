@@ -45,7 +45,7 @@ interface GondiProps {
   reservoirApiKey?: string;
 }
 
-type Step =
+type Step = { id: number } & (
   | {
       type: 'signature';
       primaryType: string;
@@ -53,10 +53,11 @@ type Step =
     }
   | {
       type: 'transaction';
-      status: 'waiting' | 'pending' | 'success';
+      status: 'waiting' | 'broadcasted' | 'success';
       to: Address;
       functionNameOrSelector: string; // can be a function name or a function selector
-    };
+    }
+);
 
 export type OnStepChange = (step: Step) => Promise<void>;
 
