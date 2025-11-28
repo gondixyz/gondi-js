@@ -3,9 +3,9 @@ import { Address, createPublicClient, createTransport } from 'viem';
 import { Wallet } from '@/clients/contracts';
 import { type OnStepChange } from '@/gondi';
 
-export const wrapWalletWithSteps = (props: {
+export const addStepCallback = (props: {
   wallet: Wallet;
-  onStepChange?: OnStepChange;
+  onStepChange: OnStepChange;
   executionId?: number | null;
 }) => {
   const { wallet, onStepChange, executionId } = props;
@@ -21,7 +21,7 @@ export const wrapWalletWithSteps = (props: {
   const originalSendTransaction = wallet.sendTransaction.bind(wallet);
 
   const sendWaitingSignatureStep = (id: number, primaryType: string) => {
-    return onStepChange?.({
+    return onStepChange({
       id,
       type: 'signature',
       status: 'waiting',
@@ -30,7 +30,7 @@ export const wrapWalletWithSteps = (props: {
   };
 
   const sendSuccessSignatureStep = (id: number, primaryType: string) => {
-    return onStepChange?.({
+    return onStepChange({
       id,
       type: 'signature',
       status: 'success',
@@ -39,7 +39,7 @@ export const wrapWalletWithSteps = (props: {
   };
 
   const sendWaitingTransactionStep = (id: number, to: Address, functionNameOrSelector: string) => {
-    return onStepChange?.({
+    return onStepChange({
       id,
       type: 'transaction',
       status: 'waiting',
@@ -49,7 +49,7 @@ export const wrapWalletWithSteps = (props: {
   };
 
   const sendPendingTransactionStep = (id: number, to: Address, functionNameOrSelector: string) => {
-    return onStepChange?.({
+    return onStepChange({
       id,
       type: 'transaction',
       status: 'broadcasted',
@@ -59,7 +59,7 @@ export const wrapWalletWithSteps = (props: {
   };
 
   const sendSuccessTransactionStep = (id: number, to: Address, functionNameOrSelector: string) => {
-    return onStepChange?.({
+    return onStepChange({
       id,
       type: 'transaction',
       status: 'success',

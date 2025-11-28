@@ -9,6 +9,7 @@ import {
 } from 'viem';
 import { getAddress } from 'viem';
 
+import { addStepCallback } from '@/addStepCallback';
 import { Auction, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Api, Props as ApiProps } from '@/clients/api';
 import { Contracts, GondiPublicClient, Wallet } from '@/clients/contracts';
@@ -34,7 +35,6 @@ import {
 import { max, mulDivUp } from '@/utils/number';
 import { isNative, isOpensea } from '@/utils/orders';
 import { isDefined, OptionalNullable } from '@/utils/types';
-import { wrapWalletWithSteps } from '@/WalletWithSteps';
 
 import { isFulfillAdvancedOrderFunctionName } from './clients/opensea/types';
 
@@ -68,9 +68,8 @@ export class Gondi {
   bcClient: GondiPublicClient;
   apiClient: Api;
   openseaClient: Opensea;
-  reservoirApiKey?: string;
 
-  constructor({ wallet, apiClient, openseaApiKey, reservoirApiKey }: GondiProps) {
+  constructor({ wallet, apiClient, openseaApiKey }: GondiProps) {
     this.wallet = wallet;
     this.account = wallet.account;
     this.bcClient = createPublicClient({
@@ -80,17 +79,16 @@ export class Gondi {
     this.contracts = new Contracts(this.bcClient, wallet);
     this.apiClient = new Api({ wallet, apiClient });
     this.openseaClient = new Opensea({ apiKey: openseaApiKey ?? process.env.OPENSEA_API_KEY });
-    this.reservoirApiKey = reservoirApiKey ?? process.env.RESERVOIR_API_KEY;
   }
 
   static create(
     props: GondiProps & {
-      onStepChange?: OnStepChange;
+      onStepChange: OnStepChange;
       executionId?: number | null;
     },
   ) {
     const { wallet, onStepChange, executionId } = props;
-    const walletWithSteps = wrapWalletWithSteps({
+    const walletWithSteps = addStepCallback({
       wallet,
       onStepChange,
       executionId,
