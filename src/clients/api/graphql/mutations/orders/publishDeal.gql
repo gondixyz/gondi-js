@@ -1,0 +1,18 @@
+mutation publishDeal($dealInput: DealInput!) {
+  result: publishDealOrder(dealInput: $dealInput) {
+    ... on Deal {
+      id
+      status
+      signature
+    }
+    ... on SignatureRequest {
+      key
+      typedData {
+        types
+        primaryType
+        domain
+        message
+      }
+    }
+  }
+}

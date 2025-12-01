@@ -9,6 +9,7 @@ import {
   BnplOrderInput,
   CollectionOrderInput,
   CollectionSignedOfferInput,
+  DealInput,
   ListListingsQueryVariables,
   ListLoansQueryVariables,
   ListOffersQueryVariables,
@@ -109,6 +110,11 @@ export class Api {
       return response.result;
     }
     throw new Error('Invalid order input');
+  }
+
+  async publishDeal(dealInput: DealInput) {
+    const response = await this.api.publishDeal({ dealInput });
+    return response.result;
   }
 
   async publishSellAndRepayOrder(orderInput: NftOrderInput) {

@@ -148,6 +148,12 @@ type BidEdge {
   node: Bid!
 }
 
+type BidHistory {
+  price: Float!
+  timestamp: DateTime!
+  value: Float!
+}
+
 enum BidSortField {
   BID
   HIGHEST_BID
@@ -448,7 +454,7 @@ type CollectionStatistics {
   outstandingPrincipal(currencyAddress: Address!): BigInt!
   percentageInOutstandingLoans: Float!
   repaymentRate: Float!
-  topBidHistory(fromDate: DateTime!, toDate: DateTime!): [FloatStatHistory!]!
+  topBidHistory(fromDate: DateTime!, toDate: DateTime!): [BidHistory!]!
   totalLoanVolume(currencyAddress: Address!): BigInt!
   totalLoanVolume1d(currencyAddress: Address!): BigInt!
   totalLoanVolume1m(currencyAddress: Address!): BigInt!
@@ -1293,8 +1299,8 @@ type Mutation {
 
   """Hides a loan renegotiation offer. """
   hideRenegotiation(contractAddress: Address = "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9", renegotiationId: String!): Renegotiation!
-  markNotificationIdsAsRead(ids: [Int!]): Void
-  markNotificationsAsRead: Void
+  markNotificationIdsAsRead(ids: [Int!], walletAddresses: [Address!] = null): Void
+  markNotificationsAsRead(walletAddresses: [Address!] = null): Void
 
   """
   Creates a buy now pay later order. Buy now pay later orders are orders which use a loan offer principal to buy and NFT and start a loan making the borrower the creator of the order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You will have to do this process two times since multiple signatures are required. You should receive an BuyNowPayLaterOrder if everything went well. Refer to gondi-js examples for more details Platform fees are calculated automatically.on how to sign it and pay the order.
@@ -1372,6 +1378,7 @@ type NFT implements Node {
   createdDate: DateTime!
   description: String
   erc20Balances: [BigIntCurrencyAmount!]!
+  erc1155Balance(address: Address!): BigInt!
   id: String!
   image: Asset
   isFlagged: Boolean
@@ -1777,6 +1784,11 @@ input OrderForNft {
   nftId: Int!
 }
 
+enum OrderModel {
+  DEAL
+  ORDER
+}
+
 enum OrderSide {
   ASK
   BID
@@ -2041,8 +2053,8 @@ type Query {
   getLoanById(address: String!, loanId: Int!): Loan
   getNftByContractAddressAndTokenId(contractAddress: Address!, tokenId: BigInt!): NFT
   getNftBySlugAndTokenId(slug: String!, tokenId: BigInt!): NFT
-  getOrderCancelCalldata(orderId: Int!): Hex!
-  getOrderSaleCalldata(nftId: Int = null, orderId: Int!, taker: Address = null): Hex!
+  getOrderCancelCalldata(model: OrderModel = null, orderId: Int!): Hex!
+  getOrderSaleCalldata(model: OrderModel = null, nftId: Int = null, orderId: Int!, taker: Address = null): Hex!
   getOutstandingDebt(borrowers: [Address!]!, currencyAddresses: [Address!] = null): BigInt!
   getOutstandingLoanStatistics: OutstandingLoanStatistics!
   getPointsFromReferrals: Int!
@@ -2191,7 +2203,7 @@ type Query {
 
   """Deprecated field: use list_nfts instead."""
   listNftsFromUser(after: String, collectionAddresses: [Address!] = null, first: Int = null, includeInStash: Boolean! = false, searchTerm: String = null, sortBy: [NftSortInput!] = null, standards: [TokenStandardType!] = null, withLoans: Boolean = false, withNoWraps: Boolean = false): NFTConnection! @deprecated(reason: "Use list_nfts instead.")
-  listNotifications(after: String, first: Int = null, notificationTypes: [NotificationType!] = null, onlyRead: Boolean! = false, onlyUnread: Boolean! = false): NotificationConnection!
+  listNotifications(after: String, first: Int = null, notificationTypes: [NotificationType!] = null, onlyRead: Boolean! = false, onlyUnread: Boolean! = false, walletAddresses: [Address!] = null): NotificationConnection!
   listOffers(after: String, blockchains: [BlockchainEnum!] = null, borrowerAddress: String = null, collections: [Int!] = null, contractAddresses: [Address!] = null, currencyAddress: Address = null, excludeLenders: [Address!] = null, first: Int = null, hidden: Boolean = null, lenders: [String!] = null, nfts: [Int!] = null, onlyCollectionOffers: Boolean = false, onlySingleNftOffers: Boolean = false, sluggedTokens: [SluggedTokenInput!] = null, slugs: [String!] = null, sortBy: [OffersSortInput!] = null, statuses: [OfferStatus!] = null, terms: TermsFilter = null, worseOffers: Boolean = true): OfferConnection!
 
   """
