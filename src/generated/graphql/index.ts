@@ -186,6 +186,13 @@ export type BidEdge = {
   node: Bid;
 };
 
+export type BidHistory = {
+  __typename?: 'BidHistory';
+  price: Scalars['Float'];
+  timestamp: Scalars['DateTime'];
+  value: Scalars['Float'];
+};
+
 export enum BidSortField {
   Bid = 'BID',
   HighestBid = 'HIGHEST_BID'
@@ -506,7 +513,7 @@ export type CollectionStatistics = {
   outstandingPrincipal: Scalars['BigInt'];
   percentageInOutstandingLoans: Scalars['Float'];
   repaymentRate: Scalars['Float'];
-  topBidHistory: Array<FloatStatHistory>;
+  topBidHistory: Array<BidHistory>;
   totalLoanVolume: Scalars['BigInt'];
   totalLoanVolume1d: Scalars['BigInt'];
   totalLoanVolume1m: Scalars['BigInt'];
@@ -1601,6 +1608,12 @@ export type MutationHideRenegotiationArgs = {
 
 export type MutationMarkNotificationIdsAsReadArgs = {
   ids?: InputMaybe<Array<Scalars['Int']>>;
+  walletAddresses?: InputMaybe<Array<Scalars['Address']>>;
+};
+
+
+export type MutationMarkNotificationsAsReadArgs = {
+  walletAddresses?: InputMaybe<Array<Scalars['Address']>>;
 };
 
 
@@ -1702,6 +1715,7 @@ export type Nft = Node & {
   createdDate: Scalars['DateTime'];
   description?: Maybe<Scalars['String']>;
   erc20Balances: Array<BigIntCurrencyAmount>;
+  erc1155Balance: Scalars['BigInt'];
   id: Scalars['String'];
   image?: Maybe<Asset>;
   isFlagged?: Maybe<Scalars['Boolean']>;
@@ -1756,6 +1770,11 @@ export type Nft = Node & {
    */
   wrappersAndNakedNfts: Array<Nft>;
   wrapsNfts?: Maybe<Array<Nft>>;
+};
+
+
+export type NftErc1155BalanceArgs = {
+  address: Scalars['Address'];
 };
 
 
@@ -2181,6 +2200,11 @@ export type OrderForNft = {
   collectionId: Scalars['Int'];
   nftId: Scalars['Int'];
 };
+
+export enum OrderModel {
+  Deal = 'DEAL',
+  Order = 'ORDER'
+}
 
 export enum OrderSide {
   Ask = 'ASK',
@@ -2618,12 +2642,14 @@ export type QueryGetNftBySlugAndTokenIdArgs = {
 
 /** Query for the lending module */
 export type QueryGetOrderCancelCalldataArgs = {
+  model?: InputMaybe<OrderModel>;
   orderId: Scalars['Int'];
 };
 
 
 /** Query for the lending module */
 export type QueryGetOrderSaleCalldataArgs = {
+  model?: InputMaybe<OrderModel>;
   nftId?: InputMaybe<Scalars['Int']>;
   orderId: Scalars['Int'];
   taker?: InputMaybe<Scalars['Address']>;
@@ -2980,6 +3006,7 @@ export type QueryListNotificationsArgs = {
   notificationTypes?: InputMaybe<Array<NotificationType>>;
   onlyRead?: Scalars['Boolean'];
   onlyUnread?: Scalars['Boolean'];
+  walletAddresses?: InputMaybe<Array<Scalars['Address']>>;
 };
 
 
@@ -4223,6 +4250,13 @@ export type PublishBuyNowPayLaterOrderMutationVariables = Exact<{
 
 export type PublishBuyNowPayLaterOrderMutation = { __typename?: 'Mutation', result: { __typename?: 'BuyNowPayLaterOrder', id: string, status: string, signature: Hex, emitCalldata: Hex, marketPlaceAddress: Address, price: bigint } | { __typename?: 'ExtraSeaportData', extraData: Hex } | { __typename?: 'SignatureRequest', key: string, typedData: { __typename?: 'TypedData', types: object, primaryType: string, domain: object, message: object } } };
 
+export type PublishDealMutationVariables = Exact<{
+  dealInput: DealInput;
+}>;
+
+
+export type PublishDealMutation = { __typename?: 'Mutation', result: { __typename?: 'Deal', id: string, status: string, signature?: Hex | null } | { __typename?: 'SignatureRequest', key: string, typedData: { __typename?: 'TypedData', types: object, primaryType: string, domain: object, message: object } } };
+
 export type PublishOrderForCollectionMutationVariables = Exact<{
   orderInput: CollectionOrderInput;
 }>;
@@ -4519,6 +4553,12 @@ export type BidEdgeKeySpecifier = ('cursor' | 'node' | BidEdgeKeySpecifier)[];
 export type BidEdgeFieldPolicy = {
 	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
 	node?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type BidHistoryKeySpecifier = ('price' | 'timestamp' | 'value' | BidHistoryKeySpecifier)[];
+export type BidHistoryFieldPolicy = {
+	price?: FieldPolicy<any> | FieldReadFunction<any>,
+	timestamp?: FieldPolicy<any> | FieldReadFunction<any>,
+	value?: FieldPolicy<any> | FieldReadFunction<any>
 };
 export type BigIntCurrencyAmountKeySpecifier = ('amount' | 'currency' | BigIntCurrencyAmountKeySpecifier)[];
 export type BigIntCurrencyAmountFieldPolicy = {
@@ -5353,7 +5393,7 @@ export type MutationFieldPolicy = {
 	showRenegotiation?: FieldPolicy<any> | FieldReadFunction<any>,
 	unfollowCollection?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type NFTKeySpecifier = ('activeLoan' | 'collection' | 'collectionId' | 'createdDate' | 'description' | 'erc20Balances' | 'id' | 'image' | 'isFlagged' | 'listed' | 'marketPlaceOfPrice' | 'maxNetPrincipalOffer' | 'nakedNft' | 'name' | 'nftId' | 'nftPriceSample' | 'owner' | 'price' | 'priceCurrencyAddress' | 'rarityRank' | 'rarityScore' | 'statistics' | 'tokenId' | 'traits' | 'url' | 'wrappedCount' | 'wrappersAndNakedNftIds' | 'wrappersAndNakedNfts' | 'wrapsNfts' | NFTKeySpecifier)[];
+export type NFTKeySpecifier = ('activeLoan' | 'collection' | 'collectionId' | 'createdDate' | 'description' | 'erc20Balances' | 'erc1155Balance' | 'id' | 'image' | 'isFlagged' | 'listed' | 'marketPlaceOfPrice' | 'maxNetPrincipalOffer' | 'nakedNft' | 'name' | 'nftId' | 'nftPriceSample' | 'owner' | 'price' | 'priceCurrencyAddress' | 'rarityRank' | 'rarityScore' | 'statistics' | 'tokenId' | 'traits' | 'url' | 'wrappedCount' | 'wrappersAndNakedNftIds' | 'wrappersAndNakedNfts' | 'wrapsNfts' | NFTKeySpecifier)[];
 export type NFTFieldPolicy = {
 	activeLoan?: FieldPolicy<any> | FieldReadFunction<any>,
 	collection?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -5361,6 +5401,7 @@ export type NFTFieldPolicy = {
 	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
 	description?: FieldPolicy<any> | FieldReadFunction<any>,
 	erc20Balances?: FieldPolicy<any> | FieldReadFunction<any>,
+	erc1155Balance?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	image?: FieldPolicy<any> | FieldReadFunction<any>,
 	isFlagged?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -6475,6 +6516,10 @@ export type StrictTypedTypePolicies = {
 		keyFields?: false | BidEdgeKeySpecifier | (() => undefined | BidEdgeKeySpecifier),
 		fields?: BidEdgeFieldPolicy,
 	},
+	BidHistory?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | BidHistoryKeySpecifier | (() => undefined | BidHistoryKeySpecifier),
+		fields?: BidHistoryFieldPolicy,
+	},
 	BigIntCurrencyAmount?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | BigIntCurrencyAmountKeySpecifier | (() => undefined | BigIntCurrencyAmountKeySpecifier),
 		fields?: BigIntCurrencyAmountFieldPolicy,
@@ -7303,6 +7348,26 @@ export const PublishBuyNowPayLaterOrderDocument = gql`
   }
 }
     `;
+export const PublishDealDocument = gql`
+    mutation publishDeal($dealInput: DealInput!) {
+  result: publishDealOrder(dealInput: $dealInput) {
+    ... on Deal {
+      id
+      status
+      signature
+    }
+    ... on SignatureRequest {
+      key
+      typedData {
+        types
+        primaryType
+        domain
+        message
+      }
+    }
+  }
+}
+    `;
 export const PublishOrderForCollectionDocument = gql`
     mutation publishOrderForCollection($orderInput: CollectionOrderInput!) {
   result: publishOrderForCollection(orderInput: $orderInput) {
@@ -7843,6 +7908,9 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
     },
     publishBuyNowPayLaterOrder(variables: PublishBuyNowPayLaterOrderMutationVariables, options?: C): Promise<PublishBuyNowPayLaterOrderMutation> {
       return requester<PublishBuyNowPayLaterOrderMutation, PublishBuyNowPayLaterOrderMutationVariables>(PublishBuyNowPayLaterOrderDocument, variables, options) as Promise<PublishBuyNowPayLaterOrderMutation>;
+    },
+    publishDeal(variables: PublishDealMutationVariables, options?: C): Promise<PublishDealMutation> {
+      return requester<PublishDealMutation, PublishDealMutationVariables>(PublishDealDocument, variables, options) as Promise<PublishDealMutation>;
     },
     publishOrderForCollection(variables: PublishOrderForCollectionMutationVariables, options?: C): Promise<PublishOrderForCollectionMutation> {
       return requester<PublishOrderForCollectionMutation, PublishOrderForCollectionMutationVariables>(PublishOrderForCollectionDocument, variables, options) as Promise<PublishOrderForCollectionMutation>;

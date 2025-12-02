@@ -240,6 +240,19 @@ export class Gondi {
     return { ...response, ...orderInput };
   }
 
+  async makeDeal(dealInput: Parameters<Api['publishDeal']>[0]) {
+    let response = await this.apiClient.publishDeal(dealInput);
+    while (response.__typename === 'SignatureRequest') {
+      const key = response.key as 'signature';
+      dealInput[key] = await this.wallet.signTypedData(response.typedData as TypedDataDefinition);
+      response = await this.apiClient.publishDeal(dealInput);
+    }
+
+    if (response.__typename !== 'Deal') throw new Error('This should never happen');
+
+    return { ...response, ...dealInput };
+  }
+
   async makeSellAndRepayOrder(
     sellAndRepayOrderInput: Parameters<Api['publishSellAndRepayOrder']>[0],
   ) {
