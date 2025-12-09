@@ -692,6 +692,8 @@ export type CurrencyEdge = {
 export type Deal = Node & {
   __typename?: 'Deal';
   blockchain: Scalars['String'];
+  counterOfferForId?: Maybe<Scalars['Int']>;
+  counterOffered: Scalars['Boolean'];
   evmOrder?: Maybe<Scalars['JSON']>;
   expiration: Scalars['DateTime'];
   id: Scalars['String'];
@@ -700,6 +702,7 @@ export type Deal = Node & {
   makerErc20sAmounts: Array<Scalars['BigInt']>;
   makerNfts: Array<Nft>;
   makerNftsAmounts: Array<Scalars['BigInt']>;
+  marketPlaceAddress: Scalars['Address'];
   nonce: Scalars['BigInt'];
   signature?: Maybe<Scalars['Signature']>;
   status: Scalars['String'];
@@ -708,6 +711,7 @@ export type Deal = Node & {
   takerErc20sAmounts: Array<Scalars['BigInt']>;
   takerNfts: Array<Nft>;
   takerNftsAmounts: Array<Scalars['BigInt']>;
+  updatedDate: Scalars['DateTime'];
 };
 
 export type DealConnection = {
@@ -723,8 +727,18 @@ export type DealEdge = {
   node: Deal;
 };
 
+export enum DealEventType {
+  Accepted = 'ACCEPTED',
+  Cancelled = 'CANCELLED',
+  Expired = 'EXPIRED',
+  Invalid = 'INVALID',
+  Received = 'RECEIVED',
+  Sent = 'SENT'
+}
+
 export type DealInput = {
   blockchain: BlockchainEnum;
+  counterOfferForId?: InputMaybe<Scalars['Int']>;
   expiration: Scalars['BigInt'];
   makerErc20s: Array<Scalars['Address']>;
   makerErc20sAmounts: Array<Scalars['BigInt']>;
@@ -737,6 +751,18 @@ export type DealInput = {
   takerErc20sAmounts: Array<Scalars['BigInt']>;
   takerNfts: Array<Scalars['Int']>;
   takerNftsAmounts: Array<Scalars['BigInt']>;
+};
+
+export type DealNotification = Node & Notification & {
+  __typename?: 'DealNotification';
+  createdOn: Scalars['DateTime'];
+  deal: Deal;
+  dealId: Scalars['Int'];
+  eventType: DealEventType;
+  id: Scalars['String'];
+  notificationType: Scalars['String'];
+  readOn?: Maybe<Scalars['DateTime']>;
+  user: User;
 };
 
 export type DealSignatureRequest = Deal | SignatureRequest;
@@ -2010,6 +2036,7 @@ export type NotificationEdge = {
 
 export enum NotificationType {
   AuctionWonNotification = 'AUCTION_WON_NOTIFICATION',
+  DealNotification = 'DEAL_NOTIFICATION',
   LoanDefaultedNotification = 'LOAN_DEFAULTED_NOTIFICATION',
   LoanDefaultReminderNotification = 'LOAN_DEFAULT_REMINDER_NOTIFICATION',
   LoanRepaidNotification = 'LOAN_REPAID_NOTIFICATION',
@@ -2798,6 +2825,7 @@ export type QueryListCurrenciesArgs = {
 export type QueryListDealsArgs = {
   after?: InputMaybe<Scalars['String']>;
   first?: InputMaybe<Scalars['Int']>;
+  ids?: InputMaybe<Array<Scalars['Int']>>;
   statuses?: InputMaybe<Array<OrderStatusType>>;
   walletAddresses: Array<Scalars['Address']>;
 };
@@ -3302,13 +3330,14 @@ export type Sale = Activity & Event & Node & {
   marketPlace: Scalars['String'];
   marketPlaceAddress?: Maybe<Scalars['Address']>;
   nft: Nft;
-  order: Order;
-  orderId: Scalars['String'];
+  order?: Maybe<Order>;
+  orderId?: Maybe<Scalars['String']>;
   originatedFromAsk?: Maybe<Scalars['Boolean']>;
   price: Scalars['BigInt'];
   receiver: Scalars['Address'];
   sender: Scalars['Address'];
-  taker: Scalars['Address'];
+  /** @deprecated Deprecated field. */
+  taker?: Maybe<Scalars['Address']>;
   timestamp: Scalars['DateTime'];
   txHash: Scalars['Hash'];
 };
@@ -4405,7 +4434,7 @@ export type OwnedNftsQueryVariables = Exact<{
 }>;
 
 
-export type OwnedNftsQuery = { __typename?: 'Query', ownedNfts: { __typename?: 'NFTConnection', pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'NFTEdge', node: { __typename?: 'NFT', id: string, tokenId: bigint, collection?: { __typename?: 'Collection', id: string, contractData: { __typename?: 'ContractData', contractAddress: Address }, wrapperCollections: Array<{ __typename?: 'Collection', contractData: { __typename?: 'ContractData', contractAddress: Address } }> } | null, activeLoan?: { __typename?: 'MultiSourceLoan', id: string } | null, statistics: { __typename?: 'NftStatistics', lastSale?: { __typename?: 'Sale', order: { __typename?: 'BuyNowPayLaterOrder', price: bigint, currency: { __typename?: 'Currency', address: Address, decimals: number } } | { __typename?: 'CollectionOrder', price: bigint, currency: { __typename?: 'Currency', address: Address, decimals: number } } | { __typename?: 'SellAndRepayOrder', price: bigint, currency: { __typename?: 'Currency', address: Address, decimals: number } } | { __typename?: 'SingleNFTOrder', price: bigint, currency: { __typename?: 'Currency', address: Address, decimals: number } } | { __typename?: 'TraitOrder', price: bigint, currency: { __typename?: 'Currency', address: Address, decimals: number } } } | null, topTraitFloorPrice?: { __typename?: 'CurrencyAmount', amount: number, currency: { __typename?: 'Currency', address: Address, decimals: number } } | null } } }> } };
+export type OwnedNftsQuery = { __typename?: 'Query', ownedNfts: { __typename?: 'NFTConnection', pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'NFTEdge', node: { __typename?: 'NFT', id: string, tokenId: bigint, collection?: { __typename?: 'Collection', id: string, contractData: { __typename?: 'ContractData', contractAddress: Address }, wrapperCollections: Array<{ __typename?: 'Collection', contractData: { __typename?: 'ContractData', contractAddress: Address } }> } | null, activeLoan?: { __typename?: 'MultiSourceLoan', id: string } | null, statistics: { __typename?: 'NftStatistics', lastSale?: { __typename?: 'Sale', order?: { __typename?: 'BuyNowPayLaterOrder', price: bigint, currency: { __typename?: 'Currency', address: Address, decimals: number } } | { __typename?: 'CollectionOrder', price: bigint, currency: { __typename?: 'Currency', address: Address, decimals: number } } | { __typename?: 'SellAndRepayOrder', price: bigint, currency: { __typename?: 'Currency', address: Address, decimals: number } } | { __typename?: 'SingleNFTOrder', price: bigint, currency: { __typename?: 'Currency', address: Address, decimals: number } } | { __typename?: 'TraitOrder', price: bigint, currency: { __typename?: 'Currency', address: Address, decimals: number } } | null } | null, topTraitFloorPrice?: { __typename?: 'CurrencyAmount', amount: number, currency: { __typename?: 'Currency', address: Address, decimals: number } } | null } } }> } };
 
 export type ListOffersQueryVariables = Exact<{
   borrowerAddress?: InputMaybe<Scalars['String']>;
@@ -4804,9 +4833,11 @@ export type CurrencyEdgeFieldPolicy = {
 	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
 	node?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type DealKeySpecifier = ('blockchain' | 'evmOrder' | 'expiration' | 'id' | 'maker' | 'makerErc20s' | 'makerErc20sAmounts' | 'makerNfts' | 'makerNftsAmounts' | 'nonce' | 'signature' | 'status' | 'taker' | 'takerErc20s' | 'takerErc20sAmounts' | 'takerNfts' | 'takerNftsAmounts' | DealKeySpecifier)[];
+export type DealKeySpecifier = ('blockchain' | 'counterOfferForId' | 'counterOffered' | 'evmOrder' | 'expiration' | 'id' | 'maker' | 'makerErc20s' | 'makerErc20sAmounts' | 'makerNfts' | 'makerNftsAmounts' | 'marketPlaceAddress' | 'nonce' | 'signature' | 'status' | 'taker' | 'takerErc20s' | 'takerErc20sAmounts' | 'takerNfts' | 'takerNftsAmounts' | 'updatedDate' | DealKeySpecifier)[];
 export type DealFieldPolicy = {
 	blockchain?: FieldPolicy<any> | FieldReadFunction<any>,
+	counterOfferForId?: FieldPolicy<any> | FieldReadFunction<any>,
+	counterOffered?: FieldPolicy<any> | FieldReadFunction<any>,
 	evmOrder?: FieldPolicy<any> | FieldReadFunction<any>,
 	expiration?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -4815,6 +4846,7 @@ export type DealFieldPolicy = {
 	makerErc20sAmounts?: FieldPolicy<any> | FieldReadFunction<any>,
 	makerNfts?: FieldPolicy<any> | FieldReadFunction<any>,
 	makerNftsAmounts?: FieldPolicy<any> | FieldReadFunction<any>,
+	marketPlaceAddress?: FieldPolicy<any> | FieldReadFunction<any>,
 	nonce?: FieldPolicy<any> | FieldReadFunction<any>,
 	signature?: FieldPolicy<any> | FieldReadFunction<any>,
 	status?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -4822,7 +4854,8 @@ export type DealFieldPolicy = {
 	takerErc20s?: FieldPolicy<any> | FieldReadFunction<any>,
 	takerErc20sAmounts?: FieldPolicy<any> | FieldReadFunction<any>,
 	takerNfts?: FieldPolicy<any> | FieldReadFunction<any>,
-	takerNftsAmounts?: FieldPolicy<any> | FieldReadFunction<any>
+	takerNftsAmounts?: FieldPolicy<any> | FieldReadFunction<any>,
+	updatedDate?: FieldPolicy<any> | FieldReadFunction<any>
 };
 export type DealConnectionKeySpecifier = ('edges' | 'pageInfo' | 'totalCount' | DealConnectionKeySpecifier)[];
 export type DealConnectionFieldPolicy = {
@@ -4834,6 +4867,17 @@ export type DealEdgeKeySpecifier = ('cursor' | 'node' | DealEdgeKeySpecifier)[];
 export type DealEdgeFieldPolicy = {
 	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
 	node?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type DealNotificationKeySpecifier = ('createdOn' | 'deal' | 'dealId' | 'eventType' | 'id' | 'notificationType' | 'readOn' | 'user' | DealNotificationKeySpecifier)[];
+export type DealNotificationFieldPolicy = {
+	createdOn?: FieldPolicy<any> | FieldReadFunction<any>,
+	deal?: FieldPolicy<any> | FieldReadFunction<any>,
+	dealId?: FieldPolicy<any> | FieldReadFunction<any>,
+	eventType?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	notificationType?: FieldPolicy<any> | FieldReadFunction<any>,
+	readOn?: FieldPolicy<any> | FieldReadFunction<any>,
+	user?: FieldPolicy<any> | FieldReadFunction<any>
 };
 export type DelegationKeySpecifier = ('contractAddress' | 'delegateTo' | 'id' | 'nft' | 'timestamp' | DelegationKeySpecifier)[];
 export type DelegationFieldPolicy = {
@@ -6595,6 +6639,10 @@ export type StrictTypedTypePolicies = {
 	DealEdge?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | DealEdgeKeySpecifier | (() => undefined | DealEdgeKeySpecifier),
 		fields?: DealEdgeFieldPolicy,
+	},
+	DealNotification?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | DealNotificationKeySpecifier | (() => undefined | DealNotificationKeySpecifier),
+		fields?: DealNotificationFieldPolicy,
 	},
 	Delegation?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | DelegationKeySpecifier | (() => undefined | DelegationKeySpecifier),
