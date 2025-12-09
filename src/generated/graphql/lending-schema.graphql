@@ -517,6 +517,8 @@ scalar DateTime
 
 type Deal implements Node {
   blockchain: String!
+  counterOfferForId: Int
+  counterOffered: Boolean!
   evmOrder: JSON
   expiration: DateTime!
   id: String!
@@ -525,6 +527,7 @@ type Deal implements Node {
   makerErc20sAmounts: [BigInt!]!
   makerNfts: [NFT!]!
   makerNftsAmounts: [BigInt!]!
+  marketPlaceAddress: Address!
   nonce: BigInt!
   signature: Signature
   status: String!
@@ -533,6 +536,7 @@ type Deal implements Node {
   takerErc20sAmounts: [BigInt!]!
   takerNfts: [NFT!]!
   takerNftsAmounts: [BigInt!]!
+  updatedDate: DateTime!
 }
 
 type DealConnection {
@@ -546,8 +550,18 @@ type DealEdge {
   node: Deal!
 }
 
+enum DealEventType {
+  ACCEPTED
+  CANCELLED
+  EXPIRED
+  INVALID
+  RECEIVED
+  SENT
+}
+
 input DealInput {
   blockchain: BlockchainEnum!
+  counterOfferForId: Int = null
   expiration: BigInt!
   makerErc20s: [Address!]!
   makerErc20sAmounts: [BigInt!]!
@@ -560,6 +574,17 @@ input DealInput {
   takerErc20sAmounts: [BigInt!]!
   takerNfts: [Int!]!
   takerNftsAmounts: [BigInt!]!
+}
+
+type DealNotification implements Node & Notification {
+  createdOn: DateTime!
+  deal: Deal!
+  dealId: Int!
+  eventType: DealEventType!
+  id: String!
+  notificationType: String!
+  readOn: DateTime
+  user: User!
 }
 
 union DealSignatureRequest = Deal | SignatureRequest
@@ -1603,6 +1628,7 @@ type NotificationEdge {
 
 enum NotificationType {
   AUCTION_WON_NOTIFICATION
+  DEAL_NOTIFICATION
   LOAN_DEFAULTED_NOTIFICATION
   LOAN_DEFAULT_REMINDER_NOTIFICATION
   LOAN_REPAID_NOTIFICATION
@@ -2082,7 +2108,7 @@ type Query {
   """List NFT collections that have at least one loan."""
   listCollectionsWithLoans(after: String, collections: [Int!] = null, first: Int! = 10, searchTerm: String = null): CollectionConnection!
   listCurrencies(after: String, first: Int! = 20): CurrencyConnection!
-  listDeals(after: String, first: Int = null, statuses: [OrderStatusType!] = null, walletAddresses: [Address!]!): DealConnection!
+  listDeals(after: String, first: Int = null, ids: [Int!] = null, statuses: [OrderStatusType!] = null, walletAddresses: [Address!]!): DealConnection!
 
   """
   List all activities. Includes loan activities, loan offers, loan renegotiations, trade orders, nft transfers.
@@ -2375,13 +2401,13 @@ type Sale implements Activity & Event & Node {
   marketPlace: String!
   marketPlaceAddress: Address
   nft: NFT!
-  order: Order!
-  orderId: String!
+  order: Order
+  orderId: String
   originatedFromAsk: Boolean
   price: BigInt!
   receiver: Address!
   sender: Address!
-  taker: Address!
+  taker: Address @deprecated(reason: "Deprecated field.")
   timestamp: DateTime!
   txHash: Hash!
 }
