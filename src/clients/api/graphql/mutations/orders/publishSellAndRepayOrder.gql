@@ -9,6 +9,7 @@ mutation publishSellAndRepayOrder($orderInput: NFTOrderInput!) {
     }
     ... on ExtraSeaportData {
       extraData
+      criteriaProof
     }
     ... on SignatureRequest {
       key
