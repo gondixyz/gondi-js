@@ -276,6 +276,7 @@ export class Gondi {
 
   async buyNowPayLater({
     amounts,
+    purchaseBundlerAddress,
     contractAddress,
     loanDuration,
     offers,
@@ -283,6 +284,7 @@ export class Gondi {
     repaymentCalldata,
   }: {
     amounts: bigint[];
+    purchaseBundlerAddress: Address;
     contractAddress: Address;
     loanDuration: bigint;
     offers: OfferFromExecutionOffer[];
@@ -318,14 +320,16 @@ export class Gondi {
     if (response.__typename !== 'BuyNowPayLaterOrder') throw new Error('This should never happen');
 
     if (isDefined(repaymentCalldata)) {
-      return this.contracts.PurchaseBundler(offers[0].contractAddress).executeSellWithLoan({
-        emitCalldata: response.emitCalldata,
-        price: response.price,
-        repaymentCalldata,
-      });
+      return this.contracts
+        .PurchaseBundler(purchaseBundlerAddress, offers[0].contractAddress)
+        .executeSellWithLoan({
+          emitCalldata: response.emitCalldata,
+          price: response.price,
+          repaymentCalldata,
+        });
     }
 
-    return this.contracts.PurchaseBundler(offers[0].contractAddress).buy({
+    return this.contracts.PurchaseBundler(purchaseBundlerAddress, offers[0].contractAddress).buy({
       emitCalldata: response.emitCalldata,
       value: max(0n, response.price - borrowed),
     });
@@ -1090,27 +1094,33 @@ export class Gondi {
 
   async buyWithSellAndRepay({
     repaymentCalldata,
+    purchaseBundlerAddress,
     mslContractAddress,
     price,
   }: {
     repaymentCalldata: Hex;
+    purchaseBundlerAddress: Address;
     mslContractAddress: Address;
     price: bigint;
   }) {
-    return await this.contracts.PurchaseBundler(mslContractAddress).executeSell({
-      repaymentCalldata,
-      price,
-    });
+    return await this.contracts
+      .PurchaseBundler(purchaseBundlerAddress, mslContractAddress)
+      .executeSell({
+        repaymentCalldata,
+        price,
+      });
   }
 
   async sellAndRepay({
+    purchaseBundlerAddress,
     mslContractAddress,
     repaymentCalldata,
   }: {
+    purchaseBundlerAddress: Address;
     mslContractAddress: Address;
     repaymentCalldata: Hex;
   }) {
-    return await this.contracts.PurchaseBundler(mslContractAddress).sell({
+    return await this.contracts.PurchaseBundler(purchaseBundlerAddress, mslContractAddress).sell({
       repaymentCalldata,
     });
   }
