@@ -57,9 +57,12 @@ jobs:
           generateReleaseNotes: true
 
       # Publish to NPM if version is not published
+      # TODO: Use OIDC
       - name: NPM Publish
         run: |
           npx can-npm-publish --verbose && npm publish || echo "Does not publish"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_SECRET }}
 
       # Generate docs
       - name: Generate docs
