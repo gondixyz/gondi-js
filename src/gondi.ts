@@ -13,6 +13,7 @@ import { addStepCallback } from '@/addStepCallback';
 import { Auction, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Api, Props as ApiProps } from '@/clients/api';
 import { Contracts, GondiPublicClient, Wallet } from '@/clients/contracts';
+import { PurchaseBundler } from '@/clients/contracts/PurchaseBundler';
 import { Opensea } from '@/clients/opensea';
 import { getContracts } from '@/deploys';
 import {
@@ -1115,13 +1116,20 @@ export class Gondi {
     purchaseBundlerAddress,
     mslContractAddress,
     repaymentCalldata,
+    swapData,
   }: {
     purchaseBundlerAddress: Address;
     mslContractAddress: Address;
     repaymentCalldata: Hex;
+    swapData?: Hex;
   }) {
-    return await this.contracts.PurchaseBundler(purchaseBundlerAddress, mslContractAddress).sell({
+    const pb = this.contracts.PurchaseBundler(purchaseBundlerAddress, mslContractAddress);
+    if (swapData && pb instanceof PurchaseBundler) {
+      throw new Error('Swap data is not supported for PurchaseBundler v1');
+    }
+    return await pb.sell({
       repaymentCalldata,
+      swapData,
     });
   }
 

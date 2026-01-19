@@ -4,6 +4,7 @@ import { Erc20 } from '@/clients/contracts/Erc20';
 import { OldERC721Wrapper } from '@/clients/contracts/OldERC721Wrapper';
 import { PositionMigrator } from '@/clients/contracts/PositionMigrator';
 import { PurchaseBundler } from '@/clients/contracts/PurchaseBundler';
+import { PurchaseBundlerV2 } from '@/clients/contracts/PurchaseBundlerV2';
 import {
   getContracts,
   getVersionFromMslAddress,
@@ -65,7 +66,7 @@ export class Contracts {
     '2': PurchaseBundler,
     '3': PurchaseBundler,
     '3.1': PurchaseBundler,
-    '3.1_PB_V2': PurchaseBundler,
+    '3.1_PB_V2': PurchaseBundlerV2,
   };
 
   _UserVaults = {
