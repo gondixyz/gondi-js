@@ -1098,17 +1098,20 @@ export class Gondi {
     purchaseBundlerAddress,
     mslContractAddress,
     price,
+    swapData,
   }: {
     repaymentCalldata: Hex;
     purchaseBundlerAddress: Address;
     mslContractAddress: Address;
     price: bigint;
+    swapData?: Hex;
   }) {
     return await this.contracts
       .PurchaseBundler(purchaseBundlerAddress, mslContractAddress)
       .executeSell({
         repaymentCalldata,
         price,
+        swapData,
       });
   }
 

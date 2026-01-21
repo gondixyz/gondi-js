@@ -106,16 +106,16 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
       repaymentArgs.data.callbackData,
     );
 
-    const { principalAddress, nftCollateralAddress, nftCollateralTokenId } = repaymentArgs.loan;
+    const { nftCollateralAddress, nftCollateralTokenId } = repaymentArgs.loan;
 
     const txHash = await this.safeContractWrite.executeSell([
-      [principalAddress],
+      [callbackData[0].purchaseCurrency],
       [price],
       [nftCollateralAddress],
       [nftCollateralTokenId],
       callbackData[0].reservoirExecutionInfo.module,
       [repaymentCalldata],
-      swapData ? [...[swapData]] : [],
+      swapData ? [swapData] : [],
     ]);
 
     return {
