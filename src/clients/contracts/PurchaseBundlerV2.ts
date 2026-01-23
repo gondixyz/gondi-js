@@ -1,3 +1,4 @@
+import { Maybe } from 'graphql/jsutils/Maybe';
 import { Address, decodeAbiParameters, Hex } from 'viem';
 
 import { Wallet } from '@/clients/contracts';
@@ -51,6 +52,8 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
     ],
   } as const;
 
+  static ETH_SENTINEL = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
+
   async buy({ emitCalldata, value }: { emitCalldata: Hex; value: bigint }) {
     const txHash = await this.safeContractWrite.buy([[emitCalldata]], { value });
 
@@ -97,7 +100,7 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
   }: {
     repaymentCalldata: Hex;
     price: bigint;
-    swapData?: Hex;
+    swapData: Maybe<Hex>;
   }) {
     const repaymentArgs = this.msl.decodeRepaymentCalldata(repaymentCalldata);
 
@@ -106,17 +109,28 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
       repaymentArgs.data.callbackData,
     );
 
-    const { nftCollateralAddress, nftCollateralTokenId } = repaymentArgs.loan;
+    const { nftCollateralAddress, nftCollateralTokenId, principalAddress } = repaymentArgs.loan;
 
-    const txHash = await this.safeContractWrite.executeSell([
-      [callbackData[0].purchaseCurrency],
-      [price],
-      [nftCollateralAddress],
-      [nftCollateralTokenId],
-      callbackData[0].reservoirExecutionInfo.module,
-      [repaymentCalldata],
-      swapData ? [swapData] : [],
-    ]);
+    if (principalAddress !== callbackData[0].purchaseCurrency && swapData === undefined) {
+      throw new Error(
+        'Swap data is required when paying with different currency than loan currency.',
+      );
+    }
+
+    const payingWithErc20 = callbackData[0].purchaseCurrency !== PurchaseBundlerV2.ETH_SENTINEL;
+
+    const txHash = await this.safeContractWrite.executeSell(
+      [
+        payingWithErc20 ? [callbackData[0].purchaseCurrency] : [],
+        payingWithErc20 ? [price] : [],
+        [nftCollateralAddress],
+        [nftCollateralTokenId],
+        callbackData[0].reservoirExecutionInfo.module,
+        [repaymentCalldata],
+        swapData ? [swapData] : [],
+      ],
+      { value: payingWithErc20 ? 0n : callbackData[0].reservoirExecutionInfo.value },
+    );
 
     return {
       txHash,
@@ -137,10 +151,12 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
     repaymentCalldata,
     emitCalldata,
     price,
+    swapData,
   }: {
     repaymentCalldata: Hex;
     emitCalldata: Hex;
     price: bigint;
+    swapData: Maybe<Hex>;
   }) {
     const { Aave } = getContracts(this.wallet.chain);
     const repaymentArgs = this.msl.decodeRepaymentCalldata(repaymentCalldata);
@@ -166,6 +182,7 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
           tokenIds: [nftCollateralTokenId],
           marketPlace: callbackData[0].reservoirExecutionInfo.module,
           executionData: [repaymentCalldata],
+          swapData: swapData ? [swapData] : [],
         },
         loanExecutionData: [emitCalldata],
       },

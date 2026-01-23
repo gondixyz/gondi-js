@@ -4744,6 +4744,11 @@ export const purchaseBundlerV2ABI = [
                 "name": "executionData",
                 "type": "bytes[]",
                 "internalType": "bytes[]"
+              },
+              {
+                "name": "swapData",
+                "type": "bytes[]",
+                "internalType": "bytes[]"
               }
             ]
           },

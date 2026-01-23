@@ -1,3 +1,4 @@
+import { Maybe } from 'graphql/jsutils/Maybe';
 import {
   Account,
   Address,
@@ -283,6 +284,7 @@ export class Gondi {
     offers,
     tokenId,
     repaymentCalldata,
+    swapDataForSellAndRepay,
   }: {
     amounts: bigint[];
     purchaseBundlerAddress: Address;
@@ -291,6 +293,7 @@ export class Gondi {
     offers: OfferFromExecutionOffer[];
     tokenId: bigint;
     repaymentCalldata?: Hex | null | undefined;
+    swapDataForSellAndRepay?: Maybe<Hex>;
   }) {
     const orderInput: BnplOrderInput = {
       amounts,
@@ -327,6 +330,7 @@ export class Gondi {
           emitCalldata: response.emitCalldata,
           price: response.price,
           repaymentCalldata,
+          swapData: swapDataForSellAndRepay,
         });
     }
 
@@ -1104,7 +1108,7 @@ export class Gondi {
     purchaseBundlerAddress: Address;
     mslContractAddress: Address;
     price: bigint;
-    swapData?: Hex;
+    swapData: Maybe<Hex>;
   }) {
     return await this.contracts
       .PurchaseBundler(purchaseBundlerAddress, mslContractAddress)
