@@ -3,7 +3,7 @@ import { Abi, Account, Address, Chain, PublicClient, Transport, WalletClient } f
 import { Erc20 } from '@/clients/contracts/Erc20';
 import { OldERC721Wrapper } from '@/clients/contracts/OldERC721Wrapper';
 import { PositionMigrator } from '@/clients/contracts/PositionMigrator';
-import { PurchaseBundler } from '@/clients/contracts/PurchaseBundler';
+import { PurchaseBundlerV1 } from '@/clients/contracts/PurchaseBundlerV1';
 import { PurchaseBundlerV2 } from '@/clients/contracts/PurchaseBundlerV2';
 import {
   getContracts,
@@ -63,9 +63,9 @@ export class Contracts {
   };
 
   _PBs = {
-    '2': PurchaseBundler,
-    '3': PurchaseBundler,
-    '3.1': PurchaseBundler,
+    '2': PurchaseBundlerV1,
+    '3': PurchaseBundlerV1,
+    '3.1': PurchaseBundlerV1,
     '3.1_PB_V2': PurchaseBundlerV2,
   };
 
@@ -138,6 +138,11 @@ export class Contracts {
 
     const version = getVersionFromPurchaseBundlerAddress(this.walletClient.chain, address);
     const PurchaseBundler = this._PBs[version];
+
+    if ((mslVersion === '2' || mslVersion === '3') && version === '3.1_PB_V2') {
+      throw new Error('PurchaseBundlerV2 is not supported for MslV5 or MslV6');
+    }
+
     return new PurchaseBundler({
       walletClient: this.walletClient,
       address,

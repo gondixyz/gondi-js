@@ -14,7 +14,8 @@ import { addStepCallback } from '@/addStepCallback';
 import { Auction, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Api, Props as ApiProps } from '@/clients/api';
 import { Contracts, GondiPublicClient, Wallet } from '@/clients/contracts';
-import { PurchaseBundler } from '@/clients/contracts/PurchaseBundler';
+import { PurchaseBundlerV1 } from '@/clients/contracts/PurchaseBundlerV1';
+import { PurchaseBundlerV2 } from '@/clients/contracts/PurchaseBundlerV2';
 import { Opensea } from '@/clients/opensea';
 import { getContracts } from '@/deploys';
 import {
@@ -29,6 +30,7 @@ import * as model from '@/model';
 import { NftStandard } from '@/model';
 import { isEmptyCalldata } from '@/utils/blockchain';
 import {
+  BPS,
   isLoanVersion,
   loanToMslLoan,
   LoanToMslLoanType,
@@ -284,7 +286,8 @@ export class Gondi {
     offers,
     tokenId,
     repaymentCalldata,
-    swapDataForSellAndRepay,
+    sellAndRepaySwapData,
+    repayFlashLoanSwapParams,
   }: {
     amounts: bigint[];
     purchaseBundlerAddress: Address;
@@ -293,7 +296,12 @@ export class Gondi {
     offers: OfferFromExecutionOffer[];
     tokenId: bigint;
     repaymentCalldata?: Hex | null | undefined;
-    swapDataForSellAndRepay?: Maybe<Hex>;
+    sellAndRepaySwapData?: Maybe<Hex>;
+    repayFlashLoanSwapParams?: Maybe<{
+      inputCurrency: Address;
+      inputAmount: bigint;
+      swapData: Hex;
+    }>;
   }) {
     const orderInput: BnplOrderInput = {
       amounts,
@@ -324,14 +332,21 @@ export class Gondi {
     if (response.__typename !== 'BuyNowPayLaterOrder') throw new Error('This should never happen');
 
     if (isDefined(repaymentCalldata)) {
-      return this.contracts
-        .PurchaseBundler(purchaseBundlerAddress, offers[0].contractAddress)
-        .executeSellWithLoan({
-          emitCalldata: response.emitCalldata,
-          price: response.price,
-          repaymentCalldata,
-          swapData: swapDataForSellAndRepay,
-        });
+      const pb = this.contracts.PurchaseBundler(purchaseBundlerAddress, offers[0].contractAddress);
+      if (sellAndRepaySwapData !== undefined && pb instanceof PurchaseBundlerV1) {
+        throw new Error('Swap data is not supported for PurchaseBundler v1');
+      }
+      return pb.executeSellWithLoan({
+        initialPayment: max(
+          0n,
+          response.price - borrowed + (response.price * PurchaseBundlerV2.AAVE_PREMIUM_BPS) / BPS,
+        ),
+        emitCalldata: response.emitCalldata,
+        price: response.price,
+        repaymentCalldata,
+        executeSellSwapData: sellAndRepaySwapData,
+        repayFlashLoanSwapParams,
+      });
     }
 
     return this.contracts.PurchaseBundler(purchaseBundlerAddress, offers[0].contractAddress).buy({
@@ -1110,13 +1125,15 @@ export class Gondi {
     price: bigint;
     swapData: Maybe<Hex>;
   }) {
-    return await this.contracts
-      .PurchaseBundler(purchaseBundlerAddress, mslContractAddress)
-      .executeSell({
-        repaymentCalldata,
-        price,
-        swapData,
-      });
+    const pb = this.contracts.PurchaseBundler(purchaseBundlerAddress, mslContractAddress);
+    if (swapData && pb instanceof PurchaseBundlerV1) {
+      throw new Error('Swap data is not supported for PurchaseBundler v1');
+    }
+    return await pb.executeSell({
+      repaymentCalldata,
+      price,
+      swapData,
+    });
   }
 
   async sellAndRepay({
@@ -1131,7 +1148,7 @@ export class Gondi {
     swapData?: Hex;
   }) {
     const pb = this.contracts.PurchaseBundler(purchaseBundlerAddress, mslContractAddress);
-    if (swapData && pb instanceof PurchaseBundler) {
+    if (swapData && pb instanceof PurchaseBundlerV1) {
       throw new Error('Swap data is not supported for PurchaseBundler v1');
     }
     return await pb.sell({

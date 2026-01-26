@@ -3795,7 +3795,7 @@ export const purchaseBundlerV2ABI = [
         "internalType": "address"
       },
       {
-        "name": "taxes",
+        "name": "punkTaxes",
         "type": "tuple",
         "internalType": "struct IPurchaseBundler.Taxes",
         "components": [
@@ -3806,11 +3806,6 @@ export const purchaseBundlerV2ABI = [
           },
           {
             "name": "sellTax",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "punkBuyTax",
             "type": "uint128",
             "internalType": "uint128"
           }
@@ -4643,44 +4638,6 @@ export const purchaseBundlerV2ABI = [
   },
   {
     "type": "function",
-    "name": "executeSell",
-    "inputs": [
-      {
-        "name": "currencies",
-        "type": "address[]",
-        "internalType": "address[]"
-      },
-      {
-        "name": "currencyAmounts",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      },
-      {
-        "name": "collections",
-        "type": "address[]",
-        "internalType": "contract ERC721[]"
-      },
-      {
-        "name": "tokenIds",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      },
-      {
-        "name": "marketPlace",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "executionData",
-        "type": "bytes[]",
-        "internalType": "bytes[]"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "payable"
-  },
-  {
-    "type": "function",
     "name": "executeSellWithLoan",
     "inputs": [
       {
@@ -4756,6 +4713,26 @@ export const purchaseBundlerV2ABI = [
             "name": "loanExecutionData",
             "type": "bytes[]",
             "internalType": "bytes[]"
+          },
+          {
+            "name": "swapCurrencies",
+            "type": "address[]",
+            "internalType": "contract ERC20[]"
+          },
+          {
+            "name": "swapAmounts",
+            "type": "uint160[]",
+            "internalType": "uint160[]"
+          },
+          {
+            "name": "swapData",
+            "type": "bytes[]",
+            "internalType": "bytes[]"
+          },
+          {
+            "name": "unwrap",
+            "type": "bool",
+            "internalType": "bool"
           }
         ]
       }
@@ -4837,7 +4814,13 @@ export const purchaseBundlerV2ABI = [
   {
     "type": "function",
     "name": "getPendingTaxes",
-    "inputs": [],
+    "inputs": [
+      {
+        "name": "module",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
     "outputs": [
       {
         "name": "",
@@ -4853,11 +4836,6 @@ export const purchaseBundlerV2ABI = [
             "name": "sellTax",
             "type": "uint128",
             "internalType": "uint128"
-          },
-          {
-            "name": "punkBuyTax",
-            "type": "uint128",
-            "internalType": "uint128"
           }
         ]
       }
@@ -4867,7 +4845,13 @@ export const purchaseBundlerV2ABI = [
   {
     "type": "function",
     "name": "getPendingTaxesSetTime",
-    "inputs": [],
+    "inputs": [
+      {
+        "name": "module",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
     "outputs": [
       {
         "name": "",
@@ -4905,7 +4889,13 @@ export const purchaseBundlerV2ABI = [
   {
     "type": "function",
     "name": "getTaxes",
-    "inputs": [],
+    "inputs": [
+      {
+        "name": "module",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
     "outputs": [
       {
         "name": "",
@@ -4919,11 +4909,6 @@ export const purchaseBundlerV2ABI = [
           },
           {
             "name": "sellTax",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "punkBuyTax",
             "type": "uint128",
             "internalType": "uint128"
           }
@@ -5272,9 +5257,53 @@ export const purchaseBundlerV2ABI = [
   {
     "type": "function",
     "name": "setTaxes",
-    "inputs": [],
+    "inputs": [
+      {
+        "name": "module",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
     "outputs": [],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "swapAndExecute",
+    "inputs": [
+      {
+        "name": "currencies",
+        "type": "address[]",
+        "internalType": "address[]"
+      },
+      {
+        "name": "amountsToSwap",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      },
+      {
+        "name": "swapData",
+        "type": "bytes",
+        "internalType": "bytes"
+      },
+      {
+        "name": "target",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "executionCalldata",
+        "type": "bytes",
+        "internalType": "bytes"
+      },
+      {
+        "name": "executionValue",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "payable"
   },
   {
     "type": "function",
@@ -5339,7 +5368,12 @@ export const purchaseBundlerV2ABI = [
     "name": "updateTaxes",
     "inputs": [
       {
-        "name": "_newTaxes",
+        "name": "module",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "newTax",
         "type": "tuple",
         "internalType": "struct IPurchaseBundler.Taxes",
         "components": [
@@ -5350,11 +5384,6 @@ export const purchaseBundlerV2ABI = [
           },
           {
             "name": "sellTax",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "punkBuyTax",
             "type": "uint128",
             "internalType": "uint128"
           }
@@ -5596,7 +5625,13 @@ export const purchaseBundlerV2ABI = [
     "name": "TaxesPendingUpdate",
     "inputs": [
       {
-        "name": "newTaxes",
+        "name": "module",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newTax",
         "type": "tuple",
         "indexed": false,
         "internalType": "struct IPurchaseBundler.Taxes",
@@ -5608,11 +5643,6 @@ export const purchaseBundlerV2ABI = [
           },
           {
             "name": "sellTax",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "punkBuyTax",
             "type": "uint128",
             "internalType": "uint128"
           }
@@ -5626,7 +5656,13 @@ export const purchaseBundlerV2ABI = [
     "name": "TaxesUpdated",
     "inputs": [
       {
-        "name": "taxes",
+        "name": "module",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newTax",
         "type": "tuple",
         "indexed": false,
         "internalType": "struct IPurchaseBundler.Taxes",
@@ -5638,11 +5674,6 @@ export const purchaseBundlerV2ABI = [
           },
           {
             "name": "sellTax",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "punkBuyTax",
             "type": "uint128",
             "internalType": "uint128"
           }
@@ -5763,6 +5794,11 @@ export const purchaseBundlerV2ABI = [
   },
   {
     "type": "error",
+    "name": "InvalidTargetContractError",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "InvalidTaxesError",
     "inputs": [
       {
@@ -5777,11 +5813,6 @@ export const purchaseBundlerV2ABI = [
           },
           {
             "name": "sellTax",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "punkBuyTax",
             "type": "uint128",
             "internalType": "uint128"
           }

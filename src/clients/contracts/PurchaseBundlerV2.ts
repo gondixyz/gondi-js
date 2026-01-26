@@ -4,13 +4,15 @@ import { Address, decodeAbiParameters, Hex } from 'viem';
 import { Wallet } from '@/clients/contracts';
 import { MslV5 } from '@/clients/contracts/MslV5';
 import { MslV6 } from '@/clients/contracts/MslV6';
-import { getContracts } from '@/deploys';
+import { getContracts, getCurrencies } from '@/deploys';
 import { purchaseBundlerV2ABI } from '@/generated/blockchain/v7';
+import { areSameAddress } from '@/utils/string';
 
 import { BaseContract } from './BaseContract';
 
 export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI> {
   msl: MslV5 | MslV6;
+  static AAVE_PREMIUM_BPS = 5n;
 
   constructor({
     address,
@@ -45,9 +47,10 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
       { name: 'contractMustBeOwner', type: 'bool' },
       // Added fields in V2
       { name: 'purchaseCurrency', type: 'address' },
+      { name: 'purchaseAmount', type: 'uint256' },
       { name: 'amount', type: 'uint256' },
       { name: 'swapData', type: 'bytes' },
-      { name: 'value', type: 'uint256' },
+      { name: 'swapValue', type: 'uint256' },
       { name: 'maxSlippage', type: 'uint256' },
     ],
   } as const;
@@ -111,25 +114,31 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
 
     const { nftCollateralAddress, nftCollateralTokenId, principalAddress } = repaymentArgs.loan;
 
-    if (principalAddress !== callbackData[0].purchaseCurrency && swapData === undefined) {
+    if (
+      !areSameAddress(principalAddress, callbackData[0].purchaseCurrency) &&
+      swapData === undefined
+    ) {
       throw new Error(
         'Swap data is required when paying with different currency than loan currency.',
       );
     }
 
-    const payingWithErc20 = callbackData[0].purchaseCurrency !== PurchaseBundlerV2.ETH_SENTINEL;
+    const isNativeCurrency = areSameAddress(
+      callbackData[0].purchaseCurrency,
+      PurchaseBundlerV2.ETH_SENTINEL,
+    );
 
     const txHash = await this.safeContractWrite.executeSell(
       [
-        payingWithErc20 ? [callbackData[0].purchaseCurrency] : [],
-        payingWithErc20 ? [price] : [],
+        isNativeCurrency ? [] : [callbackData[0].purchaseCurrency],
+        isNativeCurrency ? [] : [price],
         [nftCollateralAddress],
         [nftCollateralTokenId],
         callbackData[0].reservoirExecutionInfo.module,
         [repaymentCalldata],
         swapData ? [swapData] : [],
       ],
-      { value: payingWithErc20 ? 0n : callbackData[0].reservoirExecutionInfo.value },
+      { value: isNativeCurrency ? callbackData[0].reservoirExecutionInfo.value : undefined },
     );
 
     return {
@@ -151,12 +160,20 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
     repaymentCalldata,
     emitCalldata,
     price,
-    swapData,
+    initialPayment,
+    executeSellSwapData,
+    repayFlashLoanSwapParams,
   }: {
     repaymentCalldata: Hex;
     emitCalldata: Hex;
     price: bigint;
-    swapData: Maybe<Hex>;
+    initialPayment: bigint;
+    executeSellSwapData: Maybe<Hex>;
+    repayFlashLoanSwapParams: Maybe<{
+      inputCurrency: Address;
+      inputAmount: bigint;
+      swapData: Hex;
+    }>;
   }) {
     const { Aave } = getContracts(this.wallet.chain);
     const repaymentArgs = this.msl.decodeRepaymentCalldata(repaymentCalldata);
@@ -167,26 +184,36 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
     );
 
     const { principalAddress, nftCollateralAddress, nftCollateralTokenId } = repaymentArgs.loan;
+    const purchaseCurrency = callbackData[0].purchaseCurrency;
 
-    const txHash = await this.safeContractWrite.executeSellWithLoan([
-      {
-        borrowArgs: {
-          pool: Aave,
-          assets: [principalAddress],
-          amounts: [price],
+    const isNativeCurrency = areSameAddress(purchaseCurrency, PurchaseBundlerV2.ETH_SENTINEL);
+
+    const txHash = await this.safeContractWrite.executeSellWithLoan(
+      [
+        {
+          borrowArgs: {
+            pool: Aave,
+            assets: isNativeCurrency ? [getCurrencies().WETH_ADDRESS] : [purchaseCurrency],
+            amounts: isNativeCurrency ? [price - initialPayment] : [price],
+          },
+          executeSellArgs: {
+            currencies: isNativeCurrency ? [] : [principalAddress],
+            currencyAmounts: isNativeCurrency ? [] : [price],
+            collections: [nftCollateralAddress],
+            tokenIds: [nftCollateralTokenId],
+            marketPlace: callbackData[0].reservoirExecutionInfo.module,
+            executionData: [repaymentCalldata],
+            swapData: executeSellSwapData ? [executeSellSwapData] : [],
+          },
+          loanExecutionData: [emitCalldata],
+          swapCurrencies: repayFlashLoanSwapParams ? [repayFlashLoanSwapParams.inputCurrency] : [],
+          swapAmounts: repayFlashLoanSwapParams ? [repayFlashLoanSwapParams.inputAmount] : [],
+          swapData: repayFlashLoanSwapParams ? [repayFlashLoanSwapParams.swapData] : [],
+          unwrap: isNativeCurrency,
         },
-        executeSellArgs: {
-          currencies: [principalAddress],
-          currencyAmounts: [price],
-          collections: [nftCollateralAddress],
-          tokenIds: [nftCollateralTokenId],
-          marketPlace: callbackData[0].reservoirExecutionInfo.module,
-          executionData: [repaymentCalldata],
-          swapData: swapData ? [swapData] : [],
-        },
-        loanExecutionData: [emitCalldata],
-      },
-    ]);
+      ],
+      { value: isNativeCurrency ? initialPayment : undefined },
+    );
 
     return {
       txHash,

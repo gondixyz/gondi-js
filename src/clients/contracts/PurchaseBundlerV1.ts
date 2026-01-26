@@ -8,7 +8,7 @@ import { purchaseBundlerAbi } from '@/generated/blockchain/v6';
 
 import { BaseContract } from './BaseContract';
 
-export class PurchaseBundler extends BaseContract<typeof purchaseBundlerAbi> {
+export class PurchaseBundlerV1 extends BaseContract<typeof purchaseBundlerAbi> {
   msl: MslV5 | MslV6;
 
   constructor({
@@ -85,7 +85,7 @@ export class PurchaseBundler extends BaseContract<typeof purchaseBundlerAbi> {
     const repaymentArgs = this.msl.decodeRepaymentCalldata(repaymentCalldata);
 
     const callbackData = decodeAbiParameters(
-      [PurchaseBundler.EXECUTION_INFO],
+      [PurchaseBundlerV1.EXECUTION_INFO],
       repaymentArgs.data.callbackData,
     );
 
@@ -128,7 +128,7 @@ export class PurchaseBundler extends BaseContract<typeof purchaseBundlerAbi> {
     const repaymentArgs = this.msl.decodeRepaymentCalldata(repaymentCalldata);
 
     const callbackData = decodeAbiParameters(
-      [PurchaseBundler.EXECUTION_INFO],
+      [PurchaseBundlerV1.EXECUTION_INFO],
       repaymentArgs.data.callbackData,
     );
 
