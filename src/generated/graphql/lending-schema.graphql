@@ -406,11 +406,15 @@ input CollectionSignedOfferInput {
 
 enum CollectionSortField {
   FLOOR_PRICE
+  FLOOR_PRICE_1D_CHANGE
   FLOOR_PRICE_7D_CHANGE
   FLOOR_PRICE_30D_CHANGE
   LENDERS_OUTSTANDING_PRINCIPAL
   LISTING_COUNT
   LOAN_COUNT
+  NUMBER_OF_SALES_1D
+  NUMBER_OF_SALES_7D
+  NUMBER_OF_SALES_30D
   OFFER_COUNT
   OUTSTANDING_PRINCIPAL
   OWNERS_TOTAL_VALUE
@@ -427,6 +431,7 @@ input CollectionSortInput {
   field: CollectionSortField!
   lenders: [Address!] = null
   marketplaces: [MarketPlaceType!] = null
+  minNumberOfSales: BigInt = null
   order: Ordering!
   owners: [Address!] = null
   principalAddress: Address = null
@@ -435,6 +440,7 @@ input CollectionSortInput {
 type CollectionStatistics {
   bestOffer: CurrencyAmount @deprecated(reason: "Use highest_bid instead.")
   floorPrice: CurrencyAmount
+  floorPrice1d: Float
   floorPrice7d: Float
   floorPrice30d: Float
   floorPriceHistory(fromDate: DateTime!, toDate: DateTime!): [FloatStatHistory!]!
@@ -449,6 +455,9 @@ type CollectionStatistics {
   numberOfOffers(currencyAddress: Address!): Float! @deprecated(reason: "Use number_of_offers_for_currencies instead.")
   numberOfOffersForCurrencies(currencyAddresses: [Address!]!): Int!
   numberOfPricedNfts(marketplaces: [MarketPlaceType!] = null): Int!
+  numberOfSales1d: Int!
+  numberOfSales7d: Int!
+  numberOfSales30d: Int!
   outstandingLoanCount: Int!
   outstandingNftsCount: BigInt!
   outstandingPrincipal(currencyAddress: Address!): BigInt!
@@ -519,6 +528,7 @@ type Deal implements Node {
   blockchain: String!
   counterOfferForId: Int
   counterOffered: Boolean!
+  createdDate: DateTime!
   evmOrder: JSON
   expiration: DateTime!
   id: String!
@@ -556,7 +566,20 @@ enum DealEventType {
   EXPIRED
   INVALID
   RECEIVED
+  RECEIVED_COUNTER_OFFER
   SENT
+  SENT_COUNTER_OFFER
+}
+
+type DealExpirationReminderNotification implements Node & Notification {
+  createdOn: DateTime!
+  deal: Deal!
+  dealId: Int!
+  expiresInSeconds: Int!
+  id: String!
+  notificationType: String!
+  readOn: DateTime
+  user: User!
 }
 
 input DealInput {
@@ -588,6 +611,17 @@ type DealNotification implements Node & Notification {
 }
 
 union DealSignatureRequest = Deal | SignatureRequest
+
+enum DealSortField {
+  CREATED_DATE
+  EXPIRATION
+  STATUS
+}
+
+input DealSortInput {
+  field: DealSortField!
+  order: Ordering!
+}
 
 type Delegation implements Node {
   contractAddress: String!
@@ -682,7 +716,14 @@ enum EventType {
   TRANSFER
 }
 
+enum ExclusiveListingType {
+  FLOOR_PRICE
+  IN_LOAN
+  LOW_PRICE
+}
+
 type ExtraSeaportData {
+  criteriaProof: [Hex!]
   extraData: Hex!
 }
 
@@ -1398,6 +1439,7 @@ type NFT implements Node {
   Active loan of the NFT, which can be of status INITIATED, SENT_TO_AUCTION or DEFAULTED.
   """
   activeLoan: Loan
+  animation: Asset
   collection: Collection
   collectionId: Int
   createdDate: DateTime!
@@ -1411,7 +1453,7 @@ type NFT implements Node {
 
   """Deprecated."""
   marketPlaceOfPrice: String @deprecated(reason: "Get it from nftPriceSample")
-  maxNetPrincipalOffer(currencyAddress: Address!): Offer
+  maxNetPrincipalOffer(currencyAddress: Address = null): Offer
 
   "\n        Naked NFT for the same token_id.\n        "
   nakedNft: NFT!
@@ -1455,6 +1497,7 @@ type NFTEdge {
 input NFTOrderInput {
   amount: BigInt = null
   contractAddress: Address!
+  criteriaProof: [Hex!] = null
   currencyAddress: Address!
   expirationTime: BigInt!
   extraSeaportData: Hex = null
@@ -1593,6 +1636,7 @@ enum NftsSortField {
   OUTSTANDING_DEBT
   OUTSTANDING_LOAN_DUE_DATE
   PRICE
+  STATUS
   TOKEN_ID
 }
 
@@ -1628,6 +1672,7 @@ type NotificationEdge {
 
 enum NotificationType {
   AUCTION_WON_NOTIFICATION
+  DEAL_EXPIRATION_REMINDER_NOTIFICATION
   DEAL_NOTIFICATION
   LOAN_DEFAULTED_NOTIFICATION
   LOAN_DEFAULT_REMINDER_NOTIFICATION
@@ -2056,6 +2101,11 @@ type PoolStatistics {
 
 """Query for the lending module"""
 type Query {
+  """
+  Get the borrowing power for a list of borrowers.Borrowing power is the sum of the best offer per NFT the borrower has.The best offer is the offer with the highest net principal.Returns the normalized sum in ETH equivalent (float).
+  """
+  getBorrowingPower(borrowers: [Address!]!): Float!
+
   """Get some general loan stats about the activities for a collection."""
   getCollectionActivitiesCount(collectionId: Int = null, currencyAddress: Address = null, fromTimestamp: Int!, slug: String = null): CollectionEventsCountByDayAndCurrency!
 
@@ -2098,7 +2148,24 @@ type Query {
   listCollectionFollows(after: String, feedId: String = null, first: Int! = 20): CollectionConnection!
   listCollectionTraitTypes(after: String, collectionIds: [Int!] = null, first: Int! = 40, valueType: TraitValueType = null): TraitTypeConnection!
   listCollectionTraitValues(after: String, collectionIds: [Int!] = null, first: Int! = 40, key: [String!] = null, nftId: Int = null, onlyEnums: Boolean = null, searchTerm: String = null, sortBy: [TraitValueSortInput!] = null): TraitValueConnection!
-  listCollections(after: String, collections: [Int!] = null, excludeCollections: [Int!] = null, excludeGondiUserVault: Boolean = false, first: Int = null, forWallets: ForWalletsInput = null, searchTerm: String = null, sortBy: [CollectionSortInput!] = null, standards: [TokenStandardType!] = null, withAsks: WithAsksInput = null, withListings: Boolean = false, withLoans: Boolean = false, wrappers: Boolean = null): CollectionConnection!
+  listCollections(
+    after: String
+    collections: [Int!] = null
+    excludeCollections: [Int!] = null
+    excludeGondiUserVault: Boolean = false
+    first: Int = null
+
+    """Filter by floor price in ETH using an interval (min/max)."""
+    floorPrice: Interval = null
+    forWallets: ForWalletsInput = null
+    searchTerm: String = null
+    sortBy: [CollectionSortInput!] = null
+    standards: [TokenStandardType!] = null
+    withAsks: WithAsksInput = null
+    withListings: Boolean = false
+    withLoans: Boolean = false
+    wrappers: Boolean = null
+  ): CollectionConnection!
 
   """
   List NFT collections that have at least one listing. Listing an NFT is marking the NFT as available for taking loans and this can only be done by the owner of the NFT.
@@ -2108,7 +2175,7 @@ type Query {
   """List NFT collections that have at least one loan."""
   listCollectionsWithLoans(after: String, collections: [Int!] = null, first: Int! = 10, searchTerm: String = null): CollectionConnection!
   listCurrencies(after: String, first: Int! = 20): CurrencyConnection!
-  listDeals(after: String, first: Int = null, ids: [Int!] = null, statuses: [OrderStatusType!] = null, walletAddresses: [Address!]!): DealConnection!
+  listDeals(after: String, first: Int = null, ids: [Int!] = null, sortBy: [DealSortInput!] = null, statuses: [OrderStatusType!] = null, walletAddresses: [Address!]!): DealConnection!
 
   """
   List all activities. Includes loan activities, loan offers, loan renegotiations, trade orders, nft transfers.
@@ -2236,7 +2303,7 @@ type Query {
   This field is deprecated. Use list_orders_v2 instead. This field will be removed in the next major version.
   """
   listOrders(after: String, collectionId: Int = null, currencyAddresses: [Address!] = null, first: Int = null, hidden: Boolean = null, ids: [Int!] = null, maker: [Address!] = null, marketplaceIds: [String!] = null, marketplaces: [MarketPlaceType!] = null, nftId: Int = null, onlyInvalid: Boolean = null, orderType: OrderType = null, sortBy: [OrderSortInput!] = null, statuses: [OrderStatusType!] = null, taker: Address = null, terms: OrderTermsFilter = null): OrderConnection!
-  listOrdersV2(after: String, collectionIds: [Int!] = null, currencyAddresses: [Address!] = null, excludeMaker: [Address!] = null, first: Int = null, hidden: Boolean = null, ids: [Int!] = null, maker: [Address!] = null, marketplaceIds: [String!] = null, marketplaces: [MarketPlaceType!] = null, nfts: [OrderForNft!] = null, onlyInvalid: Boolean = null, side: OrderSide = null, sortBy: [OrderSortInput!] = null, statuses: [OrderStatusType!] = null, taker: Address = null, terms: OrderTermsFilter = null, traitIds: [Int!] = null): OrderConnection!
+  listOrdersV2(after: String, collectionIds: [Int!] = null, currencyAddresses: [Address!] = null, excludeMaker: [Address!] = null, exclusiveListings: Boolean = false, exclusiveListingsTypes: [ExclusiveListingType!] = null, first: Int = null, hidden: Boolean = null, ids: [Int!] = null, maker: [Address!] = null, marketplaceIds: [String!] = null, marketplaces: [MarketPlaceType!] = null, nfts: [OrderForNft!] = null, onlyInvalid: Boolean = null, side: OrderSide = null, sortBy: [OrderSortInput!] = null, statuses: [OrderStatusType!] = null, taker: Address = null, terms: OrderTermsFilter = null, traitIds: [Int!] = null): OrderConnection!
   listPlatformFees(blockchain: BlockchainEnum!, collectionId: Int!, marketplace: MarketPlaceType = null, operation: PlatformFeeOperationType!): [PlatformFee!]!
   listPoolActivities(after: String, first: Int! = 20, ownerAddresses: [Address!] = null, poolAddresses: [Address!] = null, types: [PoolActivityType!] = null): PoolActivityConnection!
   listPools(addresses: [String!] = null, after: String, first: Int! = 10): PoolConnection!
@@ -2298,6 +2365,7 @@ input RangeInput {
 input RefinanceTermsFilter {
   aprBps: Interval = null
   duration: Interval = null
+  ethProfitLeft: Interval = null
   fee: Interval = null
   maxPrincipal: Interval = null
   netPrincipal: Interval = null
@@ -2752,6 +2820,7 @@ type StatByCollection {
 input TermsFilter {
   aprBps: Interval = null
   duration: Interval = null
+  ethProfitLeft: Interval = null
   fee: Interval = null
   maxPrincipal: Interval = null
   netPrincipal: Interval = null

@@ -264,6 +264,7 @@ export class Gondi {
     while (response.__typename !== 'SellAndRepayOrder') {
       if (response.__typename === 'ExtraSeaportData') {
         sellAndRepayOrderInput.extraSeaportData = response.extraData;
+        sellAndRepayOrderInput.criteriaProof = response.criteriaProof;
       } else if (response.__typename === 'SignatureRequest') {
         const key = response.key as 'signature' | 'repaymentSignature';
         sellAndRepayOrderInput[key] = await this.wallet.signTypedData(

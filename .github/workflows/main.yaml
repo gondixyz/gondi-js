@@ -5,6 +5,7 @@ on:
     branches: ['main']
 
 permissions:
+  id-token: write
   contents: write
 
 jobs:
@@ -56,6 +57,7 @@ jobs:
           generateReleaseNotes: true
 
       # Publish to NPM if version is not published
+      # TODO: Use OIDC
       - name: NPM Publish
         run: |
           npx can-npm-publish --verbose && npm publish || echo "Does not publish"
