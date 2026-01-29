@@ -100,7 +100,7 @@ const contractsByChain: Record<number, Contracts> = {
         '0x7a2088a1bFc9d81c55368AE168C2C02570cB814F',
       '3.1':
         ensureAddress(process.env.GONDI_PURCHASE_BUNDLER_V7) ??
-        '0x99bbA657f2BbC93c02D617f8bA121cB8Fc104Acf',
+        '0x70e0bA845a1A0F2DA3359C97E0285013525FFC49',
     },
     Seaport:
       ensureAddress(process.env.GONDI_SEAPORT) ?? '0x0000000000000068F116a894984e2DB1123eB395',
