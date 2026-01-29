@@ -2,6 +2,9 @@
   "exclude": ["node_modules/", "dist/", "docs/", "examples/"],
   "include": ["**/*.d.ts", "**/*.ts"],
   "compilerOptions": {
+    /* Types */
+    "types": ["node"],
+
     /* Emit */
     "noEmit": false,
     "emitDeclarationOnly": true,
