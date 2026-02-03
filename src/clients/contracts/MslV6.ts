@@ -726,16 +726,10 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
   async encodeRepayLoan({
     repayArgs,
     withSignature,
-    onStepChange,
   }: {
     repayArgs: RepayArgs;
     withSignature: boolean;
-    onStepChange?: () => void;
   }) {
-    if (onStepChange && withSignature) {
-      onStepChange();
-    }
-
     const repayLoanArgs = {
       data: repayArgs.signableRepaymentData,
       loan: repayArgs.loan,
@@ -754,15 +748,12 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
   async encodeEmitLoan({
     emitArgs,
     withSignature,
-    onStepChange,
   }: {
     emitArgs: EmitLoanArgs;
     withSignature: boolean;
-    onStepChange?: () => void;
   }) {
     const emitLoanArgs = this.mapEmitLoanToMslEmitLoanArgs(emitArgs);
     if (withSignature) {
-      onStepChange?.();
       emitLoanArgs.borrowerOfferSignature = await this.signExecutionData({
         structToSign: emitLoanArgs.executionData,
       });

@@ -17,12 +17,14 @@ import {
   SingleNftOrderInput,
   SingleNftSignedOfferInput,
 } from '@/generated/graphql';
+import { OnStepChange } from '@/gondi';
 import { RenegotiationOffer } from '@/model';
 import { isDefined } from '@/utils/types';
 
 export type Props = {
   apiClient?: ApolloClient<NormalizedCacheObject>;
   wallet: Wallet;
+  onStepChange?: OnStepChange;
 };
 
 type PageInfo = { endCursor?: string | null; hasNextPage: boolean };
@@ -58,9 +60,9 @@ export class Api {
   showOrder;
   collectionStepsById;
 
-  constructor({ apiClient, wallet }: Props) {
+  constructor({ apiClient, wallet, onStepChange }: Props) {
     const gqlClient = apiClient ?? apolloClient(wallet);
-    this.api = getSdkApollo(gqlClient);
+    this.api = getSdkApollo(gqlClient, onStepChange);
 
     this.getSaleCalldata = this.api.getSaleCalldata;
     this.generateSingleNftOfferHash = this.api.generateSingleNftOfferHash;

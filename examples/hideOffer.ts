@@ -1,12 +1,16 @@
-import { OfferStatus } from 'gondi';
+import { Gondi, OfferStatus } from 'gondi';
 
 import {
   setAllowances,
   sleep,
   testCollectionOfferInput,
   testSingleNftOfferInput,
-  users,
+  wallets,
 } from './common';
+
+const users = wallets.map((wallet) =>
+  Gondi.create({ wallet, onStepChange: async (step) => console.log(step) }),
+);
 
 async function main() {
   await setAllowances();
@@ -14,7 +18,7 @@ async function main() {
     await users[0].makeCollectionOffer(testCollectionOfferInput),
     await users[0].makeSingleNftOffer(testSingleNftOfferInput),
   ];
-  console.log('offers placed successfully');
+  // console.log('offers placed successfully');
   for (const offer of offers) {
     await users[0].hideOffer({
       id: offer.offerId,
@@ -25,7 +29,7 @@ async function main() {
   const { offers: listedOffers } = await users[1].offers({
     filterBy: { status: [OfferStatus.Active] },
   });
-  console.log(listedOffers);
+  // console.log(listedOffers);
   for (const offer of offers) {
     const { waitTxInBlock } = await users[0].cancelOffer({
       id: offer.offerId,

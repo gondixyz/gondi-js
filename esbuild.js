@@ -1,7 +1,7 @@
 import { build } from 'esbuild';
 import { writeFileSync } from 'fs';
 
-import packageJson from './package.json' assert { type: 'json' };
+import packageJson from './package.json' with { type: 'json' };
 
 const metafile = !!process.env.METAFILE;
 

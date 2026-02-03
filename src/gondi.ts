@@ -42,10 +42,10 @@ interface GondiProps {
   wallet: Wallet;
   apiClient?: ApiProps['apiClient'];
   openseaApiKey?: string;
-  reservoirApiKey?: string;
+  onStepChange?: OnStepChange;
 }
 
-type Step = { id: number } & (
+type Step =
   | {
       type: 'signature';
       primaryType: string;
@@ -57,7 +57,11 @@ type Step = { id: number } & (
       to: Address;
       functionNameOrSelector: string; // can be a function name or a function selector
     }
-);
+  | {
+      type: 'api';
+      status: 'waiting' | 'success';
+      mutationName: string;
+    };
 
 export type OnStepChange = (step: Step) => Promise<void>;
 
@@ -69,7 +73,7 @@ export class Gondi {
   apiClient: Api;
   openseaClient: Opensea;
 
-  constructor({ wallet, apiClient, openseaApiKey }: GondiProps) {
+  constructor({ wallet, apiClient, openseaApiKey, onStepChange }: GondiProps) {
     this.wallet = wallet;
     this.account = wallet.account;
     this.bcClient = createPublicClient({
@@ -77,21 +81,19 @@ export class Gondi {
       transport: () => createTransport(wallet.transport),
     });
     this.contracts = new Contracts(this.bcClient, wallet);
-    this.apiClient = new Api({ wallet, apiClient });
+    this.apiClient = new Api({ wallet, apiClient, onStepChange });
     this.openseaClient = new Opensea({ apiKey: openseaApiKey ?? process.env.OPENSEA_API_KEY });
   }
 
   static create(
     props: GondiProps & {
       onStepChange: OnStepChange;
-      executionId?: number | null;
     },
   ) {
-    const { wallet, onStepChange, executionId } = props;
+    const { wallet, onStepChange } = props;
     const walletWithSteps = addStepCallback({
       wallet,
       onStepChange,
-      executionId,
     });
     return new Gondi({ ...props, wallet: walletWithSteps });
   }
@@ -226,7 +228,7 @@ export class Gondi {
     return await this.apiClient.saveCollectionOffer(signedOffer);
   }
 
-  async makeOrder(orderInput: Parameters<Api['publishOrder']>[0]) {
+  async makeOrder(orderInput: Parameters<Api['publishOrder']>[0] & { hidden?: boolean }) {
     let response = await this.apiClient.publishOrder(orderInput);
     while (response.__typename === 'SignatureRequest') {
       const key = response.key as 'signature';
@@ -236,6 +238,10 @@ export class Gondi {
 
     if (response.__typename !== 'SingleNFTOrder' && response.__typename !== 'CollectionOrder')
       throw new Error('This should never happen');
+
+    if (orderInput.hidden) {
+      await this.apiClient.hideOrder({ id: response.id });
+    }
 
     return { ...response, ...orderInput };
   }
@@ -254,7 +260,7 @@ export class Gondi {
   }
 
   async makeSellAndRepayOrder(
-    sellAndRepayOrderInput: Parameters<Api['publishSellAndRepayOrder']>[0],
+    sellAndRepayOrderInput: Parameters<Api['publishSellAndRepayOrder']>[0] & { hidden?: boolean },
   ) {
     let response = await this.apiClient.publishSellAndRepayOrder(sellAndRepayOrderInput);
     while (response.__typename !== 'SellAndRepayOrder') {
@@ -271,6 +277,10 @@ export class Gondi {
     }
 
     if (response.__typename !== 'SellAndRepayOrder') throw new Error('This should never happen');
+
+    if (sellAndRepayOrderInput.hidden) {
+      await this.apiClient.hideOrder({ id: response.id });
+    }
 
     return { ...response, ...sellAndRepayOrderInput };
   }
