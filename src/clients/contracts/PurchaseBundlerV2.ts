@@ -131,7 +131,7 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
     const txHash = await this.safeContractWrite.executeSell(
       [
         isNativeCurrency ? [] : [callbackData[0].purchaseCurrency],
-        isNativeCurrency ? [] : [price],
+        isNativeCurrency ? [] : [price], // TODO: after audit, check if this is necessary
         [nftCollateralAddress],
         [nftCollateralTokenId],
         callbackData[0].reservoirExecutionInfo.module,
@@ -194,11 +194,11 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
           borrowArgs: {
             pool: Aave,
             assets: isNativeCurrency ? [getCurrencies().WETH_ADDRESS] : [purchaseCurrency],
-            amounts: isNativeCurrency ? [price - initialPayment] : [price],
+            amounts: isNativeCurrency ? [price - initialPayment] : [price], // TODO: This could be improved to be price-initialPayment everytime
           },
           executeSellArgs: {
             currencies: isNativeCurrency ? [] : [principalAddress],
-            currencyAmounts: isNativeCurrency ? [] : [price],
+            currencyAmounts: isNativeCurrency ? [] : [price], // TODO: after audit, check if this is necessary
             collections: [nftCollateralAddress],
             tokenIds: [nftCollateralTokenId],
             marketPlace: callbackData[0].reservoirExecutionInfo.module,
