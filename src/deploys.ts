@@ -101,7 +101,7 @@ const contractsByChain: Record<number, Contracts> = {
         '0x7a2088a1bFc9d81c55368AE168C2C02570cB814F',
       '3.1':
         ensureAddress(process.env.GONDI_PURCHASE_BUNDLER_V7) ??
-        '0x99bbA657f2BbC93c02D617f8bA121cB8Fc104Acf',
+        '0x70e0bA845a1A0F2DA3359C97E0285013525FFC49',
       '3.1_PB_V2':
         ensureAddress(process.env.GONDI_PURCHASE_BUNDLER_V7_PB_V2) ??
         '0x1291Be112d480055DaFd8a610b7d1e203891C274',
@@ -132,7 +132,7 @@ const contractsByChain: Record<number, Contracts> = {
     PurchaseBundler: {
       '2': '0x3b59bffe109e0f33f20887343759a98b48ecdf5f',
       '3': '0x53ceda4c47585df08201955820e23bb261489140',
-      '3.1': '0xfd31a0cd628f0bab2cc174c3abd6bfc2d01aca61',
+      '3.1': '0x1FBa531724Ea2493a15Bf5c4EA05f6aB5C0FCd62',
       '3.1_PB_V2': zeroAddress, // TODO: complete me
     },
     Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
