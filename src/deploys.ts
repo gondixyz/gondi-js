@@ -27,6 +27,7 @@ interface Contracts {
     '2': Address;
     '3': Address;
     '3.1': Address;
+    '3.1_PB_V2': Address;
   };
   Seaport: Address;
   Aave: Address;
@@ -101,6 +102,9 @@ const contractsByChain: Record<number, Contracts> = {
       '3.1':
         ensureAddress(process.env.GONDI_PURCHASE_BUNDLER_V7) ??
         '0x70e0bA845a1A0F2DA3359C97E0285013525FFC49',
+      '3.1_PB_V2':
+        ensureAddress(process.env.GONDI_PURCHASE_BUNDLER_V7_PB_V2) ??
+        '0x1291Be112d480055DaFd8a610b7d1e203891C274',
     },
     Seaport:
       ensureAddress(process.env.GONDI_SEAPORT) ?? '0x0000000000000068F116a894984e2DB1123eB395',
@@ -129,6 +133,7 @@ const contractsByChain: Record<number, Contracts> = {
       '2': '0x3b59bffe109e0f33f20887343759a98b48ecdf5f',
       '3': '0x53ceda4c47585df08201955820e23bb261489140',
       '3.1': '0x1FBa531724Ea2493a15Bf5c4EA05f6aB5C0FCd62',
+      '3.1_PB_V2': zeroAddress, // TODO: complete me
     },
     Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
     Aave: '0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2',
@@ -156,6 +161,7 @@ const contractsByChain: Record<number, Contracts> = {
       '2': zeroAddress,
       '3': zeroAddress,
       '3.1': '0xfaaff69da43b8195e5b0945c4fea4476e4264157',
+      '3.1_PB_V2': zeroAddress, // Hyperevm does not support PurchaseBundlerV2
     },
     Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
     Aave: zeroAddress,
@@ -178,6 +184,20 @@ export const getVersionFromMslAddress = (chain: Pick<Chain, 'id'>, address: Addr
   )?.[0];
   if (!version) {
     throw new Error(`No version found for MSL contract ${address}`);
+  }
+  return version;
+};
+
+export const getVersionFromPurchaseBundlerAddress = (
+  chain: Pick<Chain, 'id'>,
+  address: Address,
+) => {
+  const contracts = getContracts(chain);
+  const version = entries(contracts.PurchaseBundler).find(([_, versionAddress]) =>
+    areSameAddress(versionAddress, address),
+  )?.[0];
+  if (!version) {
+    throw new Error(`No version found for PurchaseBundler contract ${address}`);
   }
   return version;
 };
