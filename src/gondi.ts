@@ -627,7 +627,7 @@ export class Gondi {
     sortBy = { field: OffersSortField.CreatedDate, order: Ordering.Desc },
     filterBy = {},
   }: model.ListOffersProps) {
-    const { status, nft, collection, borrower, ...fields } = filterBy;
+    const { status, nft, collection, borrower, contractAddresses, ...fields } = filterBy;
     return await this.apiClient.listOffers({
       first: limit,
       after: cursor,
@@ -636,6 +636,7 @@ export class Gondi {
       nfts: nft ? [nft] : [],
       collections: collection ? [collection] : [],
       borrowerAddress: borrower,
+      contractAddresses: contractAddresses ?? [],
       ...fields,
     });
   }

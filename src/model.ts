@@ -93,6 +93,7 @@ export type ListOffersProps = {
     borrower?: Address;
     lenders?: Address[];
     status?: OfferStatus[];
+    contractAddresses?: Address[];
   };
 };
 
