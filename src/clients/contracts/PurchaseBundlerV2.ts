@@ -183,7 +183,7 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
       repaymentArgs.data.callbackData,
     );
 
-    const { principalAddress, nftCollateralAddress, nftCollateralTokenId } = repaymentArgs.loan;
+    const { nftCollateralAddress, nftCollateralTokenId } = repaymentArgs.loan;
     const purchaseCurrency = callbackData[0].purchaseCurrency;
 
     const isNativeCurrency = areSameAddress(purchaseCurrency, PurchaseBundlerV2.ETH_SENTINEL);
@@ -197,7 +197,7 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
             amounts: isNativeCurrency ? [price - initialPayment] : [price], // TODO: This could be improved to be price-initialPayment everytime
           },
           executeSellArgs: {
-            currencies: isNativeCurrency ? [] : [principalAddress],
+            currencies: isNativeCurrency ? [] : [purchaseCurrency],
             currencyAmounts: isNativeCurrency ? [] : [price], // TODO: after audit, check if this is necessary
             collections: [nftCollateralAddress],
             tokenIds: [nftCollateralTokenId],
