@@ -1,4 +1,4 @@
-mutation hideOrder($id: Int!) {
+mutation hideOrder($id: Int64!) {
   hideOrder(orderId: $id) {
     id
   }
