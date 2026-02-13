@@ -1125,7 +1125,7 @@ export class Gondi {
     purchaseBundlerAddress?: Address;
     mslContractAddress: Address;
     price: bigint;
-    swapData: Maybe<Hex>;
+    swapData?: Maybe<Hex>;
   }) {
     const pb = this.contracts.PurchaseBundler(purchaseBundlerAddress, mslContractAddress);
     if (swapData && pb instanceof PurchaseBundlerV1) {
