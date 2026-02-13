@@ -1399,10 +1399,10 @@ type Mutation {
   hideOffer(contractAddress: Address!, offerId: String!): Offer!
 
   """Hides a trade order."""
-  hideOrder(orderId: Int64!): Order!
+  hideOrder(orderIdInt64: Int64 = null): Order!
 
   """Hides a loan renegotiation offer. """
-  hideRenegotiation(contractAddress: Address = "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9", renegotiationId: String!): Renegotiation!
+  hideRenegotiation(contractAddress: Address = "0xca5a494ca20483e21ec1e41fe1d9461da77595bd", renegotiationId: String!): Renegotiation!
   markNotificationIdsAsRead(ids: [Int!], walletAddresses: [Address!] = null): Void
   markNotificationsAsRead(walletAddresses: [Address!] = null): Void
 
@@ -1466,7 +1466,7 @@ type Mutation {
   showOffer(contractAddress: Address!, offerId: String!): Offer!
 
   """Unhides a trade order."""
-  showOrder(orderId: Int64!): Order!
+  showOrder(orderIdInt64: Int64 = null): Order!
 
   """Unhides a loan renegotiation offer. """
   showRenegotiation(contractAddress: Address = "0xca5a494ca20483e21ec1e41fe1d9461da77595bd", renegotiationId: String!): Renegotiation!
@@ -2045,8 +2045,8 @@ type Query {
   getLoanById(address: String!, loanId: Int!): Loan
   getNftByContractAddressAndTokenId(contractAddress: Address!, tokenId: BigInt!): NFT
   getNftBySlugAndTokenId(slug: String!, tokenId: BigInt!): NFT
-  getOrderCancelCalldata(model: OrderModel = null, orderId: Int64!): Hex!
-  getOrderSaleCalldata(model: OrderModel = null, nftId: Int = null, orderId: Int64!, taker: Address = null): Hex!
+  getOrderCancelCalldata(model: OrderModel = null, orderIdInt64: Int64 = null): Hex!
+  getOrderSaleCalldata(model: OrderModel = null, nftId: Int = null, orderIdInt64: Int64 = null, taker: Address = null): Hex!
   getOutstandingDebt(borrowers: [Address!]!, currencyAddresses: [Address!] = null): BigInt!
   getOutstandingLoanStatistics: OutstandingLoanStatistics!
   getPointsFromReferrals: Int!

@@ -46,10 +46,10 @@ const typesMap = {
   },
   // Note: this parse supports up to 2**53 - 1
   Int64: {
-    serialize: (parsed: number) => {
+    serialize: (parsed: unknown) => {
       return Number(parsed);
     },
-    parseValue: (raw: number) => {
+    parseValue: (raw: unknown) => {
       return Number(raw);
     },
   },

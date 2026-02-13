@@ -1,5 +1,5 @@
 mutation showOrder($id: Int64!) {
-  showOrder(orderId: $id) {
+  showOrder(orderIdInt64: $id) {
     id
   }
 }
