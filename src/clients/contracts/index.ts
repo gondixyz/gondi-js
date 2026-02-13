@@ -124,7 +124,7 @@ export class Contracts {
    * @param mslContractAddress The contract address of the MSL contract
    * @returns The corresponding PurchaseBundler contract
    */
-  PurchaseBundler(address: Address, mslContractAddress: Address) {
+  PurchaseBundler(address: Address | undefined, mslContractAddress: Address) {
     const mslVersion = getVersionFromMslAddress(this.walletClient.chain, mslContractAddress);
     if (mslVersion === '1') {
       throw new Error('V1 has no support for PurchaseBundler');
@@ -136,7 +136,9 @@ export class Contracts {
       throw new Error('MslV4 is not supported for PurchaseBundler');
     }
 
-    const version = getVersionFromPurchaseBundlerAddress(this.walletClient.chain, address);
+    const contracts = getContracts(this.walletClient.chain);
+    const resolvedAddress = address ?? contracts.PurchaseBundler[mslVersion];
+    const version = getVersionFromPurchaseBundlerAddress(this.walletClient.chain, resolvedAddress);
     const PurchaseBundler = this._PBs[version];
 
     if ((mslVersion === '2' || mslVersion === '3') && version === '3.1_PB_V2') {
@@ -145,7 +147,7 @@ export class Contracts {
 
     return new PurchaseBundler({
       walletClient: this.walletClient,
-      address,
+      address: resolvedAddress,
       msl,
     });
   }

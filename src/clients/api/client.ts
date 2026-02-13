@@ -44,6 +44,15 @@ const typesMap = {
       return null;
     },
   },
+  // Note: this parse supports up to 2**53 - 1
+  Int64: {
+    serialize: (parsed: unknown) => {
+      return Number(parsed);
+    },
+    parseValue: (raw: unknown) => {
+      return Number(raw);
+    },
+  },
   DateTime: {
     serialize: (parsed: unknown) => {
       if (parsed instanceof Date) return parsed.toISOString();

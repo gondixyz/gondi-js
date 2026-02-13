@@ -21,6 +21,7 @@ export type Scalars = {
   DateTime: Date;
   Hash: Hash;
   Hex: Hex;
+  Int64: any;
   JSON: object;
   Signature: Hex;
   Void: any;
@@ -1702,7 +1703,7 @@ export type MutationHideOfferArgs = {
 
 
 export type MutationHideOrderArgs = {
-  orderId: Scalars['Int'];
+  orderIdInt64?: InputMaybe<Scalars['Int64']>;
 };
 
 
@@ -1803,7 +1804,7 @@ export type MutationShowOfferArgs = {
 
 
 export type MutationShowOrderArgs = {
-  orderId: Scalars['Int'];
+  orderIdInt64?: InputMaybe<Scalars['Int64']>;
 };
 
 
@@ -1938,7 +1939,7 @@ export type NftPriceSample = Node & {
   currencyAddress: Scalars['Address'];
   id: Scalars['String'];
   order: Order;
-  orderId: Scalars['Int'];
+  orderId: Scalars['Int64'];
   surveyedId: Scalars['Int'];
   taker: Scalars['Address'];
   timestamp: Scalars['Int'];
@@ -2641,7 +2642,7 @@ export type QueryGetNftBySlugAndTokenIdArgs = {
 /** Query for the lending module */
 export type QueryGetOrderCancelCalldataArgs = {
   model?: InputMaybe<OrderModel>;
-  orderId: Scalars['Int'];
+  orderIdInt64?: InputMaybe<Scalars['Int64']>;
 };
 
 
@@ -2649,7 +2650,7 @@ export type QueryGetOrderCancelCalldataArgs = {
 export type QueryGetOrderSaleCalldataArgs = {
   model?: InputMaybe<OrderModel>;
   nftId?: InputMaybe<Scalars['Int']>;
-  orderId: Scalars['Int'];
+  orderIdInt64?: InputMaybe<Scalars['Int64']>;
   taker?: InputMaybe<Scalars['Address']>;
 };
 
@@ -4115,7 +4116,7 @@ export type UnhideOfferMutationVariables = Exact<{
 export type UnhideOfferMutation = { __typename?: 'Mutation', showOffer: { __typename?: 'CollectionOffer', id: string } | { __typename?: 'SingleNFTOffer', id: string } };
 
 export type HideOrderMutationVariables = Exact<{
-  id: Scalars['Int'];
+  id: Scalars['Int64'];
 }>;
 
 
@@ -4157,7 +4158,7 @@ export type PublishSellAndRepayOrderMutationVariables = Exact<{
 export type PublishSellAndRepayOrderMutation = { __typename?: 'Mutation', result: { __typename?: 'ExtraSeaportData', extraData: Hex, criteriaProof?: Array<Hex> | null } | { __typename?: 'SellAndRepayOrder', id: string, status: string, signature: Hex, repaymentCalldata: Hex, marketPlaceAddress: Address } | { __typename?: 'SignatureRequest', key: string, typedData: { __typename?: 'TypedData', types: object, primaryType: string, domain: object, message: object } } };
 
 export type ShowOrderMutationVariables = Exact<{
-  id: Scalars['Int'];
+  id: Scalars['Int64'];
 }>;
 
 
@@ -4304,7 +4305,7 @@ export type ListOffersQueryVariables = Exact<{
 export type ListOffersQuery = { __typename?: 'Query', result: { __typename?: 'OfferConnection', pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'OfferEdge', node: { __typename?: 'CollectionOffer', id: string, offerId: bigint, lenderAddress?: Address | null, borrowerAddress?: Address | null, signerAddress?: Address | null, contractAddress: Address, requiresLiquidation?: boolean | null, principalAddress: Address, principalAmount: bigint, aprBps: bigint, fee: bigint, capacity: bigint, expirationTime: bigint, duration: bigint, status: string, offerHash?: Hash | null, signature?: Hex | null, createdDate?: Date | null, repayment: bigint, hidden?: boolean | null, maxSeniorRepayment: bigint, collection: { __typename?: 'Collection', id: string, slug: string, contractData: { __typename?: 'ContractData', contractAddress: Address } }, currency: { __typename?: 'Currency', symbol: string, decimals: number, address: Address }, validators: Array<{ __typename?: 'OfferValidator', arguments: Hex, validator: Address }> } | { __typename?: 'SingleNFTOffer', id: string, offerId: bigint, lenderAddress?: Address | null, borrowerAddress?: Address | null, signerAddress?: Address | null, contractAddress: Address, requiresLiquidation?: boolean | null, principalAddress: Address, principalAmount: bigint, aprBps: bigint, fee: bigint, capacity: bigint, expirationTime: bigint, duration: bigint, status: string, offerHash?: Hash | null, signature?: Hex | null, createdDate?: Date | null, repayment: bigint, hidden?: boolean | null, maxSeniorRepayment: bigint, nft: { __typename?: 'NFT', id: string, tokenId: bigint, collection?: { __typename?: 'Collection', id: string, slug: string, contractData: { __typename?: 'ContractData', contractAddress: Address } } | null }, currency: { __typename?: 'Currency', symbol: string, decimals: number, address: Address }, validators: Array<{ __typename?: 'OfferValidator', arguments: Hex, validator: Address }> } }> } };
 
 export type GetSaleCalldataQueryVariables = Exact<{
-  orderId: Scalars['Int'];
+  orderId: Scalars['Int64'];
   nftId: Scalars['Int'];
   taker: Scalars['Address'];
 }>;
@@ -6938,8 +6939,8 @@ export const UnhideOfferDocument = gql`
 }
     `;
 export const HideOrderDocument = gql`
-    mutation hideOrder($id: Int!) {
-  hideOrder(orderId: $id) {
+    mutation hideOrder($id: Int64!) {
+  hideOrder(orderIdInt64: $id) {
     id
   }
 }
@@ -7059,8 +7060,8 @@ export const PublishSellAndRepayOrderDocument = gql`
 }
     `;
 export const ShowOrderDocument = gql`
-    mutation showOrder($id: Int!) {
-  showOrder(orderId: $id) {
+    mutation showOrder($id: Int64!) {
+  showOrder(orderIdInt64: $id) {
     id
   }
 }
@@ -7492,9 +7493,9 @@ export const ListOffersDocument = gql`
 }
     `;
 export const GetSaleCalldataDocument = gql`
-    query getSaleCalldata($orderId: Int!, $nftId: Int!, $taker: Address!) {
+    query getSaleCalldata($orderId: Int64!, $nftId: Int!, $taker: Address!) {
   saleCalldata: getOrderSaleCalldata(
-    orderId: $orderId
+    orderIdInt64: $orderId
     nftId: $nftId
     taker: $taker
   )
