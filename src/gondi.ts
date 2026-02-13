@@ -291,7 +291,7 @@ export class Gondi {
     repayFlashLoanSwapParams,
   }: {
     amounts: bigint[];
-    purchaseBundlerAddress: Address;
+    purchaseBundlerAddress?: Address;
     contractAddress: Address;
     loanDuration: bigint;
     offers: OfferFromExecutionOffer[];
@@ -1122,7 +1122,7 @@ export class Gondi {
     swapData,
   }: {
     repaymentCalldata: Hex;
-    purchaseBundlerAddress: Address;
+    purchaseBundlerAddress?: Address;
     mslContractAddress: Address;
     price: bigint;
     swapData: Maybe<Hex>;
@@ -1144,7 +1144,7 @@ export class Gondi {
     repaymentCalldata,
     swapData,
   }: {
-    purchaseBundlerAddress: Address;
+    purchaseBundlerAddress?: Address;
     mslContractAddress: Address;
     repaymentCalldata: Hex;
     swapData?: Hex;
