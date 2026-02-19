@@ -47,7 +47,6 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
       { name: 'contractMustBeOwner', type: 'bool' },
       // Added fields in V2
       { name: 'purchaseCurrency', type: 'address' },
-      { name: 'purchaseAmount', type: 'uint256' },
       { name: 'amount', type: 'uint256' },
       { name: 'swapData', type: 'bytes' },
       { name: 'swapValue', type: 'uint256' },
