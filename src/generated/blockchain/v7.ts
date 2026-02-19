@@ -3736,2155 +3736,1804 @@ export const multiSourceLoanAbi = [
 ] as const;
 
 export const purchaseBundlerV2ABI = [
-  {
-    "type": "constructor",
-    "inputs": [
-      {
-        "name": "name",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "multiSourceLoanAddress",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "marketplaceContracts",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "wethAddress",
-        "type": "address",
-        "internalType": "address payable"
-      },
-      {
-        "name": "punkMarketAddress",
-        "type": "address",
-        "internalType": "address payable"
-      },
-      {
-        "name": "wrappedPunkAddress",
-        "type": "address",
-        "internalType": "address payable"
-      },
-      {
-        "name": "c721Address",
-        "type": "address",
-        "internalType": "address payable"
-      },
-      {
-        "name": "uniswapRouterAddress",
-        "type": "address",
-        "internalType": "address payable"
-      },
-      {
-        "name": "permit2Address",
-        "type": "address",
-        "internalType": "address payable"
-      },
-      {
-        "name": "currencyManager",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "quoterAddress_",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "punkTaxes",
-        "type": "tuple",
-        "internalType": "struct IPurchaseBundler.Taxes",
-        "components": [
-          {
-            "name": "buyTax",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "sellTax",
-            "type": "uint128",
-            "internalType": "uint128"
-          }
-        ]
-      },
-      {
-        "name": "minWaitTime",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "protocolFee",
-        "type": "tuple",
-        "internalType": "struct WithProtocolFee.ProtocolFee",
-        "components": [
-          {
-            "name": "recipient",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "fraction",
-            "type": "uint256",
-            "internalType": "uint256"
-          }
-        ]
-      }
-    ],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "fallback",
-    "stateMutability": "payable"
-  },
-  {
-    "type": "receive",
-    "stateMutability": "payable"
-  },
-  {
-    "type": "function",
-    "name": "DOMAIN_SEPARATOR",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "ETH",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "FEE_UPDATE_NOTICE",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "INITIAL_DOMAIN_SEPARATOR",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "MAX_SLIPPAGE_DENOMINATOR",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "MIN_WAIT_TIME",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "QUOTER_UPDATE_NOTICE",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "TAX_UPDATE_NOTICE",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "VERSION",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "afterNFTTransfer",
-    "inputs": [
-      {
-        "name": "_loan",
-        "type": "tuple",
-        "internalType": "struct IMultiSourceLoan.Loan",
-        "components": [
-          {
-            "name": "borrower",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "nftCollateralTokenId",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "nftCollateralAddress",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "principalAddress",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "principalAmount",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "startTime",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "duration",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "tranche",
-            "type": "tuple[]",
-            "internalType": "struct IMultiSourceLoan.Tranche[]",
-            "components": [
-              {
-                "name": "loanId",
-                "type": "uint256",
-                "internalType": "uint256"
-              },
-              {
-                "name": "floor",
-                "type": "uint256",
-                "internalType": "uint256"
-              },
-              {
-                "name": "principalAmount",
-                "type": "uint256",
-                "internalType": "uint256"
-              },
-              {
-                "name": "lender",
-                "type": "address",
-                "internalType": "address"
-              },
-              {
-                "name": "accruedInterest",
-                "type": "uint256",
-                "internalType": "uint256"
-              },
-              {
-                "name": "startTime",
-                "type": "uint256",
-                "internalType": "uint256"
-              },
-              {
-                "name": "aprBps",
-                "type": "uint256",
-                "internalType": "uint256"
-              }
+        {
+            "type": "constructor",
+            "inputs": [
+                {
+                    "name": "name",
+                    "type": "string",
+                    "internalType": "string"
+                },
+                {
+                    "name": "multiSourceLoanAddress",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "marketplaceContracts",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "wethAddress",
+                    "type": "address",
+                    "internalType": "address payable"
+                },
+                {
+                    "name": "punkMarketAddress",
+                    "type": "address",
+                    "internalType": "address payable"
+                },
+                {
+                    "name": "wrappedPunkAddress",
+                    "type": "address",
+                    "internalType": "address payable"
+                },
+                {
+                    "name": "c721Address",
+                    "type": "address",
+                    "internalType": "address payable"
+                },
+                {
+                    "name": "uniswapRouterAddress",
+                    "type": "address",
+                    "internalType": "address payable"
+                },
+                {
+                    "name": "aaveAddressProvider",
+                    "type": "address",
+                    "internalType": "address payable"
+                },
+                {
+                    "name": "permit2Address",
+                    "type": "address",
+                    "internalType": "address payable"
+                },
+                {
+                    "name": "currencyManager",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "punkTaxes",
+                    "type": "tuple",
+                    "internalType": "struct IPurchaseBundler.Taxes",
+                    "components": [
+                        {
+                            "name": "buyTax",
+                            "type": "uint128",
+                            "internalType": "uint128"
+                        },
+                        {
+                            "name": "sellTax",
+                            "type": "uint128",
+                            "internalType": "uint128"
+                        }
+                    ]
+                },
+                {
+                    "name": "minWaitTime",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                },
+                {
+                    "name": "protocolFee",
+                    "type": "tuple",
+                    "internalType": "struct WithProtocolFee.ProtocolFee",
+                    "components": [
+                        {
+                            "name": "recipient",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "fraction",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        }
+                    ]
+                }
+            ],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "fallback",
+            "stateMutability": "payable"
+        },
+        {
+            "type": "receive",
+            "stateMutability": "payable"
+        },
+        {
+            "type": "function",
+            "name": "DOMAIN_SEPARATOR",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bytes32",
+                    "internalType": "bytes32"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "ETH",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "FEE_UPDATE_NOTICE",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "INITIAL_DOMAIN_SEPARATOR",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bytes32",
+                    "internalType": "bytes32"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "MAX_SLIPPAGE_DENOMINATOR",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "MIN_WAIT_TIME",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "VERSION",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bytes",
+                    "internalType": "bytes"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "afterNFTTransfer",
+            "inputs": [
+                {
+                    "name": "_loan",
+                    "type": "tuple",
+                    "internalType": "struct IMultiSourceLoan.Loan",
+                    "components": [
+                        {
+                            "name": "borrower",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "nftCollateralTokenId",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "nftCollateralAddress",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "principalAddress",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "principalAmount",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "startTime",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "duration",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "tranche",
+                            "type": "tuple[]",
+                            "internalType": "struct IMultiSourceLoan.Tranche[]",
+                            "components": [
+                                {
+                                    "name": "loanId",
+                                    "type": "uint256",
+                                    "internalType": "uint256"
+                                },
+                                {
+                                    "name": "floor",
+                                    "type": "uint256",
+                                    "internalType": "uint256"
+                                },
+                                {
+                                    "name": "principalAmount",
+                                    "type": "uint256",
+                                    "internalType": "uint256"
+                                },
+                                {
+                                    "name": "lender",
+                                    "type": "address",
+                                    "internalType": "address"
+                                },
+                                {
+                                    "name": "accruedInterest",
+                                    "type": "uint256",
+                                    "internalType": "uint256"
+                                },
+                                {
+                                    "name": "startTime",
+                                    "type": "uint256",
+                                    "internalType": "uint256"
+                                },
+                                {
+                                    "name": "aprBps",
+                                    "type": "uint256",
+                                    "internalType": "uint256"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "protocolFee",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        }
+                    ]
+                },
+                {
+                    "name": "_executionData",
+                    "type": "bytes",
+                    "internalType": "bytes"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bytes4",
+                    "internalType": "bytes4"
+                }
+            ],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "afterPrincipalTransfer",
+            "inputs": [
+                {
+                    "name": "_loan",
+                    "type": "tuple",
+                    "internalType": "struct IMultiSourceLoan.Loan",
+                    "components": [
+                        {
+                            "name": "borrower",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "nftCollateralTokenId",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "nftCollateralAddress",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "principalAddress",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "principalAmount",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "startTime",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "duration",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "tranche",
+                            "type": "tuple[]",
+                            "internalType": "struct IMultiSourceLoan.Tranche[]",
+                            "components": [
+                                {
+                                    "name": "loanId",
+                                    "type": "uint256",
+                                    "internalType": "uint256"
+                                },
+                                {
+                                    "name": "floor",
+                                    "type": "uint256",
+                                    "internalType": "uint256"
+                                },
+                                {
+                                    "name": "principalAmount",
+                                    "type": "uint256",
+                                    "internalType": "uint256"
+                                },
+                                {
+                                    "name": "lender",
+                                    "type": "address",
+                                    "internalType": "address"
+                                },
+                                {
+                                    "name": "accruedInterest",
+                                    "type": "uint256",
+                                    "internalType": "uint256"
+                                },
+                                {
+                                    "name": "startTime",
+                                    "type": "uint256",
+                                    "internalType": "uint256"
+                                },
+                                {
+                                    "name": "aprBps",
+                                    "type": "uint256",
+                                    "internalType": "uint256"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "protocolFee",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        }
+                    ]
+                },
+                {
+                    "name": "_fee",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                },
+                {
+                    "name": "_executionData",
+                    "type": "bytes",
+                    "internalType": "bytes"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bytes4",
+                    "internalType": "bytes4"
+                }
+            ],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "approveForSwap",
+            "inputs": [
+                {
+                    "name": "currency",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "buy",
+            "inputs": [
+                {
+                    "name": "executionData",
+                    "type": "bytes[]",
+                    "internalType": "bytes[]"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "loanIds",
+                    "type": "uint256[]",
+                    "internalType": "uint256[]"
+                }
+            ],
+            "stateMutability": "payable"
+        },
+        {
+            "type": "function",
+            "name": "cancelAllOrders",
+            "inputs": [
+                {
+                    "name": "nonce",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "cancelOrder",
+            "inputs": [
+                {
+                    "name": "nonce",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "cancelled",
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bool",
+                    "internalType": "bool"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "executeOperation",
+            "inputs": [
+                {
+                    "name": "assets",
+                    "type": "address[]",
+                    "internalType": "address[]"
+                },
+                {
+                    "name": "amounts",
+                    "type": "uint256[]",
+                    "internalType": "uint256[]"
+                },
+                {
+                    "name": "premiums",
+                    "type": "uint256[]",
+                    "internalType": "uint256[]"
+                },
+                {
+                    "name": "initiator",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "params",
+                    "type": "bytes",
+                    "internalType": "bytes"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bool",
+                    "internalType": "bool"
+                }
+            ],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "executeOrder",
+            "inputs": [
+                {
+                    "name": "order",
+                    "type": "tuple",
+                    "internalType": "struct ITradeMarketplace.Order",
+                    "components": [
+                        {
+                            "name": "maker",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "taker",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "collection",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "tokenId",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "currency",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "price",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "nonce",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "expiration",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "isAsk",
+                            "type": "bool",
+                            "internalType": "bool"
+                        },
+                        {
+                            "name": "signature",
+                            "type": "bytes",
+                            "internalType": "bytes"
+                        }
+                    ]
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "executeSell",
+            "inputs": [
+                {
+                    "name": "currencies",
+                    "type": "address[]",
+                    "internalType": "address[]"
+                },
+                {
+                    "name": "currencyAmounts",
+                    "type": "uint256[]",
+                    "internalType": "uint256[]"
+                },
+                {
+                    "name": "collections",
+                    "type": "address[]",
+                    "internalType": "contract ERC721[]"
+                },
+                {
+                    "name": "tokenIds",
+                    "type": "uint256[]",
+                    "internalType": "uint256[]"
+                },
+                {
+                    "name": "marketPlace",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "executionData",
+                    "type": "bytes[]",
+                    "internalType": "bytes[]"
+                },
+                {
+                    "name": "swapData",
+                    "type": "bytes[]",
+                    "internalType": "bytes[]"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "payable"
+        },
+        {
+            "type": "function",
+            "name": "executeSellWithLoan",
+            "inputs": [
+                {
+                    "name": "args",
+                    "type": "tuple",
+                    "internalType": "struct IPurchaseBundler.ExecuteSellWithLoanArgs",
+                    "components": [
+                        {
+                            "name": "borrowArgs",
+                            "type": "tuple",
+                            "internalType": "struct IPurchaseBundler.AaveBorrowArgs",
+                            "components": [
+                                {
+                                    "name": "pool",
+                                    "type": "address",
+                                    "internalType": "contract IPool"
+                                },
+                                {
+                                    "name": "assets",
+                                    "type": "address[]",
+                                    "internalType": "address[]"
+                                },
+                                {
+                                    "name": "amounts",
+                                    "type": "uint256[]",
+                                    "internalType": "uint256[]"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "executeSellArgs",
+                            "type": "tuple",
+                            "internalType": "struct IPurchaseBundler.ExecuteSellArgs",
+                            "components": [
+                                {
+                                    "name": "currencies",
+                                    "type": "address[]",
+                                    "internalType": "address[]"
+                                },
+                                {
+                                    "name": "currencyAmounts",
+                                    "type": "uint256[]",
+                                    "internalType": "uint256[]"
+                                },
+                                {
+                                    "name": "collections",
+                                    "type": "address[]",
+                                    "internalType": "contract ERC721[]"
+                                },
+                                {
+                                    "name": "tokenIds",
+                                    "type": "uint256[]",
+                                    "internalType": "uint256[]"
+                                },
+                                {
+                                    "name": "marketPlace",
+                                    "type": "address",
+                                    "internalType": "address"
+                                },
+                                {
+                                    "name": "executionData",
+                                    "type": "bytes[]",
+                                    "internalType": "bytes[]"
+                                },
+                                {
+                                    "name": "swapData",
+                                    "type": "bytes[]",
+                                    "internalType": "bytes[]"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "loanExecutionData",
+                            "type": "bytes[]",
+                            "internalType": "bytes[]"
+                        },
+                        {
+                            "name": "swapCurrencies",
+                            "type": "address[]",
+                            "internalType": "contract ERC20[]"
+                        },
+                        {
+                            "name": "swapAmounts",
+                            "type": "uint160[]",
+                            "internalType": "uint160[]"
+                        },
+                        {
+                            "name": "swapData",
+                            "type": "bytes[]",
+                            "internalType": "bytes[]"
+                        },
+                        {
+                            "name": "unwrap",
+                            "type": "bool",
+                            "internalType": "bool"
+                        }
+                    ]
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "payable"
+        },
+        {
+            "type": "function",
+            "name": "getMultiSourceLoanAddress",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "getPendingProtocolFee",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "tuple",
+                    "internalType": "struct WithProtocolFee.ProtocolFee",
+                    "components": [
+                        {
+                            "name": "recipient",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "fraction",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        }
+                    ]
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "getPendingProtocolFeeSetTime",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "getPendingTaxes",
+            "inputs": [
+                {
+                    "name": "module",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "tuple",
+                    "internalType": "struct IPurchaseBundler.Taxes",
+                    "components": [
+                        {
+                            "name": "buyTax",
+                            "type": "uint128",
+                            "internalType": "uint128"
+                        },
+                        {
+                            "name": "sellTax",
+                            "type": "uint128",
+                            "internalType": "uint128"
+                        }
+                    ]
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "getPendingTaxesSetTime",
+            "inputs": [
+                {
+                    "name": "module",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "getProtocolFee",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "tuple",
+                    "internalType": "struct WithProtocolFee.ProtocolFee",
+                    "components": [
+                        {
+                            "name": "recipient",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "fraction",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        }
+                    ]
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "getTaxes",
+            "inputs": [
+                {
+                    "name": "module",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "tuple",
+                    "internalType": "struct IPurchaseBundler.Taxes",
+                    "components": [
+                        {
+                            "name": "buyTax",
+                            "type": "uint128",
+                            "internalType": "uint128"
+                        },
+                        {
+                            "name": "sellTax",
+                            "type": "uint128",
+                            "internalType": "uint128"
+                        }
+                    ]
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "isOrderCancelled",
+            "inputs": [
+                {
+                    "name": "order",
+                    "type": "tuple",
+                    "internalType": "struct ITradeMarketplace.Order",
+                    "components": [
+                        {
+                            "name": "maker",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "taker",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "collection",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "tokenId",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "currency",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "price",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "nonce",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "expiration",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "isAsk",
+                            "type": "bool",
+                            "internalType": "bool"
+                        },
+                        {
+                            "name": "signature",
+                            "type": "bytes",
+                            "internalType": "bytes"
+                        }
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bool",
+                    "internalType": "bool"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "minNonce",
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "multicall",
+            "inputs": [
+                {
+                    "name": "data",
+                    "type": "bytes[]",
+                    "internalType": "bytes[]"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "results",
+                    "type": "bytes[]",
+                    "internalType": "bytes[]"
+                }
+            ],
+            "stateMutability": "payable"
+        },
+        {
+            "type": "function",
+            "name": "name",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "string",
+                    "internalType": "string"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "onERC721Received",
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                },
+                {
+                    "name": "",
+                    "type": "bytes",
+                    "internalType": "bytes"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bytes4",
+                    "internalType": "bytes4"
+                }
+            ],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "orderHash",
+            "inputs": [
+                {
+                    "name": "order",
+                    "type": "tuple",
+                    "internalType": "struct ITradeMarketplace.Order",
+                    "components": [
+                        {
+                            "name": "maker",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "taker",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "collection",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "tokenId",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "currency",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "price",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "nonce",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "expiration",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        },
+                        {
+                            "name": "isAsk",
+                            "type": "bool",
+                            "internalType": "bool"
+                        },
+                        {
+                            "name": "signature",
+                            "type": "bytes",
+                            "internalType": "bytes"
+                        }
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bytes32",
+                    "internalType": "bytes32"
+                }
+            ],
+            "stateMutability": "pure"
+        },
+        {
+            "type": "function",
+            "name": "owner",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "pendingOwner",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "pendingOwnerTime",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "requestTransferOwner",
+            "inputs": [
+                {
+                    "name": "_newOwner",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "sell",
+            "inputs": [
+                {
+                    "name": "executionData",
+                    "type": "bytes[]",
+                    "internalType": "bytes[]"
+                },
+                {
+                    "name": "swapData",
+                    "type": "bytes[]",
+                    "internalType": "bytes[]"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "setProtocolFee",
+            "inputs": [],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "setTaxes",
+            "inputs": [
+                {
+                    "name": "module",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "swapAndExecute",
+            "inputs": [
+                {
+                    "name": "args",
+                    "type": "tuple",
+                    "internalType": "struct IPurchaseBundler.SwapAndExecuteParams",
+                    "components": [
+                        {
+                            "name": "inputCurrencies",
+                            "type": "address[]",
+                            "internalType": "address[]"
+                        },
+                        {
+                            "name": "outputCurrencies",
+                            "type": "address[]",
+                            "internalType": "address[]"
+                        },
+                        {
+                            "name": "amountsToSwap",
+                            "type": "uint256[]",
+                            "internalType": "uint256[]"
+                        },
+                        {
+                            "name": "swapData",
+                            "type": "bytes",
+                            "internalType": "bytes"
+                        },
+                        {
+                            "name": "target",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "executionCalldata",
+                            "type": "bytes",
+                            "internalType": "bytes"
+                        },
+                        {
+                            "name": "executionValue",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        }
+                    ]
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "payable"
+        },
+        {
+            "type": "function",
+            "name": "transferOwnership",
+            "inputs": [],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "transferOwnership",
+            "inputs": [
+                {
+                    "name": "newOwner",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "updateProtocolFee",
+            "inputs": [
+                {
+                    "name": "_newProtocolFee",
+                    "type": "tuple",
+                    "internalType": "struct WithProtocolFee.ProtocolFee",
+                    "components": [
+                        {
+                            "name": "recipient",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "fraction",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        }
+                    ]
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "updateTaxes",
+            "inputs": [
+                {
+                    "name": "module",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "newTax",
+                    "type": "tuple",
+                    "internalType": "struct IPurchaseBundler.Taxes",
+                    "components": [
+                        {
+                            "name": "buyTax",
+                            "type": "uint128",
+                            "internalType": "uint128"
+                        },
+                        {
+                            "name": "sellTax",
+                            "type": "uint128",
+                            "internalType": "uint128"
+                        }
+                    ]
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "event",
+            "name": "AllOrdersCancelled",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "nonce",
+                    "type": "uint256",
+                    "indexed": false,
+                    "internalType": "uint256"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "BNPLLoansStarted",
+            "inputs": [
+                {
+                    "name": "loanIds",
+                    "type": "uint256[]",
+                    "indexed": false,
+                    "internalType": "uint256[]"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "OrderExecuted",
+            "inputs": [
+                {
+                    "name": "maker",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "taker",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "collection",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "tokenId",
+                    "type": "uint256",
+                    "indexed": false,
+                    "internalType": "uint256"
+                },
+                {
+                    "name": "currency",
+                    "type": "address",
+                    "indexed": false,
+                    "internalType": "address"
+                },
+                {
+                    "name": "price",
+                    "type": "uint256",
+                    "indexed": false,
+                    "internalType": "uint256"
+                },
+                {
+                    "name": "nonce",
+                    "type": "uint256",
+                    "indexed": false,
+                    "internalType": "uint256"
+                },
+                {
+                    "name": "expiration",
+                    "type": "uint256",
+                    "indexed": false,
+                    "internalType": "uint256"
+                },
+                {
+                    "name": "isAsk",
+                    "type": "bool",
+                    "indexed": false,
+                    "internalType": "bool"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "OwnershipTransferred",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "newOwner",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "ProtocolFeePendingUpdate",
+            "inputs": [
+                {
+                    "name": "fee",
+                    "type": "tuple",
+                    "indexed": false,
+                    "internalType": "struct WithProtocolFee.ProtocolFee",
+                    "components": [
+                        {
+                            "name": "recipient",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "fraction",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        }
+                    ]
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "ProtocolFeeUpdated",
+            "inputs": [
+                {
+                    "name": "fee",
+                    "type": "tuple",
+                    "indexed": false,
+                    "internalType": "struct WithProtocolFee.ProtocolFee",
+                    "components": [
+                        {
+                            "name": "recipient",
+                            "type": "address",
+                            "internalType": "address"
+                        },
+                        {
+                            "name": "fraction",
+                            "type": "uint256",
+                            "internalType": "uint256"
+                        }
+                    ]
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "SellAndRepayExecuted",
+            "inputs": [
+                {
+                    "name": "loanIds",
+                    "type": "uint256[]",
+                    "indexed": false,
+                    "internalType": "uint256[]"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "TaxesPendingUpdate",
+            "inputs": [
+                {
+                    "name": "module",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "newTax",
+                    "type": "tuple",
+                    "indexed": false,
+                    "internalType": "struct IPurchaseBundler.Taxes",
+                    "components": [
+                        {
+                            "name": "buyTax",
+                            "type": "uint128",
+                            "internalType": "uint128"
+                        },
+                        {
+                            "name": "sellTax",
+                            "type": "uint128",
+                            "internalType": "uint128"
+                        }
+                    ]
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "TaxesUpdated",
+            "inputs": [
+                {
+                    "name": "module",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "newTax",
+                    "type": "tuple",
+                    "indexed": false,
+                    "internalType": "struct IPurchaseBundler.Taxes",
+                    "components": [
+                        {
+                            "name": "buyTax",
+                            "type": "uint128",
+                            "internalType": "uint128"
+                        },
+                        {
+                            "name": "sellTax",
+                            "type": "uint128",
+                            "internalType": "uint128"
+                        }
+                    ]
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "TransferOwnerRequested",
+            "inputs": [
+                {
+                    "name": "newOwner",
+                    "type": "address",
+                    "indexed": false,
+                    "internalType": "address"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "error",
+            "name": "AddressZeroError",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "CouldNotReturnEthError",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "CurrencyNotWhitelisted",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "ECDSAInvalidSignature",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "ECDSAInvalidSignatureLength",
+            "inputs": [
+                {
+                    "name": "length",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
             ]
-          },
-          {
-            "name": "protocolFee",
-            "type": "uint256",
-            "internalType": "uint256"
-          }
-        ]
-      },
-      {
-        "name": "_executionData",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes4",
-        "internalType": "bytes4"
-      }
-    ],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "afterNFTTransfer",
-    "inputs": [
-      {
-        "name": "_loan",
-        "type": "tuple",
-        "internalType": "struct IMultiSourceLoan.Loan",
-        "components": [
-          {
-            "name": "borrower",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "nftCollateralTokenId",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "nftCollateralAddress",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "principalAddress",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "principalAmount",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "startTime",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "duration",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "source",
-            "type": "tuple[]",
-            "internalType": "struct IMultiSourceLoan.Source[]",
-            "components": [
-              {
-                "name": "loanId",
-                "type": "uint256",
-                "internalType": "uint256"
-              },
-              {
-                "name": "lender",
-                "type": "address",
-                "internalType": "address"
-              },
-              {
-                "name": "principalAmount",
-                "type": "uint256",
-                "internalType": "uint256"
-              },
-              {
-                "name": "accruedInterest",
-                "type": "uint256",
-                "internalType": "uint256"
-              },
-              {
-                "name": "startTime",
-                "type": "uint256",
-                "internalType": "uint256"
-              },
-              {
-                "name": "aprBps",
-                "type": "uint256",
-                "internalType": "uint256"
-              }
+        },
+        {
+            "type": "error",
+            "name": "ECDSAInvalidSignatureS",
+            "inputs": [
+                {
+                    "name": "s",
+                    "type": "bytes32",
+                    "internalType": "bytes32"
+                }
             ]
-          }
-        ]
-      },
-      {
-        "name": "_executionData",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes4",
-        "internalType": "bytes4"
-      }
-    ],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "afterPrincipalTransfer",
-    "inputs": [
-      {
-        "name": "_loan",
-        "type": "tuple",
-        "internalType": "struct IMultiSourceLoan.Loan",
-        "components": [
-          {
-            "name": "borrower",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "nftCollateralTokenId",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "nftCollateralAddress",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "principalAddress",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "principalAmount",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "startTime",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "duration",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "source",
-            "type": "tuple[]",
-            "internalType": "struct IMultiSourceLoan.Source[]",
-            "components": [
-              {
-                "name": "loanId",
-                "type": "uint256",
-                "internalType": "uint256"
-              },
-              {
-                "name": "lender",
-                "type": "address",
-                "internalType": "address"
-              },
-              {
-                "name": "principalAmount",
-                "type": "uint256",
-                "internalType": "uint256"
-              },
-              {
-                "name": "accruedInterest",
-                "type": "uint256",
-                "internalType": "uint256"
-              },
-              {
-                "name": "startTime",
-                "type": "uint256",
-                "internalType": "uint256"
-              },
-              {
-                "name": "aprBps",
-                "type": "uint256",
-                "internalType": "uint256"
-              }
+        },
+        {
+            "type": "error",
+            "name": "InvalidCallbackError",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "InvalidCollateralError",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "InvalidCurrencyError",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "InvalidExecutionData",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "InvalidInputError",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "InvalidSignature",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "InvalidStateError",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "InvalidSwapDataLengthError",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "InvalidSwapError",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "InvalidTaker",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "InvalidTargetContractError",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "InvalidTaxesError",
+            "inputs": [
+                {
+                    "name": "newTaxes",
+                    "type": "tuple",
+                    "internalType": "struct IPurchaseBundler.Taxes",
+                    "components": [
+                        {
+                            "name": "buyTax",
+                            "type": "uint128",
+                            "internalType": "uint128"
+                        },
+                        {
+                            "name": "sellTax",
+                            "type": "uint128",
+                            "internalType": "uint128"
+                        }
+                    ]
+                }
             ]
-          }
-        ]
-      },
-      {
-        "name": "_fee",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_executionData",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes4",
-        "internalType": "bytes4"
-      }
-    ],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "afterPrincipalTransfer",
-    "inputs": [
-      {
-        "name": "_loan",
-        "type": "tuple",
-        "internalType": "struct IMultiSourceLoan.Loan",
-        "components": [
-          {
-            "name": "borrower",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "nftCollateralTokenId",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "nftCollateralAddress",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "principalAddress",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "principalAmount",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "startTime",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "duration",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "tranche",
-            "type": "tuple[]",
-            "internalType": "struct IMultiSourceLoan.Tranche[]",
-            "components": [
-              {
-                "name": "loanId",
-                "type": "uint256",
-                "internalType": "uint256"
-              },
-              {
-                "name": "floor",
-                "type": "uint256",
-                "internalType": "uint256"
-              },
-              {
-                "name": "principalAmount",
-                "type": "uint256",
-                "internalType": "uint256"
-              },
-              {
-                "name": "lender",
-                "type": "address",
-                "internalType": "address"
-              },
-              {
-                "name": "accruedInterest",
-                "type": "uint256",
-                "internalType": "uint256"
-              },
-              {
-                "name": "startTime",
-                "type": "uint256",
-                "internalType": "uint256"
-              },
-              {
-                "name": "aprBps",
-                "type": "uint256",
-                "internalType": "uint256"
-              }
+        },
+        {
+            "type": "error",
+            "name": "LowNonceError",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "nonce",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                },
+                {
+                    "name": "currentMinNonce",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
             ]
-          },
-          {
-            "name": "protocolFee",
-            "type": "uint256",
-            "internalType": "uint256"
-          }
-        ]
-      },
-      {
-        "name": "_fee",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_executionData",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes4",
-        "internalType": "bytes4"
-      }
-    ],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "approveForSwap",
-    "inputs": [
-      {
-        "name": "currency",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "buy",
-    "inputs": [
-      {
-        "name": "executionData",
-        "type": "bytes[]",
-        "internalType": "bytes[]"
-      },
-      {
-        "name": "currencies",
-        "type": "address[]",
-        "internalType": "address[]"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "loanIds",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      }
-    ],
-    "stateMutability": "payable"
-  },
-  {
-    "type": "function",
-    "name": "buy",
-    "inputs": [
-      {
-        "name": "executionData",
-        "type": "bytes[]",
-        "internalType": "bytes[]"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "loanIds",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      }
-    ],
-    "stateMutability": "payable"
-  },
-  {
-    "type": "function",
-    "name": "cancelAllOrders",
-    "inputs": [
-      {
-        "name": "nonce",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "cancelOrder",
-    "inputs": [
-      {
-        "name": "nonce",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "cancelled",
-    "inputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "executeOperation",
-    "inputs": [
-      {
-        "name": "assets",
-        "type": "address[]",
-        "internalType": "address[]"
-      },
-      {
-        "name": "amounts",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      },
-      {
-        "name": "premiums",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      },
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "params",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "executeOrder",
-    "inputs": [
-      {
-        "name": "order",
-        "type": "tuple",
-        "internalType": "struct ITradeMarketplace.Order",
-        "components": [
-          {
-            "name": "maker",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "taker",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "collection",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "tokenId",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "currency",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "price",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "nonce",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "expiration",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "isAsk",
-            "type": "bool",
-            "internalType": "bool"
-          },
-          {
-            "name": "signature",
-            "type": "bytes",
-            "internalType": "bytes"
-          }
-        ]
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "executeSell",
-    "inputs": [
-      {
-        "name": "currencies",
-        "type": "address[]",
-        "internalType": "address[]"
-      },
-      {
-        "name": "currencyAmounts",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      },
-      {
-        "name": "collections",
-        "type": "address[]",
-        "internalType": "contract ERC721[]"
-      },
-      {
-        "name": "tokenIds",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      },
-      {
-        "name": "marketPlace",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "executionData",
-        "type": "bytes[]",
-        "internalType": "bytes[]"
-      },
-      {
-        "name": "swapData",
-        "type": "bytes[]",
-        "internalType": "bytes[]"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "payable"
-  },
-  {
-    "type": "function",
-    "name": "executeSellWithLoan",
-    "inputs": [
-      {
-        "name": "args",
-        "type": "tuple",
-        "internalType": "struct IPurchaseBundler.ExecuteSellWithLoanArgs",
-        "components": [
-          {
-            "name": "borrowArgs",
-            "type": "tuple",
-            "internalType": "struct IPurchaseBundler.AaveBorrowArgs",
-            "components": [
-              {
-                "name": "pool",
-                "type": "address",
-                "internalType": "contract IPool"
-              },
-              {
-                "name": "assets",
-                "type": "address[]",
-                "internalType": "address[]"
-              },
-              {
-                "name": "amounts",
-                "type": "uint256[]",
-                "internalType": "uint256[]"
-              }
+        },
+        {
+            "type": "error",
+            "name": "MarketplaceAddressNotWhitelisted",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "MulticallFailed",
+            "inputs": [
+                {
+                    "name": "i",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                },
+                {
+                    "name": "returndata",
+                    "type": "bytes",
+                    "internalType": "bytes"
+                }
             ]
-          },
-          {
-            "name": "executeSellArgs",
-            "type": "tuple",
-            "internalType": "struct IPurchaseBundler.ExecuteSellArgs",
-            "components": [
-              {
-                "name": "currencies",
-                "type": "address[]",
-                "internalType": "address[]"
-              },
-              {
-                "name": "currencyAmounts",
-                "type": "uint256[]",
-                "internalType": "uint256[]"
-              },
-              {
-                "name": "collections",
-                "type": "address[]",
-                "internalType": "contract ERC721[]"
-              },
-              {
-                "name": "tokenIds",
-                "type": "uint256[]",
-                "internalType": "uint256[]"
-              },
-              {
-                "name": "marketPlace",
-                "type": "address",
-                "internalType": "address"
-              },
-              {
-                "name": "executionData",
-                "type": "bytes[]",
-                "internalType": "bytes[]"
-              },
-              {
-                "name": "swapData",
-                "type": "bytes[]",
-                "internalType": "bytes[]"
-              }
+        },
+        {
+            "type": "error",
+            "name": "OnlyLoanCallableError",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "OrderCancelled",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "OrderExpired",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "TooEarlyError",
+            "inputs": [
+                {
+                    "name": "_pendingProtocolFeeSetTime",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
             ]
-          },
-          {
-            "name": "loanExecutionData",
-            "type": "bytes[]",
-            "internalType": "bytes[]"
-          },
-          {
-            "name": "swapCurrencies",
-            "type": "address[]",
-            "internalType": "contract ERC20[]"
-          },
-          {
-            "name": "swapAmounts",
-            "type": "uint160[]",
-            "internalType": "uint160[]"
-          },
-          {
-            "name": "swapData",
-            "type": "bytes[]",
-            "internalType": "bytes[]"
-          },
-          {
-            "name": "unwrap",
-            "type": "bool",
-            "internalType": "bool"
-          }
-        ]
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "payable"
-  },
-  {
-    "type": "function",
-    "name": "finalUpdateMultiSourceLoanAddress",
-    "inputs": [
-      {
-        "name": "_newAddress",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "finalUpdateQuoterAddress",
-    "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "getMultiSourceLoanAddress",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getPendingProtocolFee",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "tuple",
-        "internalType": "struct WithProtocolFee.ProtocolFee",
-        "components": [
-          {
-            "name": "recipient",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "fraction",
-            "type": "uint256",
-            "internalType": "uint256"
-          }
-        ]
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getPendingProtocolFeeSetTime",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getPendingTaxes",
-    "inputs": [
-      {
-        "name": "module",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "tuple",
-        "internalType": "struct IPurchaseBundler.Taxes",
-        "components": [
-          {
-            "name": "buyTax",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "sellTax",
-            "type": "uint128",
-            "internalType": "uint128"
-          }
-        ]
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getPendingTaxesSetTime",
-    "inputs": [
-      {
-        "name": "module",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getProtocolFee",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "tuple",
-        "internalType": "struct WithProtocolFee.ProtocolFee",
-        "components": [
-          {
-            "name": "recipient",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "fraction",
-            "type": "uint256",
-            "internalType": "uint256"
-          }
-        ]
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getTaxes",
-    "inputs": [
-      {
-        "name": "module",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "tuple",
-        "internalType": "struct IPurchaseBundler.Taxes",
-        "components": [
-          {
-            "name": "buyTax",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "sellTax",
-            "type": "uint128",
-            "internalType": "uint128"
-          }
-        ]
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "isOrderCancelled",
-    "inputs": [
-      {
-        "name": "order",
-        "type": "tuple",
-        "internalType": "struct ITradeMarketplace.Order",
-        "components": [
-          {
-            "name": "maker",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "taker",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "collection",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "tokenId",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "currency",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "price",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "nonce",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "expiration",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "isAsk",
-            "type": "bool",
-            "internalType": "bool"
-          },
-          {
-            "name": "signature",
-            "type": "bytes",
-            "internalType": "bytes"
-          }
-        ]
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "minNonce",
-    "inputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "name",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "string",
-        "internalType": "string"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "onERC721Received",
-    "inputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes4",
-        "internalType": "bytes4"
-      }
-    ],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "orderHash",
-    "inputs": [
-      {
-        "name": "order",
-        "type": "tuple",
-        "internalType": "struct ITradeMarketplace.Order",
-        "components": [
-          {
-            "name": "maker",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "taker",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "collection",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "tokenId",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "currency",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "price",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "nonce",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "expiration",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "isAsk",
-            "type": "bool",
-            "internalType": "bool"
-          },
-          {
-            "name": "signature",
-            "type": "bytes",
-            "internalType": "bytes"
-          }
-        ]
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "stateMutability": "pure"
-  },
-  {
-    "type": "function",
-    "name": "owner",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "pendingOwner",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "pendingOwnerTime",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "pendingQuoterAddress",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "pendingQuoterAddressSetTime",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "quoterAddress",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "requestTransferOwner",
-    "inputs": [
-      {
-        "name": "_newOwner",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "requestUpdateQuoterAddress",
-    "inputs": [
-      {
-        "name": "quoterAddress_",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "sell",
-    "inputs": [
-      {
-        "name": "executionData",
-        "type": "bytes[]",
-        "internalType": "bytes[]"
-      },
-      {
-        "name": "swapData",
-        "type": "bytes[]",
-        "internalType": "bytes[]"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setProtocolFee",
-    "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setTaxes",
-    "inputs": [
-      {
-        "name": "module",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "swapAndExecute",
-    "inputs": [
-      {
-        "name": "currencies",
-        "type": "address[]",
-        "internalType": "address[]"
-      },
-      {
-        "name": "amountsToSwap",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      },
-      {
-        "name": "swapData",
-        "type": "bytes",
-        "internalType": "bytes"
-      },
-      {
-        "name": "target",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "executionCalldata",
-        "type": "bytes",
-        "internalType": "bytes"
-      },
-      {
-        "name": "executionValue",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "payable"
-  },
-  {
-    "type": "function",
-    "name": "transferOwnership",
-    "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "transferOwnership",
-    "inputs": [
-      {
-        "name": "newOwner",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "updateMultiSourceLoanAddressFirst",
-    "inputs": [
-      {
-        "name": "_newAddress",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "updateProtocolFee",
-    "inputs": [
-      {
-        "name": "_newProtocolFee",
-        "type": "tuple",
-        "internalType": "struct WithProtocolFee.ProtocolFee",
-        "components": [
-          {
-            "name": "recipient",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "fraction",
-            "type": "uint256",
-            "internalType": "uint256"
-          }
-        ]
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "updateTaxes",
-    "inputs": [
-      {
-        "name": "module",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "newTax",
-        "type": "tuple",
-        "internalType": "struct IPurchaseBundler.Taxes",
-        "components": [
-          {
-            "name": "buyTax",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "sellTax",
-            "type": "uint128",
-            "internalType": "uint128"
-          }
-        ]
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "event",
-    "name": "AllOrdersCancelled",
-    "inputs": [
-      {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "nonce",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "BNPLLoansStarted",
-    "inputs": [
-      {
-        "name": "loanIds",
-        "type": "uint256[]",
-        "indexed": false,
-        "internalType": "uint256[]"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "MultiSourceLoanPendingUpdate",
-    "inputs": [
-      {
-        "name": "newAddress",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "MultiSourceLoanUpdated",
-    "inputs": [
-      {
-        "name": "newAddress",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "OrderExecuted",
-    "inputs": [
-      {
-        "name": "maker",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "taker",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "collection",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "tokenId",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "currency",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      },
-      {
-        "name": "price",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "nonce",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "expiration",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "isAsk",
-        "type": "bool",
-        "indexed": false,
-        "internalType": "bool"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "OwnershipTransferred",
-    "inputs": [
-      {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "newOwner",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "ProtocolFeePendingUpdate",
-    "inputs": [
-      {
-        "name": "fee",
-        "type": "tuple",
-        "indexed": false,
-        "internalType": "struct WithProtocolFee.ProtocolFee",
-        "components": [
-          {
-            "name": "recipient",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "fraction",
-            "type": "uint256",
-            "internalType": "uint256"
-          }
-        ]
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "ProtocolFeeUpdated",
-    "inputs": [
-      {
-        "name": "fee",
-        "type": "tuple",
-        "indexed": false,
-        "internalType": "struct WithProtocolFee.ProtocolFee",
-        "components": [
-          {
-            "name": "recipient",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "fraction",
-            "type": "uint256",
-            "internalType": "uint256"
-          }
-        ]
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "QuoterAddressPendingUpdate",
-    "inputs": [
-      {
-        "name": "newQuoterAddress",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "QuoterAddressUpdated",
-    "inputs": [
-      {
-        "name": "newQuoterAddress",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "SellAndRepayExecuted",
-    "inputs": [
-      {
-        "name": "loanIds",
-        "type": "uint256[]",
-        "indexed": false,
-        "internalType": "uint256[]"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "TaxesPendingUpdate",
-    "inputs": [
-      {
-        "name": "module",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "newTax",
-        "type": "tuple",
-        "indexed": false,
-        "internalType": "struct IPurchaseBundler.Taxes",
-        "components": [
-          {
-            "name": "buyTax",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "sellTax",
-            "type": "uint128",
-            "internalType": "uint128"
-          }
-        ]
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "TaxesUpdated",
-    "inputs": [
-      {
-        "name": "module",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "newTax",
-        "type": "tuple",
-        "indexed": false,
-        "internalType": "struct IPurchaseBundler.Taxes",
-        "components": [
-          {
-            "name": "buyTax",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "sellTax",
-            "type": "uint128",
-            "internalType": "uint128"
-          }
-        ]
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "TransferOwnerRequested",
-    "inputs": [
-      {
-        "name": "newOwner",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "error",
-    "name": "AddressZeroError",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "CouldNotReturnEthError",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "CurrencyNotWhitelisted",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "ECDSAInvalidSignature",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "ECDSAInvalidSignatureLength",
-    "inputs": [
-      {
-        "name": "length",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "ECDSAInvalidSignatureS",
-    "inputs": [
-      {
-        "name": "s",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "InvalidAddressUpdateError",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "InvalidCallbackError",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "InvalidCollateralError",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "InvalidCurrencyError",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "InvalidExecutionData",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "InvalidInputError",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "InvalidPrincipalError",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "InvalidSignature",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "InvalidStateError",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "InvalidSwapDataLengthError",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "InvalidTaker",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "InvalidTargetContractError",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "InvalidTaxesError",
-    "inputs": [
-      {
-        "name": "newTaxes",
-        "type": "tuple",
-        "internalType": "struct IPurchaseBundler.Taxes",
-        "components": [
-          {
-            "name": "buyTax",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "sellTax",
-            "type": "uint128",
-            "internalType": "uint128"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "LowNonceError",
-    "inputs": [
-      {
-        "name": "user",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "nonce",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "currentMinNonce",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "MarketplaceAddressNotWhitelisted",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "OnlyLoanCallableError",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "OnlyWethSupportedError",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "OrderCancelled",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "OrderExpired",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "TooEarlyError",
-    "inputs": [
-      {
-        "name": "_pendingProtocolFeeSetTime",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "TooMuchSlippageError",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "TooSoonError",
-    "inputs": []
-  }
-] as const;
+        },
+        {
+            "type": "error",
+            "name": "TooMuchSlippageError",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "TooSoonError",
+            "inputs": []
+        }
+    ] as const;
