@@ -47,7 +47,6 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
       { name: 'contractMustBeOwner', type: 'bool' },
       // Added fields in V2
       { name: 'purchaseCurrency', type: 'address' },
-      { name: 'purchaseAmount', type: 'uint256' },
       { name: 'amount', type: 'uint256' },
       { name: 'swapData', type: 'bytes' },
       { name: 'swapValue', type: 'uint256' },
@@ -131,7 +130,7 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
     const txHash = await this.safeContractWrite.executeSell(
       [
         isNativeCurrency ? [] : [callbackData[0].purchaseCurrency],
-        isNativeCurrency ? [] : [price], // TODO: after audit, check if this is necessary
+        isNativeCurrency ? [] : [price],
         [nftCollateralAddress],
         [nftCollateralTokenId],
         callbackData[0].reservoirExecutionInfo.module,
@@ -198,7 +197,7 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
           },
           executeSellArgs: {
             currencies: isNativeCurrency ? [] : [purchaseCurrency],
-            currencyAmounts: isNativeCurrency ? [] : [price], // TODO: after audit, check if this is necessary
+            currencyAmounts: isNativeCurrency ? [] : [price],
             collections: [nftCollateralAddress],
             tokenIds: [nftCollateralTokenId],
             marketPlace: callbackData[0].reservoirExecutionInfo.module,
