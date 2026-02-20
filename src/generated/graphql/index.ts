@@ -1924,9 +1924,11 @@ export type NftOrderInput = {
   fees?: InputMaybe<Array<OrderFee>>;
   isAsk: Scalars['Boolean'];
   orderToFill?: InputMaybe<Scalars['Int']>;
+  orderToFillInt64?: InputMaybe<Scalars['Int64']>;
   price?: InputMaybe<Scalars['BigInt']>;
   repaymentSignature?: InputMaybe<Scalars['Signature']>;
   replaceOrderId?: InputMaybe<Scalars['Int']>;
+  replaceOrderIdInt64?: InputMaybe<Scalars['Int64']>;
   signature?: InputMaybe<Scalars['Signature']>;
   startTime: Scalars['BigInt'];
   taker?: InputMaybe<Scalars['Address']>;

@@ -20,9 +20,13 @@ import { Opensea } from '@/clients/opensea';
 import { getContracts } from '@/deploys';
 import {
   BnplOrderInput,
+  CollectionOrderInput,
+  DealInput,
   MarketplaceEnum,
+  NftOrderInput,
   OffersSortField,
   Ordering,
+  SingleNftOrderInput,
   SingleNftSignedOfferInput,
   TokenStandardType,
 } from '@/generated/graphql';
@@ -230,7 +234,7 @@ export class Gondi {
     return await this.apiClient.saveCollectionOffer(signedOffer);
   }
 
-  async makeOrder(orderInput: Parameters<Api['publishOrder']>[0]) {
+  async makeOrder(orderInput: SingleNftOrderInput | CollectionOrderInput) {
     let response = await this.apiClient.publishOrder(orderInput);
     while (response.__typename === 'SignatureRequest') {
       const key = response.key as 'signature';
@@ -244,7 +248,7 @@ export class Gondi {
     return { ...response, ...orderInput };
   }
 
-  async makeDeal(dealInput: Parameters<Api['publishDeal']>[0]) {
+  async makeDeal(dealInput: DealInput) {
     let response = await this.apiClient.publishDeal(dealInput);
     while (response.__typename === 'SignatureRequest') {
       const key = response.key as 'signature';
@@ -257,9 +261,13 @@ export class Gondi {
     return { ...response, ...dealInput };
   }
 
-  async makeSellAndRepayOrder(
-    sellAndRepayOrderInput: Parameters<Api['publishSellAndRepayOrder']>[0],
-  ) {
+  async makeSellAndRepayOrder(sellAndRepayOrderInput: NftOrderInput) {
+    sellAndRepayOrderInput.orderToFillInt64 =
+      sellAndRepayOrderInput.orderToFillInt64 ?? sellAndRepayOrderInput.orderToFill;
+    sellAndRepayOrderInput.replaceOrderIdInt64 =
+      sellAndRepayOrderInput.replaceOrderIdInt64 ?? sellAndRepayOrderInput.replaceOrderId;
+    sellAndRepayOrderInput.orderToFill = undefined;
+    sellAndRepayOrderInput.replaceOrderId = undefined;
     let response = await this.apiClient.publishSellAndRepayOrder(sellAndRepayOrderInput);
     while (response.__typename !== 'SellAndRepayOrder') {
       if (response.__typename === 'ExtraSeaportData') {
