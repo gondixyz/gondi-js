@@ -1545,9 +1545,11 @@ input NFTOrderInput {
   fees: [OrderFee!] = null
   isAsk: Boolean!
   orderToFill: Int = null
+  orderToFillInt64: Int64 = null
   price: BigInt = null
   repaymentSignature: Signature = null
   replaceOrderId: Int = null
+  replaceOrderIdInt64: Int64 = null
   signature: Signature = null
   startTime: BigInt!
   taker: Address = null

@@ -118,6 +118,8 @@ export class Api {
   }
 
   async publishSellAndRepayOrder(orderInput: NftOrderInput) {
+    orderInput.orderToFillInt64 = orderInput.orderToFillInt64 ?? orderInput.orderToFill;
+    orderInput.replaceOrderIdInt64 = orderInput.replaceOrderIdInt64 ?? orderInput.replaceOrderId;
     const response = await this.api.publishSellAndRepayOrder({ orderInput });
     return response.result;
   }
