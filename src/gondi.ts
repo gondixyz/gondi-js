@@ -262,12 +262,6 @@ export class Gondi {
   }
 
   async makeSellAndRepayOrder(sellAndRepayOrderInput: NftOrderInput) {
-    sellAndRepayOrderInput.orderToFillInt64 =
-      sellAndRepayOrderInput.orderToFillInt64 ?? sellAndRepayOrderInput.orderToFill;
-    sellAndRepayOrderInput.replaceOrderIdInt64 =
-      sellAndRepayOrderInput.replaceOrderIdInt64 ?? sellAndRepayOrderInput.replaceOrderId;
-    sellAndRepayOrderInput.orderToFill = undefined;
-    sellAndRepayOrderInput.replaceOrderId = undefined;
     let response = await this.apiClient.publishSellAndRepayOrder(sellAndRepayOrderInput);
     while (response.__typename !== 'SellAndRepayOrder') {
       if (response.__typename === 'ExtraSeaportData') {
@@ -386,6 +380,7 @@ export class Gondi {
     return this.apiClient.hideOffer({ contract: contractAddress, id: id.toString() });
   }
 
+  /** Hides all offers with id less than `minOfferId` for the given contract. */
   async hideOffers({
     minOfferId,
     contractAddress,
