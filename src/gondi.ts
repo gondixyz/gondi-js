@@ -266,6 +266,8 @@ export class Gondi {
       sellAndRepayOrderInput.orderToFillInt64 ?? sellAndRepayOrderInput.orderToFill;
     sellAndRepayOrderInput.replaceOrderIdInt64 =
       sellAndRepayOrderInput.replaceOrderIdInt64 ?? sellAndRepayOrderInput.replaceOrderId;
+    sellAndRepayOrderInput.orderToFill = undefined;
+    sellAndRepayOrderInput.replaceOrderId = undefined;
     let response = await this.apiClient.publishSellAndRepayOrder(sellAndRepayOrderInput);
     while (response.__typename !== 'SellAndRepayOrder') {
       if (response.__typename === 'ExtraSeaportData') {
