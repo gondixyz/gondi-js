@@ -133,7 +133,7 @@ const contractsByChain: Record<number, Contracts> = {
       '2': '0x3b59bffe109e0f33f20887343759a98b48ecdf5f',
       '3': '0x53ceda4c47585df08201955820e23bb261489140',
       '3.1': '0x1FBa531724Ea2493a15Bf5c4EA05f6aB5C0FCd62',
-      '3.1_PB_V2': zeroAddress, // TODO: complete me
+      '3.1_PB_V2': '0xc10472ac1bf9f2e58ff2c83596b4535334c90814',
     },
     Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
     Aave: '0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2',
