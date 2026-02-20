@@ -386,6 +386,19 @@ export class Gondi {
     return this.apiClient.hideOffer({ contract: contractAddress, id: id.toString() });
   }
 
+  async hideOffers({
+    minOfferId,
+    contractAddress,
+  }: {
+    minOfferId: bigint;
+    contractAddress: Address;
+  }) {
+    return this.apiClient.hideOffers({
+      contract: contractAddress,
+      minOfferId: minOfferId.toString(),
+    });
+  }
+
   async unhideOffer({ id, contractAddress }: { id: bigint; contractAddress: Address }) {
     return this.apiClient.unhideOffer({
       contract: contractAddress,
