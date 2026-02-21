@@ -1,3 +1,226 @@
+# Breaking Changes 0.27.0
+
+### Important
+
+---
+
+This document outlines the breaking changes introduced in our codebase for version 0.27.0. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [Int64 Scalar Type](#int64-scalar-type) orderId type changed from bigint to number
+- [Hide Offers](#hide-offers) new method to hide multiple offers
+- [Bug Fixes](#bug-fixes-0270) missing Int64 references and PurchaseBundler audit changes
+
+---
+
+## Int64 Scalar Type
+
+**Description:**
+
+The `orderId` field type has been changed from `bigint` to `number` (Int64 scalar) in the following methods:
+
+- `hideOrder()` mutation
+- `showOrder()` mutation
+- `getSaleCalldata()` query
+
+This change aligns with GraphQL's Int64 scalar type for better API compatibility.
+
+**Migration Steps:**
+
+Update any code that passes `orderId` as `bigint` to use `number` instead:
+
+```typescript
+// Before
+await gondi.hideOrder({ id: 123n, contractAddress: '0x...' });
+
+// After
+await gondi.hideOrder({ id: 123, contractAddress: '0x...' });
+```
+
+---
+
+## Hide Offers
+
+**Description:**
+
+New `hideOffers()` method added to hide all offers above a minimum threshold in a single operation.
+
+```typescript
+await gondi.hideOffers({
+  minOfferId: 100,
+  contractAddress: '0x...',
+});
+```
+
+---
+
+## Bug Fixes 0.27.0
+
+**Description:**
+
+- Fixed missing Int64 field references throughout the codebase
+- Applied Purchase Bundler audit recommendations for improved security
+
+---
+
+# Breaking Changes 0.26.0
+
+### Important
+
+---
+
+This document outlines the breaking changes introduced in our codebase for version 0.26.0. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [PurchaseBundler V2](#purchasebundler-v2) major refactor with new required parameters
+- [Make Deal](#make-deal) new method for publishing deals
+
+---
+
+## PurchaseBundler V2
+
+**Description:**
+
+PurchaseBundler has been upgraded to V2 with significant changes:
+
+- `PurchaseBundler.ts` renamed to `PurchaseBundlerV1.ts`
+- New `PurchaseBundlerV2` contract wrapper added
+- Methods now require `purchaseBundlerAddress` parameter:
+  - `buyNowPayLater()`
+  - `buyWithSellAndRepay()`
+  - `sellAndRepay()`
+- Added swap data support for improved trading flexibility
+
+**Migration Steps:**
+
+Update all PurchaseBundler method calls to include the new required parameter:
+
+```typescript
+// Before
+await gondi.buyNowPayLater({
+  loan,
+  price,
+  // ... other params
+});
+
+// After
+await gondi.buyNowPayLater({
+  loan,
+  price,
+  purchaseBundlerAddress: '0x...', // Required
+  sellAndRepaySwapData: swapData, // Optional
+  // ... other params
+});
+```
+
+---
+
+## Make Deal
+
+**Description:**
+
+New `makeDeal()` method added for publishing deals with signatures:
+
+```typescript
+const deal = await gondi.makeDeal({
+  // DealInput parameters
+});
+```
+
+---
+
+# Breaking Changes 0.25.0
+
+### Important
+
+---
+
+This document outlines the breaking changes introduced in our codebase for version 0.25.0. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [OnStepChange Callback](#onstepchange-callback) Gondi.create() now accepts callback for transaction tracking
+- [Sell and Repay OpenSea](#sell-and-repay-opensea) enhanced OpenSea data support
+
+---
+
+## OnStepChange Callback
+
+**Description:**
+
+`Gondi.create()` now accepts an optional `onStepChange` callback for tracking transaction progress:
+
+- New `OnStepChange` type exported
+- Added `executionId` parameter
+- Step tracking with new types and codes for monitoring transaction states
+
+**Migration Steps:**
+
+To track transaction progress, provide the callback when creating Gondi instance:
+
+```typescript
+const gondi = await Gondi.create({
+  wallet,
+  onStepChange: (step) => {
+    console.log('Transaction step:', step);
+  },
+  executionId: 'unique-id', // Optional
+});
+```
+
+---
+
+## Sell and Repay OpenSea
+
+**Description:**
+
+Enhanced `makeSellAndRepayOrder()` with additional OpenSea data support for improved marketplace integration.
+
+---
+
+# Breaking Changes 0.24.0
+
+### Important
+
+---
+
+This document outlines the breaking changes introduced in our codebase for version 0.24.0. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [PositionMigrator Contract](#positionmigrator-contract) new contract for loan migrations
+- [OpenSea Multichain](#opensea-multichain) multichain fulfillment support
+
+---
+
+## PositionMigrator Contract
+
+**Description:**
+
+New `PositionMigrator` contract wrapper added for loan position migrations:
+
+- `flashRenegotiation()` method for flash loan-based renegotiations
+- Smart Migrate V2 contract integration
+- Enhanced MSL V5 refinancing support
+
+```typescript
+await gondi.flashRenegotiation({
+  // Flash renegotiation parameters
+});
+```
+
+---
+
+## OpenSea Multichain
+
+**Description:**
+
+Added multichain support to OpenSea order fulfillment. The `opensea.fulfillOrder()` method now supports cross-chain operations.
+
+---
+
 # Breaking Changes 0.23.0
 
 ### Important
