@@ -18,6 +18,9 @@ node_modules
 .yarn/*
 !.yarn/releases
 
+# claude code
+.claude
+
 # debug
 *.log
 npm-debug.log*
