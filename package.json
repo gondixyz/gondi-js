@@ -14,7 +14,7 @@
     "examples"
   ],
   "scripts": {
-    "docs": "typedoc --options ./typedocconfig.ts --out docs/$npm_package_version && rm -rf docs/lts && cp -r docs/$npm_package_version/ docs/lts/",
+    "docs": "typedoc --options ./typedocconfig.cts --out docs/$npm_package_version && rm -rf docs/lts && cp -r docs/$npm_package_version/ docs/lts/",
     "analyze": "METAFILE=true yarn build",
     "build": "node esbuild.js && tsc && tsc-alias",
     "build-unbundle": "tsc --outDir dist && tsc-alias",
