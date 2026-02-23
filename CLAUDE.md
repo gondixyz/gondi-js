@@ -121,9 +121,7 @@ After transactions, events are parsed with `parseEventLogs`. Always validate the
 ## Workflow
 
 - **Plan first**: Always enter plan mode before starting any task to align on approach before making changes.
-- **Post-change steps**: After introducing changes, based on complexity/coverage:
-  1. Run `bun run docs` to regenerate documentation.
-  2. Bump the package version — **minor** for small/additive changes, **major** for breaking or large-scope changes.
+- **Post-change steps**: See the `Maintenance Guidelines` section below for detailed requirements on version bumping, changelog updates, and documentation generation.
 
 ## Maintenance Guidelines
 
