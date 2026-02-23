@@ -117,3 +117,52 @@ After transactions, events are parsed with `parseEventLogs`. Always validate the
 - TypeScript strict mode; no unused locals/parameters
 - ES modules only (`"type": "module"`)
 - Use `Optional<T, K>` and `OptionalNullable<T, K>` from `src/utils/types.ts` to derive SDK input types from generated GraphQL types (see `src/model.ts`)
+
+## Maintenance Guidelines
+
+### Changelog Management
+
+- **CRITICAL**: Update CHANGELOG.md with every version bump in package.json
+- Document all breaking changes, new features, and bug fixes
+- Follow the existing format with version headers (# Breaking Changes X.X.X)
+- Breaking changes must include:
+  - Clear **Description** section
+  - **Reason** for the change (when applicable)
+  - **Migration Steps** with code examples
+- Use consistent categories: BREAKING, NEW, ENHANCEMENT, FIX
+- Each version section should include:
+  - Version number header
+  - "Important" section
+  - Table of Contents with linked entries
+  - Detailed descriptions for each change
+
+### Documentation Generation
+
+- **MANDATORY**: Run `bun run docs` after every version change
+- Documentation outputs to `docs/{version}` and `docs/lts/`
+- Ensure TypeDoc reflects all API changes
+- Update documentation before publishing new npm package versions
+- Documentation should include all exported types, methods, and interfaces
+
+### Code Review Considerations
+
+When reviewing PRs (including @claude reviews), ensure:
+
+1. **CHANGELOG.md is updated** for any public API changes
+2. **Version bump** in package.json matches change severity:
+   - MAJOR: Breaking changes
+   - MINOR: New features (backwards compatible)
+   - PATCH: Bug fixes (backwards compatible)
+3. **Documentation regenerated** if API changes present (check `docs/` directory)
+4. **Breaking changes clearly documented** with migration guides
+5. All exported types, methods, and interfaces are documented with JSDoc comments
+6. GraphQL schema changes trigger `bun run gql:types` regeneration
+
+### GitHub Actions Setup
+
+- **Claude PR Review**: Requires `CLAUDE_CODE_OAUTH_TOKEN` repository secret
+  - Install Claude GitHub App: https://github.com/apps/claude
+  - Or run `/install-github-app` from Claude Code CLI
+  - Workflow triggers on @claude mentions in PR comments
+  - Reviews are informational and don't block merges
+- Pre-commit hooks run `bun lint && bun fmt-check`
