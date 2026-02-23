@@ -145,6 +145,7 @@ After transactions, events are parsed with `parseEventLogs`. Always validate the
 
 - **MANDATORY**: Run `bun run docs` after every version change
 - Documentation outputs to `docs/{version}` and `docs/lts/`
+- **IMPORTANT**: Always commit documentation changes separately from code changes to ease code review
 - Ensure TypeDoc reflects all API changes
 - Update documentation before publishing new npm package versions
 - Documentation should include all exported types, methods, and interfaces

@@ -81,6 +81,9 @@ async function main() {
   const offers = [offerA, offerB, offerC];
 
   console.log('hiding all 3 offers in a single batch call...');
+  // Note: All offers in a batch must share the same contractAddress
+  // This example uses offers[0].contractAddress which works since all offers
+  // were created on the same MultiSourceLoan contract version
   const result = await gondi.hideOffers({
     ids: offers.map((o) => o.offerId),
     contractAddress: offers[0].contractAddress,
@@ -97,8 +100,9 @@ async function main() {
     },
   });
 
+  // Compare offerId (bigint) values, not id (database string ID)
   const hiddenIds = new Set(offers.map((o) => o.offerId.toString()));
-  const leaked = listedOffers.filter((o) => hiddenIds.has(o.id));
+  const leaked = listedOffers.filter((o) => hiddenIds.has(o.offerId.toString()));
   if (leaked.length > 0) {
     console.error('FAIL: hidden offers still appear as active:', leaked);
     process.exit(1);
