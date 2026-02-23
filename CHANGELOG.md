@@ -1,3 +1,36 @@
+# Breaking Changes 0.27.1
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.27.1. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [New Features](#new-features-0271) hideOffers batch mutation method added
+
+---
+
+## New Features 0.27.1
+
+**Description:**
+
+Added a new `hideOffers()` method to the `Gondi` class for batch hiding multiple offers in a single transaction. This complements the existing `hideOffer()` method and improves efficiency when managing multiple offers.
+
+**API:**
+
+```typescript
+await gondi.hideOffers({
+  ids: offerIds,
+  contractAddress: contractAddress,
+});
+```
+
+The method accepts an array of offer IDs and hides them all in a single batch mutation.
+
+---
+
 # Breaking Changes 0.27.0
 
 ### Important
