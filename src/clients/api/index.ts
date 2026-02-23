@@ -51,6 +51,7 @@ export class Api {
   unlistNft;
   ownedNfts;
   hideOffer;
+  hideOffers;
   hideRenegotiationOffer;
   unhideOffer;
   unhideRenegotiationOffer;
@@ -76,6 +77,7 @@ export class Api {
     this.unlistNft = this.api.unlistNft;
     this.ownedNfts = this.api.ownedNfts;
     this.hideOffer = this.api.hideOffer;
+    this.hideOffers = this.api.hideOffers;
     this.hideRenegotiationOffer = this.api.hideRenegotiationOffer;
     this.unhideOffer = this.api.unhideOffer;
     this.unhideRenegotiationOffer = this.api.unhideRenegotiationOffer;

@@ -28,11 +28,22 @@ type Artist implements Node {
   lastMint: NFT
   name: String!
   sales1d: Int!
+  slug: String!
   socials: [String!]!
   totalVolume: Float!
   uniqueCollectors: Int!
   volume1d: Float!
   websites: [String!]!
+}
+
+input ArtistCollectionInput {
+  collectionIds: [Int!]!
+  source: ArtistCollectionSourceType
+}
+
+enum ArtistCollectionSourceType {
+  COLLECTION_ARTISTS
+  NFT_ARTISTS
 }
 
 type ArtistConnection {
@@ -270,6 +281,7 @@ type CancelAllOrdersCalldata {
 
 """An NFT collection."""
 type Collection implements Node {
+  artists: [Artist!]!
   bannerImage: Asset
   collectionUrl: String
   contractData: ContractData!
@@ -293,6 +305,7 @@ type Collection implements Node {
   twitterUsername: String
   uniqueCollectors: Int!
   verified: Boolean!
+  whitelistedSupply: Int!
   wrappedCollection: Collection
   wrappedCollectionId: Int
   wrapperCollections: [Collection!]!
@@ -484,6 +497,7 @@ enum CollectionSortField {
   TOTAL_LOAN_VOLUME
   TOTAL_OUTSTANDING_PRINCIPAL
   TOTAL_VOLUME
+  TOTAL_VOLUME_1D
   TOTAL_VOLUME_7D
   TOTAL_VOLUME_30D
   TRENDING_VOLUME
@@ -1398,6 +1412,9 @@ type Mutation {
   """Hides a loan offer."""
   hideOffer(contractAddress: Address!, offerId: String!): Offer!
 
+  """Hides multiple loan offers."""
+  hideOffers(contractAddress: Address!, offerIds: [String!]!): [Offer!]!
+
   """Hides a trade order."""
   hideOrder(orderIdInt64: Int64 = null): Order!
 
@@ -1481,6 +1498,7 @@ type NFT implements Node {
   """
   activeLoan: Loan
   animation: Asset
+  artists: [Artist!]!
   collection: Collection
   collectionId: Int
   createdDate: DateTime!
@@ -1489,6 +1507,7 @@ type NFT implements Node {
   erc1155Balance(address: Address!): BigInt!
   id: String!
   image: Asset
+  isExcluded: Boolean
   isFlagged: Boolean
   listed: Listing
 
@@ -2018,6 +2037,9 @@ type Query {
   """Get an artist by ID."""
   getArtist(artistId: Int!): Artist
 
+  """Get an artist by slug."""
+  getArtistBySlug(slug: String!): Artist
+
   """
   Get the borrowing power for a list of borrowers.Borrowing power is the sum of the best offer per NFT the borrower has.The best offer is the offer with the highest net principal.Returns the normalized sum in ETH equivalent (float).
   """
@@ -2052,15 +2074,18 @@ type Query {
   getOutstandingDebt(borrowers: [Address!]!, currencyAddresses: [Address!] = null): BigInt!
   getOutstandingLoanStatistics: OutstandingLoanStatistics!
   getPointsFromReferrals: Int!
+  getPurchaseBundlerFromOrder(orderId: Int64!): Address!
   getReferredWallets: Int!
+  getSellAndRepayOrderSwapCalldata(expectedRate: Float!, loanId: String!, orderId: Int64!, slippage: Float!): Hex
   getSourcesStatistics(currencyAddress: Address!, lenders: [Address!]!, statuses: [LoanStatusType!]!): SourcesStatistics!
   getSourcesStatisticsByCollection(currencyAddress: Address!, lenders: [Address!]!, statuses: [LoanStatusType!]!): [SourceStatisticsFromCollection!]!
+  getSwapRate(fromCurrency: Address!, toCurrency: Address!): Float!
   getUserPointActivities(after: String, first: Int = null): PointActivityConnection!
   getUserPoints: Int!
   globalSearch(searchTerm: String!): [GlobalSearchResult!]!
 
   """List artists/creators, optionally filtered by type."""
-  listArtists(after: String, artistType: ArtistType = null, first: Int! = 10, sortBy: [ArtistSortInput!] = null): ArtistConnection!
+  listArtists(after: String, artistType: ArtistType = null, collection: ArtistCollectionInput = null, first: Int! = 10, sortBy: [ArtistSortInput!] = null): ArtistConnection!
   listAuctions(after: String, currencyAddress: Address = null, first: Int = null, sortBy: [AuctionSortInput!] = null, statuses: [AuctionStatus!] = null): AuctionConnection!
   listBids(after: String, auctionId: String = null, auctionStatuses: [AuctionStatus!] = null, bidders: [String!] = null, currencyAddresses: [Address!] = null, first: Int = null, onlyLatest: Boolean! = false, sortBy: [BidSortInput!] = null): BidConnection!
 
@@ -2203,10 +2228,12 @@ type Query {
   listNftStrategyDeployments(after: String, first: Int = null): NftStrategyDeploymentConnection!
   listNfts(
     after: String
+    artists: [Int!] = null
     blockchains: [BlockchainEnum!] = null
     burned: Boolean = null
     excludeSlugs: [String!] = null
     first: Int = null
+    flagged: Boolean = null
 
     """
     When filtering by collections, you can include vaults with items from the slugs.
