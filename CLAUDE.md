@@ -118,6 +118,11 @@ After transactions, events are parsed with `parseEventLogs`. Always validate the
 - ES modules only (`"type": "module"`)
 - Use `Optional<T, K>` and `OptionalNullable<T, K>` from `src/utils/types.ts` to derive SDK input types from generated GraphQL types (see `src/model.ts`)
 
+## Workflow
+
+- **Plan first**: Always enter plan mode before starting any task to align on approach before making changes.
+- **Post-change steps**: See the `Maintenance Guidelines` section below for detailed requirements on version bumping, changelog updates, and documentation generation.
+
 ## Maintenance Guidelines
 
 ### Changelog Management
