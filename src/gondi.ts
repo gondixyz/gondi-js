@@ -11,7 +11,7 @@ import {
 import { getAddress } from 'viem';
 
 import { addStepCallback } from '@/addStepCallback';
-import { Auction, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
+import { Auction, isNativeCurrency, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Api, Props as ApiProps } from '@/clients/api';
 import { Contracts, GondiPublicClient, Wallet } from '@/clients/contracts';
 import { PurchaseBundlerV1 } from '@/clients/contracts/PurchaseBundlerV1';
@@ -360,7 +360,7 @@ export class Gondi {
 
     return this.contracts.PurchaseBundler(purchaseBundlerAddress, offers[0].contractAddress).buy({
       emitCalldata: response.emitCalldata,
-      value: max(0n, response.price - borrowed),
+      value: isNativeCurrency(response.currencyAddress) ? max(0n, response.price - borrowed) : 0n,
     });
   }
 

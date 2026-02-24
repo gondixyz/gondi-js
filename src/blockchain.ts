@@ -11,6 +11,7 @@ import type {
   multiSourceLoanAbi as multiSourceLoanABIV6,
 } from '@/generated/blockchain/v6';
 import type { multiSourceLoanAbi as multiSourceLoanABIV7 } from '@/generated/blockchain/v7';
+import { areSameAddress } from '@/utils/string';
 
 type RepayAbiTypeV4 = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof multiSourceLoanABIV4, 'repayLoan'>['inputs']
@@ -91,3 +92,5 @@ export const zeroHash: Hash = `0x${'0'.repeat(64)}`;
 export const zeroHex: HexString = `0x0`;
 
 export const REORG_SAFETY_BUFFER = 5n * 60n;
+
+export const isNativeCurrency = (address: Address) => areSameAddress(address, zeroAddress);
