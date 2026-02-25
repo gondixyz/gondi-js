@@ -281,6 +281,8 @@ type CancelAllOrdersCalldata {
 
 """An NFT collection."""
 type Collection implements Node {
+  artistArtworksCount(artistId: Int!): Int!
+  artistFloorPrice(artistId: Int!): CurrencyAmount
   artists: [Artist!]!
   bannerImage: Asset
   collectionUrl: String
@@ -296,8 +298,10 @@ type Collection implements Node {
   name: String
   nftsCount: Int
 
-  """The first 10 NFTs of the collection, sorted ASC by token ID."""
-  previewNfts: [NFT!]!
+  """
+  Up to 10 preview NFTs for the collection, optionally filtered by artist. When an artist_id is provided, only NFTs associated with that artist are returned; otherwise any NFTs from the collection, ordered by token_id.
+  """
+  previewNfts(artistId: Int = null): [NFT!]!
   royalties: [Royalty!]!
   slug: String!
   statistics: CollectionStatistics!
@@ -478,6 +482,7 @@ input CollectionSignedOfferInput {
 }
 
 enum CollectionSortField {
+  ARTIST_FLOOR_PRICE
   CONTRACT_CREATED_DATE
   FLOOR_PRICE
   FLOOR_PRICE_1D_CHANGE
@@ -504,6 +509,7 @@ enum CollectionSortField {
 }
 
 input CollectionSortInput {
+  artistId: Int = null
   field: CollectionSortField!
   lenders: [Address!] = null
   marketplaces: [MarketPlaceType!] = null
@@ -794,6 +800,11 @@ interface GlobalSearchResult {
 type GlobalSearchResultAccount implements GlobalSearchResult {
   id: String!
   user: User!
+}
+
+type GlobalSearchResultArtist implements GlobalSearchResult {
+  artist: Artist!
+  id: String!
 }
 
 type GlobalSearchResultCollection implements GlobalSearchResult {
@@ -2284,7 +2295,7 @@ type Query {
   This field is deprecated. Use list_orders_v2 instead. This field will be removed in the next major version.
   """
   listOrders(after: String, collectionId: Int = null, currencyAddresses: [Address!] = null, first: Int = null, hidden: Boolean = null, ids: [Int!] = null, maker: [Address!] = null, marketplaceIds: [String!] = null, marketplaces: [MarketPlaceType!] = null, nftId: Int = null, onlyInvalid: Boolean = null, orderType: OrderType = null, sortBy: [OrderSortInput!] = null, statuses: [OrderStatusType!] = null, taker: Address = null, terms: OrderTermsFilter = null): OrderConnection!
-  listOrdersV2(after: String, collectionIds: [Int!] = null, currencyAddresses: [Address!] = null, excludeMaker: [Address!] = null, excludeTaker: [Address!] = null, exclusiveListings: Boolean = false, exclusiveListingsTypes: [ExclusiveListingType!] = null, first: Int = null, hidden: Boolean = null, ids: [Int!] = null, maker: [Address!] = null, marketplaceIds: [String!] = null, marketplaces: [MarketPlaceType!] = null, nfts: [OrderForNft!] = null, onlyInvalid: Boolean = null, side: OrderSide = null, sortBy: [OrderSortInput!] = null, statuses: [OrderStatusType!] = null, taker: Address = null, terms: OrderTermsFilter = null, traitIds: [Int!] = null): OrderConnection!
+  listOrdersV2(after: String, collectionIds: [Int!] = null, currencyAddresses: [Address!] = null, excludeMaker: [Address!] = null, excludeTaker: [Address!] = null, exclusiveListings: Boolean = false, exclusiveListingsTypes: [ExclusiveListingType!] = null, first: Int = null, hidden: Boolean = null, ids: [Int!] = null, idsInt64: [Int64!] = null, maker: [Address!] = null, marketplaceIds: [String!] = null, marketplaces: [MarketPlaceType!] = null, nfts: [OrderForNft!] = null, onlyInvalid: Boolean = null, side: OrderSide = null, sortBy: [OrderSortInput!] = null, statuses: [OrderStatusType!] = null, taker: Address = null, terms: OrderTermsFilter = null, traitIds: [Int!] = null): OrderConnection!
   listPlatformFees(blockchain: BlockchainEnum!, collectionId: Int!, marketplace: MarketPlaceType = null, operation: PlatformFeeOperationType!): [PlatformFee!]!
   listRenegotiations(after: String, blockchains: [BlockchainEnum!] = null, collections: [Int!] = null, first: Int = null, hidden: Boolean = null, isAddNewTranche: Boolean = null, loanId: String = null, sortBy: [OffersSortInput!] = null, statuses: [OfferStatus!] = null, terms: RefinanceTermsFilter = null): RenegotiationConnection!
   listSales(after: String, collections: [Int!] = null, currencyAddresses: [Address!] = null, first: Int! = 10, fromTimestamp: Int = null, nfts: [Int!] = null, sortBy: [SalesSortInput!] = null, toTimestamp: Int = null, traits: [Int!] = null, users: [Address!] = null): SaleConnection!

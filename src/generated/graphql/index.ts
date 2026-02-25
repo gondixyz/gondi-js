@@ -326,6 +326,8 @@ export type CancelAllOrdersCalldata = {
 /** An NFT collection. */
 export type Collection = Node & {
   __typename?: 'Collection';
+  artistArtworksCount: Scalars['Int'];
+  artistFloorPrice?: Maybe<CurrencyAmount>;
   artists: Array<Artist>;
   bannerImage?: Maybe<Asset>;
   collectionUrl?: Maybe<Scalars['String']>;
@@ -340,7 +342,7 @@ export type Collection = Node & {
   maxNetPrincipalOffer?: Maybe<CollectionOffer>;
   name?: Maybe<Scalars['String']>;
   nftsCount?: Maybe<Scalars['Int']>;
-  /** The first 10 NFTs of the collection, sorted ASC by token ID. */
+  /** Up to 10 preview NFTs for the collection, optionally filtered by artist. When an artist_id is provided, only NFTs associated with that artist are returned; otherwise any NFTs from the collection, ordered by token_id. */
   previewNfts: Array<Nft>;
   royalties: Array<Royalty>;
   slug: Scalars['String'];
@@ -357,8 +359,26 @@ export type Collection = Node & {
 
 
 /** An NFT collection. */
+export type CollectionArtistArtworksCountArgs = {
+  artistId: Scalars['Int'];
+};
+
+
+/** An NFT collection. */
+export type CollectionArtistFloorPriceArgs = {
+  artistId: Scalars['Int'];
+};
+
+
+/** An NFT collection. */
 export type CollectionMaxNetPrincipalOfferArgs = {
   currencyAddress: Scalars['Address'];
+};
+
+
+/** An NFT collection. */
+export type CollectionPreviewNftsArgs = {
+  artistId?: InputMaybe<Scalars['Int']>;
 };
 
 export type CollectionConnection = {
@@ -537,6 +557,7 @@ export type CollectionSignedOfferInput = {
 };
 
 export enum CollectionSortField {
+  ArtistFloorPrice = 'ARTIST_FLOOR_PRICE',
   ContractCreatedDate = 'CONTRACT_CREATED_DATE',
   FloorPrice = 'FLOOR_PRICE',
   FloorPrice_1DChange = 'FLOOR_PRICE_1D_CHANGE',
@@ -563,6 +584,7 @@ export enum CollectionSortField {
 }
 
 export type CollectionSortInput = {
+  artistId?: InputMaybe<Scalars['Int']>;
   field: CollectionSortField;
   lenders?: InputMaybe<Array<Scalars['Address']>>;
   marketplaces?: InputMaybe<Array<MarketPlaceType>>;
@@ -985,6 +1007,12 @@ export type GlobalSearchResultAccount = GlobalSearchResult & {
   __typename?: 'GlobalSearchResultAccount';
   id: Scalars['String'];
   user: User;
+};
+
+export type GlobalSearchResultArtist = GlobalSearchResult & {
+  __typename?: 'GlobalSearchResultArtist';
+  artist: Artist;
+  id: Scalars['String'];
 };
 
 export type GlobalSearchResultCollection = GlobalSearchResult & {
@@ -3140,6 +3168,7 @@ export type QueryListOrdersV2Args = {
   first?: InputMaybe<Scalars['Int']>;
   hidden?: InputMaybe<Scalars['Boolean']>;
   ids?: InputMaybe<Array<Scalars['Int']>>;
+  idsInt64?: InputMaybe<Array<Scalars['Int64']>>;
   maker?: InputMaybe<Array<Scalars['Address']>>;
   marketplaceIds?: InputMaybe<Array<Scalars['String']>>;
   marketplaces?: InputMaybe<Array<MarketPlaceType>>;
@@ -4197,7 +4226,7 @@ export type PublishBuyNowPayLaterOrderMutationVariables = Exact<{
 }>;
 
 
-export type PublishBuyNowPayLaterOrderMutation = { __typename?: 'Mutation', result: { __typename?: 'BuyNowPayLaterOrder', id: string, status: string, signature: Hex, emitCalldata: Hex, marketPlaceAddress: Address, price: bigint } | { __typename?: 'ExtraSeaportData', extraData: Hex } | { __typename?: 'SignatureRequest', key: string, typedData: { __typename?: 'TypedData', types: object, primaryType: string, domain: object, message: object } } };
+export type PublishBuyNowPayLaterOrderMutation = { __typename?: 'Mutation', result: { __typename?: 'BuyNowPayLaterOrder', id: string, status: string, signature: Hex, emitCalldata: Hex, marketPlaceAddress: Address, price: bigint, currencyAddress: Address } | { __typename?: 'ExtraSeaportData', extraData: Hex } | { __typename?: 'SignatureRequest', key: string, typedData: { __typename?: 'TypedData', types: object, primaryType: string, domain: object, message: object } } };
 
 export type PublishDealMutationVariables = Exact<{
   dealInput: DealInput;
@@ -4580,8 +4609,10 @@ export type CancelAllOrdersCalldataFieldPolicy = {
 	calldata?: FieldPolicy<any> | FieldReadFunction<any>,
 	marketPlaceAddress?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type CollectionKeySpecifier = ('artists' | 'bannerImage' | 'collectionUrl' | 'contractData' | 'description' | 'discordUrl' | 'externalUrl' | 'hasTransferValidator' | 'id' | 'image' | 'imageId' | 'maxNetPrincipalOffer' | 'name' | 'nftsCount' | 'previewNfts' | 'royalties' | 'slug' | 'statistics' | 'supply' | 'twitterUsername' | 'uniqueCollectors' | 'verified' | 'whitelistedSupply' | 'wrappedCollection' | 'wrappedCollectionId' | 'wrapperCollections' | CollectionKeySpecifier)[];
+export type CollectionKeySpecifier = ('artistArtworksCount' | 'artistFloorPrice' | 'artists' | 'bannerImage' | 'collectionUrl' | 'contractData' | 'description' | 'discordUrl' | 'externalUrl' | 'hasTransferValidator' | 'id' | 'image' | 'imageId' | 'maxNetPrincipalOffer' | 'name' | 'nftsCount' | 'previewNfts' | 'royalties' | 'slug' | 'statistics' | 'supply' | 'twitterUsername' | 'uniqueCollectors' | 'verified' | 'whitelistedSupply' | 'wrappedCollection' | 'wrappedCollectionId' | 'wrapperCollections' | CollectionKeySpecifier)[];
 export type CollectionFieldPolicy = {
+	artistArtworksCount?: FieldPolicy<any> | FieldReadFunction<any>,
+	artistFloorPrice?: FieldPolicy<any> | FieldReadFunction<any>,
 	artists?: FieldPolicy<any> | FieldReadFunction<any>,
 	bannerImage?: FieldPolicy<any> | FieldReadFunction<any>,
 	collectionUrl?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -4909,6 +4940,11 @@ export type GlobalSearchResultAccountKeySpecifier = ('id' | 'user' | GlobalSearc
 export type GlobalSearchResultAccountFieldPolicy = {
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	user?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type GlobalSearchResultArtistKeySpecifier = ('artist' | 'id' | GlobalSearchResultArtistKeySpecifier)[];
+export type GlobalSearchResultArtistFieldPolicy = {
+	artist?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>
 };
 export type GlobalSearchResultCollectionKeySpecifier = ('collection' | 'id' | GlobalSearchResultCollectionKeySpecifier)[];
 export type GlobalSearchResultCollectionFieldPolicy = {
@@ -6443,6 +6479,10 @@ export type StrictTypedTypePolicies = {
 		keyFields?: false | GlobalSearchResultAccountKeySpecifier | (() => undefined | GlobalSearchResultAccountKeySpecifier),
 		fields?: GlobalSearchResultAccountFieldPolicy,
 	},
+	GlobalSearchResultArtist?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | GlobalSearchResultArtistKeySpecifier | (() => undefined | GlobalSearchResultArtistKeySpecifier),
+		fields?: GlobalSearchResultArtistFieldPolicy,
+	},
 	GlobalSearchResultCollection?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | GlobalSearchResultCollectionKeySpecifier | (() => undefined | GlobalSearchResultCollectionKeySpecifier),
 		fields?: GlobalSearchResultCollectionFieldPolicy,
@@ -7042,6 +7082,7 @@ export const PublishBuyNowPayLaterOrderDocument = gql`
       emitCalldata
       marketPlaceAddress
       price
+      currencyAddress
     }
     ... on SignatureRequest {
       key
