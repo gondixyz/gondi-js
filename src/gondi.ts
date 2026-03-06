@@ -20,6 +20,7 @@ import { Opensea } from '@/clients/opensea';
 import { getContracts } from '@/deploys';
 import {
   BnplOrderInput,
+  BulkNftOrdersInput,
   CollectionOrderInput,
   DealInput,
   MarketplaceEnum,
@@ -246,6 +247,20 @@ export class Gondi {
       throw new Error('This should never happen');
 
     return { ...response, ...orderInput };
+  }
+
+  async makeOrders(orders: SingleNftOrderInput[]) {
+    const bulkInput: BulkNftOrdersInput = { orders };
+    let response = await this.apiClient.publishBulkOrders(bulkInput);
+
+    if (response.__typename === 'SignatureRequest') {
+      const signature = await this.wallet.signTypedData(response.typedData as TypedDataDefinition);
+      response = await this.apiClient.publishBulkOrders({ orders, signature });
+    }
+
+    if (response.__typename !== 'BulkNFTOrdersResult') throw new Error('This should never happen');
+
+    return response.orders;
   }
 
   async makeDeal(dealInput: DealInput) {

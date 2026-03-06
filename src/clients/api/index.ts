@@ -7,6 +7,7 @@ import { getSdkApollo } from '@/clients/api/sdk';
 import { Wallet } from '@/clients/contracts';
 import {
   BnplOrderInput,
+  BulkNftOrdersInput,
   CollectionOrderInput,
   CollectionSignedOfferInput,
   DealInput,
@@ -130,6 +131,11 @@ export class Api {
 
   async publishBuyNowPayLaterOrder(orderInput: BnplOrderInput) {
     const response = await this.api.publishBuyNowPayLaterOrder({ orderInput });
+    return response.result;
+  }
+
+  async publishBulkOrders(bulkInput: BulkNftOrdersInput) {
+    const response = await this.api.publishBulkOrders({ bulkInput });
     return response.result;
   }
 
