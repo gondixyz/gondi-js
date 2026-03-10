@@ -236,7 +236,7 @@ export class Gondi {
     return await this.apiClient.saveCollectionOffer(signedOffer);
   }
 
-  async makeOrder(orderInput: (SingleNftOrderInput | CollectionOrderInput) & { hidden?: boolean }) {
+  async makeOrder(orderInput: SingleNftOrderInput | CollectionOrderInput) {
     let response = await this.apiClient.publishOrder(orderInput);
     while (response.__typename === 'SignatureRequest') {
       const key = response.key as 'signature';
@@ -246,10 +246,6 @@ export class Gondi {
 
     if (response.__typename !== 'SingleNFTOrder' && response.__typename !== 'CollectionOrder')
       throw new Error('This should never happen');
-
-    if (orderInput.hidden) {
-      await this.apiClient.hideOrder({ id: response.id });
-    }
 
     return { ...response, ...orderInput };
   }
@@ -267,7 +263,7 @@ export class Gondi {
     return { ...response, ...dealInput };
   }
 
-  async makeSellAndRepayOrder(sellAndRepayOrderInput: NftOrderInput & { hidden?: boolean }) {
+  async makeSellAndRepayOrder(sellAndRepayOrderInput: NftOrderInput) {
     sellAndRepayOrderInput.orderToFillInt64 =
       sellAndRepayOrderInput.orderToFillInt64 ?? sellAndRepayOrderInput.orderToFill;
     sellAndRepayOrderInput.replaceOrderIdInt64 =
@@ -289,10 +285,6 @@ export class Gondi {
     }
 
     if (response.__typename !== 'SellAndRepayOrder') throw new Error('This should never happen');
-
-    if (sellAndRepayOrderInput.hidden) {
-      await this.apiClient.hideOrder({ id: response.id });
-    }
 
     return { ...response, ...sellAndRepayOrderInput };
   }
@@ -514,6 +506,7 @@ export class Gondi {
   }
 
   async hideOrder({ id }: { id: number }) {
+    console.log('hiding order', id);
     return this.apiClient.hideOrder({ id });
   }
 
