@@ -1,3 +1,4 @@
+import { Maybe } from 'graphql/jsutils/Maybe';
 import {
   Account,
   Address,
@@ -10,16 +11,22 @@ import {
 import { getAddress } from 'viem';
 
 import { addStepCallback } from '@/addStepCallback';
-import { Auction, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
+import { Auction, isNativeCurrency, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Api, Props as ApiProps } from '@/clients/api';
 import { Contracts, GondiPublicClient, Wallet } from '@/clients/contracts';
+import { PurchaseBundlerV1 } from '@/clients/contracts/PurchaseBundlerV1';
+import { PurchaseBundlerV2 } from '@/clients/contracts/PurchaseBundlerV2';
 import { Opensea } from '@/clients/opensea';
 import { getContracts } from '@/deploys';
 import {
   BnplOrderInput,
+  CollectionOrderInput,
+  DealInput,
   MarketplaceEnum,
+  NftOrderInput,
   OffersSortField,
   Ordering,
+  SingleNftOrderInput,
   SingleNftSignedOfferInput,
   TokenStandardType,
 } from '@/generated/graphql';
@@ -27,6 +34,7 @@ import * as model from '@/model';
 import { NftStandard } from '@/model';
 import { isEmptyCalldata } from '@/utils/blockchain';
 import {
+  BPS,
   isLoanVersion,
   loanToMslLoan,
   LoanToMslLoanType,
@@ -228,7 +236,7 @@ export class Gondi {
     return await this.apiClient.saveCollectionOffer(signedOffer);
   }
 
-  async makeOrder(orderInput: Parameters<Api['publishOrder']>[0] & { hidden?: boolean }) {
+  async makeOrder(orderInput: (SingleNftOrderInput | CollectionOrderInput) & { hidden?: boolean }) {
     let response = await this.apiClient.publishOrder(orderInput);
     while (response.__typename === 'SignatureRequest') {
       const key = response.key as 'signature';
@@ -246,7 +254,7 @@ export class Gondi {
     return { ...response, ...orderInput };
   }
 
-  async makeDeal(dealInput: Parameters<Api['publishDeal']>[0]) {
+  async makeDeal(dealInput: DealInput) {
     let response = await this.apiClient.publishDeal(dealInput);
     while (response.__typename === 'SignatureRequest') {
       const key = response.key as 'signature';
@@ -259,9 +267,13 @@ export class Gondi {
     return { ...response, ...dealInput };
   }
 
-  async makeSellAndRepayOrder(
-    sellAndRepayOrderInput: Parameters<Api['publishSellAndRepayOrder']>[0] & { hidden?: boolean },
-  ) {
+  async makeSellAndRepayOrder(sellAndRepayOrderInput: NftOrderInput & { hidden?: boolean }) {
+    sellAndRepayOrderInput.orderToFillInt64 =
+      sellAndRepayOrderInput.orderToFillInt64 ?? sellAndRepayOrderInput.orderToFill;
+    sellAndRepayOrderInput.replaceOrderIdInt64 =
+      sellAndRepayOrderInput.replaceOrderIdInt64 ?? sellAndRepayOrderInput.replaceOrderId;
+    sellAndRepayOrderInput.orderToFill = undefined;
+    sellAndRepayOrderInput.replaceOrderId = undefined;
     let response = await this.apiClient.publishSellAndRepayOrder(sellAndRepayOrderInput);
     while (response.__typename !== 'SellAndRepayOrder') {
       if (response.__typename === 'ExtraSeaportData') {
@@ -287,18 +299,28 @@ export class Gondi {
 
   async buyNowPayLater({
     amounts,
+    purchaseBundlerAddress,
     contractAddress,
     loanDuration,
     offers,
     tokenId,
     repaymentCalldata,
+    sellAndRepaySwapData,
+    repayFlashLoanSwapParams,
   }: {
     amounts: bigint[];
+    purchaseBundlerAddress?: Address;
     contractAddress: Address;
     loanDuration: bigint;
     offers: OfferFromExecutionOffer[];
     tokenId: bigint;
     repaymentCalldata?: Hex | null | undefined;
+    sellAndRepaySwapData?: Maybe<Hex>;
+    repayFlashLoanSwapParams?: Maybe<{
+      inputCurrency: Address;
+      inputAmount: bigint;
+      swapData: Hex;
+    }>;
   }) {
     const orderInput: BnplOrderInput = {
       amounts,
@@ -329,16 +351,26 @@ export class Gondi {
     if (response.__typename !== 'BuyNowPayLaterOrder') throw new Error('This should never happen');
 
     if (isDefined(repaymentCalldata)) {
-      return this.contracts.PurchaseBundler(offers[0].contractAddress).executeSellWithLoan({
+      const pb = this.contracts.PurchaseBundler(purchaseBundlerAddress, offers[0].contractAddress);
+      if (sellAndRepaySwapData !== undefined && pb instanceof PurchaseBundlerV1) {
+        throw new Error('Swap data is not supported for PurchaseBundler v1');
+      }
+      return pb.executeSellWithLoan({
+        initialPayment: max(
+          0n,
+          response.price - borrowed + (response.price * PurchaseBundlerV2.AAVE_PREMIUM_BPS) / BPS,
+        ),
         emitCalldata: response.emitCalldata,
         price: response.price,
         repaymentCalldata,
+        executeSellSwapData: sellAndRepaySwapData,
+        repayFlashLoanSwapParams,
       });
     }
 
-    return this.contracts.PurchaseBundler(offers[0].contractAddress).buy({
+    return this.contracts.PurchaseBundler(purchaseBundlerAddress, offers[0].contractAddress).buy({
       emitCalldata: response.emitCalldata,
-      value: max(0n, response.price - borrowed),
+      value: isNativeCurrency(response.currencyAddress) ? max(0n, response.price - borrowed) : 0n,
     });
   }
 
@@ -362,6 +394,13 @@ export class Gondi {
 
   async hideOffer({ id, contractAddress }: { id: bigint; contractAddress: Address }) {
     return this.apiClient.hideOffer({ contract: contractAddress, id: id.toString() });
+  }
+
+  async hideOffers({ ids, contractAddress }: { ids: bigint[]; contractAddress: Address }) {
+    return this.apiClient.hideOffers({
+      contract: contractAddress,
+      ids: ids.map((id) => id.toString()),
+    });
   }
 
   async unhideOffer({ id, contractAddress }: { id: bigint; contractAddress: Address }) {
@@ -613,7 +652,7 @@ export class Gondi {
     sortBy = { field: OffersSortField.CreatedDate, order: Ordering.Desc },
     filterBy = {},
   }: model.ListOffersProps) {
-    const { status, nft, collection, borrower, ...fields } = filterBy;
+    const { status, nft, collection, borrower, contractAddresses, ...fields } = filterBy;
     return await this.apiClient.listOffers({
       first: limit,
       after: cursor,
@@ -622,6 +661,7 @@ export class Gondi {
       nfts: nft ? [nft] : [],
       collections: collection ? [collection] : [],
       borrowerAddress: borrower,
+      contractAddresses: contractAddresses ?? [],
       ...fields,
     });
   }
@@ -1101,28 +1141,46 @@ export class Gondi {
 
   async buyWithSellAndRepay({
     repaymentCalldata,
+    purchaseBundlerAddress,
     mslContractAddress,
     price,
+    swapData,
   }: {
     repaymentCalldata: Hex;
+    purchaseBundlerAddress?: Address;
     mslContractAddress: Address;
     price: bigint;
+    swapData?: Maybe<Hex>;
   }) {
-    return await this.contracts.PurchaseBundler(mslContractAddress).executeSell({
+    const pb = this.contracts.PurchaseBundler(purchaseBundlerAddress, mslContractAddress);
+    if (swapData && pb instanceof PurchaseBundlerV1) {
+      throw new Error('Swap data is not supported for PurchaseBundler v1');
+    }
+    return await pb.executeSell({
       repaymentCalldata,
       price,
+      swapData,
     });
   }
 
   async sellAndRepay({
+    purchaseBundlerAddress,
     mslContractAddress,
     repaymentCalldata,
+    swapData,
   }: {
+    purchaseBundlerAddress?: Address;
     mslContractAddress: Address;
     repaymentCalldata: Hex;
+    swapData?: Hex;
   }) {
-    return await this.contracts.PurchaseBundler(mslContractAddress).sell({
+    const pb = this.contracts.PurchaseBundler(purchaseBundlerAddress, mslContractAddress);
+    if (swapData && pb instanceof PurchaseBundlerV1) {
+      throw new Error('Swap data is not supported for PurchaseBundler v1');
+    }
+    return await pb.sell({
       repaymentCalldata,
+      swapData,
     });
   }
 

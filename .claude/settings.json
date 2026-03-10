@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Edit",
+      "Write",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote:*)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh issue:*)",
+      "Bash(bun run build-check:*)",
+      "Bash(bun lint:*)",
+      "Bash(bun test:*)",
+      "Bash(bun verify:*)",
+      "Bash(bun css:types:*)",
+      "Bash(bun fmt:*)",
+      "Bash(cat:*)"
+    ]
+  }
+}

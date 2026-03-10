@@ -1,0 +1,5 @@
+mutation hideOffers($contract: Address!, $ids: [String!]!) {
+  hideOffers(contractAddress: $contract, offerIds: $ids) {
+    id
+  }
+}

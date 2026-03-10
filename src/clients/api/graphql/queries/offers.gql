@@ -4,6 +4,7 @@ query listOffers(
   $sortBy: OffersSortInput!
   $terms: TermsFilter
   $statuses: [OfferStatus!] = [ACTIVE, CANCELLED, INACTIVE, EXPIRED]
+  $contractAddresses: [Address!]
   $nfts: [Int!]
   $collections: [Int!]
   $onlySingleNftOffers: Boolean
@@ -21,6 +22,7 @@ query listOffers(
     onlySingleNftOffers: $onlySingleNftOffers
     onlyCollectionOffers: $onlyCollectionOffers
     statuses: $statuses
+    contractAddresses: $contractAddresses
     first: $first
     after: $after
   ) {
