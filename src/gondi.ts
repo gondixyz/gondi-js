@@ -506,7 +506,6 @@ export class Gondi {
   }
 
   async hideOrder({ id }: { id: number }) {
-    console.log('hiding order', id);
     return this.apiClient.hideOrder({ id });
   }
 
