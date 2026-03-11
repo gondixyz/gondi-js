@@ -1,3 +1,105 @@
+# Breaking Changes 0.27.3
+
+### Important
+
+---
+
+This document outlines the breaking changes introduced in our codebase for version 0.27.3. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [OnStepChange Refactor](#onstepchange-refactor) `id` and `executionId` removed, new `api` step type added
+- [reservoirApiKey Removed](#reservoirapikey-removed) removed from `GondiProps`
+- [encodeRepayLoan / encodeEmitLoan](#encoderepayloan--encodeemitloan) `onStepChange` parameter removed from internal contract methods
+
+---
+
+## OnStepChange Refactor
+
+**Description:**
+
+The `onStepChange` callback system has been refactored:
+
+- BREAKING: The `id` field has been removed from the `Step` type. Steps no longer carry an incrementing numeric identifier.
+- BREAKING: The `executionId` parameter has been removed from `Gondi.create()`.
+- NEW: A new `'api'` step type has been added to track GraphQL mutation progress (with `mutationName` field).
+- ENHANCEMENT: `onStepChange` can now be passed directly to the `Gondi` constructor (not just `Gondi.create()`), and it now also tracks API mutations automatically.
+
+**Migration Steps:**
+
+```typescript
+// Before
+const gondi = Gondi.create({
+  wallet,
+  onStepChange: (step) => {
+    console.log(step.id, step.type, step.status);
+  },
+  executionId: 5,
+});
+
+// After
+const gondi = Gondi.create({
+  wallet,
+  onStepChange: (step) => {
+    // step.id no longer exists
+    // step.type can now be 'signature' | 'transaction' | 'api'
+    console.log(step.type, step.status);
+  },
+});
+
+// Or pass onStepChange directly to the constructor:
+const gondi = new Gondi({
+  wallet,
+  onStepChange: (step) => {
+    console.log(step.type, step.status);
+  },
+});
+```
+
+---
+
+## reservoirApiKey Removed
+
+**Description:**
+
+The `reservoirApiKey` option has been removed from `GondiProps`.
+
+**Migration Steps:**
+
+Remove any `reservoirApiKey` usage from your Gondi constructor calls:
+
+```typescript
+// Before
+const gondi = new Gondi({ wallet, reservoirApiKey: 'key' });
+
+// After
+const gondi = new Gondi({ wallet });
+```
+
+---
+
+## encodeRepayLoan / encodeEmitLoan
+
+**Description:**
+
+The `onStepChange` parameter has been removed from `encodeRepayLoan` (MslV5, MslV6) and `encodeEmitLoan` (MslV6). Step tracking is now handled automatically at the wallet level via the `onStepChange` callback passed to `Gondi.create()` or the constructor.
+
+**Migration Steps:**
+
+Remove the `onStepChange` parameter from calls to these internal methods:
+
+```typescript
+// Before
+await msl.encodeRepayLoan({ repayArgs, withSignature: true, onStepChange: () => {} });
+await msl.encodeEmitLoan({ emitArgs, withSignature: true, onStepChange: () => {} });
+
+// After
+await msl.encodeRepayLoan({ repayArgs, withSignature: true });
+await msl.encodeEmitLoan({ emitArgs, withSignature: true });
+```
+
+---
+
 # Breaking Changes 0.27.1
 
 ### Important

@@ -7,6 +7,7 @@ import {
 import { type DocumentNode } from 'graphql';
 
 import { getSdk, Requester } from '@/generated/graphql';
+import { OnStepChange } from '@/gondi';
 
 export type ApolloRequesterOptions<V, R> =
   | Omit<QueryOptions<V>, 'variables' | 'query'>
@@ -15,7 +16,7 @@ export type ApolloRequesterOptions<V, R> =
 const validDocDefOps = ['mutation', 'query', 'subscription'];
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export function getSdkApollo<C>(client: ApolloClient<C>) {
+export function getSdkApollo<C>(client: ApolloClient<C>, onStepChange?: OnStepChange) {
   const requester: Requester = async <R, V>(
     doc: DocumentNode,
     variables?: V,
@@ -46,6 +47,11 @@ export function getSdkApollo<C>(client: ApolloClient<C>) {
 
     switch (definition.operation) {
       case 'mutation': {
+        onStepChange?.({
+          type: 'api',
+          status: 'waiting',
+          mutationName: definition.name?.value ?? '',
+        });
         const response = await client.mutate({
           mutation: doc,
           variables: variables as unknown as OperationVariables,
@@ -61,6 +67,11 @@ export function getSdkApollo<C>(client: ApolloClient<C>) {
           throw new Error('No data presented in the GraphQL response');
         }
 
+        onStepChange?.({
+          type: 'api',
+          status: 'success',
+          mutationName: definition.name?.value ?? '',
+        });
         return response.data;
       }
       case 'query': {
