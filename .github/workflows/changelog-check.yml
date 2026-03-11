@@ -1,0 +1,40 @@
+name: Changelog Check
+
+on:
+  pull_request:
+    branches: ['main']
+    paths:
+      - 'package.json'
+
+jobs:
+  changelog-check:
+    name: Check changelog entry for version bump
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from PR branch
+        id: pr_version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Get version from base branch
+        id: base_version
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          echo "version=$(git show origin/${{ github.base_ref }}:package.json | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).version")" >> $GITHUB_OUTPUT
+
+      - name: Check changelog entry
+        if: steps.pr_version.outputs.version != steps.base_version.outputs.version
+        run: |
+          VERSION="${{ steps.pr_version.outputs.version }}"
+          echo "Version bumped from ${{ steps.base_version.outputs.version }} to $VERSION"
+          if grep -q "# Breaking Changes $VERSION" CHANGELOG.md; then
+            echo "✓ CHANGELOG.md contains an entry for version $VERSION"
+          else
+            echo "✗ CHANGELOG.md is missing an entry for version $VERSION"
+            echo "  Please add a '# Breaking Changes $VERSION' section to CHANGELOG.md"
+            exit 1
+          fi
