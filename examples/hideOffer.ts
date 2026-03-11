@@ -1,12 +1,16 @@
-import { OfferStatus } from 'gondi';
+import { Gondi, OfferStatus } from 'gondi';
 
 import {
   setAllowances,
   sleep,
   testCollectionOfferInput,
   testSingleNftOfferInput,
-  users,
+  wallets,
 } from './common';
+
+const users = wallets.map((wallet) =>
+  Gondi.create({ wallet, onStepChange: async (step) => console.log(step) }),
+);
 
 async function main() {
   await setAllowances();

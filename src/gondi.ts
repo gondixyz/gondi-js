@@ -50,10 +50,10 @@ interface GondiProps {
   wallet: Wallet;
   apiClient?: ApiProps['apiClient'];
   openseaApiKey?: string;
-  reservoirApiKey?: string;
+  onStepChange?: OnStepChange;
 }
 
-type Step = { id: number } & (
+type Step =
   | {
       type: 'signature';
       primaryType: string;
@@ -65,8 +65,13 @@ type Step = { id: number } & (
       to: Address;
       functionNameOrSelector: string; // can be a function name or a function selector
     }
-);
+  | {
+      type: 'api';
+      status: 'waiting' | 'success';
+      mutationName: string;
+    };
 
+// TODO: Add TS types for primaryType, functionNameOrSelector and mutationName
 export type OnStepChange = (step: Step) => Promise<void>;
 
 export class Gondi {
@@ -77,7 +82,7 @@ export class Gondi {
   apiClient: Api;
   openseaClient: Opensea;
 
-  constructor({ wallet, apiClient, openseaApiKey }: GondiProps) {
+  constructor({ wallet, apiClient, openseaApiKey, onStepChange }: GondiProps) {
     this.wallet = wallet;
     this.account = wallet.account;
     this.bcClient = createPublicClient({
@@ -85,21 +90,19 @@ export class Gondi {
       transport: () => createTransport(wallet.transport),
     });
     this.contracts = new Contracts(this.bcClient, wallet);
-    this.apiClient = new Api({ wallet, apiClient });
+    this.apiClient = new Api({ wallet, apiClient, onStepChange });
     this.openseaClient = new Opensea({ apiKey: openseaApiKey ?? process.env.OPENSEA_API_KEY });
   }
 
   static create(
     props: GondiProps & {
       onStepChange: OnStepChange;
-      executionId?: number | null;
     },
   ) {
-    const { wallet, onStepChange, executionId } = props;
+    const { wallet, onStepChange } = props;
     const walletWithSteps = addStepCallback({
       wallet,
       onStepChange,
-      executionId,
     });
     return new Gondi({ ...props, wallet: walletWithSteps });
   }
