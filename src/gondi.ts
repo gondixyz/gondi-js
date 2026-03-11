@@ -71,6 +71,7 @@ type Step =
       mutationName: string;
     };
 
+// TODO: Add TS types for primaryType, functionNameOrSelector and mutationName
 export type OnStepChange = (step: Step) => Promise<void>;
 
 export class Gondi {
