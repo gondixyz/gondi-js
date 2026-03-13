@@ -1,0 +1,35 @@
+mutation publishBulkOrders($bulkInput: BulkNFTOrdersInput!) {
+  result: publishBulkOrdersForNfts(bulkInput: $bulkInput) {
+    ... on SignatureRequest {
+      key
+      typedData {
+        types
+        primaryType
+        domain
+        message
+      }
+    }
+    ... on BulkNFTOrdersResult {
+      orders {
+        id
+        nft {
+          id
+        }
+        price
+        fees
+        currencyAddress
+        marketPlace
+        status
+        startTime
+        expiration
+        maker
+        isAsk
+        nonce
+        taker
+        signature
+        marketPlaceAddress
+        evmOrder
+      }
+    }
+  }
+}

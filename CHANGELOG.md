@@ -1,3 +1,43 @@
+# Breaking Changes 0.28.0
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.28.0. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [New Features](#new-features-0280) bulk NFT orders publishing added
+
+---
+
+## New Features 0.28.0
+
+**Description:**
+
+Added a new `makeOrders()` method to the `Gondi` class for publishing multiple NFT orders in a single batch operation. This complements the existing single-order flow and improves efficiency when creating multiple orders at once.
+
+The method supports a signature request flow: if the API requires a signature, it will prompt the wallet to sign the typed data before finalizing the orders.
+
+**API:**
+
+```typescript
+const orders = await gondi.makeOrders([
+  {
+    // SingleNftOrderInput
+    nftId: '...',
+    price: 1000000000000000000n,
+    // ... other order fields
+  },
+  // ... more orders
+]);
+```
+
+The method returns the published orders from the `BulkNFTOrdersResult`.
+
+---
+
 # Breaking Changes 0.27.3
 
 ### Important
