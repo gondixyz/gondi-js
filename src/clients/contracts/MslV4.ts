@@ -103,6 +103,10 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
     };
   }
 
+  async cancelOffers(_: { ids: bigint[] }): Promise<never> {
+    throw new Error('Not implemented for V1');
+  }
+
   async cancelAllOffers({ minId }: { minId: bigint }) {
     const txHash = await this.safeContractWrite.cancelAllOffers([
       this.wallet.account.address,

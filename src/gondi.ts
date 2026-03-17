@@ -394,6 +394,10 @@ export class Gondi {
     });
   }
 
+  async cancelOffers({ ids, contractAddress }: { ids: bigint[]; contractAddress: Address }) {
+    return this.contracts.Msl(contractAddress).cancelOffers({ ids });
+  }
+
   async cancelAllOffers({ minId, contractAddress }: { minId: bigint; contractAddress: Address }) {
     return this.contracts.Msl(contractAddress).cancelAllOffers({
       minId,
