@@ -7,6 +7,7 @@ import { getSdkApollo } from '@/clients/api/sdk';
 import { Wallet } from '@/clients/contracts';
 import {
   BnplOrderInput,
+  BulkNftOrdersInput,
   CollectionOrderInput,
   CollectionSignedOfferInput,
   DealInput,
@@ -17,12 +18,14 @@ import {
   SingleNftOrderInput,
   SingleNftSignedOfferInput,
 } from '@/generated/graphql';
+import { OnStepChange } from '@/gondi';
 import { RenegotiationOffer } from '@/model';
 import { isDefined } from '@/utils/types';
 
 export type Props = {
   apiClient?: ApolloClient<NormalizedCacheObject>;
   wallet: Wallet;
+  onStepChange?: OnStepChange;
 };
 
 type PageInfo = { endCursor?: string | null; hasNextPage: boolean };
@@ -51,6 +54,7 @@ export class Api {
   unlistNft;
   ownedNfts;
   hideOffer;
+  hideOffers;
   hideRenegotiationOffer;
   unhideOffer;
   unhideRenegotiationOffer;
@@ -58,9 +62,9 @@ export class Api {
   showOrder;
   collectionStepsById;
 
-  constructor({ apiClient, wallet }: Props) {
+  constructor({ apiClient, wallet, onStepChange }: Props) {
     const gqlClient = apiClient ?? apolloClient(wallet);
-    this.api = getSdkApollo(gqlClient);
+    this.api = getSdkApollo(gqlClient, onStepChange);
 
     this.getSaleCalldata = this.api.getSaleCalldata;
     this.generateSingleNftOfferHash = this.api.generateSingleNftOfferHash;
@@ -76,6 +80,7 @@ export class Api {
     this.unlistNft = this.api.unlistNft;
     this.ownedNfts = this.api.ownedNfts;
     this.hideOffer = this.api.hideOffer;
+    this.hideOffers = this.api.hideOffers;
     this.hideRenegotiationOffer = this.api.hideRenegotiationOffer;
     this.unhideOffer = this.api.unhideOffer;
     this.unhideRenegotiationOffer = this.api.unhideRenegotiationOffer;
@@ -118,12 +123,21 @@ export class Api {
   }
 
   async publishSellAndRepayOrder(orderInput: NftOrderInput) {
+    orderInput.orderToFillInt64 = orderInput.orderToFillInt64 ?? orderInput.orderToFill;
+    orderInput.replaceOrderIdInt64 = orderInput.replaceOrderIdInt64 ?? orderInput.replaceOrderId;
+    orderInput.orderToFill = undefined;
+    orderInput.replaceOrderId = undefined;
     const response = await this.api.publishSellAndRepayOrder({ orderInput });
     return response.result;
   }
 
   async publishBuyNowPayLaterOrder(orderInput: BnplOrderInput) {
     const response = await this.api.publishBuyNowPayLaterOrder({ orderInput });
+    return response.result;
+  }
+
+  async publishBulkOrders(bulkInput: BulkNftOrdersInput) {
+    const response = await this.api.publishBulkOrders({ bulkInput });
     return response.result;
   }
 

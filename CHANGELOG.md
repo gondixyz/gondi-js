@@ -1,3 +1,455 @@
+# Breaking Changes 0.28.0
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.28.0. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [New Features](#new-features-0280) bulk NFT orders publishing added
+
+---
+
+## New Features 0.28.0
+
+**Description:**
+
+Added a new `makeOrders()` method to the `Gondi` class for publishing multiple NFT orders in a single batch operation. This complements the existing single-order flow and improves efficiency when creating multiple orders at once.
+
+The method supports a signature request flow: if the API requires a signature, it will prompt the wallet to sign the typed data before finalizing the orders.
+
+**API:**
+
+```typescript
+const orders = await gondi.makeOrders([
+  {
+    // SingleNftOrderInput
+    nftId: '...',
+    price: 1000000000000000000n,
+    // ... other order fields
+  },
+  // ... more orders
+]);
+```
+
+The method returns the published orders from the `BulkNFTOrdersResult`.
+
+---
+
+# Breaking Changes 0.27.3
+
+### Important
+
+---
+
+This document outlines the breaking changes introduced in our codebase for version 0.27.3. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [OnStepChange Refactor](#onstepchange-refactor) `id` and `executionId` removed, new `api` step type added
+- [reservoirApiKey Removed](#reservoirapikey-removed) removed from `GondiProps`
+- [encodeRepayLoan / encodeEmitLoan](#encoderepayloan--encodeemitloan) `onStepChange` parameter removed from internal contract methods
+
+---
+
+## OnStepChange Refactor
+
+**Description:**
+
+The `onStepChange` callback system has been refactored:
+
+- BREAKING: The `id` field has been removed from the `Step` type. Steps no longer carry an incrementing numeric identifier.
+- BREAKING: The `executionId` parameter has been removed from `Gondi.create()`.
+- NEW: A new `'api'` step type has been added to track GraphQL mutation progress (with `mutationName` field).
+- ENHANCEMENT: `onStepChange` can now be passed directly to the `Gondi` constructor (not just `Gondi.create()`), and it now also tracks API mutations automatically.
+
+**Migration Steps:**
+
+```typescript
+// Before
+const gondi = Gondi.create({
+  wallet,
+  onStepChange: (step) => {
+    console.log(step.id, step.type, step.status);
+  },
+  executionId: 5,
+});
+
+// After
+const gondi = Gondi.create({
+  wallet,
+  onStepChange: (step) => {
+    // step.id no longer exists
+    // step.type can now be 'signature' | 'transaction' | 'api'
+    console.log(step.type, step.status);
+  },
+});
+
+// Or pass onStepChange directly to the constructor:
+const gondi = new Gondi({
+  wallet,
+  onStepChange: (step) => {
+    console.log(step.type, step.status);
+  },
+});
+```
+
+---
+
+## reservoirApiKey Removed
+
+**Description:**
+
+The `reservoirApiKey` option has been removed from `GondiProps`.
+
+**Migration Steps:**
+
+Remove any `reservoirApiKey` usage from your Gondi constructor calls:
+
+```typescript
+// Before
+const gondi = new Gondi({ wallet, reservoirApiKey: 'key' });
+
+// After
+const gondi = new Gondi({ wallet });
+```
+
+---
+
+## encodeRepayLoan / encodeEmitLoan
+
+**Description:**
+
+The `onStepChange` parameter has been removed from `encodeRepayLoan` (MslV5, MslV6) and `encodeEmitLoan` (MslV6). Step tracking is now handled automatically at the wallet level via the `onStepChange` callback passed to `Gondi.create()` or the constructor.
+
+**Migration Steps:**
+
+Remove the `onStepChange` parameter from calls to these internal methods:
+
+```typescript
+// Before
+await msl.encodeRepayLoan({ repayArgs, withSignature: true, onStepChange: () => {} });
+await msl.encodeEmitLoan({ emitArgs, withSignature: true, onStepChange: () => {} });
+
+// After
+await msl.encodeRepayLoan({ repayArgs, withSignature: true });
+await msl.encodeEmitLoan({ emitArgs, withSignature: true });
+```
+
+---
+
+# Breaking Changes 0.27.1
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.27.1. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [New Features](#new-features-0271) hideOffers batch mutation method added
+
+---
+
+## New Features 0.27.1
+
+**Description:**
+
+Added a new `hideOffers()` method to the `Gondi` class for batch hiding multiple offers in a single transaction. This complements the existing `hideOffer()` method and improves efficiency when managing multiple offers.
+
+**API:**
+
+```typescript
+await gondi.hideOffers({
+  ids: offerIds,
+  contractAddress: contractAddress,
+});
+```
+
+The method accepts an array of offer IDs and hides them all in a single batch mutation.
+
+---
+
+# Breaking Changes 0.27.0
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.27.0. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [Bug Fixes](#bug-fixes-0270) fixed missing Int64 field references
+
+---
+
+## Bug Fixes 0.27.0
+
+**Description:**
+
+- Fixed missing Int64 field references that were introduced in v0.26.3. The Int64 scalar type was previously added in v0.26.3 where `orderId` changed from `bigint` to `number`, but some references were missing and have now been corrected.
+
+---
+
+# Breaking Changes 0.26.3
+
+### Important
+
+---
+
+This document outlines the breaking changes introduced in our codebase for version 0.26.3. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [Int64 Scalar Type](#int64-scalar-type) orderId type changed from bigint to number
+
+---
+
+## Int64 Scalar Type
+
+**Description:**
+
+The `orderId` field type has been changed from `bigint` to `number` (Int64 scalar) in the following methods:
+
+- `hideOrder()` mutation
+- `showOrder()` mutation
+- `getSaleCalldata()` query
+
+This change aligns with GraphQL's Int64 scalar type for better API compatibility. Note that Int64 can represent values up to 2^53-1 accurately in JavaScript.
+
+**Migration Steps:**
+
+Update any code that passes `orderId` as `bigint` to use `number` instead:
+
+```typescript
+// Before
+await gondi.hideOrder({ id: 123n, contractAddress: '0x...' });
+
+// After
+await gondi.hideOrder({ id: 123, contractAddress: '0x...' });
+```
+
+---
+
+# Breaking Changes 0.26.0
+
+### Important
+
+---
+
+This document outlines the breaking changes introduced in our codebase for version 0.26.0. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [PurchaseBundler V2](#purchasebundler-v2) major refactor with new required parameters
+
+---
+
+## PurchaseBundler V2
+
+**Description:**
+
+PurchaseBundler has been upgraded to V2 with significant changes:
+
+- `PurchaseBundler.ts` renamed to `PurchaseBundlerV1.ts`
+- New `PurchaseBundlerV2` contract wrapper added
+- Methods now require `purchaseBundlerAddress` parameter:
+  - `buyNowPayLater()`
+  - `buyWithSellAndRepay()`
+  - `sellAndRepay()`
+- Added swap data support for improved trading flexibility
+
+**Migration Steps:**
+
+Update all PurchaseBundler method calls to include the new required parameter:
+
+```typescript
+// Before
+await gondi.buyNowPayLater({
+  loan,
+  price,
+  // ... other params
+});
+
+// After
+await gondi.buyNowPayLater({
+  loan,
+  price,
+  purchaseBundlerAddress: '0x...', // Required
+  sellAndRepaySwapData: swapData, // Optional
+  repayFlashLoanSwapParams: swapParams, // Optional
+  // ... other params
+});
+```
+
+---
+
+# Breaking Changes 0.25.1
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.25.1. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [Make Deal](#make-deal) new method for publishing deals
+
+---
+
+## Make Deal
+
+**Description:**
+
+New `makeDeal()` method added for publishing deals with signatures:
+
+```typescript
+const deal = await gondi.makeDeal({
+  // DealInput parameters
+});
+```
+
+---
+
+# Breaking Changes 0.25.0
+
+### Important
+
+---
+
+This document outlines the breaking changes introduced in our codebase for version 0.25.0. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [OnStepChange Opt-In](#onstepchange-optin) enhanced callback handling for transaction tracking
+
+---
+
+## OnStepChange Opt-In
+
+**Description:**
+
+Enhanced the `onStepChange` callback feature (originally introduced in v0.24.4) with opt-in improvements:
+
+- Refined callback behavior to be opt-in
+- Better integration with wallet step tracking
+- Improved transaction progress monitoring
+
+**Migration Steps:**
+
+The `onStepChange` callback remains optional when creating Gondi instance:
+
+```typescript
+const gondi = await Gondi.create({
+  wallet,
+  onStepChange: (step) => {
+    console.log('Transaction step:', step);
+  },
+  executionId: 'unique-id', // Optional
+});
+```
+
+---
+
+# Breaking Changes 0.24.7
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.24.7. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [Sell and Repay OpenSea](#sell-and-repay-opensea) enhanced OpenSea data support
+
+---
+
+## Sell and Repay OpenSea
+
+**Description:**
+
+Enhanced `makeSellAndRepayOrder()` with additional OpenSea data support for improved marketplace integration.
+
+---
+
+# Breaking Changes 0.24.4
+
+### Important
+
+---
+
+This document outlines the breaking changes introduced in our codebase for version 0.24.4. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [OnStepChange Callback](#onstepchange-callback) Gondi.create() now accepts callback for transaction tracking
+
+---
+
+## OnStepChange Callback
+
+**Description:**
+
+`Gondi.create()` now accepts an optional `onStepChange` callback for tracking transaction progress:
+
+- New `OnStepChange` type exported
+- Added `executionId` parameter
+- Step tracking with new types and codes for monitoring transaction states
+
+**Migration Steps:**
+
+To track transaction progress, provide the callback when creating Gondi instance:
+
+```typescript
+const gondi = await Gondi.create({
+  wallet,
+  onStepChange: (step) => {
+    console.log('Transaction step:', step);
+  },
+  executionId: 'unique-id', // Optional
+});
+```
+
+---
+
+# Breaking Changes 0.24.0
+
+### Important
+
+---
+
+This document outlines the breaking changes introduced in our codebase for version 0.24.0. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [PositionMigrator Contract](#positionmigrator-contract) new contract for loan migrations
+
+---
+
+## PositionMigrator Contract
+
+**Description:**
+
+New `PositionMigrator` contract wrapper added for loan position migrations:
+
+- `flashRenegotiation()` method for flash loan-based renegotiations
+- Smart Migrate V2 contract integration (added in v0.24.3)
+- Enhanced MSL V5 refinancing support
+
+```typescript
+await gondi.flashRenegotiation({
+  // Flash renegotiation parameters
+});
+```
+
+---
+
 # Breaking Changes 0.23.0
 
 ### Important
