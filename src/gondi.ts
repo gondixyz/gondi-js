@@ -359,6 +359,9 @@ export class Gondi {
     if (response.__typename !== 'BuyNowPayLaterOrder') throw new Error('This should never happen');
 
     if (isDefined(repaymentCalldata)) {
+      if (this.wallet.chain.id === 999) {
+        throw new Error('Buy-with-loan with Sell&Repay is not supported on HyperEVM');
+      }
       const pb = this.contracts.PurchaseBundler(purchaseBundlerAddress, offers[0].contractAddress);
       if (sellAndRepaySwapData !== undefined && pb instanceof PurchaseBundlerV1) {
         throw new Error('Swap data is not supported for PurchaseBundler v1');

@@ -64,7 +64,7 @@ export class Contracts {
 
   _PBs = {
     '2': PurchaseBundlerV1,
-    '3': PurchaseBundlerV1,
+    '3': PurchaseBundlerV2, // We use PB_V2 for MSL V3.0
     '3.1': PurchaseBundlerV1,
     '3.1_PB_V2': PurchaseBundlerV2,
   };
@@ -131,19 +131,15 @@ export class Contracts {
     }
 
     const msl = this.Msl(mslContractAddress);
-    if (msl instanceof MslV4) {
+    if (msl instanceof MslV4 || msl instanceof MslV5) {
       // Enforce type cast, this should never happen.
-      throw new Error('MslV4 is not supported for PurchaseBundler');
+      throw new Error('Loan version not supported for PurchaseBundler');
     }
 
     const contracts = getContracts(this.walletClient.chain);
     const resolvedAddress = address ?? contracts.PurchaseBundler[mslVersion];
     const version = getVersionFromPurchaseBundlerAddress(this.walletClient.chain, resolvedAddress);
     const PurchaseBundler = this._PBs[version];
-
-    if ((mslVersion === '2' || mslVersion === '3') && version === '3.1_PB_V2') {
-      throw new Error('PurchaseBundlerV2 is not supported for MslV5 or MslV6');
-    }
 
     return new PurchaseBundler({
       walletClient: this.walletClient,
