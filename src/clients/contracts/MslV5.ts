@@ -110,6 +110,22 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
     };
   }
 
+  async cancelOffers({ ids }: { ids: bigint[] }) {
+    const encoded = ids.map((id) =>
+      encodeFunctionData({ abi: this.abi, functionName: 'cancelOffer', args: [id] }),
+    );
+    const txHash = await this.safeContractWrite.multicall([encoded]);
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({ hash: txHash });
+        const events = this.parseEventLogs('OfferCancelled', receipt.logs);
+        if (events.length !== ids.length) throw new Error('Offers not cancelled');
+        return { events: events.map(({ args }) => args), ...receipt };
+      },
+    };
+  }
+
   async cancelAllOffers({ minId }: { minId: bigint }) {
     const txHash = await this.safeContractWrite.cancelAllOffers([minId]);
 
