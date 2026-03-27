@@ -8,11 +8,11 @@ import { setContext } from '@apollo/client/link/context/index.js';
 import { withScalars } from 'apollo-link-scalars';
 import { buildSchema } from 'graphql';
 
-import { apiDomain } from '@/clients/api';
 import { Credential, SessionToken } from '@/clients/api/auth';
 import { Wallet } from '@/clients/contracts';
 import lendingSchemaText from '@/generated/graphql/lending-schema.graphql';
 
+export const apiDomain = () => process.env.GONDI_URL ?? 'https://api2.gondi.xyz';
 const apiUrl = () => `${apiDomain()}/lending/graphql`;
 const lendingSchema = buildSchema(lendingSchemaText);
 
