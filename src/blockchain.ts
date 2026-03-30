@@ -94,3 +94,8 @@ export const zeroHex: HexString = `0x0`;
 export const REORG_SAFETY_BUFFER = 5n * 60n;
 
 export const isNativeCurrency = (address: Address) => areSameAddress(address, zeroAddress);
+
+// TODO: replace with viem/chains after upgrading viem
+export const hyperliquid = {
+  id: 999 as const,
+};

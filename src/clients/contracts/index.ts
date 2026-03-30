@@ -64,7 +64,7 @@ export class Contracts {
 
   _PBs = {
     '2': PurchaseBundlerV1,
-    '3': PurchaseBundlerV2, // We use PB_V2 for MSL V3.0
+    '3': PurchaseBundlerV2,
     '3.1': PurchaseBundlerV1,
     '3.1_PB_V2': PurchaseBundlerV2,
   };
