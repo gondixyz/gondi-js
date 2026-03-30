@@ -1,6 +1,7 @@
 import { Address, Chain, Hash, isAddress, zeroAddress } from 'viem';
 import { mainnet } from 'viem/chains';
 
+import { hyperliquid } from '@/blockchain';
 import { entries } from '@/utils/object';
 import { areSameAddress } from '@/utils/string';
 
@@ -139,8 +140,7 @@ const contractsByChain: Record<number, Contracts> = {
     Aave: '0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2',
     Cryptopunks: '0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb',
   },
-  // HyperEVM
-  [999]: {
+  [hyperliquid.id]: {
     MultiSourceLoan: {
       '1': zeroAddress,
       '2': zeroAddress,
