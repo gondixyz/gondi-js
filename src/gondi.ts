@@ -45,7 +45,6 @@ import { max, mulDivUp } from '@/utils/number';
 import { isNative, isOpensea } from '@/utils/orders';
 import { isDefined, OptionalNullable } from '@/utils/types';
 
-import { hyperliquid } from './blockchain';
 import { isFulfillAdvancedOrderFunctionName } from './clients/opensea/types';
 
 interface GondiProps {
@@ -360,9 +359,6 @@ export class Gondi {
     if (response.__typename !== 'BuyNowPayLaterOrder') throw new Error('This should never happen');
 
     if (isDefined(repaymentCalldata)) {
-      if (this.wallet.chain.id === hyperliquid.id) {
-        throw new Error('Buy-with-loan with Sell&Repay is not supported on HyperEVM');
-      }
       const pb = this.contracts.PurchaseBundler(purchaseBundlerAddress, offers[0].contractAddress);
       if (sellAndRepaySwapData !== undefined && pb instanceof PurchaseBundlerV1) {
         throw new Error('Swap data is not supported for PurchaseBundler v1');
