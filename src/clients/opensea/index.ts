@@ -1,7 +1,7 @@
 import { Address } from 'viem';
 import { mainnet } from 'viem/chains';
 
-import { zeroHash } from '@/blockchain';
+import { hyperliquid, zeroHash } from '@/blockchain';
 import { max, sumBigInt } from '@/utils/number';
 
 import { FulfillmentDataResponse, isFulfillAdvancedOrder, isMatchAdvancedOrders } from './types';
@@ -22,7 +22,7 @@ export class Opensea {
 
   private openseaBlockchainByChainId: Record<number, string> = {
     [mainnet.id]: 'ethereum',
-    [999]: 'hyperevm',
+    [hyperliquid.id]: 'hyperevm',
   } as const;
 
   async fulfillOrder({
