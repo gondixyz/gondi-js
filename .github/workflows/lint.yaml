@@ -26,4 +26,4 @@ jobs:
         run: bun run verify
 
       - name: Security Audit
-        run: bun audit --audit-level high
+        run: bun audit
