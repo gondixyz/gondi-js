@@ -3,8 +3,6 @@ name: Changelog Check
 on:
   pull_request:
     branches: ['main']
-    paths:
-      - 'package.json'
 
 jobs:
   changelog-check:
@@ -27,14 +25,22 @@ jobs:
           echo "version=$(git show origin/${{ github.base_ref }}:package.json | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).version")" >> $GITHUB_OUTPUT
 
       - name: Check changelog entry
-        if: steps.pr_version.outputs.version != steps.base_version.outputs.version
         run: |
-          VERSION="${{ steps.pr_version.outputs.version }}"
-          echo "Version bumped from ${{ steps.base_version.outputs.version }} to $VERSION"
-          if grep -q "# Breaking Changes $VERSION" CHANGELOG.md; then
-            echo "✓ CHANGELOG.md contains an entry for version $VERSION"
+          PR_VERSION="${{ steps.pr_version.outputs.version }}"
+          BASE_VERSION="${{ steps.base_version.outputs.version }}"
+          if [ "$PR_VERSION" = "$BASE_VERSION" ]; then
+            echo "✓ No version change detected, skipping changelog check"
+            exit 0
+          fi
+          echo "Version bumped from $BASE_VERSION to $PR_VERSION"
+          if grep -qE "^# (Breaking Changes|New Features|Changes|Bug Fixes) $PR_VERSION" CHANGELOG.md; then
+            echo "✓ CHANGELOG.md contains an entry for version $PR_VERSION"
           else
-            echo "✗ CHANGELOG.md is missing an entry for version $VERSION"
-            echo "  Please add a '# Breaking Changes $VERSION' section to CHANGELOG.md"
+            echo "✗ CHANGELOG.md is missing an entry for version $PR_VERSION"
+            echo "  Please add one of the following sections to CHANGELOG.md:"
+            echo "    # Breaking Changes $PR_VERSION"
+            echo "    # New Features $PR_VERSION"
+            echo "    # Changes $PR_VERSION"
+            echo "    # Bug Fixes $PR_VERSION"
             exit 1
           fi
