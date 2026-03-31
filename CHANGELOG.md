@@ -1,3 +1,28 @@
+# Changes 0.29.3
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.29.3.
+
+## Table of Contents
+
+- [CI Fix](#ci-fix-0293) fix npm publish and prevent orphaned releases
+
+---
+
+## CI Fix 0.29.3
+
+**Description:**
+
+- FIX: Pinned esbuild devDependency to `0.25.12` to match override and resolve `EOVERRIDE` error during `npm publish`
+- FIX: Reordered CI workflow to run npm publish before creating GitHub tag/release
+- FIX: Removed silent error swallowing (`|| echo "Does not publish"`) so publish failures are visible
+- ENHANCEMENT: GitHub release and tag are now conditional on successful npm publish
+
+---
+
 # Changes 0.29.2
 
 ### Important
