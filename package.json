@@ -18,6 +18,7 @@
     "analyze": "METAFILE=true yarn build",
     "build": "node esbuild.js && tsc && tsc-alias",
     "build-unbundle": "tsc --outDir dist && tsc-alias",
+    "verify": "bun run lint && bun run fmt-check",
     "lint": "yarn run fmt-check && eslint src/ --ext .js,.jsx,.ts,.tsx",
     "lint-fix": "yarn run fmt && eslint src/ --ext .js,.jsx,.ts,.tsx --fix",
     "fmt-check": "prettier --config .prettierrc --ignore-path .prettierignore --check .",

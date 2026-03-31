@@ -30,8 +30,11 @@ jobs:
       - name: Build
         run: bun run build
 
-      - name: Lint
-        run: bun run lint
+      - name: Verify
+        run: bun run verify
+
+      - name: Security Audit
+        run: bun audit --audit-level high
 
       - name: Set package.json version as env
         run: node -p -e '`PACKAGE_VERSION=${require("./package.json").version}`' >> $GITHUB_ENV
