@@ -85,7 +85,7 @@
     "flatted": "3.4.2",
     "handlebars": "4.7.9",
     "immutable": "5.1.5",
-    "lodash": "4.17.23",
+    "lodash": "4.18.0",
     "minimatch": "10.2.5",
     "node-fetch": "2.7.0",
     "picomatch": "4.0.4",
