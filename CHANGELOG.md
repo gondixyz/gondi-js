@@ -1,3 +1,26 @@
+# Bug Fixes 0.29.4
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.29.4.
+
+## Table of Contents
+
+- [BNPL Hyperliquid Fix](#bnpl-hyperliquid-fix-0294) fix native currency detection for Hyperliquid
+
+---
+
+## BNPL Hyperliquid Fix 0.29.4
+
+**Description:**
+
+- FIX: Extended `isNativeCurrency` to recognize Hyperliquid's native HYPE token address (`0x0000000000000000000000000000000000000999`) in addition to the standard ETH zero address
+- NEW: Exported `__ETH_ADDRESS` and `__HYPE_ADDRESS` constants for native currency addresses
+
+---
+
 # Changes 0.29.3
 
 ### Important
