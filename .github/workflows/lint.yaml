@@ -5,8 +5,8 @@ on:
     branches: ['**']
 
 jobs:
-  install-build-lint-and-deploy:
-    name: Install dependencies, build and lint
+  install-build-verify:
+    name: Install dependencies, build and verify
     runs-on: ubuntu-latest
 
     steps:
@@ -22,5 +22,8 @@ jobs:
       - name: Build
         run: bun run build
 
-      - name: Lint
-        run: bun run lint
+      - name: Verify
+        run: bun run verify
+
+      - name: Security Audit
+        run: bun audit

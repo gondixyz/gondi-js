@@ -30,8 +30,11 @@ jobs:
       - name: Build
         run: bun run build
 
-      - name: Lint
-        run: bun run lint
+      - name: Verify
+        run: bun run verify
+
+      - name: Security Audit
+        run: bun audit
 
       - name: Set package.json version as env
         run: node -p -e '`PACKAGE_VERSION=${require("./package.json").version}`' >> $GITHUB_ENV
@@ -47,8 +50,16 @@ jobs:
             echo "Tag v${{ env.PACKAGE_VERSION }} does not exist, proceeding with release"
           fi
 
-      - name: Push Tag to GitHub
+      # TODO: Use OIDC
+      - name: NPM Publish
+        id: npm_publish
         if: steps.check_tag.outputs.tag_exists == 'false'
+        run: npx can-npm-publish --verbose && npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_SECRET }}
+
+      - name: Push Tag to GitHub
+        if: steps.check_tag.outputs.tag_exists == 'false' && steps.npm_publish.outcome == 'success'
         uses: pkgdeps/git-tag-action@v2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -58,21 +69,13 @@ jobs:
           git_tag_prefix: 'v'
 
       - name: Create GitHub Release
-        if: steps.check_tag.outputs.tag_exists == 'false'
+        if: steps.check_tag.outputs.tag_exists == 'false' && steps.npm_publish.outcome == 'success'
         uses: ncipollo/release-action@v1
         with:
           tag: v${{ env.PACKAGE_VERSION }}
           name: v${{ env.PACKAGE_VERSION }}
           body: ${{ github.sha }}
           generateReleaseNotes: true
-
-      # TODO: Use OIDC
-      - name: NPM Publish
-        if: steps.check_tag.outputs.tag_exists == 'false'
-        run: |
-          npx can-npm-publish --verbose && npm publish || echo "Does not publish"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_SECRET }}
 
       - name: Generate docs
         run: bun run docs

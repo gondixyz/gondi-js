@@ -1,6 +1,7 @@
 import { Address, Chain, Hash, isAddress, zeroAddress } from 'viem';
 import { mainnet } from 'viem/chains';
 
+import { hyperliquid } from '@/blockchain';
 import { entries } from '@/utils/object';
 import { areSameAddress } from '@/utils/string';
 
@@ -131,16 +132,15 @@ const contractsByChain: Record<number, Contracts> = {
     },
     PurchaseBundler: {
       '2': '0x3b59bffe109e0f33f20887343759a98b48ecdf5f',
-      '3': '0x53ceda4c47585df08201955820e23bb261489140',
-      '3.1': '0x1FBa531724Ea2493a15Bf5c4EA05f6aB5C0FCd62',
+      '3': '0x500007b5ccc7dc461dfc0f0ac99295b2e077c333',
+      '3.1': zeroAddress, // This is not used in favour of 3.1_PB_V2
       '3.1_PB_V2': '0xe02d85e80c1ebda5aa43b8a1996332a83f855a59',
     },
     Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
     Aave: '0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2',
     Cryptopunks: '0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb',
   },
-  // HyperEVM
-  [999]: {
+  [hyperliquid.id]: {
     MultiSourceLoan: {
       '1': zeroAddress,
       '2': zeroAddress,

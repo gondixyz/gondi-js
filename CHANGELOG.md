@@ -1,3 +1,157 @@
+# Bug Fixes 0.29.4
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.29.4.
+
+## Table of Contents
+
+- [BNPL Hyperliquid Fix](#bnpl-hyperliquid-fix-0294) fix native currency detection for Hyperliquid
+
+---
+
+## BNPL Hyperliquid Fix 0.29.4
+
+**Description:**
+
+- FIX: Extended `isNativeCurrency` to recognize Hyperliquid's native HYPE token address (`0x0000000000000000000000000000000000000999`) in addition to the standard ETH zero address
+- NEW: Exported `__ETH_ADDRESS` and `__HYPE_ADDRESS` constants for native currency addresses
+
+---
+
+# Changes 0.29.3
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.29.3.
+
+## Table of Contents
+
+- [CI Fix](#ci-fix-0293) fix npm publish and prevent orphaned releases
+
+---
+
+## CI Fix 0.29.3
+
+**Description:**
+
+- FIX: Pinned esbuild devDependency to `0.25.12` to match override and resolve `EOVERRIDE` error during `npm publish`
+- FIX: Reordered CI workflow to run npm publish before creating GitHub tag/release
+- FIX: Removed silent error swallowing (`|| echo "Does not publish"`) so publish failures are visible
+- ENHANCEMENT: GitHub release and tag are now conditional on successful npm publish
+
+---
+
+# Changes 0.29.2
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.29.2.
+
+## Table of Contents
+
+- [CI Improvements](#ci-improvements-0292) verify script, security audit, and changelog check fixes
+
+---
+
+## CI Improvements 0.29.2
+
+**Description:**
+
+- NEW: Added `verify` script in `package.json` combining `lint` and `fmt-check`
+- NEW: Added `bun audit` security audit step to CI workflows (`lint.yaml` and `main.yaml`)
+- FIX: Fixed `changelog-check.yml` workflow bypassing failure when later commits don't touch `package.json`
+- ENHANCEMENT: Changelog check now accepts multiple header types (`Breaking Changes`, `New Features`, `Changes`, `Bug Fixes`)
+- ENHANCEMENT: Added `overrides` in `package.json` to resolve transitive dependency vulnerabilities (minimatch, ws, handlebars, flatted, picomatch, node-fetch, immutable, ajv, lodash, yaml, yargs-parser, esbuild)
+
+---
+
+# Changes 0.29.1
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.29.1.
+
+## Table of Contents
+
+- [Enable V3 Sell and Repay](#enable-v3-sell-and-repay-0291) PurchaseBundler V3 mapping fix and Hyperliquid support
+
+---
+
+## Enable V3 Sell and Repay 0.29.1
+
+**Description:**
+
+- FIX: PurchaseBundler version `'3'` now correctly maps to `PurchaseBundlerV2` instead of `PurchaseBundlerV1`
+- FIX: Removed incompatibility check that prevented `PurchaseBundlerV2` from working with MslV5/MslV6
+- FIX: Updated PurchaseBundler `'3'` and `'3.1'` contract addresses on mainnet
+- NEW: Added `hyperliquid` blockchain configuration (chain ID 999)
+
+---
+
+# New Features 0.29.0
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.29.0.
+
+## Table of Contents
+
+- [Cancel Offers](#cancel-offers-0290) batch offer cancellation in a single transaction
+
+---
+
+## Cancel Offers 0.29.0
+
+**Description:**
+
+Added a new `cancelOffers()` method to the `Gondi` class for canceling multiple offers in a single transaction via multicall. Supported on V5 and V6 contracts (V4 throws "Not implemented").
+
+**API:**
+
+```typescript
+await gondi.cancelOffers({
+  ids: [offerId1, offerId2, offerId3],
+  contractAddress: mslContractAddress,
+});
+```
+
+Returns transaction hash and receipt with parsed `OfferCancelled` events.
+
+---
+
+# Bug Fixes 0.28.1
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.28.1.
+
+## Table of Contents
+
+- [Contract Address Fix](#contract-address-fix-0281) updated PurchaseBundler 3.1_PB_V2 address
+
+---
+
+## Contract Address Fix 0.28.1
+
+**Description:**
+
+Updated the PurchaseBundler version `'3.1_PB_V2'` contract address on mainnet to the correct deployment address.
+
+---
+
 # Breaking Changes 0.28.0
 
 ### Important
@@ -137,6 +291,30 @@ await msl.encodeEmitLoan({ emitArgs, withSignature: true, onStepChange: () => {}
 await msl.encodeRepayLoan({ repayArgs, withSignature: true });
 await msl.encodeEmitLoan({ emitArgs, withSignature: true });
 ```
+
+---
+
+# Bug Fixes 0.27.2
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.27.2.
+
+## Table of Contents
+
+- [BNPL Currency Fix](#bnpl-currency-fix-0272) fixed ETH being passed for non-native currency loans
+
+---
+
+## BNPL Currency Fix 0.27.2
+
+**Description:**
+
+Fixed `buyNowPayLater()` to only pass ETH value when the loan currency is native (ETH). Previously, ETH was always sent regardless of the currency type, which caused issues with stablecoin-denominated loans.
+
+Added `isNativeCurrency()` utility function and updated GraphQL schema with new `currencyAddress` field on `BuyNowPayLaterOrder`.
 
 ---
 
