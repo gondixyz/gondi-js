@@ -30,9 +30,9 @@ jobs:
         with:
           ref: ${{ matrix.branch }}
 
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: package.json
 
       - uses: actions/cache@v4
         with:
