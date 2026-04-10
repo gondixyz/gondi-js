@@ -1,3 +1,27 @@
+# Changes 0.29.5
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.29.5.
+
+## Table of Contents
+
+- [Lending API URL Split](#lending-api-url-split-0295) separate lending GraphQL endpoint from the general API domain
+
+---
+
+## Lending API URL Split 0.29.5
+
+**Description:**
+
+- NEW: Added `lendingApiDomain()` helper in `@/clients/api` that returns the lending GraphQL endpoint (`https://api2.gondi.xyz`), independent from the existing `apiDomain()` (`https://api.gondi.xyz`). Both still honor `GONDI_URL` when set.
+- CHANGE: The Apollo lending client now builds its URL from `lendingApiDomain()` instead of `apiDomain()`, so the lending GraphQL endpoint no longer piggy-backs on the general API host.
+- CHANGE: Updated the default `GONDI_API` schema URL used by `bun run gql:types` (codegen) to point at `https://api2.gondi.xyz/lending/graphql`.
+
+---
+
 # Bug Fixes 0.29.4
 
 ### Important
