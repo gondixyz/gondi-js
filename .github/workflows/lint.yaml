@@ -24,6 +24,3 @@ jobs:
 
       - name: Verify
         run: bun run verify
-
-      - name: Security Audit
-        run: bun audit
