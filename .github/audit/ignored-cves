@@ -1,0 +1,8 @@
+# GHSA IDs to suppress in scheduled dependency audits.
+# Format: one GHSA ID per line. Lines starting with `#` are comments and
+# the most recent comment is shown as the "Reason" for the next ID in the
+# auto-managed security issue.
+#
+# Example:
+#   # webpack — pinned by transitive dep, no fix available
+#   GHSA-8fgc-7cc6-rx7x

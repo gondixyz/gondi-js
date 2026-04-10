@@ -1,0 +1,60 @@
+name: Scheduled dependency audit
+
+on:
+  schedule:
+    # Twice daily: 9:30 AM UTC and 5:00 PM UTC
+    - cron: '30 9 * * *'
+    - cron: '0 17 * * *'
+  workflow_dispatch:
+
+jobs:
+  audit:
+    name: Audit (${{ matrix.branch }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      issues: write
+      contents: read
+
+    concurrency:
+      group: ${{ github.workflow }}-${{ matrix.branch }}
+      cancel-in-progress: true
+
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: ['main']
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
+
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            ./node_modules
+          key: ${{ runner.os }}-bun-cache-${{ matrix.branch }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-cache-${{ matrix.branch }}-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run audit
+        id: audit
+        continue-on-error: true
+        run: .github/scripts/run-audit.sh
+
+      - name: Report audit results
+        env:
+          BRANCH: ${{ matrix.branch }}
+          AUDIT_OUTPUT: ${{ steps.audit.outputs.output }}
+          AUDIT_EXIT_CODE: ${{ steps.audit.outputs.exit_code }}
+          GH_TOKEN: ${{ github.token }}
+        run: .github/scripts/audit-report.sh
