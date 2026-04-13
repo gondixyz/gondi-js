@@ -30,6 +30,7 @@ import {
   SingleNftOrderInput,
   SingleNftSignedOfferInput,
   TokenStandardType,
+  TraitOrderInput,
 } from '@/generated/graphql';
 import * as model from '@/model';
 import { NftStandard } from '@/model';
@@ -238,7 +239,7 @@ export class Gondi {
     return await this.apiClient.saveCollectionOffer(signedOffer);
   }
 
-  async makeOrder(orderInput: SingleNftOrderInput | CollectionOrderInput) {
+  async makeOrder(orderInput: SingleNftOrderInput | CollectionOrderInput | TraitOrderInput) {
     let response = await this.apiClient.publishOrder(orderInput);
     while (response.__typename === 'SignatureRequest') {
       const key = response.key as 'signature';
@@ -246,7 +247,11 @@ export class Gondi {
       response = await this.apiClient.publishOrder(orderInput);
     }
 
-    if (response.__typename !== 'SingleNFTOrder' && response.__typename !== 'CollectionOrder')
+    if (
+      response.__typename !== 'SingleNFTOrder' &&
+      response.__typename !== 'CollectionOrder' &&
+      response.__typename !== 'TraitOrder'
+    )
       throw new Error('This should never happen');
 
     return { ...response, ...orderInput };

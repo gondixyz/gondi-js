@@ -861,6 +861,79 @@ type GlobalSearchResultNFT implements GlobalSearchResult {
   nft: NFT!
 }
 
+type GlobalSearchV2ResultAccount {
+  activeBorrowedLoansCount: Int!
+  activeLentSourcesCount: Int!
+  ensName: String!
+  heldNftsCount: Int!
+  id: Int!
+  walletAddress: String!
+}
+
+type GlobalSearchV2ResultArtist {
+  artistType: String
+  artworksCount: Int!
+  id: Int!
+  imageCacheUrl: String
+  imageContentType: String
+  imageData: String
+  name: String!
+  slug: String!
+  volume1d: Float!
+}
+
+type GlobalSearchV2ResultCollection {
+  blockchain: String!
+  contractAddress: String!
+  floorPriceAmount: Float
+  floorPriceCurrencyAddress: String
+  floorPriceCurrencyDecimals: Int
+  floorPriceCurrencySymbol: String
+  id: Int!
+  imageCacheUrl: String
+  imageContentType: String
+  imageData: String
+  name: String
+  slug: String!
+}
+
+type GlobalSearchV2ResultNFT {
+  blockchain: String!
+  collectionId: Int!
+  collectionImageCacheUrl: String
+  collectionImageData: String
+  collectionName: String
+  collectionSlug: String!
+  contractAddress: String!
+  erc20Balances: [SearchERC20Balance!]!
+  id: Int!
+  imageCacheUrl: String
+  imageContentType: String
+  imageData: String
+  isVault: Boolean!
+  name: String
+  nftId: String!
+  owner: String
+  priceCurrencyAddress: String
+  priceCurrencyDecimals: Int
+  priceCurrencySymbol: String
+  priceValue: BigInt
+  tokenId: String!
+  wrappedCounts: [Int!]!
+  wrappedImageCacheUrls: [String!]!
+  wrappedImageContentTypes: [String!]!
+  wrappedImageData: [String!]!
+}
+
+union GlobalSearchV2ResultNFTGlobalSearchV2ResultCollectionGlobalSearchV2ResultArtistGlobalSearchV2ResultAccount = GlobalSearchV2ResultAccount | GlobalSearchV2ResultArtist | GlobalSearchV2ResultCollection | GlobalSearchV2ResultNFT
+
+type GlobalSearchV2Results {
+  accounts: [GlobalSearchV2ResultAccount!]!
+  artists: [GlobalSearchV2ResultArtist!]!
+  collections: [GlobalSearchV2ResultCollection!]!
+  nfts: [GlobalSearchV2ResultNFT!]!
+}
+
 scalar Hash
 
 scalar Hex
@@ -871,6 +944,13 @@ scalar Int64
 input Interval {
   max: Float = null
   min: Float = null
+}
+
+enum ItemVisitType {
+  ACCOUNT
+  ARTIST
+  COLLECTION
+  NFT
 }
 
 """
@@ -1504,9 +1584,15 @@ type Mutation {
   publishOrderForNft(orderInput: SingleNFTOrderInput!): SingleNFTOrderSignatureRequest!
 
   """
+  Creates a trait bid order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive a TraitOrder if everything went well. An order can only be a BID. Platform fees are added to the fees array if not present. Refer to gondi-js examples for more details.
+  """
+  publishOrderForTrait(orderInput: TraitOrderInput!): TraitOrderSignatureRequest!
+
+  """
   Creates a sell and repay loan order. Sell and repay orders are orders to sell an NFT and use that money to repay a loan leaving the rest for the borrower. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You will have to do this process two times since multiple signatures are required. You should receive an SellAndRepayOrder if everything went well. Refer to gondi-js examples for more details Platform fees are added to the fees array if not present.on how to sign it and pay the order.
   """
   publishSellAndRepayOrder(orderInput: NFTOrderInput!): SellAndRepayOrderSignatureRequestExtraSeaportData!
+  recordItemVisit(itemId: String!, itemType: ItemVisitType!, turnstileToken: String!): Boolean!
 
   """Refreshes NFT metadata and image"""
   refreshNftMetadata(nftId: Int!): NFT!
@@ -2240,6 +2326,7 @@ type Query {
   """
   getBorrowingPower(borrowers: [Address!]!): Float!
   getCancelAllNftOrdersCalldata(isAsk: Boolean = null, kind: OrderKind!, nftId: Int!, statuses: [OrderStatusType!] = null, walletAddress: Address!): [CancelAllOrdersCalldata!]!
+  getCancelOrdersCalldata(maker: Address!, orderIds: [Int64!]!): [CancelAllOrdersCalldata!]!
 
   """Get some general loan stats about the activities for a collection."""
   getCollectionActivitiesCount(collectionId: Int = null, currencyAddress: Address = null, fromTimestamp: Int!, slug: String = null): CollectionEventsCountByDayAndCurrency!
@@ -2270,7 +2357,11 @@ type Query {
   getOutstandingLoanStatistics: OutstandingLoanStatistics!
   getPointsFromReferrals: Int!
   getPoolByShareSymbol(symbol: String!): Pool
-  getPurchaseBundlerFromOrder(orderId: Int64!): Address!
+  getPurchaseBundlerFromOrder(
+    """Loan ID if NFT to execute with the purchase bundler is a loan."""
+    loanId: String = null
+    orderId: Int64!
+  ): Address!
   getReferredWallets: Int!
   getSellAndRepayOrderSwapCalldata(expectedRate: Float!, loanId: String!, orderId: Int64!, slippage: Float!): Hex
   getSourcesStatistics(currencyAddress: Address!, lenders: [Address!]!, statuses: [LoanStatusType!]!): SourcesStatistics!
@@ -2282,16 +2373,17 @@ type Query {
   getUserPointActivities(after: String, first: Int = null): PointActivityConnection!
   getUserPoints: Int!
   globalSearch(searchTerm: String!): [GlobalSearchResult!]!
+  globalSearchV2(searchTerm: String!): GlobalSearchV2Results!
 
   """List artists/creators, optionally filtered by type."""
-  listArtists(after: String, artistType: ArtistType = null, collection: ArtistCollectionInput = null, first: Int! = 10, sortBy: [ArtistSortInput!] = null): ArtistConnection!
+  listArtists(after: String, artistType: ArtistType = null, collection: ArtistCollectionInput = null, first: Int! = 10, ids: [Int!] = null, sortBy: [ArtistSortInput!] = null): ArtistConnection!
   listAuctions(after: String, currencyAddress: Address = null, first: Int = null, sortBy: [AuctionSortInput!] = null, statuses: [AuctionStatus!] = null): AuctionConnection!
   listBids(after: String, auctionId: String = null, auctionStatuses: [AuctionStatus!] = null, bidders: [String!] = null, currencyAddresses: [Address!] = null, first: Int = null, onlyLatest: Boolean! = false, sortBy: [BidSortInput!] = null): BidConnection!
 
   """List collections for feed."""
   listCollectionFollows(after: String, feedId: String = null, first: Int! = 20): CollectionConnection!
   listCollectionTraitTypes(after: String, collectionIds: [Int!] = null, first: Int! = 40, valueType: TraitValueType = null): TraitTypeConnection!
-  listCollectionTraitValues(after: String, collectionIds: [Int!] = null, first: Int! = 40, key: [String!] = null, nftId: Int = null, onlyEnums: Boolean = null, searchTerm: String = null, sortBy: [TraitValueSortInput!] = null): TraitValueConnection!
+  listCollectionTraitValues(after: String, collectionIds: [Int!] = null, first: Int! = 40, key: [String!] = null, nftId: Int = null, onlyEnums: Boolean = null, searchTerm: String = null, sortBy: [TraitValueSortInput!] = null, traitIds: [Int!] = null): TraitValueConnection!
   listCollections(
     after: String
 
@@ -2433,6 +2525,7 @@ type Query {
     excludeSlugs: [String!] = null
     first: Int = null
     flagged: Boolean = null
+    inactive: Boolean = null
 
     """
     When filtering by collections, you can include vaults with items from the slugs.
@@ -2477,7 +2570,29 @@ type Query {
   """Deprecated field: use list_nfts instead."""
   listNftsFromUser(after: String, collectionAddresses: [Address!] = null, first: Int = null, includeInStash: Boolean! = false, searchTerm: String = null, sortBy: [NftSortInput!] = null, standards: [TokenStandardType!] = null, withLoans: Boolean = false, withNoWraps: Boolean = false): NFTConnection! @deprecated(reason: "Use list_nfts instead.")
   listNotifications(after: String, first: Int = null, notificationTypes: [NotificationType!] = null, onlyRead: Boolean! = false, onlyUnread: Boolean! = false, walletAddresses: [Address!] = null): NotificationConnection!
-  listOffers(after: String, blockchains: [BlockchainEnum!] = null, borrowerAddress: String = null, collections: [Int!] = null, contractAddresses: [Address!] = null, currencyAddress: Address = null, excludeLenders: [Address!] = null, first: Int = null, hidden: Boolean = null, lenders: [String!] = null, nfts: [Int!] = null, onlyCollectionOffers: Boolean = false, onlySingleNftOffers: Boolean = false, sluggedTokens: [SluggedTokenInput!] = null, slugs: [String!] = null, sortBy: [OffersSortInput!] = null, statuses: [OfferStatus!] = null, terms: TermsFilter = null, worseOffers: Boolean = true): OfferConnection!
+  listOffers(
+    after: String
+    blockchains: [BlockchainEnum!] = null
+
+    """Not used anymore."""
+    borrowerAddress: String = null
+    collections: [Int!] = null
+    contractAddresses: [Address!] = null
+    currencyAddress: Address = null
+    excludeLenders: [Address!] = null
+    first: Int = null
+    hidden: Boolean = null
+    lenders: [String!] = null
+    nfts: [Int!] = null
+    onlyCollectionOffers: Boolean = false
+    onlySingleNftOffers: Boolean = false
+    sluggedTokens: [SluggedTokenInput!] = null
+    slugs: [String!] = null
+    sortBy: [OffersSortInput!] = null
+    statuses: [OfferStatus!] = null
+    terms: TermsFilter = null
+    worseOffers: Boolean = true
+  ): OfferConnection!
 
   """
   This field is deprecated. Use list_orders_v2 instead. This field will be removed in the next major version.
@@ -2487,6 +2602,7 @@ type Query {
   listPlatformFees(blockchain: BlockchainEnum!, collectionId: Int!, marketplace: MarketPlaceType = null, operation: PlatformFeeOperationType!): [PlatformFee!]!
   listPoolActivities(after: String, first: Int! = 20, ownerAddresses: [Address!] = null, poolAddresses: [Address!] = null, types: [PoolActivityType!] = null): PoolActivityConnection!
   listPools(addresses: [String!] = null, after: String, first: Int! = 10): PoolConnection!
+  listPopularSearches(first: Int! = 10): [GlobalSearchV2ResultNFTGlobalSearchV2ResultCollectionGlobalSearchV2ResultArtistGlobalSearchV2ResultAccount!]!
   listRenegotiations(after: String, blockchains: [BlockchainEnum!] = null, collections: [Int!] = null, first: Int = null, hidden: Boolean = null, isAddNewTranche: Boolean = null, loanId: String = null, sortBy: [OffersSortInput!] = null, statuses: [OfferStatus!] = null, terms: RefinanceTermsFilter = null): RenegotiationConnection!
   listSales(after: String, collections: [Int!] = null, currencyAddresses: [Address!] = null, first: Int! = 10, fromTimestamp: Int = null, nfts: [Int!] = null, sortBy: [SalesSortInput!] = null, toTimestamp: Int = null, traits: [Int!] = null, users: [Address!] = null): SaleConnection!
 
@@ -2521,6 +2637,7 @@ type Query {
     terms: TermsFilter = null
     withdrawalQueues: [Int!] = null
   ): SourceLostSourceConnection!
+  listUsers(after: String, first: Int! = 10, walletAddresses: [Address!]!): UserConnection!
   listWithdrawalPositions(after: String, first: Int! = 10, owner: Address = null, poolAddresses: [Address!] = null): WithdrawalPositionConnection!
   listWithdrawalQueues(after: String, first: Int! = 10, poolAddresses: [Address!] = null): WithdrawalQueueConnection!
   me: User
@@ -2679,6 +2796,11 @@ enum SalesSortField {
 input SalesSortInput {
   field: SalesSortField!
   order: Ordering!
+}
+
+type SearchERC20Balance {
+  address: String!
+  amount: BigInt!
 }
 
 type SellAndRepayOrder implements Event & Node & Order {
@@ -3049,6 +3171,7 @@ type Trait implements Node {
   key: String!
   sampleAsset: Asset
   statistics: TraitStatistics! @deprecated(reason: "Trait statistics are not available")
+  traitType: TraitType
   type: String!
   value: String!
 }
@@ -3059,6 +3182,7 @@ input TraitKeyValueOptionsInput {
 }
 
 type TraitOrder implements Event & Node & Order {
+  collection: Collection!
   collectionId: Int!
   createdDate: DateTime!
   currency: Currency!
@@ -3083,9 +3207,26 @@ type TraitOrder implements Event & Node & Order {
   status: String!
   taker: Address!
   timestamp: DateTime!
+  trait: Trait!
   traitId: Int!
   updatedDate: DateTime!
 }
+
+input TraitOrderInput {
+  amount: BigInt = null
+  currencyAddress: Address!
+  expirationTime: BigInt!
+  fees: [OrderFee!] = null
+  isAsk: Boolean = null
+  maxExecutions: BigInt = null
+  price: BigInt = null
+  signature: Signature = null
+  startTime: BigInt!
+  taker: Address = null
+  traitIds: [Int!]!
+}
+
+union TraitOrderSignatureRequest = SignatureRequest | TraitOrder
 
 input TraitRangeOptionsInput {
   key: String!
@@ -3184,8 +3325,12 @@ type UnderfundedOfferNotification implements Node & Notification {
 
 type User implements Node {
   about: String
+  activeLoansAsBorrowerCount: Int!
+  activeLoansAsLenderCount: Int!
   blockchain: String! @deprecated(reason: "DEPRECATED")
   createdDate: DateTime!
+  ensName: String
+  heldNftsCount: Int!
   id: String!
   linkedWallets: [LinkedWallets!]!
   mail: String
@@ -3202,6 +3347,17 @@ type User implements Node {
   usedProduct: Boolean!
   username: String
   walletAddress: Address!
+}
+
+type UserConnection {
+  edges: [UserEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type UserEdge {
+  cursor: String!
+  node: User!
 }
 
 input UserFilter {

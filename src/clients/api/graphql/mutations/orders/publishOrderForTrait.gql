@@ -1,0 +1,19 @@
+mutation publishOrderForTrait($orderInput: TraitOrderInput!) {
+  result: publishOrderForTrait(orderInput: $orderInput) {
+    ... on TraitOrder {
+      id
+      status
+      signature
+      marketPlaceAddress
+    }
+    ... on SignatureRequest {
+      key
+      typedData {
+        types
+        primaryType
+        domain
+        message
+      }
+    }
+  }
+}
