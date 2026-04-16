@@ -17,6 +17,7 @@ import {
   NftOrderInput,
   SingleNftOrderInput,
   SingleNftSignedOfferInput,
+  TraitOrderInput,
 } from '@/generated/graphql';
 import { OnStepChange } from '@/gondi';
 import { RenegotiationOffer } from '@/model';
@@ -106,7 +107,11 @@ export class Api {
     };
   }
 
-  async publishOrder(orderInput: SingleNftOrderInput | CollectionOrderInput) {
+  async publishOrder(orderInput: SingleNftOrderInput | CollectionOrderInput | TraitOrderInput) {
+    if ('traitIds' in orderInput) {
+      const response = await this.api.publishOrderForTrait({ orderInput });
+      return response.result;
+    }
     if ('tokenId' in orderInput) {
       const response = await this.api.publishOrderForNft({ orderInput });
       return response.result;
