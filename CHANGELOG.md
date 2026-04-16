@@ -1,3 +1,27 @@
+# New Features 0.29.6
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.29.6.
+
+## Table of Contents
+
+- [Publish Trait Orders](#publish-trait-orders-0296) support publishing marketplace orders for NFT traits
+
+---
+
+## Publish Trait Orders 0.29.6
+
+**Description:**
+
+- NEW: Added `publishOrderForTrait` GraphQL mutation in `@/clients/api/graphql/mutations/orders` for publishing trait-based orders.
+- ENHANCEMENT: `Gondi.makeOrder()` and `Api.publishOrder()` now accept `TraitOrderInput` in addition to `SingleNftOrderInput` and `CollectionOrderInput`. Trait orders are routed automatically based on the presence of `traitIds` in the input.
+- ENHANCEMENT: The response handler in `makeOrder()` now recognizes `TraitOrder` as a valid resolved order type alongside `SingleNFTOrder` and `CollectionOrder`.
+
+---
+
 # Changes 0.29.5
 
 ### Important
