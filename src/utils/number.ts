@@ -1,7 +1,4 @@
-import { Maybe } from 'graphql/jsutils/Maybe';
-
-export const DEFAULT_DECIMALS = 18;
-export const PERCENTAGE = 100;
+const PERCENTAGE = 100;
 
 export const toInteger = (bn: bigint | number): number => Number(bn.valueOf());
 
@@ -11,14 +8,10 @@ export const perToBps = (percent: number): number => Math.floor(percent * PERCEN
 
 export const bpsToPer = (bps: bigint | number): number => Number(bps) / PERCENTAGE;
 
-export const floatToBigInt = (number: number, decimals: Maybe<number>) => {
-  const finalDecimals = decimals ?? DEFAULT_DECIMALS;
+export const floatToBigInt = (number: number, decimals: number) => {
   const decimalPart = number % 1;
   const integerPart = BigInt(number - decimalPart);
-  return (
-    integerPart * 10n ** BigInt(finalDecimals) +
-    BigInt(Math.floor(decimalPart * 10 ** finalDecimals))
-  );
+  return integerPart * 10n ** BigInt(decimals) + BigInt(Math.floor(decimalPart * 10 ** decimals));
 };
 
 type ObjectT<T extends string> = { [k in T]: number | bigint };

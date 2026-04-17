@@ -41,9 +41,9 @@ export const calculateProratedOriginationFee = ({
     );
   };
 
-  const lft = max(0n, getFeeBasedOnExtraAprBps(eaprBps - aprBps - 10n));
-  const rht = getFeeBasedOnExtraAprBps(eaprBps - aprBps + 10n);
+  const left = max(0n, getFeeBasedOnExtraAprBps(eaprBps - aprBps - 10n));
+  const right = getFeeBasedOnExtraAprBps(eaprBps - aprBps + 10n);
 
-  const fee = lowerBound(lft, rht, (f) => backendGetEaprBps(f) >= eaprBps);
+  const fee = lowerBound(left, right, (f) => backendGetEaprBps(f) >= eaprBps);
   return { fee, actualEaprBps: backendGetEaprBps(fee) };
 };
