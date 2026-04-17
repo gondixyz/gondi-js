@@ -6,6 +6,7 @@ mutation generateCollectionOfferHash($offerInput: CollectionOfferInput!) {
     signerAddress
     borrowerAddress
     collateralAddress
+    fee
 
     validators {
       validator

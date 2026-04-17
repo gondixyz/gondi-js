@@ -6,6 +6,7 @@ mutation generateSingleNftOfferHash($offerInput: SingleNFTOfferInput!) {
     signerAddress
     borrowerAddress
     collateralAddress
+    fee
 
     validators {
       validator
