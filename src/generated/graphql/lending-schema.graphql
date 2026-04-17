@@ -260,6 +260,7 @@ type BuyNowPayLaterOrder implements Event & Node & Order {
   emitCalldata: Hex!
   evmOrder: JSON
   expiration: DateTime!
+  feeMetadata: OrderFeeMetadata
   fees: BigInt!
   hidden: Boolean!
   id: String!
@@ -278,6 +279,7 @@ type BuyNowPayLaterOrder implements Event & Node & Order {
   signature: Signature!
   startTime: DateTime!
   status: String!
+  stealth: Boolean!
   taker: Address!
   timestamp: DateTime!
   updatedDate: DateTime!
@@ -321,6 +323,7 @@ type Collection implements Node {
   slug: String!
   statistics: CollectionStatistics!
   supply: BigInt
+  traitOffersEnabled: Boolean!
   twitterUsername: String
   uniqueCollectors: Int!
   verified: Boolean!
@@ -436,6 +439,7 @@ type CollectionOrder implements Event & Node & Order {
   evmOrder: JSON
   executions: Int!
   expiration: DateTime!
+  feeMetadata: OrderFeeMetadata
   fees: BigInt!
   hidden: Boolean!
   id: String!
@@ -453,6 +457,7 @@ type CollectionOrder implements Event & Node & Order {
   signature: Signature!
   startTime: DateTime!
   status: String!
+  stealth: Boolean!
   taker: Address!
   timestamp: DateTime!
   updatedDate: DateTime!
@@ -469,6 +474,7 @@ input CollectionOrderInput {
   price: BigInt = null
   signature: Signature = null
   startTime: BigInt!
+  stealth: Boolean = null
   taker: Address = null
 }
 
@@ -768,6 +774,16 @@ type ERC4626Withdraw implements Node & PoolActivity {
   txHash: Hash!
 }
 
+"""An edition within a collection."""
+type Edition implements Node {
+  collectionId: Int!
+  id: String!
+  image: Asset
+  isWholeCollection: Boolean!
+  name: String!
+  slug: String!
+}
+
 interface Event implements Node {
   id: String!
   timestamp: DateTime!
@@ -944,6 +960,13 @@ scalar Int64
 input Interval {
   max: Float = null
   min: Float = null
+}
+
+enum ItemType {
+  EDITION
+  ONE_OF_ONE
+  PFP
+  SERIES
 }
 
 enum ItemVisitType {
@@ -1501,6 +1524,38 @@ type MultiSourceLoanHistory implements Node {
   startTime: DateTime!
 }
 
+type MultipleTraitOrder implements Event & Node & Order {
+  collection: Collection!
+  collectionId: Int!
+  createdDate: DateTime!
+  currency: Currency!
+  currencyAddress: Address!
+  evmOrder: JSON
+  expiration: DateTime!
+  feeMetadata: OrderFeeMetadata
+  fees: BigInt!
+  hidden: Boolean!
+  id: String!
+  isAsk: Boolean!
+  isPrivate: Boolean!
+  maker: Address!
+  marketPlace: String!
+  marketPlaceAddress: Address!
+  netAmount: BigInt!
+  nonce: BigInt!
+  orderType: String!
+  originalId: Hash!
+  price: BigInt!
+  signature: Signature!
+  startTime: DateTime!
+  status: String!
+  stealth: Boolean!
+  taker: Address!
+  timestamp: DateTime!
+  traits: [Trait!]!
+  updatedDate: DateTime!
+}
+
 type Mutation {
   """
   Lists all NFTs from a user to start receiving loan offers. Can be filtered to only match certain criteria.
@@ -1649,12 +1704,15 @@ type NFT implements Node {
   collectionId: Int
   createdDate: DateTime!
   description: String
+  edition: Edition
+  editionId: Int
   erc20Balances: [BigIntCurrencyAmount!]!
   erc1155Balance(address: Address!): BigInt!
   id: String!
   image: Asset
   isExcluded: Boolean
   isFlagged: Boolean
+  itemType: ItemType
   listed: Listing
 
   """Deprecated."""
@@ -2021,6 +2079,7 @@ interface Order implements Event & Node {
   currencyAddress: Address!
   evmOrder: JSON
   expiration: DateTime!
+  feeMetadata: OrderFeeMetadata
   fees: BigInt!
   hidden: Boolean!
   id: String!
@@ -2037,6 +2096,7 @@ interface Order implements Event & Node {
   signature: Signature!
   startTime: DateTime!
   status: String!
+  stealth: Boolean!
   taker: Address!
   timestamp: DateTime!
   updatedDate: DateTime!
@@ -2056,6 +2116,13 @@ type OrderEdge {
 input OrderFee {
   amount: BigInt!
   taker: Address!
+}
+
+type OrderFeeMetadata {
+  executionFee: BigInt!
+  executionFeeConcept: String!
+  publicationFee: BigInt!
+  publicationFeeConcept: String!
 }
 
 input OrderForNft {
@@ -2156,6 +2223,8 @@ enum PlatformFeeOperationType {
   BUY_NOW_PAY_LATER
   SALE
   SELL_AND_REPAY
+  STEALTH_BID_EXECUTION
+  STEALTH_BID_PUBLICATION
 }
 
 type PointActivity implements Node {
@@ -2341,6 +2410,9 @@ type Query {
   getCollectionOfferSteps(collectionId: Int!): OfferSteps!
   getCollectionsByContractAddress(contractAddress: Address!): [Collection!]!
   getCurrency(address: Address!): Currency
+
+  """Get an edition by its slug."""
+  getEditionBySlug(slug: String!): Edition!
   getFeedId: String!
   getListingById(listingId: Int!): Listing
   getLoanActivitiesStatisticsByMonth(activities: [LoanActivityType!]!, currencyAddress: Address!, lenders: [Address!]!): LoanActivitiesStatisticsByMonth!
@@ -2425,6 +2497,7 @@ type Query {
     blockchains: [BlockchainEnum!] = null
     collectionIds: [Int!] = null
     currencyAddresses: [Address!] = null
+    editionIds: [Int!] = null
     excludeSlugs: [String!] = null
     first: Int = null
 
@@ -2522,6 +2595,7 @@ type Query {
     artists: [Int!] = null
     blockchains: [BlockchainEnum!] = null
     burned: Boolean = null
+    editionIds: [Int!] = null
     excludeSlugs: [String!] = null
     first: Int = null
     flagged: Boolean = null
@@ -2579,6 +2653,7 @@ type Query {
     collections: [Int!] = null
     contractAddresses: [Address!] = null
     currencyAddress: Address = null
+    editionIds: [Int!] = null
     excludeLenders: [Address!] = null
     first: Int = null
     hidden: Boolean = null
@@ -2598,7 +2673,7 @@ type Query {
   This field is deprecated. Use list_orders_v2 instead. This field will be removed in the next major version.
   """
   listOrders(after: String, collectionId: Int = null, currencyAddresses: [Address!] = null, first: Int = null, hidden: Boolean = null, ids: [Int!] = null, maker: [Address!] = null, marketplaceIds: [String!] = null, marketplaces: [MarketPlaceType!] = null, nftId: Int = null, onlyInvalid: Boolean = null, orderType: OrderType = null, sortBy: [OrderSortInput!] = null, statuses: [OrderStatusType!] = null, taker: Address = null, terms: OrderTermsFilter = null): OrderConnection!
-  listOrdersV2(after: String, collectionIds: [Int!] = null, currencyAddresses: [Address!] = null, excludeMaker: [Address!] = null, excludeTaker: [Address!] = null, exclusiveListings: Boolean = false, exclusiveListingsTypes: [ExclusiveListingType!] = null, first: Int = null, hidden: Boolean = null, ids: [Int!] = null, idsInt64: [Int64!] = null, maker: [Address!] = null, marketplaceIds: [String!] = null, marketplaces: [MarketPlaceType!] = null, nfts: [OrderForNft!] = null, onlyInvalid: Boolean = null, side: OrderSide = null, sortBy: [OrderSortInput!] = null, statuses: [OrderStatusType!] = null, taker: Address = null, terms: OrderTermsFilter = null, traitIds: [Int!] = null): OrderConnection!
+  listOrdersV2(after: String, collectionIds: [Int!] = null, currencyAddresses: [Address!] = null, excludeMaker: [Address!] = null, excludeTaker: [Address!] = null, exclusiveListings: Boolean = false, exclusiveListingsTypes: [ExclusiveListingType!] = null, first: Int = null, hidden: Boolean = null, ids: [Int!] = null, idsInt64: [Int64!] = null, maker: [Address!] = null, marketplaceIds: [String!] = null, marketplaces: [MarketPlaceType!] = null, nfts: [OrderForNft!] = null, onlyInvalid: Boolean = null, side: OrderSide = null, sortBy: [OrderSortInput!] = null, statuses: [OrderStatusType!] = null, taker: Address = null, terms: OrderTermsFilter = null, traitIds: [Int!] = null, walletAddresses: [Address!] = null): OrderConnection!
   listPlatformFees(blockchain: BlockchainEnum!, collectionId: Int!, marketplace: MarketPlaceType = null, operation: PlatformFeeOperationType!): [PlatformFee!]!
   listPoolActivities(after: String, first: Int! = 20, ownerAddresses: [Address!] = null, poolAddresses: [Address!] = null, types: [PoolActivityType!] = null): PoolActivityConnection!
   listPools(addresses: [String!] = null, after: String, first: Int! = 10): PoolConnection!
@@ -2809,6 +2884,7 @@ type SellAndRepayOrder implements Event & Node & Order {
   currencyAddress: Address!
   evmOrder: JSON
   expiration: DateTime!
+  feeMetadata: OrderFeeMetadata
   fees: BigInt!
   hidden: Boolean!
   id: String!
@@ -2830,6 +2906,7 @@ type SellAndRepayOrder implements Event & Node & Order {
   signature: Signature!
   startTime: DateTime!
   status: String!
+  stealth: Boolean!
   taker: Address!
   timestamp: DateTime!
   updatedDate: DateTime!
@@ -2942,6 +3019,7 @@ type SingleNFTOrder implements Event & Node & Order {
   currencyAddress: Address!
   evmOrder: JSON
   expiration: DateTime!
+  feeMetadata: OrderFeeMetadata
   fees: BigInt!
   hidden: Boolean!
   id: String!
@@ -2960,6 +3038,7 @@ type SingleNFTOrder implements Event & Node & Order {
   signature: Signature!
   startTime: DateTime!
   status: String!
+  stealth: Boolean!
   taker: Address!
   timestamp: DateTime!
   updatedDate: DateTime!
@@ -2975,6 +3054,7 @@ input SingleNFTOrderInput {
   price: BigInt = null
   signature: Signature = null
   startTime: BigInt!
+  stealth: Boolean = null
   taker: Address = null
   tokenId: BigInt!
 }
@@ -3189,6 +3269,7 @@ type TraitOrder implements Event & Node & Order {
   currencyAddress: Address!
   evmOrder: JSON
   expiration: DateTime!
+  feeMetadata: OrderFeeMetadata
   fees: BigInt!
   hidden: Boolean!
   id: String!
@@ -3205,6 +3286,7 @@ type TraitOrder implements Event & Node & Order {
   signature: Signature!
   startTime: DateTime!
   status: String!
+  stealth: Boolean!
   taker: Address!
   timestamp: DateTime!
   trait: Trait!
@@ -3222,6 +3304,7 @@ input TraitOrderInput {
   price: BigInt = null
   signature: Signature = null
   startTime: BigInt!
+  stealth: Boolean = null
   taker: Address = null
   traitIds: [Int!]!
 }

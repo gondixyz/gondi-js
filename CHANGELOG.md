@@ -1,3 +1,41 @@
+# New Features 0.29.7
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.29.7.
+
+## Table of Contents
+
+- [Prorated Origination Fee Helper](#prorated-origination-fee-helper-0297) compute the smallest origination fee for a target effective APR
+- [Backend-Signed Offer Fee](#backend-signed-offer-fee-0297) offer signatures now bind to the fee returned by the backend
+
+---
+
+## Prorated Origination Fee Helper 0.29.7
+
+**Description:**
+
+- NEW: Added `calculateProratedOriginationFee` as a static method on the `Gondi` class (`Gondi.calculateProratedOriginationFee`). Given `principal`, `aprBps`, `duration` (seconds), and a target `effectiveApr` (percent), it returns `{ fee, actualEaprBps }` — the smallest origination fee (as `bigint`) whose backend-computed effective APR reaches the target, along with that APR in basis points. Because the backend's `getEaprBps` applies floor division twice, some target eAPRs are unrepresentable as a step in the integer fee domain; callers detect this by comparing `actualEaprBps` against the expected target.
+- NEW: Added `lowerBound` in `@/utils/algorithm` — smallest `bigint` in `[lo, hi]` where a monotonic predicate becomes true. Uses `lo + (hi - lo) / 2n` to stay correct on negative ranges under BigInt's truncate-toward-zero division.
+- NEW: Added `product` in `@/utils/array` — a generator for the cartesian product of arrays, typed to preserve each input's element type.
+- NEW: Added shared helpers in `@/utils/number`: `perToBps`, `bpsToPer`, `floatToBigInt`.
+- NEW: Added `DAYS_IN_YEAR` and renamed `SECONDS_PER_YEAR` → `SECONDS_IN_YEAR` in `@/utils/dates`.
+- NEW: Tests added under `src/utils/originationFee.test.ts` and `src/utils/algorithm.test.ts` exercised via `bun test` (new `test` script in `package.json`). `@types/bun` added to devDependencies and `bun` appended to `tsconfig.json` types.
+
+---
+
+## Backend-Signed Offer Fee 0.29.7
+
+**Description:**
+
+- CHANGE: `makeSingleNftOffer` and `makeCollectionOffer` now sign the `fee` returned by the backend's `generate*OfferHash` response rather than any client-supplied value. The backend-authoritative fee is folded into both the struct passed to the wallet for signing and the final signed-offer payload.
+- CHANGE: The `generateSingleNftOfferHash` and `generateCollectionOfferHash` GraphQL mutations now select the `fee` field; the generated schema and TypeScript types have been regenerated accordingly.
+- **Why this matters**: The on-chain fee is now pinned by the backend, so signatures cannot be reused with a different fee than the one the backend approved. Integrators that previously relied on the client-set `fee` in the signed struct should double-check their flow — the backend's value wins.
+
+---
+
 # New Features 0.29.6
 
 ### Important

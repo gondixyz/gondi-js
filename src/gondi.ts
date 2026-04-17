@@ -44,6 +44,7 @@ import {
 } from '@/utils/loan';
 import { max, mulDivUp } from '@/utils/number';
 import { isNative, isOpensea } from '@/utils/orders';
+import { calculateProratedOriginationFee } from '@/utils/originationFee';
 import { isDefined, OptionalNullable } from '@/utils/types';
 
 import { isFulfillAdvancedOrderFunctionName } from './clients/opensea/types';
@@ -109,6 +110,8 @@ export class Gondi {
     return new Gondi({ ...props, wallet: walletWithSteps });
   }
 
+  static calculateProratedOriginationFee = calculateProratedOriginationFee;
+
   async makeSingleNftOffer(offer: model.SingleNftOfferInput) {
     return await this._makeSingleNftOffer(offer);
   }
@@ -148,7 +151,7 @@ export class Gondi {
 
     const response = await this.apiClient.generateSingleNftOfferHash({ offerInput });
 
-    const { offerHash, offerId, validators, lenderAddress, signerAddress, borrowerAddress } =
+    const { offerHash, offerId, validators, lenderAddress, signerAddress, borrowerAddress, fee } =
       response.offer;
     const collateralAddress = response.offer.collateralAddress;
 
@@ -156,6 +159,7 @@ export class Gondi {
 
     const structToSign = {
       ...offerInput,
+      fee,
       lender: lenderAddress ?? offerInput.lenderAddress,
       signer: signerAddress ?? offerInput.signerAddress,
       borrower: borrowerAddress ?? offerInput.borrowerAddress,
@@ -169,6 +173,7 @@ export class Gondi {
 
     const signedOffer: SingleNftSignedOfferInput = {
       ...offerInput,
+      fee,
       offerValidators: validators.map((validator) => ({
         arguments: validator.arguments,
         validator: validator.validator,
@@ -211,10 +216,11 @@ export class Gondi {
 
     if (!collateralAddress) throw new Error('Invalid collection');
 
-    const { offerHash, offerId, validators, lenderAddress, signerAddress, borrowerAddress } =
+    const { offerHash, offerId, validators, lenderAddress, signerAddress, borrowerAddress, fee } =
       response.offer;
     const structToSign = {
       ...offerInput,
+      fee,
       lender: lenderAddress ?? offerInput.lenderAddress,
       signer: signerAddress ?? offerInput.signerAddress,
       borrower: borrowerAddress ?? offerInput.borrowerAddress,
@@ -228,6 +234,7 @@ export class Gondi {
 
     const signedOffer = {
       ...offerInput,
+      fee,
       offerValidators: validators.map((validator) => ({
         arguments: validator.arguments,
         validator: validator.validator,

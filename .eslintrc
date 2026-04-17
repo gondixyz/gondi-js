@@ -1,6 +1,6 @@
 {
   "root": true,
-  "ignorePatterns": ["src/test/**/*", "dist/", "node_modules/"],
+  "ignorePatterns": ["src/test/**/*", "**/*.test.ts", "dist/", "node_modules/"],
 
   "parser": "@typescript-eslint/parser",
   "plugins": ["@typescript-eslint", "import", "simple-import-sort"],

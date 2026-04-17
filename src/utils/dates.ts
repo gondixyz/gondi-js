@@ -3,7 +3,8 @@ import { toInteger } from '@/utils/number';
 export const SECONDS_IN_MIN = 60;
 export const SECONDS_IN_HOUR = SECONDS_IN_MIN * 60;
 export const SECONDS_IN_DAY = SECONDS_IN_HOUR * 24;
-export const SECONDS_PER_YEAR = SECONDS_IN_DAY * 365;
+export const DAYS_IN_YEAR = 365;
+export const SECONDS_IN_YEAR = SECONDS_IN_DAY * DAYS_IN_YEAR;
 
 export const millisToSeconds = (millis: number | bigint) => Math.ceil(toInteger(millis) / 1_000);
 export const secondsToMillis = (seconds: number | bigint) => toInteger(seconds) * 1_000;
