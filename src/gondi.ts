@@ -44,6 +44,7 @@ import {
 } from '@/utils/loan';
 import { max, mulDivUp } from '@/utils/number';
 import { isNative, isOpensea } from '@/utils/orders';
+import { calculateProratedOriginationFee } from '@/utils/originationFee';
 import { isDefined, OptionalNullable } from '@/utils/types';
 
 import { isFulfillAdvancedOrderFunctionName } from './clients/opensea/types';
@@ -108,6 +109,8 @@ export class Gondi {
     });
     return new Gondi({ ...props, wallet: walletWithSteps });
   }
+
+  static calculateProratedOriginationFee = calculateProratedOriginationFee;
 
   async makeSingleNftOffer(offer: model.SingleNftOfferInput) {
     return await this._makeSingleNftOffer(offer);

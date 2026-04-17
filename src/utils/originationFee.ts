@@ -1,20 +1,19 @@
+import { lowerBound } from '@/utils/algorithm';
 import { SECONDS_IN_YEAR } from '@/utils/dates';
 import { BPS } from '@/utils/loan';
-import { floatToBigInt, max, perToBps, toFloat } from '@/utils/number';
+import { max, perToBps } from '@/utils/number';
 
 export const calculateProratedOriginationFee = ({
   principal,
   aprBps,
   duration,
   effectiveApr,
-  currency,
 }: {
   principal: bigint;
   aprBps: bigint;
   duration: bigint;
   effectiveApr: number;
-  currency: { decimals: number };
-}): { fee: bigint; actualEaprBps: bigint } => {
+}) => {
   // eAPR_BPS = (APR_BPS * principal + fee * 1_YEAR * BPS / duration) / (principal - fee)
   // eAPR is monotonically increasing in fee, so we binary search for the smallest fee
   // that yields the target eAPR. Upper bound corresponds to +10 bps extra eAPR.
@@ -36,27 +35,15 @@ export const calculateProratedOriginationFee = ({
   const eaprBps = BigInt(perToBps(effectiveApr));
   if (eaprBps <= aprBps) return { fee: 0n, actualEaprBps: aprBps };
 
-  const principalFloat = toFloat(principal, currency.decimals);
-
-  const getFeeBasedOnExtraAprBps = (extraAprBps: number) => {
-    const fee =
-      (extraAprBps * principalFloat) /
-      ((SECONDS_IN_YEAR * Number(BPS)) / Number(duration) + Number(eaprBps));
-    return floatToBigInt(fee, currency.decimals);
+  const getFeeBasedOnExtraAprBps = (extraAprBps: bigint) => {
+    return (
+      (extraAprBps * principal * duration) / (BigInt(SECONDS_IN_YEAR) * BPS + eaprBps * duration)
+    );
   };
 
-  const lowerEstimate = getFeeBasedOnExtraAprBps(Number(eaprBps - aprBps - 10n));
-  let lft = max(0n, lowerEstimate);
-  let rht = getFeeBasedOnExtraAprBps(Number(eaprBps - aprBps + 10n));
+  const lft = max(0n, getFeeBasedOnExtraAprBps(eaprBps - aprBps - 10n));
+  const rht = getFeeBasedOnExtraAprBps(eaprBps - aprBps + 10n);
 
-  while (lft < rht) {
-    const midFee = (lft + rht) / 2n;
-    if (backendGetEaprBps(midFee) < eaprBps) {
-      lft = midFee + 1n;
-    } else {
-      rht = midFee;
-    }
-  }
-
-  return { fee: lft, actualEaprBps: backendGetEaprBps(lft) };
+  const fee = lowerBound(lft, rht, (f) => backendGetEaprBps(f) >= eaprBps);
+  return { fee, actualEaprBps: backendGetEaprBps(fee) };
 };
