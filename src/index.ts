@@ -10,4 +10,5 @@ export {
 export type { OnStepChange } from '@/gondi';
 
 export type * as Types from '@/model';
+export { calculateProratedOriginationFee } from '@/utils/originationFee';
 export { FULFILLED, REJECTED } from '@/utils/promises';

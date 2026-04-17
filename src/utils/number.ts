@@ -1,6 +1,32 @@
+import { Maybe } from 'graphql/jsutils/Maybe';
+import { formatUnits } from 'viem';
+
+export const DEFAULT_DECIMALS = 18;
+export const PERCENTAGE = 100;
+
 export const toInteger = (bn: bigint | number): number => Number(bn.valueOf());
 
 export const bpsToPercentage = (bps: bigint | number) => toInteger(bps) / 10000;
+
+export const perToBps = (percent: number): number => Math.floor(percent * PERCENTAGE);
+
+export const bpsToPer = (bps: bigint | number): number => Number(bps) / PERCENTAGE;
+
+export const toFloat = (bn: Maybe<bigint>, decimals: Maybe<number>) => {
+  if (!bn) return 0;
+  const finalDecimals = decimals ?? DEFAULT_DECIMALS;
+  return Number(formatUnits(bn, finalDecimals));
+};
+
+export const floatToBigInt = (number: number, decimals: Maybe<number>) => {
+  const finalDecimals = decimals ?? DEFAULT_DECIMALS;
+  const decimalPart = number % 1;
+  const integerPart = BigInt(number - decimalPart);
+  return (
+    integerPart * 10n ** BigInt(finalDecimals) +
+    BigInt(Math.floor(decimalPart * 10 ** finalDecimals))
+  );
+};
 
 type ObjectT<T extends string> = { [k in T]: number | bigint };
 type ObjectValue<T extends string, O extends ObjectT<T>> = O extends { [k in T]: infer R }

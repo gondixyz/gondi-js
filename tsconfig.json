@@ -1,9 +1,9 @@
 {
-  "exclude": ["node_modules/", "dist/", "docs/", "examples/"],
+  "exclude": ["node_modules/", "dist/", "docs/", "examples/", "**/*.test.ts"],
   "include": ["**/*.d.ts", "**/*.ts"],
   "compilerOptions": {
     /* Types */
-    "types": ["node"],
+    "types": ["node", "bun"],
 
     /* Emit */
     "noEmit": false,

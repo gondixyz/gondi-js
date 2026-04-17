@@ -3,7 +3,7 @@ import { Address, isAddress } from 'viem';
 import { LoanV4, LoanV5, LoanV6, zeroAddress } from '@/blockchain';
 import { getVersionFromMslAddress } from '@/deploys';
 import * as model from '@/model';
-import { millisToSeconds, SECONDS_PER_YEAR, secondsToMillis, toDate } from '@/utils/dates';
+import { millisToSeconds, SECONDS_IN_YEAR, secondsToMillis, toDate } from '@/utils/dates';
 import { maxBy, mulDivUp, sumBigInt } from '@/utils/number';
 import { areSameAddress } from '@/utils/string';
 import { Optional } from '@/utils/types';
@@ -102,7 +102,7 @@ interface TrancheOwed {
 }
 
 const getInterest = (amount: bigint, aprBps: bigint, duration: bigint) => {
-  return mulDivUp(amount, aprBps * duration, BPS * BigInt(SECONDS_PER_YEAR));
+  return mulDivUp(amount, aprBps * duration, BPS * BigInt(SECONDS_IN_YEAR));
 };
 
 export const getTotalOwed = (
