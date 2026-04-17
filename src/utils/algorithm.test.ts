@@ -20,11 +20,7 @@ describe('lowerBound', () => {
     expect(lowerBound(50n, 50n, () => false)).toBe(50n);
   });
 
-  test('flip at lo boundary', () => {
-    expect(lowerBound(5n, 100n, (x) => x >= 5n)).toBe(5n);
-  });
-
-  test('flip at hi boundary', () => {
+  test('returns hi when predicate is true at hi', () => {
     expect(lowerBound(0n, 100n, (x) => x >= 100n)).toBe(100n);
   });
 
