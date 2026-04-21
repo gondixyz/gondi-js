@@ -257,7 +257,8 @@ export class Gondi {
     if (
       response.__typename !== 'SingleNFTOrder' &&
       response.__typename !== 'CollectionOrder' &&
-      response.__typename !== 'TraitOrder'
+      response.__typename !== 'TraitOrder' &&
+      response.__typename !== 'MultipleTraitOrder'
     )
       throw new Error('This should never happen');
 
