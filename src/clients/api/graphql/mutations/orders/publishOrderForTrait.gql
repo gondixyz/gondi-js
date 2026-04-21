@@ -6,6 +6,12 @@ mutation publishOrderForTrait($orderInput: TraitOrderInput!) {
       signature
       marketPlaceAddress
     }
+    ... on MultipleTraitOrder {
+      id
+      status
+      signature
+      marketPlaceAddress
+    }
     ... on SignatureRequest {
       key
       typedData {
