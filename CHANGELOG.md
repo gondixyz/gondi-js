@@ -1,3 +1,27 @@
+# New Features 0.29.8
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.29.8.
+
+## Table of Contents
+
+- [Multiple Trait Order Support](#multiple-trait-order-support-0298) publish flow now resolves to `MultipleTraitOrder` in addition to `TraitOrder`
+
+---
+
+## Multiple Trait Order Support 0.29.8
+
+**Description:**
+
+- ENHANCEMENT: `publishOrderForTrait` GraphQL mutation now selects the `MultipleTraitOrder` branch of the `TraitOrderSignatureRequest` union, exposing `id`, `status`, `signature`, and `marketPlaceAddress` when the backend resolves the input as a multi-trait order.
+- ENHANCEMENT: `Gondi.makeOrder()` recognizes `MultipleTraitOrder` as a valid resolved order `__typename` alongside `SingleNFTOrder`, `CollectionOrder`, and `TraitOrder`, so callers no longer hit the "This should never happen" guard when the backend returns a multi-trait order.
+- CHANGE: Regenerated GraphQL types and schema to reflect new backend fields: `executions`/`maxExecutions` on `TraitOrder` and `MultipleTraitOrder`, `itemType` on `Collection`, `collection` and `statistics` on `Edition` (with new `EditionStatistics` type), a `CollectionOrderType` enum, and an `orderTypes` argument on `listOrdersV2`.
+
+---
+
 # New Features 0.29.7
 
 ### Important
