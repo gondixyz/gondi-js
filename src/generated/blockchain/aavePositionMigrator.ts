@@ -1,4 +1,4 @@
-export const positionMigratorAbi = [
+export const aavePositionMigratorAbi = [
   {
     "type": "constructor",
     "inputs": [

@@ -1,10 +1,11 @@
 import { Abi, Account, Address, Chain, PublicClient, Transport, WalletClient } from 'viem';
 
+import { AavePositionMigrator } from '@/clients/contracts/AavePositionMigrator';
 import { Erc20 } from '@/clients/contracts/Erc20';
 import { OldERC721Wrapper } from '@/clients/contracts/OldERC721Wrapper';
-import { PositionMigrator } from '@/clients/contracts/PositionMigrator';
 import { PurchaseBundlerV1 } from '@/clients/contracts/PurchaseBundlerV1';
 import { PurchaseBundlerV2 } from '@/clients/contracts/PurchaseBundlerV2';
+import { UniswapV3PositionMigrator } from '@/clients/contracts/UniswapV3PositionMigrator';
 import {
   getContracts,
   getVersionFromMslAddress,
@@ -206,8 +207,16 @@ export class Contracts {
     });
   }
 
-  PositionMigrator(address: Address, msl: MslV6) {
-    return new PositionMigrator({
+  AavePositionMigrator(address: Address, msl: MslV6) {
+    return new AavePositionMigrator({
+      walletClient: this.walletClient,
+      address,
+      msl,
+    });
+  }
+
+  UniswapV3PositionMigrator(address: Address, msl: MslV6) {
+    return new UniswapV3PositionMigrator({
       walletClient: this.walletClient,
       address,
       msl,

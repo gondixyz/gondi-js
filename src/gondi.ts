@@ -609,11 +609,13 @@ export class Gondi {
     loan,
     loanId,
     executionData,
+    migratorType = 'uniswapV3PositionMigrator',
   }: {
     contractAddress: Address;
     loan: LoanToMslLoanType;
     loanId: bigint;
     executionData: EmitLoanArgs;
+    migratorType?: 'aavePositionMigrator' | 'uniswapV3PositionMigrator';
   }) {
     const previousMsl = this.contracts.Msl(loan.contractAddress);
     const nextMsl = this.contracts.Msl(
@@ -647,7 +649,11 @@ export class Gondi {
 
     const currentBalance = await this.currencyBalance({ tokenAddress: loan.principalAddress });
 
-    return this.contracts.PositionMigrator(contractAddress, nextMsl).smartRenegotiation({
+    const migrator =
+      migratorType === 'aavePositionMigrator'
+        ? this.contracts.AavePositionMigrator(contractAddress, nextMsl)
+        : this.contracts.UniswapV3PositionMigrator(contractAddress, nextMsl);
+    return migrator.smartRenegotiation({
       currentBalance,
       previousMsl,
       repaymentCalldata,
