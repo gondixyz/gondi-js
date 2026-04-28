@@ -1,3 +1,25 @@
+# New Features 0.29.9
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.29.9.
+
+## Table of Contents
+
+- [Mutation Variables in Step Callback](#mutation-variables-in-step-callback-0299) `onStepChange` now exposes the variables sent with each mutation
+
+---
+
+## Mutation Variables in Step Callback 0.29.9
+
+**Description:**
+
+- ENHANCEMENT: The `'api'` variant of the `Step` type emitted to `onStepChange` now carries an optional `variables: OperationVariables` field, populated for both the `'waiting'` and `'success'` statuses inside `getSdkApollo`. Consumers building UI/telemetry on top of `onStepChange` can now correlate the mutation step with the payload that was sent, without intercepting the Apollo link.
+
+---
+
 # New Features 0.29.8
 
 ### Important
