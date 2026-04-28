@@ -29,6 +29,7 @@ export function getSdkApollo<C>(client: ApolloClient<C>, onStepChange?: OnStepCh
         clientName: 'lending',
       },
     };
+    const apolloVariables = variables as unknown as OperationVariables;
     // Valid document should contain *single* query or mutation unless it's has a fragment
     if (
       doc.definitions.filter(
@@ -51,10 +52,11 @@ export function getSdkApollo<C>(client: ApolloClient<C>, onStepChange?: OnStepCh
           type: 'api',
           status: 'waiting',
           mutationName: definition.name?.value ?? '',
+          variables: apolloVariables,
         });
         const response = await client.mutate({
           mutation: doc,
-          variables: variables as unknown as OperationVariables,
+          variables: apolloVariables,
           ...options,
           fetchPolicy: 'no-cache',
         });
@@ -71,13 +73,14 @@ export function getSdkApollo<C>(client: ApolloClient<C>, onStepChange?: OnStepCh
           type: 'api',
           status: 'success',
           mutationName: definition.name?.value ?? '',
+          variables: apolloVariables,
         });
         return response.data;
       }
       case 'query': {
         const response = await client.query({
           query: doc,
-          variables: variables as unknown as OperationVariables,
+          variables: apolloVariables,
           ...options,
         });
 

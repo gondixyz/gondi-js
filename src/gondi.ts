@@ -1,3 +1,4 @@
+import { OperationVariables } from '@apollo/client/core/index.js';
 import { Maybe } from 'graphql/jsutils/Maybe';
 import {
   Account,
@@ -72,6 +73,7 @@ type Step =
       type: 'api';
       status: 'waiting' | 'success';
       mutationName: string;
+      variables?: OperationVariables;
     };
 
 // TODO: Add TS types for primaryType, functionNameOrSelector and mutationName
