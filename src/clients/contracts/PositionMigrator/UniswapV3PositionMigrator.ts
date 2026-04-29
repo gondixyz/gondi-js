@@ -4,26 +4,38 @@ import { Address, Hex } from 'viem';
 import { Wallet } from '@/clients/contracts';
 import { MslV5 } from '@/clients/contracts/MslV5';
 import { MslV6 } from '@/clients/contracts/MslV6';
-import { PositionMigrator } from '@/clients/contracts/PositionMigrator';
-import { getContracts } from '@/deploys';
-import { aavePositionMigratorAbi } from '@/generated/blockchain/aavePositionMigrator';
+import { PositionMigrator } from '@/clients/contracts/PositionMigrator/PositionMigrator';
+import { uniswapv3PositionMigrator } from '@/generated/blockchain/uniswapv3PositionMigrator';
 import { SECONDS_IN_HOUR } from '@/utils/dates';
 import { getTotalOwed } from '@/utils/loan';
 import { max } from '@/utils/number';
+import { areSameAddress } from '@/utils/string';
 
 type SmartMigrateArgs = AbiParametersToPrimitiveTypes<
-  ExtractAbiFunction<typeof aavePositionMigratorAbi, 'smartMigrate'>['inputs']
+  ExtractAbiFunction<typeof uniswapv3PositionMigrator, 'smartMigrate'>['inputs']
 >[0];
 
+type UniswapV3Pool = {
+  token0: Address;
+  token1: Address;
+  fee: number; // In hundreds of basis points
+};
+
+const UNISWAP_V3_USDC_WETH_POOL: UniswapV3Pool = {
+  token0: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+  token1: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+  fee: 500,
+};
+
 /**
- * This contract allows migration from one position to another.
- * We will use this to migrate V3.0 loans to V3.1 and also support
- * capital efficient refinance from offers
+ * This contract allows migration from one position to another using Uniswap V3
+ * flash loans as the source of liquidity. We will use this to migrate V3.0 loans
+ * to V3.1 and also support capital efficient refinance from offers.
  */
-export class AavePositionMigrator extends PositionMigrator<typeof aavePositionMigratorAbi> {
+export class UniswapV3PositionMigrator extends PositionMigrator<typeof uniswapv3PositionMigrator> {
   protected getDomain() {
     return {
-      name: 'PositionMigrator',
+      name: 'UniswapV3PositionMigrator',
       version: '1',
       chainId: this.wallet.chain.id,
       verifyingContract: this.address,
@@ -38,16 +50,18 @@ export class AavePositionMigrator extends PositionMigrator<typeof aavePositionMi
         PositionMigrationArgs: [
           { name: 'close', type: 'Position' },
           { name: 'open', type: 'Position' },
-          { name: 'borrowArgs', type: 'AaveBorrowArgs' },
+          { name: 'borrowArgs', type: 'UniswapV3BorrowArgs' },
           { name: 'approvalContract', type: 'address' },
           { name: 'migrator', type: 'address' },
           { name: 'nonce', type: 'uint256' },
         ],
-        AaveBorrowArgs: [
-          { name: 'pool', type: 'address' },
+        UniswapV3BorrowArgs: [
+          { name: 'token0', type: 'address' },
+          { name: 'token1', type: 'address' },
+          { name: 'fee', type: 'uint24' },
           { name: 'recipient', type: 'address' },
-          { name: 'assets', type: 'address[]' },
-          { name: 'amounts', type: 'uint256[]' },
+          { name: 'amount0', type: 'uint256' },
+          { name: 'amount1', type: 'uint256' },
         ],
         Position: [
           { name: 'contractAddress', type: 'address' },
@@ -71,10 +85,11 @@ export class AavePositionMigrator extends PositionMigrator<typeof aavePositionMi
     super({
       walletClient,
       address,
-      abi: aavePositionMigratorAbi,
+      abi: uniswapv3PositionMigrator,
       msl,
     });
   }
+
   async smartRenegotiation({
     currentBalance,
     previousMsl,
@@ -86,15 +101,29 @@ export class AavePositionMigrator extends PositionMigrator<typeof aavePositionMi
     repaymentCalldata: Hex;
     emitCalldata: Hex;
   }) {
-    const { Aave } = getContracts(this.wallet.chain);
-
     const repaymentArgs = previousMsl.decodeRepaymentCalldata(repaymentCalldata);
     const totalOwed = getTotalOwed(repaymentArgs.loan, BigInt(SECONDS_IN_HOUR));
+    const amountToBorrow = max(0n, totalOwed - currentBalance);
+
+    const principalIsToken0 = areSameAddress(
+      repaymentArgs.loan.principalAddress,
+      UNISWAP_V3_USDC_WETH_POOL.token0,
+    );
+    const principalIsToken1 = areSameAddress(
+      repaymentArgs.loan.principalAddress,
+      UNISWAP_V3_USDC_WETH_POOL.token1,
+    );
+    if (!principalIsToken0 && !principalIsToken1) {
+      throw new Error('Loan principal does not match token0 or token1 of the Uniswap V3 pool');
+    }
+
     const borrowArgs = {
-      pool: Aave,
+      token0: UNISWAP_V3_USDC_WETH_POOL.token0,
+      token1: UNISWAP_V3_USDC_WETH_POOL.token1,
+      fee: UNISWAP_V3_USDC_WETH_POOL.fee,
       recipient: this.wallet.account.address,
-      assets: [repaymentArgs.loan.principalAddress],
-      amounts: [max(0n, totalOwed - currentBalance)],
+      amount0: principalIsToken0 ? amountToBorrow : 0n,
+      amount1: principalIsToken1 ? amountToBorrow : 0n,
     };
 
     return this.executeSmartRenegotiation({

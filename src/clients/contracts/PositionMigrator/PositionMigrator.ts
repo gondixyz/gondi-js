@@ -7,7 +7,7 @@ import { MslV6 } from '@/clients/contracts/MslV6';
 import { aavePositionMigratorAbi } from '@/generated/blockchain/aavePositionMigrator';
 import { uniswapv3PositionMigrator } from '@/generated/blockchain/uniswapv3PositionMigrator';
 
-import { BaseContract } from './BaseContract';
+import { BaseContract } from '../BaseContract';
 
 type PositionMigratorAbi = typeof aavePositionMigratorAbi | typeof uniswapv3PositionMigrator;
 
@@ -38,13 +38,6 @@ export abstract class PositionMigrator<
     });
     this.msl = msl;
   }
-
-  protected abstract getDomain(): {
-    name: string;
-    version: string;
-    chainId: number;
-    verifyingContract: Address;
-  };
 
   abstract signMigrationArgs(args: {
     structToSign: SmartMigrateArgs['migrationArgs'];
