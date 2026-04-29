@@ -1,16 +1,15 @@
 import { AbiParametersToPrimitiveTypes, ExtractAbiFunction } from 'abitype';
-import { Address, Hex, zeroAddress } from 'viem';
+import { Address, Hex } from 'viem';
 
 import { Wallet } from '@/clients/contracts';
 import { MslV5 } from '@/clients/contracts/MslV5';
 import { MslV6 } from '@/clients/contracts/MslV6';
+import { PositionMigrator } from '@/clients/contracts/PositionMigrator';
 import { uniswapv3PositionMigrator } from '@/generated/blockchain/uniswapv3PositionMigrator';
 import { SECONDS_IN_HOUR } from '@/utils/dates';
 import { getTotalOwed } from '@/utils/loan';
 import { max } from '@/utils/number';
 import { areSameAddress } from '@/utils/string';
-
-import { BaseContract } from './BaseContract';
 
 type SmartMigrateArgs = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof uniswapv3PositionMigrator, 'smartMigrate'>['inputs']
@@ -33,10 +32,8 @@ const UNISWAP_V3_USDC_WETH_POOL: UniswapV3Pool = {
  * flash loans as the source of liquidity. We will use this to migrate V3.0 loans
  * to V3.1 and also support capital efficient refinance from offers.
  */
-export class UniswapV3PositionMigrator extends BaseContract<typeof uniswapv3PositionMigrator> {
-  msl: MslV6;
-
-  private getDomain() {
+export class UniswapV3PositionMigrator extends PositionMigrator<typeof uniswapv3PositionMigrator> {
+  protected getDomain() {
     return {
       name: 'UniswapV3PositionMigrator',
       version: '1',
@@ -89,8 +86,8 @@ export class UniswapV3PositionMigrator extends BaseContract<typeof uniswapv3Posi
       walletClient,
       address,
       abi: uniswapv3PositionMigrator,
+      msl,
     });
-    this.msl = msl;
   }
 
   async smartRenegotiation({
@@ -129,42 +126,11 @@ export class UniswapV3PositionMigrator extends BaseContract<typeof uniswapv3Posi
       amount1: principalIsToken1 ? amountToBorrow : 0n,
     };
 
-    const migrationArgs = {
-      close: {
-        contractAddress: previousMsl.address,
-        callData: repaymentCalldata,
-        value: 0n,
-      },
-      open: {
-        contractAddress: this.msl.address,
-        callData: emitCalldata,
-        value: 0n,
-      },
+    return this.executeSmartRenegotiation({
+      previousMsl,
+      repaymentCalldata,
+      emitCalldata,
       borrowArgs,
-      approvalContract: zeroAddress, // unused
-      migrator: this.wallet.account.address,
-      nonce: await this.contract.read.getNonce([this.wallet.account.address]),
-    };
-
-    const txHash = await this.safeContractWrite.smartMigrate([
-      {
-        migrationArgs,
-        migratorSignature: '0x',
-      },
-    ]);
-
-    return {
-      txHash,
-      waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-        const events = this.parseEventLogs('SmartMigration', receipt.logs);
-        if (events.length !== 1) {
-          throw new Error('Smart Renegotiation not executed');
-        }
-        return receipt;
-      },
-    };
+    });
   }
 }

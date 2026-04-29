@@ -609,7 +609,7 @@ export class Gondi {
     loan,
     loanId,
     executionData,
-    migratorType = 'uniswapV3PositionMigrator',
+    migratorType = 'aavePositionMigrator',
   }: {
     contractAddress: Address;
     loan: LoanToMslLoanType;
