@@ -6,9 +6,9 @@ import {
   InMemoryCache,
 } from '@apollo/client/core/index.js';
 import { gql } from 'graphql-tag';
-import { SiweMessage } from 'siwe';
 
 import { apiDomain } from '@/clients/api';
+import { buildSiweMessage } from '@/clients/api/siwe';
 import { Wallet } from '@/clients/contracts';
 
 export type Credential = SessionToken;
@@ -56,7 +56,7 @@ export const signIn = async ({ wallet }: { wallet: Wallet }) => {
 
   const nonce = data?.generateSignInNonce;
 
-  const message = new SiweMessage({
+  const message = buildSiweMessage({
     domain: 'gondi.xyz',
     address: wallet.account.address,
     chainId: wallet.chain.id,
@@ -67,7 +67,7 @@ export const signIn = async ({ wallet }: { wallet: Wallet }) => {
   });
 
   const signature = await wallet.signMessage({
-    message: message.prepareMessage(),
+    message,
   });
 
   const { data: siweData, errors: siweErrors } = await authClient.mutate({
@@ -77,7 +77,7 @@ export const signIn = async ({ wallet }: { wallet: Wallet }) => {
       }
     `,
     variables: {
-      siweInput: { message: message.prepareMessage(), signature: signature },
+      siweInput: { message, signature },
     },
   });
 

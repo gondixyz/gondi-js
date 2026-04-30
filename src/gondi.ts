@@ -14,6 +14,7 @@ import { getAddress } from 'viem';
 import { addStepCallback } from '@/addStepCallback';
 import { Auction, isNativeCurrency, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
 import { Api, Props as ApiProps } from '@/clients/api';
+import { buildSiweMessage } from '@/clients/api/siwe';
 import { Contracts, GondiPublicClient, Wallet } from '@/clients/contracts';
 import { PurchaseBundlerV1 } from '@/clients/contracts/PurchaseBundlerV1';
 import { PurchaseBundlerV2 } from '@/clients/contracts/PurchaseBundlerV2';
@@ -113,6 +114,7 @@ export class Gondi {
   }
 
   static calculateProratedOriginationFee = calculateProratedOriginationFee;
+  static buildSiweMessage = buildSiweMessage;
 
   async makeSingleNftOffer(offer: model.SingleNftOfferInput) {
     return await this._makeSingleNftOffer(offer);
