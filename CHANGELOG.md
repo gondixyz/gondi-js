@@ -1,3 +1,38 @@
+# New Features 0.29.10
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.29.10.
+
+## Table of Contents
+
+- [Drop `siwe` and `ethers` runtime dependencies](#drop-siwe-and-ethers-runtime-dependencies-02910) inline a minimal SIWE message builder
+- [Move tests to top-level `tests/` folder](#move-tests-to-top-level-tests-folder-02910) tests now live as a sibling of `src/`
+
+---
+
+## Drop `siwe` and `ethers` runtime dependencies 0.29.10
+
+**Description:**
+
+- CHANGE: Removed `siwe` and `ethers` from `dependencies`. The SIWE message used during sign-in is now produced by a minimal local helper, `buildSiweMessage`, in `src/clients/api/siwe.ts` (re-exported as `Gondi.buildSiweMessage`). The function emits a byte-for-byte identical EIP-4361 message to what `new SiweMessage(...).prepareMessage()` produced.
+- CHANGE: `buildSiweMessage` validates the `address` argument with viem's `getAddress` and throws if the input isn't already in EIP-55 checksum form. This matches the previous behavior of `SiweMessage`, which rejected non-checksummed and otherwise malformed addresses at construction time. In practice the address comes from `wallet.account.address` (viem returns checksummed), so the production flow is unaffected.
+- CHANGE: `siwe` is now a `devDependency` only, used by the parity test under `tests/clients/api/auth.test.ts` to lock the new helper's output against the upstream library.
+- **Why this matters**: Removes ~hundreds of KB of transitive deps (notably `ethers`) from the published bundle. SDK consumers who imported `SiweMessage` from `siwe` transitively via `gondi` should add `siwe` to their own dependencies.
+
+---
+
+## Move tests to top-level `tests/` folder 0.29.10
+
+**Description:**
+
+- CHANGE: Existing `*.test.ts` files were moved out of `src/` into a sibling `tests/` directory mirroring the source layout (e.g. `src/utils/algorithm.test.ts` → `tests/utils/algorithm.test.ts`). `bun test` discovers them automatically; no script changes were required.
+- NEW: Added `tests/clients/api/auth.test.ts` covering `buildSiweMessage` parity with `SiweMessage.prepareMessage()` across multiple chains/nonces and verifying both implementations reject the same set of malformed addresses (wrong checksum, all-lowercase, wrong length, missing `0x`, non-hex).
+
+---
+
 # New Features 0.29.9
 
 ### Important
