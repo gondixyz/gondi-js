@@ -1,3 +1,26 @@
+# New Features 0.29.11
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.29.11.
+
+## Table of Contents
+
+- [Preserve Trailing Bytes on Raw Contract Calls](#preserve-trailing-bytes-on-raw-contract-calls-02911) attribution-tag bytes appended past the ABI payload are no longer dropped
+
+---
+
+## Preserve Trailing Bytes on Raw Contract Calls 0.29.11
+
+**Description:**
+
+- FIX: `BaseContract.sendTransactionWithAbiValidation` previously decoded calldata against the contract ABI and routed it through `safeContractWrite`, which re-encodes from `args` and silently dropped any trailing bytes (e.g. the gondi attribution tag appended to seaport calldata by the backend). When trailing bytes are detected, the call now goes through a new `safeRawWrite` path that `eth_call`s the original calldata for revert safety and broadcasts the original bytes unchanged.
+- ENHANCEMENT: Reverts from the raw-calldata path are decoded against the contract ABI via `decodeErrorResult`, so callers see the same custom-error names and args that `safeContractWrite` would have surfaced through `simulateContract`.
+
+---
+
 # New Features 0.29.10
 
 ### Important
