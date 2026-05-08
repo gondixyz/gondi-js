@@ -1307,14 +1307,14 @@ export class Gondi {
     nfts,
   }: {
     orders: Array<{
-      id: string;
+      orderId: number;
       currencyAddress: Address;
       marketPlaceAddress: Address;
     }>;
     nfts: Array<{ id: string }>;
   }) {
     const { bulkSaleCalldata } = await this.apiClient.getBulkSaleCalldata({
-      orders: orders.map((o, i) => ({ orderId: Number(o.id), nftId: Number(nfts[i].id) })),
+      orders: orders.map((o, i) => ({ orderId: o.orderId, nftId: Number(nfts[i].id) })),
       taker: this.wallet.account.address,
     });
 
@@ -1322,9 +1322,10 @@ export class Gondi {
       ({ calldata, marketPlaceAddress, totalPrice, currencyAddress }) => ({
         marketPlaceAddress,
         execute: async () => {
+          const value = isNativeCurrency(currencyAddress) ? totalPrice : 0n;
           const { waitTxInBlock } = await this.contracts
             .GenericContract(marketPlaceAddress)
-            .sendTransactionData(calldata, isNativeCurrency(currencyAddress) ? totalPrice : 0n);
+            .sendTransactionData(calldata, value);
           return waitTxInBlock();
         },
       }),
