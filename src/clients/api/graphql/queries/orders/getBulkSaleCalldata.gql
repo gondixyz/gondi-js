@@ -1,0 +1,8 @@
+query getBulkSaleCalldata($orders: [BulkSaleOrderInput!]!, $taker: Address!) {
+  bulkSaleCalldata: getBulkOrderSaleCalldata(orders: $orders, taker: $taker) {
+    calldata
+    marketPlaceAddress
+    totalPrice
+    currencyAddress
+  }
+}

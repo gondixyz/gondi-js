@@ -1302,6 +1302,35 @@ export class Gondi {
     };
   }
 
+  async executeBulkOrders({
+    orders,
+    nfts,
+  }: {
+    orders: Array<{
+      id: string;
+      currencyAddress: Address;
+      marketPlaceAddress: Address;
+    }>;
+    nfts: Array<{ id: string }>;
+  }) {
+    const { bulkSaleCalldata } = await this.apiClient.getBulkSaleCalldata({
+      orders: orders.map((o, i) => ({ orderId: Number(o.id), nftId: Number(nfts[i].id) })),
+      taker: this.wallet.account.address,
+    });
+
+    return bulkSaleCalldata.map(
+      ({ calldata, marketPlaceAddress, totalPrice, currencyAddress }) => ({
+        marketPlaceAddress,
+        execute: async () => {
+          const { waitTxInBlock } = await this.contracts
+            .GenericContract(marketPlaceAddress)
+            .sendTransactionData(calldata, isNativeCurrency(currencyAddress) ? totalPrice : 0n);
+          return waitTxInBlock();
+        },
+      }),
+    );
+  }
+
   async getProtocolFee({ mslContractAddress }: { mslContractAddress: Address }) {
     return this.contracts.Msl(mslContractAddress).getProtocolFee();
   }

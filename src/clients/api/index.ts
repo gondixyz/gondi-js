@@ -43,6 +43,7 @@ export const lendingApiDomain = () => process.env.GONDI_URL ?? 'https://api2.gon
 export class Api {
   api: ReturnType<typeof getSdkApollo>;
   getSaleCalldata;
+  getBulkSaleCalldata;
   generateSingleNftOfferHash;
   generateCollectionOfferHash;
   generateRenegotiationOfferHash;
@@ -69,6 +70,7 @@ export class Api {
     this.api = getSdkApollo(gqlClient, onStepChange);
 
     this.getSaleCalldata = this.api.getSaleCalldata;
+    this.getBulkSaleCalldata = this.api.getBulkSaleCalldata;
     this.generateSingleNftOfferHash = this.api.generateSingleNftOfferHash;
     this.generateCollectionOfferHash = this.api.generateCollectionOfferHash;
     this.generateRenegotiationOfferHash = this.api.generateRenegotiationOfferHash;

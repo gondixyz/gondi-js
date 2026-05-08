@@ -253,6 +253,18 @@ type BulkNFTOrdersResult {
 
 union BulkNFTOrdersResultSignatureRequest = BulkNFTOrdersResult | SignatureRequest
 
+type BulkSaleCalldataItem {
+  calldata: Hex!
+  currencyAddress: Address!
+  marketPlaceAddress: Address!
+  totalPrice: BigInt!
+}
+
+input BulkSaleOrderInput {
+  nftId: Int = null
+  orderId: Int64!
+}
+
 type BuyNowPayLaterOrder implements Event & Node & Order {
   createdDate: DateTime!
   currency: Currency!
@@ -306,6 +318,7 @@ type Collection implements Node {
   contractData: ContractData!
   description: String
   discordUrl: String
+  editionIds: [Int!]!
   externalUrl: String
   hasTransferValidator: Boolean!
   id: String!
@@ -484,6 +497,7 @@ union CollectionOrderSignatureRequest = CollectionOrder | SignatureRequest
 enum CollectionOrderType {
   COLLECTION
   MULTIPLE_TRAIT
+  SINGLE_NFT
   TRAIT
 }
 
@@ -787,15 +801,45 @@ type Edition implements Node {
   collectionId: Int!
   id: String!
   image: Asset
-  isWholeCollection: Boolean!
   name: String!
+  offersEnabled: Boolean!
+  sampleNft: NFT
   slug: String!
   statistics: EditionStatistics!
+
+  """
+  Hidden synthetic trait that backs edition bids. Returns null until the edition has been processed by the edition-traits backfill CLI.
+  """
+  trait: Trait
+  traitId: Int
+}
+
+type EditionConnection {
+  edges: [EditionEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type EditionEdge {
+  cursor: String!
+  node: Edition!
+}
+
+enum EditionSortField {
+  FLOOR_PRICE
+  NAME
+}
+
+input EditionSortInput {
+  field: EditionSortField!
+  order: Ordering!
 }
 
 type EditionStatistics {
   floorPrice: BigIntCurrencyAmount
+  highestBid: Order
   lastSale: Sale
+  supply: Int!
   uniqueOwners: Int!
 }
 
@@ -928,6 +972,20 @@ type GlobalSearchV2ResultCollection {
   slug: String!
 }
 
+type GlobalSearchV2ResultEdition {
+  blockchain: String!
+  collectionImageCacheUrl: String
+  collectionImageData: String
+  collectionName: String
+  collectionSlug: String!
+  id: Int!
+  imageCacheUrl: String
+  imageContentType: String
+  imageData: String
+  name: String!
+  slug: String!
+}
+
 type GlobalSearchV2ResultNFT {
   blockchain: String!
   collectionId: Int!
@@ -962,6 +1020,7 @@ type GlobalSearchV2Results {
   accounts: [GlobalSearchV2ResultAccount!]!
   artists: [GlobalSearchV2ResultArtist!]!
   collections: [GlobalSearchV2ResultCollection!]!
+  editions: [GlobalSearchV2ResultEdition!]!
   nfts: [GlobalSearchV2ResultNFT!]!
 }
 
@@ -2411,6 +2470,7 @@ type Query {
   Get the borrowing power for a list of borrowers.Borrowing power is the sum of the best offer per NFT the borrower has.The best offer is the offer with the highest net principal.Returns the normalized sum in ETH equivalent (float).
   """
   getBorrowingPower(borrowers: [Address!]!): Float!
+  getBulkOrderSaleCalldata(model: OrderModel = null, orders: [BulkSaleOrderInput!]!, taker: Address = null): [BulkSaleCalldataItem!]!
   getCancelAllNftOrdersCalldata(isAsk: Boolean = null, kind: OrderKind!, nftId: Int!, statuses: [OrderStatusType!] = null, walletAddress: Address!): [CancelAllOrdersCalldata!]!
   getCancelOrdersCalldata(maker: Address!, orderIds: [Int64!]!): [CancelAllOrdersCalldata!]!
 
@@ -2421,6 +2481,11 @@ type Query {
   Get a collection by its slug. Slugs are unique identifiers for collections. 
   """
   getCollectionBySlug(slug: String!): Collection
+
+  """
+  Highest active bid targeting a single collection whose trait constraint is satisfied by the supplied trait IDs. Considers single-trait bids whose trait is in the input, multi-trait bids whose trait set is contained in the input, and collection-level bids. Returns null when traitIds is empty or no matching bid exists.
+  """
+  getCollectionHighestBidMatchingTraits(collectionId: Int!, traitIds: [Int!]!): Order
 
   """Get some general loans stats from a collection."""
   getCollectionLoansData(collectionId: Int!, currencyAddress: Address): CollectionLoansData!
@@ -2504,6 +2569,9 @@ type Query {
   listCollectionsWithLoans(after: String, collections: [Int!] = null, first: Int! = 10, searchTerm: String = null): CollectionConnection!
   listCurrencies(after: String, first: Int! = 20): CurrencyConnection!
   listDeals(after: String, first: Int = null, ids: [Int!] = null, sortBy: [DealSortInput!] = null, statuses: [OrderStatusType!] = null, walletAddresses: [Address!]!): DealConnection!
+
+  """List editions, filtered by collection, IDs, or search term."""
+  listEditions(after: String, collectionId: Int = null, editions: [Int!] = null, first: Int = null, searchTerm: String = null, sortBy: [EditionSortInput!] = null): EditionConnection!
 
   """
   List all activities. Includes loan activities, loan offers, loan renegotiations, trade orders, nft transfers.
@@ -2694,6 +2762,7 @@ type Query {
     after: String
     collectionIds: [Int!] = null
     currencyAddresses: [Address!] = null
+    editionIds: [Int!] = null
     excludeMaker: [Address!] = null
     excludeTaker: [Address!] = null
     exclusiveListings: Boolean = false
@@ -3294,6 +3363,7 @@ type TopUpRequestedNotification implements Node & Notification {
 type Trait implements Node {
   collectionId: String!
   id: String!
+  isSynthetic: Boolean!
   key: String!
   sampleAsset: Asset
   statistics: TraitStatistics! @deprecated(reason: "Trait statistics are not available")
@@ -3313,6 +3383,11 @@ type TraitOrder implements Event & Node & Order {
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
+
+  """
+  Edition this trait order targets, when the trait_id is the synthetic trait of an edition. Null for ordinary trait orders.
+  """
+  edition: Edition
   evmOrder: JSON
   executions: Int!
   expiration: DateTime!
@@ -3374,6 +3449,7 @@ type TraitType implements Node {
   collectionId: Int!
   count: Int!
   id: String!
+  isSynthetic: Boolean!
   key: String!
   max: Float
   min: Float
@@ -3394,6 +3470,7 @@ type TraitTypeEdge {
 type TraitValue implements Node {
   collectionId: Int!
   id: String!
+  isSynthetic: Boolean!
   key: String!
   rarity: Int!
   sampleAsset: Asset
