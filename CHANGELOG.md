@@ -1,3 +1,25 @@
+# New Features 0.29.12
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.29.12.
+
+## Table of Contents
+
+- [`maxSeniorRepayment` on Refinance Fallback Offer](#maxseniorrepayment-on-refinance-fallback-offer-02912) configure the fallback `SingleNFTOffer` produced by `makeRefinanceOffer({ withFallbackOffer: true })`
+
+---
+
+## `maxSeniorRepayment` on Refinance Fallback Offer 0.29.12
+
+**Description:**
+
+- ENHANCEMENT: `Gondi.makeRefinanceOffer` now accepts an optional `maxSeniorRepayment` argument when `withFallbackOffer: true`. The value is forwarded to the fallback `SingleNFTOffer` instead of the previously hardcoded `0n`, letting callers cap senior-tranche repayment on the fallback path the same way they would for a stand-alone offer. The argument is only valid alongside `withFallbackOffer: true`; the other variants of `makeRefinanceOffer` continue to reject it at the type level. Default behavior is unchanged when the argument is omitted.
+
+---
+
 # New Features 0.29.11
 
 ### Important
