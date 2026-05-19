@@ -1,3 +1,25 @@
+# Bug Fixes 0.29.13
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.29.13.
+
+## Table of Contents
+
+- [Contract Address Update](#contract-address-update-02913) updated PurchaseBundler `3.1_PB_V2` address
+
+---
+
+## Contract Address Update 0.29.13
+
+**Description:**
+
+Updated the PurchaseBundler version `'3.1_PB_V2'` contract address on mainnet to the latest deployment (`0xf46a58cada29ff34cf62f72357d2b37815506feb`).
+
+---
+
 # New Features 0.29.12
 
 ### Important
