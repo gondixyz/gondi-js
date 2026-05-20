@@ -132,7 +132,7 @@ const contractsByChain: Record<number, Contracts> = {
     },
     PurchaseBundler: {
       '2': '0x3b59bffe109e0f33f20887343759a98b48ecdf5f',
-      '3': '0x500007b5ccc7dc461dfc0f0ac99295b2e077c333',
+      '3': '0xcea7eea12c6fc82d0318704b9d35a4192c2d260a',
       '3.1': zeroAddress, // This is not used in favour of 3.1_PB_V2
       '3.1_PB_V2': '0xf46a58cada29ff34cf62f72357d2b37815506feb',
     },
