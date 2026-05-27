@@ -506,7 +506,7 @@ export class Gondi {
         duration,
         expirationTime,
         fee,
-        maxSeniorRepayment: 0n,
+        maxSeniorRepayment: props.maxSeniorRepayment ?? 0n,
         capacity: 0n,
       };
       const fallbackOffer = await this._makeSingleNftOffer(offerInput, contractAddress, true);
@@ -1350,9 +1350,27 @@ type MakeRefinanceOfferProps = {
   renegotiation: model.RenegotiationInput;
   contractAddress: Address;
 } & (
-  | { skipSignature?: never; withFallbackOffer?: never; principalAddress?: never; nftId?: never }
-  | { skipSignature: true; withFallbackOffer?: never; principalAddress?: never; nftId?: never }
-  | { skipSignature?: never; withFallbackOffer: true; principalAddress: Address; nftId: number }
+  | {
+      skipSignature?: never;
+      withFallbackOffer?: never;
+      principalAddress?: never;
+      nftId?: never;
+      maxSeniorRepayment?: never;
+    }
+  | {
+      skipSignature: true;
+      withFallbackOffer?: never;
+      principalAddress?: never;
+      nftId?: never;
+      maxSeniorRepayment?: never;
+    }
+  | {
+      skipSignature?: never;
+      withFallbackOffer: true;
+      principalAddress: Address;
+      nftId: number;
+      maxSeniorRepayment?: bigint;
+    }
 );
 
 export type CreateVaultNfts = {
