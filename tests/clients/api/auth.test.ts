@@ -29,6 +29,24 @@ describe('buildSiweMessage', () => {
     expect(ours).toBe(expected);
   });
 
+  test('uses a provided issuedAt timestamp', () => {
+    const params = {
+      domain: 'gondi.xyz',
+      address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
+      statement: 'Sign in with Ethereum to the app.',
+      uri: 'https://api.gondi.xyz/lending/graphql',
+      version: '1',
+      chainId: 1,
+      nonce: 'abcdef1234567890',
+      issuedAt: '2026-05-01T09:30:00.000Z',
+    };
+
+    const ours = buildSiweMessage(params);
+    const expected = new SiweMessage(params).prepareMessage();
+
+    expect(ours).toBe(expected);
+  });
+
   test.each([
     [1, '00000000', '0x71C7656EC7ab88b098defB751B7401B5f6d8976F'],
     [137, 'ffffffff', '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'],

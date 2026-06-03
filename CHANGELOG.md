@@ -1,3 +1,26 @@
+# Bug Fixes 0.29.15
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.29.15.
+
+## Table of Contents
+
+- [Configurable SIWE `issuedAt`](#configurable-siwe-issuedat-02915) allow callers to provide a server-issued timestamp for sign-in messages
+
+---
+
+## Configurable SIWE `issuedAt` 0.29.15
+
+**Description:**
+
+- ENHANCEMENT: `buildSiweMessage` now accepts an optional `issuedAt` timestamp. When provided, the SIWE message uses that timestamp instead of reading the local client clock.
+- ENHANCEMENT: The SDK `signIn` helper accepts and forwards the optional `issuedAt` timestamp to `buildSiweMessage`. Existing callers keep the previous behavior when the argument is omitted.
+
+---
+
 # Bug Fixes 0.29.14
 
 ### Important
