@@ -8,6 +8,7 @@ export const buildSiweMessage = ({
   version,
   chainId,
   nonce,
+  issuedAt,
 }: {
   domain: string;
   address: string;
@@ -16,12 +17,13 @@ export const buildSiweMessage = ({
   version: string;
   chainId: number;
   nonce: string;
+  issuedAt?: string;
 }): string => {
   const checksummed = getAddress(address);
   if (checksummed !== address) {
     throw new Error(`Address must be EIP-55 checksummed: ${address}`);
   }
-  const issuedAt = new Date().toISOString();
+  const messageIssuedAt = issuedAt ?? new Date().toISOString();
   return (
     `${domain} wants you to sign in with your Ethereum account:\n` +
     `${checksummed}\n\n` +
@@ -30,6 +32,6 @@ export const buildSiweMessage = ({
     `Version: ${version}\n` +
     `Chain ID: ${chainId}\n` +
     `Nonce: ${nonce}\n` +
-    `Issued At: ${issuedAt}`
+    `Issued At: ${messageIssuedAt}`
   );
 };

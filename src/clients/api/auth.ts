@@ -35,7 +35,7 @@ export const getAuthClient = async () => {
   });
 };
 
-export const signIn = async ({ wallet }: { wallet: Wallet }) => {
+export const signIn = async ({ wallet, issuedAt }: { wallet: Wallet; issuedAt?: string }) => {
   const authClient = await getAuthClient();
 
   const { data, errors } = await authClient.mutate({
@@ -64,6 +64,7 @@ export const signIn = async ({ wallet }: { wallet: Wallet }) => {
     uri: authApiUrl(),
     version: '1',
     nonce,
+    issuedAt,
   });
 
   const signature = await wallet.signMessage({
