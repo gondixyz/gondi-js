@@ -47,7 +47,7 @@
     "@types/node": "^20.4.6",
     "@typescript-eslint/eslint-plugin": "^5.49.0",
     "@typescript-eslint/parser": "^5.49.0",
-    "esbuild": "0.25.12",
+    "esbuild": "0.28.1",
     "eslint": "^8.34.0",
     "eslint-config-prettier": "^8.6.0",
     "eslint-import-resolver-typescript": "^3.5.3",
@@ -82,7 +82,7 @@
   },
   "overrides": {
     "ajv": "6.14.0",
-    "esbuild": "0.25.12",
+    "esbuild": "0.28.1",
     "flatted": "3.4.2",
     "handlebars": "4.7.9",
     "immutable": "5.1.5",
