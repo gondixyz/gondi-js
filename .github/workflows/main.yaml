@@ -77,8 +77,18 @@ jobs:
       - name: Generate docs
         run: bun run docs
 
-      - name: Publish docs
-        uses: JamesIves/github-pages-deploy-action@v4.3.3
+      - name: Publish versioned docs
+        if: steps.check_tag.outputs.tag_exists == 'false'
+        uses: JamesIves/github-pages-deploy-action@8817a56e5bfec6e2b08345c81f4d422db53a2cdc # v4.3.3
+        with:
+          branch: gh-pages
+          folder: docs/${{ env.PACKAGE_VERSION }}
+          target-folder: ${{ env.PACKAGE_VERSION }}
+          clean: false
+
+      - name: Publish latest docs
+        uses: JamesIves/github-pages-deploy-action@8817a56e5bfec6e2b08345c81f4d422db53a2cdc # v4.3.3
         with:
           branch: gh-pages
           folder: docs/lts
+          clean: false

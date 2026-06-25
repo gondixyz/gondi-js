@@ -7,6 +7,10 @@ dist
 .env
 meta.json
 
+# generated docs (typedoc) — published to the gh-pages branch by CI, not
+# tracked in source. Regenerate locally with `bun run docs` if needed.
+docs
+
 # misc
 .DS_Store
 

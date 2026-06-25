@@ -143,12 +143,15 @@ After transactions, events are parsed with `parseEventLogs`. Always validate the
 
 ### Documentation Generation
 
-- **MANDATORY**: Run `bun run docs` after every version change
-- Documentation outputs to `docs/{version}` and `docs/lts/`
-- **IMPORTANT**: Always commit documentation changes separately from code changes to ease code review
-- Ensure TypeDoc reflects all API changes
-- Update documentation before publishing new npm package versions
-- Documentation should include all exported types, methods, and interfaces
+- Documentation is a **generated build artifact** and is **not committed** to the
+  repo (`docs/` is gitignored). The `Main` workflow regenerates it on each
+  release and publishes it to the `gh-pages` branch:
+  - `docs/lts/` → site root (served at https://gondixyz.github.io/gondi-js)
+  - `docs/{version}/` → `gondixyz.github.io/gondi-js/{version}/` (versioned, accumulates)
+- Run `bun run docs` locally only when you want to preview output; do not commit
+  the result.
+- Ensure JSDoc on all exported types, methods, and interfaces reflects API
+  changes so the generated docs stay accurate.
 
 ### Code Review Considerations
 
@@ -159,7 +162,7 @@ When reviewing PRs (including @claude reviews), ensure:
    - MAJOR: Breaking changes
    - MINOR: New features (backwards compatible)
    - PATCH: Bug fixes (backwards compatible)
-3. **Documentation regenerated** if API changes present (check `docs/` directory)
+3. **JSDoc updated** for any public API changes (docs are generated on release; `docs/` is not committed)
 4. **Breaking changes clearly documented** with migration guides
 5. All exported types, methods, and interfaces are documented with JSDoc comments
 6. GraphQL schema changes trigger `bun run gql:types` regeneration
