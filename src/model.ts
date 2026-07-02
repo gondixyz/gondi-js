@@ -119,3 +119,5 @@ export type ListListingsProps = {
 };
 
 export type NftStandard = 'ERC721' | 'ERC1155';
+
+export type TransferNftStandard = NftStandard | 'CryptoPunks' | 'OldERC721';
