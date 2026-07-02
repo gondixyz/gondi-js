@@ -7,6 +7,7 @@ import {
   createTransport,
   Hash,
   Hex,
+  TransactionReceipt,
   TypedDataDefinition,
 } from 'viem';
 import { getAddress } from 'viem';
@@ -1033,6 +1034,66 @@ export class Gondi {
         return { ...events[0].args, ...receipt };
       },
     };
+  }
+
+  /**
+   * Transfer an NFT to another wallet. The sender is the connected wallet account.
+   * Supports ERC721 (default), ERC1155, naked CryptoPunks and old (pre-ERC721) collections.
+   * `amount` only applies to ERC1155 transfers.
+   */
+  async transferNFT({
+    to,
+    nftAddress,
+    tokenId,
+    standard = 'ERC721',
+    amount = 1n,
+  }: {
+    to: Address;
+    nftAddress: Address;
+    tokenId: bigint;
+    standard?: model.TransferNftStandard;
+    amount?: bigint;
+  }) {
+    const from = this.wallet.account.address;
+    const buildTransferResult = <TEventArgs extends object>(
+      txHash: Hash,
+      getTransferEvents: (logs: TransactionReceipt['logs']) => { args: TEventArgs }[],
+    ) => ({
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({ hash: txHash });
+        const events = getTransferEvents(receipt.logs);
+        if (events.length === 0) throw new Error(`${standard} transfer failed`);
+        return { ...events[0].args, ...receipt };
+      },
+    });
+
+    if (standard === 'ERC1155') {
+      const nft = this.contracts.ERC1155(nftAddress);
+      const txHash = await nft.safeContractWrite.safeTransferFrom([
+        from,
+        to,
+        tokenId,
+        amount,
+        zeroHex,
+      ]);
+      return buildTransferResult(txHash, (logs) => nft.parseEventLogs('TransferSingle', logs));
+    }
+    if (standard === 'CryptoPunks') {
+      const cryptopunks = this.contracts.Cryptopunks(nftAddress);
+      const txHash = await cryptopunks.safeContractWrite.transferPunk([to, tokenId]);
+      return buildTransferResult(txHash, (logs) =>
+        cryptopunks.parseEventLogs('PunkTransfer', logs),
+      );
+    }
+    if (standard === 'OldERC721') {
+      const nft = this.contracts.OldERC721(nftAddress);
+      const txHash = await nft.safeContractWrite.transfer([to, tokenId]);
+      return buildTransferResult(txHash, (logs) => nft.parseEventLogs('Transfer', logs));
+    }
+    const nft = this.contracts.ERC721(nftAddress);
+    const txHash = await nft.safeContractWrite.safeTransferFrom([from, to, tokenId]);
+    return buildTransferResult(txHash, (logs) => nft.parseEventLogs('Transfer', logs));
   }
 
   async isApprovedToken({

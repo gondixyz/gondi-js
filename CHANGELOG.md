@@ -1,3 +1,34 @@
+# New Features 0.30.0
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.30.0.
+
+## Table of Contents
+
+- [NFT Transfer](#nft-transfer-0300) new `transferNFT` method to send an NFT to another wallet
+
+---
+
+## NFT Transfer 0.30.0
+
+**Description:**
+
+- NEW: `transferNFT` transfers an NFT owned by the connected wallet to another wallet. It supports `ERC721` (default), `ERC1155`, naked `CryptoPunks` (`transferPunk`) and old pre-ERC721 collections (`OldERC721`). The write is simulated before broadcasting and the returned `waitTxInBlock` resolves with the parsed transfer event and the receipt.
+
+```typescript
+const { txHash, waitTxInBlock } = await gondi.transferNFT({
+  to: '0xRecipient',
+  nftAddress: '0xCollection',
+  tokenId: 1n,
+});
+const result = await waitTxInBlock();
+```
+
+---
+
 # Bug Fixes 0.29.15
 
 ### Important

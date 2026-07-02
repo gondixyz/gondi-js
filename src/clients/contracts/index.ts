@@ -184,6 +184,14 @@ export class Contracts {
     });
   }
 
+  Cryptopunks(address: Address) {
+    return new BaseContract({
+      address,
+      abi: cryptopunksABI,
+      walletClient: this.walletClient,
+    });
+  }
+
   ERC1155(address: Address) {
     return new BaseContract({
       address,
