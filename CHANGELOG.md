@@ -1,3 +1,26 @@
+# Bug Fixes 0.30.1
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.30.1.
+
+## Table of Contents
+
+- [Anvil UserVault address](#anvil-uservault-address-0301) corrected stale fallback and per-call environment resolution
+
+---
+
+## Anvil UserVault address 0.30.1
+
+**Description:**
+
+- FIX: the anvil fallback address for `UserVault` version `3` pointed at a contract that is no longer the vault on dev chains (`0x4A67…`), so `createUserVault` reverted on `mint`. It now defaults to the deployed dev vault (`0x0963…`).
+- FIX: `getContracts` builds its per-chain table on every call, so `GONDI_*` environment overrides set by the host application at any point (for example `GONDI_USER_VAULT_V6`) are honored instead of being snapshotted at module load.
+
+---
+
 # New Features 0.30.0
 
 ### Important

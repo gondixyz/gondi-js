@@ -55,7 +55,12 @@ const ensureAddress = (value: string | undefined): Address | null => {
 export const MSL_V5_TX_HASH =
   '0xb6dfcbc1661d0c0bced9591d06e964f97d41a35984704ffe61f8e062e43919c8' as Hash;
 
-const contractsByChain: Record<number, Contracts> = {
+/**
+ * Built per call so the GONDI_* environment overrides are read when contracts
+ * are needed instead of being snapshotted at module load, which runs before
+ * host apps can populate them.
+ */
+const buildContractsByChain = (): Record<number, Contracts> => ({
   [ANVIL_CHAIN_ID]: {
     MultiSourceLoan: {
       '1':
@@ -91,7 +96,7 @@ const contractsByChain: Record<number, Contracts> = {
         '0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82',
       '3':
         ensureAddress(process.env.GONDI_USER_VAULT_V6) ??
-        '0x4A679253410272dd5232B3Ff7cF5dbB88f295319',
+        '0x09635F643e140090A9A8Dcd712eD6285858ceBef',
     },
     PurchaseBundler: {
       '2':
@@ -167,10 +172,10 @@ const contractsByChain: Record<number, Contracts> = {
     Aave: zeroAddress,
     Cryptopunks: zeroAddress,
   },
-};
+});
 
 export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
-  const contracts = contractsByChain[chain.id];
+  const contracts = buildContractsByChain()[chain.id];
   if (!contracts) {
     throw new Error(`No contracts found for chain ${chain.id}`);
   }
