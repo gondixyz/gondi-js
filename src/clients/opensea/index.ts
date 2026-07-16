@@ -116,14 +116,19 @@ export class Opensea {
       'x-api-key': this.apiKey || '',
     };
 
-    const response = await fetch(`${this.apiUrl}/${path}`, {
+    const url = `${this.apiUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+    const response = await fetch(url, {
       method: 'POST',
       headers,
       body: body ? JSON.stringify(body) : undefined,
     });
 
     if (!response.ok) {
-      throw new Error(`OpenSea API error: ${response.status} ${response.statusText}`);
+      const detail = await response.text().catch(() => '');
+      const suffix = detail ? ` - ${detail}` : '';
+      throw new Error(
+        `OpenSea API error: ${response.status} ${response.statusText} (POST ${path})${suffix}`,
+      );
     }
 
     return response.json();

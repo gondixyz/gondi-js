@@ -1,3 +1,26 @@
+# Bug Fixes 0.30.2
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.30.2.
+
+## Table of Contents
+
+- [OpenSea error logging](#opensea-error-logging-0302) surface the OpenSea response body and request path in failed fulfillment errors
+
+---
+
+## OpenSea error logging 0.30.2
+
+**Description:**
+
+- FIX: `Opensea.postApi` discarded OpenSea's response body on non-2xx responses, so `sellNft` failures surfaced only as opaque `OpenSea API error: 400` messages (empty `statusText`, no reason). The thrown error now includes the request path and OpenSea's response body, making stale/invalid-offer rejections diagnosable.
+- FIX: the request URL joined `apiUrl` and `path` with a literal slash while both already carried one, producing a double slash (`/api/v2//offers/...`). The join now trims the boundary slashes.
+
+---
+
 # Bug Fixes 0.30.1
 
 ### Important
