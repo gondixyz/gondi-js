@@ -2,13 +2,16 @@ import { Address, createPublicClient, createTransport } from 'viem';
 
 import { Wallet } from '@/clients/contracts';
 import { type OnStepChange } from '@/gondi';
+import { withRetriedReceiptWait } from '@/utils/blockchain';
 
 export const addStepCallback = (props: { wallet: Wallet; onStepChange: OnStepChange }) => {
   const { wallet, onStepChange } = props;
-  const bcClient = createPublicClient({
-    chain: wallet.chain,
-    transport: () => createTransport(wallet.transport),
-  });
+  const bcClient = withRetriedReceiptWait(
+    createPublicClient({
+      chain: wallet.chain,
+      transport: () => createTransport(wallet.transport),
+    }),
+  );
 
   const originalSignTypedData = wallet.signTypedData.bind(wallet);
   const originalWriteContract = wallet.writeContract.bind(wallet);
