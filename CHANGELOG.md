@@ -1,3 +1,25 @@
+# Bug Fixes 0.30.3
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.30.3.
+
+## Table of Contents
+
+- [Patient receipt waits](#patient-receipt-waits-0303) transaction receipt waits retry pending lookups and give up only after 6 minutes
+
+---
+
+## Patient receipt waits 0.30.3
+
+**Description:**
+
+- FIX: every `waitForTransactionReceipt` (the step callback's broadcasted→success wait and all `waitTxInBlock` results) previously inherited viem's defaults, which reject with `TransactionReceiptNotFoundError` after only a handful of lookup retries when the RPC node lags behind the mempool — often seconds after broadcasting — and otherwise time out at 180s. Slow-to-mine transactions surfaced as failures even though they later confirmed. All public clients now retry pending-receipt lookups and keep waiting for up to 6 minutes total, throwing `WaitForTransactionReceiptTimeoutError` (with the transaction hash) only once that window is exhausted.
+
+---
+
 # Bug Fixes 0.30.2
 
 ### Important

@@ -37,7 +37,7 @@ import {
 } from '@/generated/graphql';
 import * as model from '@/model';
 import { NftStandard } from '@/model';
-import { isEmptyCalldata } from '@/utils/blockchain';
+import { isEmptyCalldata, withRetriedReceiptWait } from '@/utils/blockchain';
 import {
   BPS,
   isLoanVersion,
@@ -92,10 +92,12 @@ export class Gondi {
   constructor({ wallet, apiClient, openseaApiKey, onStepChange }: GondiProps) {
     this.wallet = wallet;
     this.account = wallet.account;
-    this.bcClient = createPublicClient({
-      chain: wallet.chain,
-      transport: () => createTransport(wallet.transport),
-    });
+    this.bcClient = withRetriedReceiptWait(
+      createPublicClient({
+        chain: wallet.chain,
+        transport: () => createTransport(wallet.transport),
+      }),
+    );
     this.contracts = new Contracts(this.bcClient, wallet);
     this.apiClient = new Api({ wallet, apiClient, onStepChange });
     this.openseaClient = new Opensea({ apiKey: openseaApiKey ?? process.env.OPENSEA_API_KEY });

@@ -22,6 +22,7 @@ import {
 } from 'viem';
 
 import { Wallet } from '@/clients/contracts';
+import { withRetriedReceiptWait } from '@/utils/blockchain';
 
 export class BaseContract<TAbi extends Abi> {
   abi: TAbi;
@@ -52,9 +53,11 @@ export class BaseContract<TAbi extends Abi> {
     abi: TAbi;
   }) {
     this.wallet = walletClient;
-    const bcClient = createPublicClient({
-      transport: () => createTransport(walletClient.transport),
-    });
+    const bcClient = withRetriedReceiptWait(
+      createPublicClient({
+        transport: () => createTransport(walletClient.transport),
+      }),
+    );
     this.bcClient = bcClient;
     this.address = address;
     this.abi = abi;
