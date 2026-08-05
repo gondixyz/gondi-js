@@ -5,7 +5,16 @@ import { hyperliquid } from '@/blockchain';
 import { entries } from '@/utils/object';
 import { areSameAddress } from '@/utils/string';
 
-const ANVIL_CHAIN_ID = 31337;
+const ANVIL_DEFAULT_CHAIN_ID = 31337;
+
+const anvilChainId = (): number => {
+  const rawChainId = process.env.ANVIL_CHAIN_ID;
+  if (!rawChainId) {
+    return ANVIL_DEFAULT_CHAIN_ID;
+  }
+  const parsedChainId = Number(rawChainId);
+  return Number.isNaN(parsedChainId) ? ANVIL_DEFAULT_CHAIN_ID : parsedChainId;
+};
 
 interface Contracts {
   MultiSourceLoan: {
@@ -56,12 +65,14 @@ export const MSL_V5_TX_HASH =
   '0xb6dfcbc1661d0c0bced9591d06e964f97d41a35984704ffe61f8e062e43919c8' as Hash;
 
 /**
- * Built per call so the GONDI_* environment overrides are read when contracts
- * are needed instead of being snapshotted at module load, which runs before
- * host apps can populate them.
+ * Built per call so the GONDI_* environment overrides and the ANVIL_CHAIN_ID
+ * override are read when contracts are needed instead of being snapshotted at
+ * module load, which runs before host apps can populate them. ANVIL_CHAIN_ID
+ * lets multi-instance local dev environments run their anvil fork on a chain
+ * id other than the default 31337.
  */
 const buildContractsByChain = (): Record<number, Contracts> => ({
-  [ANVIL_CHAIN_ID]: {
+  [anvilChainId()]: {
     MultiSourceLoan: {
       '1':
         ensureAddress(process.env.GONDI_MULTI_SOURCE_LOAN_V4) ??

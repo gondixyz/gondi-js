@@ -1,3 +1,25 @@
+# New Features 0.30.4
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.30.4.
+
+## Table of Contents
+
+- [Anvil chain id override](#anvil-chain-id-override-0304) `ANVIL_CHAIN_ID` environment variable overrides the local anvil chain id
+
+---
+
+## Anvil chain id override 0.30.4
+
+**Description:**
+
+- NEW: the chain id used for the local anvil contract deployment can now be overridden with the `ANVIL_CHAIN_ID` environment variable (default remains `31337`). Multi-instance local dev environments that run each anvil fork on its own chain id can now use the SDK against those forks; previously `getContracts` threw `No contracts found for chain <id>` for any local chain id other than `31337`. The variable is read lazily, like the existing `GONDI_*` contract address overrides, so it can be set any time before the first contract call.
+
+---
+
 # Bug Fixes 0.30.3
 
 ### Important
