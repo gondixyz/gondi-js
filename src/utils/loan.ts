@@ -69,6 +69,9 @@ export const loanToMslLoan = (loan: LoanToMslLoanType) => {
     source,
     tranche: source,
     protocolFee,
+    // Required to encode Loan structs from contract version 3.2; older loans ignore it.
+    lenderRefinanceDisabled:
+      'lenderRefinanceDisabled' in loan ? loan.lenderRefinanceDisabled : false,
   };
 };
 
@@ -91,6 +94,7 @@ export const isLoanVersion = (address: Address, chainId: number) => {
     isV2: version === '2',
     isV3: version === '3',
     isV3_1: version === '3.1',
+    isV3_2: version === '3.2',
   };
 };
 

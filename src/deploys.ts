@@ -22,12 +22,14 @@ interface Contracts {
     '2': Address;
     '3': Address;
     '3.1': Address;
+    '3.2': Address;
   };
   AuctionLoanLiquidator: {
     '1': Address;
     '2': Address;
     '3': Address;
     '3.1': Address;
+    '3.2': Address;
   };
   UserVault: {
     '2': Address;
@@ -38,6 +40,7 @@ interface Contracts {
     '3': Address;
     '3.1': Address;
     '3.1_PB_V2': Address;
+    '3.2': Address;
   };
   Seaport: Address;
   Aave: Address;
@@ -86,6 +89,9 @@ const buildContractsByChain = (): Record<number, Contracts> => ({
       '3.1':
         ensureAddress(process.env.GONDI_MULTI_SOURCE_LOAN_V7) ??
         '0x95401dc811bb5740090279Ba06cfA8fcF6113778',
+      '3.2':
+        ensureAddress(process.env.GONDI_MULTI_SOURCE_LOAN_V8) ??
+        '0x1429859428C0aBc9C2C47C8Ee9FBaf82cFA0F20f',
     },
     AuctionLoanLiquidator: {
       '1':
@@ -100,6 +106,9 @@ const buildContractsByChain = (): Record<number, Contracts> => ({
       '3.1':
         ensureAddress(process.env.GONDI_AUCTION_LOAN_LIQUIDATOR_V7) ??
         '0xf5059a5D33d5853360D16C683c16e67980206f36',
+      '3.2':
+        ensureAddress(process.env.GONDI_AUCTION_LOAN_LIQUIDATOR_V8) ??
+        '0xcbEAF3BDe82155F56486Fb5a1072cb8baAf547cc',
     },
     UserVault: {
       '2':
@@ -122,6 +131,9 @@ const buildContractsByChain = (): Record<number, Contracts> => ({
       '3.1_PB_V2':
         ensureAddress(process.env.GONDI_PURCHASE_BUNDLER_V7_PB_V2) ??
         '0x1291Be112d480055DaFd8a610b7d1e203891C274',
+      '3.2':
+        ensureAddress(process.env.GONDI_PURCHASE_BUNDLER_V8) ??
+        '0x1fA02b2d6A771842690194Cf62D91bdd92BfE28d',
     },
     Seaport:
       ensureAddress(process.env.GONDI_SEAPORT) ?? '0x0000000000000068F116a894984e2DB1123eB395',
@@ -135,12 +147,14 @@ const buildContractsByChain = (): Record<number, Contracts> => ({
       '2': '0x478f6F994C6fb3cf3e444a489b3AD9edB8cCaE16',
       '3': '0xf65b99ce6dc5f6c556172bcc0ff27d3665a7d9a8',
       '3.1': '0xf41B389E0C1950dc0B16C9498eaE77131CC08A56',
+      '3.2': zeroAddress, // TODO(MSL-v3.2): not deployed to mainnet yet
     },
     AuctionLoanLiquidator: {
       '1': '0x237e4421C742d843Fdd96D22294D338507e17091',
       '2': '0x97d34635b605c2f1630d6b4c6c5d222b8a2ca47d',
       '3': '0x2995ae7233fa89b314b5a707465b57a582f440f0',
       '3.1': '0x2995ae7233fa89b314b5a707465b57a582f440f0',
+      '3.2': zeroAddress, // TODO(MSL-v3.2): not deployed to mainnet yet
     },
     UserVault: {
       '2': '0x14a6Dcebb2Bb73aae1b199CCAadA75247b81976D',
@@ -151,6 +165,7 @@ const buildContractsByChain = (): Record<number, Contracts> => ({
       '3': '0xcea7eea12c6fc82d0318704b9d35a4192c2d260a',
       '3.1': zeroAddress, // This is not used in favour of 3.1_PB_V2
       '3.1_PB_V2': '0xf46a58cada29ff34cf62f72357d2b37815506feb',
+      '3.2': zeroAddress, // TODO(MSL-v3.2): not deployed to mainnet yet
     },
     Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
     Aave: '0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2',
@@ -162,12 +177,14 @@ const buildContractsByChain = (): Record<number, Contracts> => ({
       '2': zeroAddress,
       '3': zeroAddress,
       '3.1': '0x6ad675624ec8320e5806858cd5db101a0b927fd9',
+      '3.2': zeroAddress, // TODO(MSL-v3.2): not deployed to hyperliquid yet
     },
     AuctionLoanLiquidator: {
       '1': zeroAddress,
       '2': zeroAddress,
       '3': zeroAddress,
       '3.1': '0xb166ec953fef89c6ee2e39e60fbd49b19cf4c6ad',
+      '3.2': zeroAddress, // TODO(MSL-v3.2): not deployed to hyperliquid yet
     },
     UserVault: {
       '2': zeroAddress,
@@ -178,6 +195,7 @@ const buildContractsByChain = (): Record<number, Contracts> => ({
       '3': zeroAddress,
       '3.1': '0xfaaff69da43b8195e5b0945c4fea4476e4264157',
       '3.1_PB_V2': zeroAddress, // Hyperevm does not support PurchaseBundlerV2
+      '3.2': zeroAddress, // TODO(MSL-v3.2): not deployed to hyperliquid yet
     },
     Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
     Aave: zeroAddress,

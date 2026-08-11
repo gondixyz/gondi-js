@@ -152,6 +152,7 @@ export class Gondi {
       signerAddress: this.account.address,
       borrowerAddress: offer.borrowerAddress ?? zeroAddress,
       requiresLiquidation: !!offer.requiresLiquidation,
+      lenderRefinanceDisabled: !!offer.lenderRefinanceDisabled,
       contractAddress,
       offerValidators: [], // This is ignored by the API but it was required in the mutation
     };
@@ -209,6 +210,7 @@ export class Gondi {
       signerAddress: this.account.address,
       borrowerAddress: offer.borrowerAddress ?? zeroAddress,
       requiresLiquidation: !!offer.requiresLiquidation,
+      lenderRefinanceDisabled: !!offer.lenderRefinanceDisabled,
       contractAddress,
       offerValidators: [
         // This is ignored by the API but it was required in the mutation
@@ -820,6 +822,7 @@ export class Gondi {
   private getDefaults() {
     const contracts = getContracts(this.wallet.chain);
     return {
+      // TODO(MSL-v3.2): default to '3.2' once it is deployed to mainnet.
       Msl: contracts.MultiSourceLoan['3.1'],
       UserVault: contracts.UserVault['3'],
     };

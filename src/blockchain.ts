@@ -11,6 +11,7 @@ import type {
   multiSourceLoanAbi as multiSourceLoanABIV6,
 } from '@/generated/blockchain/v6';
 import type { multiSourceLoanAbi as multiSourceLoanABIV7 } from '@/generated/blockchain/v7';
+import type { multiSourceLoanAbi as multiSourceLoanABIV8 } from '@/generated/blockchain/v8';
 import { areSameAddress } from '@/utils/string';
 
 type RepayAbiTypeV4 = AbiParametersToPrimitiveTypes<
@@ -34,6 +35,12 @@ type EmitAbiTypeV6 = AbiParametersToPrimitiveTypes<
 >;
 type EmitAbiTypeV7 = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof multiSourceLoanABIV7, 'emitLoan'>['inputs']
+>;
+type EmitAbiTypeV8 = AbiParametersToPrimitiveTypes<
+  ExtractAbiFunction<typeof multiSourceLoanABIV8, 'emitLoan'>['inputs']
+>;
+type RepayAbiTypeV8 = AbiParametersToPrimitiveTypes<
+  ExtractAbiFunction<typeof multiSourceLoanABIV8, 'repayLoan'>['inputs']
 >;
 
 type RefiAbiTypeV4 = AbiParametersToPrimitiveTypes<
@@ -63,11 +70,17 @@ export type LoanV6 = RepayAbiTypeV6[0]['loan'] & {
   startTime: Date | bigint;
   contractStartTime: Date | bigint;
 };
-export type Loan = LoanV4 | LoanV5 | LoanV6;
+export type LoanV8 = RepayAbiTypeV8[0]['loan'] & {
+  contractAddress: Address;
+  startTime: Date | bigint;
+  contractStartTime: Date | bigint;
+};
+export type Loan = LoanV4 | LoanV5 | LoanV6 | LoanV8;
 
 export type OfferV4 = EmitAbiTypeV4[0];
 export type OfferV5 = EmitAbiTypeV5[0]['executionData']['offer'];
 export type OfferV6 = EmitAbiTypeV6[0]['executionData']['offerExecution'][number]['offer'];
+export type OfferV8 = EmitAbiTypeV8[0]['executionData']['offerExecution'][number]['offer'];
 
 export type RenegotiationV4 = RefiAbiTypeV4[0];
 export type RenegotiationV5 = RefiAbiTypeV5[0];
@@ -79,6 +92,7 @@ export type SignableRepaymentDataV6 = RepayAbiTypeV6[0]['data'];
 
 export type ExecutionDataV6 = EmitAbiTypeV6[0]['executionData'];
 export type ExecutionDataV7 = EmitAbiTypeV7[0]['executionData'];
+export type ExecutionDataV8 = EmitAbiTypeV8[0]['executionData'];
 
 type AuctionV5 = PlaceBidAbiTypeV5[2];
 type AuctionV6 = PlaceBidAbiTypeV6[2];

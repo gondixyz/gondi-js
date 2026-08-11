@@ -58,6 +58,7 @@ query listOffers(
         repayment
         hidden
         maxSeniorRepayment
+        lenderRefinanceDisabled
         validators {
           arguments
           validator
