@@ -1,10 +1,12 @@
-import { Address, decodeFunctionData, encodeFunctionData, Hash, Hex } from 'viem';
+import { Address, decodeFunctionData, encodeFunctionData, Hash, Hex, zeroAddress } from 'viem';
 
 import {
   ExecutionDataV6,
   ExecutionDataV7,
+  ExecutionDataV8,
   LoanV6,
   OfferV6,
+  OfferV8,
   RenegotiationV6,
   REORG_SAFETY_BUFFER,
   SignableRepaymentDataV6,
@@ -13,8 +15,8 @@ import {
 import { Wallet } from '@/clients/contracts';
 import { multiSourceLoanAbi as multiSourceLoanAbiV6 } from '@/generated/blockchain/v6';
 import { multiSourceLoanAbi as multiSourceLoanAbiV7 } from '@/generated/blockchain/v7';
+import { multiSourceLoanAbi as multiSourceLoanAbiV8 } from '@/generated/blockchain/v8';
 import { EmitLoanArgs } from '@/gondi';
-import { filterFalsy } from '@/utils/array';
 import { millisToSeconds, SECONDS_IN_DAY, secondsToMillis } from '@/utils/dates';
 import { getMslLoanId, getRemainingSeconds, LoanToMslLoanType } from '@/utils/loan';
 import { bpsToPercentage, sumBy } from '@/utils/number';
@@ -27,8 +29,18 @@ type RepayArgs = {
   signableRepaymentData: SignableRepaymentDataV6;
 };
 
-export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof multiSourceLoanAbiV7> {
-  version: '3' | '3.1';
+const MSL_V6_ABI_BY_VERSION = {
+  '3': multiSourceLoanAbiV6,
+  '3.1': multiSourceLoanAbiV7,
+  '3.2': multiSourceLoanAbiV8,
+} as const;
+
+export type MslV6Version = keyof typeof MSL_V6_ABI_BY_VERSION;
+
+export class MslV6 extends BaseContract<
+  typeof multiSourceLoanAbiV6 | typeof multiSourceLoanAbiV7 | typeof multiSourceLoanAbiV8
+> {
+  version: MslV6Version;
 
   constructor({
     walletClient,
@@ -37,16 +49,13 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
   }: {
     walletClient: Wallet;
     address: Address;
-    version: string;
+    version: MslV6Version;
   }) {
     super({
       walletClient,
       address,
-      abi: version === '3' ? multiSourceLoanAbiV6 : multiSourceLoanAbiV7,
+      abi: MSL_V6_ABI_BY_VERSION[version],
     });
-    if (version !== '3' && version !== '3.1') {
-      throw new Error(`Invalid version ${version}`);
-    }
     this.version = version;
   }
 
@@ -59,26 +68,53 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
     };
   }
 
-  async signOffer({ structToSign }: { structToSign: OfferV6 }) {
+  private loanOfferType() {
+    return [
+      { name: 'offerId', type: 'uint256' },
+      { name: 'lender', type: 'address' },
+      { name: 'fee', type: 'uint256' },
+      { name: 'capacity', type: 'uint256' },
+      { name: 'nftCollateralAddress', type: 'address' },
+      { name: 'nftCollateralTokenId', type: 'uint256' },
+      { name: 'principalAddress', type: 'address' },
+      { name: 'principalAmount', type: 'uint256' },
+      { name: 'aprBps', type: 'uint256' },
+      { name: 'expirationTime', type: 'uint256' },
+      { name: 'duration', type: 'uint256' },
+      { name: 'maxSeniorRepayment', type: 'uint256' },
+      { name: 'validators', type: 'OfferValidator[]' },
+      ...(this.version === '3.2'
+        ? [
+            { name: 'lenderRefinanceDisabled', type: 'bool' },
+            { name: 'borrower', type: 'address' },
+          ]
+        : []),
+    ];
+  }
+
+  private executionDataType() {
+    return [
+      { name: 'offerExecution', type: 'OfferExecution[]' },
+      ...(this.version !== '3'
+        ? [
+            { name: 'loanId', type: 'uint256' },
+            { name: 'nftCollateralAddress', type: 'address' },
+          ]
+        : []),
+      { name: 'tokenId', type: 'uint256' },
+      { name: 'duration', type: 'uint256' },
+      { name: 'expirationTime', type: 'uint256' },
+      { name: 'principalReceiver', type: 'address' },
+      { name: 'callbackData', type: 'bytes' },
+    ];
+  }
+
+  async signOffer({ structToSign }: { structToSign: OfferV6 | OfferV8 }) {
     return this.wallet.signTypedData({
       domain: this.getDomain(),
       primaryType: 'LoanOffer',
       types: {
-        LoanOffer: [
-          { name: 'offerId', type: 'uint256' },
-          { name: 'lender', type: 'address' },
-          { name: 'fee', type: 'uint256' },
-          { name: 'capacity', type: 'uint256' },
-          { name: 'nftCollateralAddress', type: 'address' },
-          { name: 'nftCollateralTokenId', type: 'uint256' },
-          { name: 'principalAddress', type: 'address' },
-          { name: 'principalAmount', type: 'uint256' },
-          { name: 'aprBps', type: 'uint256' },
-          { name: 'expirationTime', type: 'uint256' },
-          { name: 'duration', type: 'uint256' },
-          { name: 'maxSeniorRepayment', type: 'uint256' },
-          { name: 'validators', type: 'OfferValidator[]' },
-        ],
+        LoanOffer: this.loanOfferType(),
         OfferValidator: [
           { name: 'validator', type: 'address' },
           { name: 'arguments', type: 'bytes' },
@@ -124,7 +160,7 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
     });
   }
 
-  async signExecutionData<T extends ExecutionDataV6 | ExecutionDataV7>({
+  async signExecutionData<T extends ExecutionDataV6 | ExecutionDataV7 | ExecutionDataV8>({
     structToSign,
   }: {
     structToSign: T;
@@ -133,36 +169,13 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
       domain: this.getDomain(),
       primaryType: 'ExecutionData',
       types: {
-        ExecutionData: filterFalsy([
-          { name: 'offerExecution', type: 'OfferExecution[]' },
-          this.version === '3.1' && { name: 'loanId', type: 'uint256' },
-          this.version === '3.1' && { name: 'nftCollateralAddress', type: 'address' },
-          { name: 'tokenId', type: 'uint256' },
-          { name: 'duration', type: 'uint256' },
-          { name: 'expirationTime', type: 'uint256' },
-          { name: 'principalReceiver', type: 'address' },
-          { name: 'callbackData', type: 'bytes' },
-        ]),
+        ExecutionData: this.executionDataType(),
         OfferExecution: [
           { name: 'offer', type: 'LoanOffer' },
           { name: 'amount', type: 'uint256' },
           { name: 'lenderOfferSignature', type: 'bytes' },
         ],
-        LoanOffer: [
-          { name: 'offerId', type: 'uint256' },
-          { name: 'lender', type: 'address' },
-          { name: 'fee', type: 'uint256' },
-          { name: 'capacity', type: 'uint256' },
-          { name: 'nftCollateralAddress', type: 'address' },
-          { name: 'nftCollateralTokenId', type: 'uint256' },
-          { name: 'principalAddress', type: 'address' },
-          { name: 'principalAmount', type: 'uint256' },
-          { name: 'aprBps', type: 'uint256' },
-          { name: 'expirationTime', type: 'uint256' },
-          { name: 'duration', type: 'uint256' },
-          { name: 'maxSeniorRepayment', type: 'uint256' },
-          { name: 'validators', type: 'OfferValidator[]' },
-        ],
+        LoanOffer: this.loanOfferType(),
         OfferValidator: [
           { name: 'validator', type: 'address' },
           { name: 'arguments', type: 'bytes' },
@@ -260,6 +273,10 @@ export class MslV6 extends BaseContract<typeof multiSourceLoanAbiV6 | typeof mul
           ...offer,
           lender: offer.lenderAddress,
           validators: offer.offerValidators,
+          // Only encoded from version 3.2, where the lender opts out of refinances.
+          lenderRefinanceDisabled: offer.lenderRefinanceDisabled ?? false,
+          // Only encoded from version 3.2, where the zero address leaves the offer open.
+          borrower: offer.borrowerAddress ?? zeroAddress,
         },
       })),
       nftCollateralAddress,

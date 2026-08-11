@@ -39,6 +39,8 @@ export interface KeyedClient {
 
 type Erc721Or1155ABI = typeof erc721ABI | typeof erc1155Abi;
 
+type MslArgs = { walletClient: Wallet; address: Address };
+
 export class Contracts {
   publicClient: GondiPublicClient;
   walletClient: Wallet;
@@ -48,11 +50,13 @@ export class Contracts {
     this.publicClient = publicClient;
   }
 
+  // Each entry supplies its own version so the abi is picked without a cast.
   _Msls = {
-    '1': MslV4,
-    '2': MslV5,
-    '3': MslV6,
-    '3.1': MslV6,
+    '1': (args: MslArgs) => new MslV4(args),
+    '2': (args: MslArgs) => new MslV5(args),
+    '3': (args: MslArgs) => new MslV6({ ...args, version: '3' }),
+    '3.1': (args: MslArgs) => new MslV6({ ...args, version: '3.1' }),
+    '3.2': (args: MslArgs) => new MslV6({ ...args, version: '3.2' }),
   };
 
   _Alls = {
@@ -60,6 +64,7 @@ export class Contracts {
     '2': AllV5,
     '3': AllV6,
     '3.1': AllV6,
+    '3.2': AllV6,
   };
 
   _PBs = {
@@ -67,6 +72,7 @@ export class Contracts {
     '3': PurchaseBundlerV2,
     '3.1': PurchaseBundlerV1,
     '3.1_PB_V2': PurchaseBundlerV2,
+    '3.2': PurchaseBundlerV2,
   };
 
   _UserVaults = {
@@ -94,13 +100,8 @@ export class Contracts {
 
   Msl(address: Address) {
     const version = getVersionFromMslAddress(this.walletClient.chain, address);
-    const Msl = this._Msls[version];
 
-    return new Msl({
-      walletClient: this.walletClient,
-      address,
-      version,
-    });
+    return this._Msls[version]({ walletClient: this.walletClient, address });
   }
 
   /**

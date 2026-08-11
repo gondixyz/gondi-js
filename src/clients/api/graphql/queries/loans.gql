@@ -58,6 +58,7 @@ query listLoans(
         blendedAprBps
         totalOriginationFee
         protocolFee
+        lenderRefinanceDisabled
 
         nft {
           id

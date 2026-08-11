@@ -1,3 +1,34 @@
+# New Features 0.31.0
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.31.0.
+
+## Table of Contents
+
+- [MultiSourceLoan v3.2, lenderRefinanceDisabled and named borrowers](#multisourceloan-v32-lenderrefinancedisabled-and-named-borrowers-0310) support the new contract version, the lender opt-out of refinances, and offers restricted to one borrower
+
+---
+
+## MultiSourceLoan v3.2, lenderRefinanceDisabled and named borrowers 0.31.0
+
+**Description:**
+
+- NEW: contract version `'3.2'` is supported end to end: v3.2 ABI (`generated/blockchain/v8`), address book entries (`GONDI_MULTI_SOURCE_LOAN_V8`, `GONDI_AUCTION_LOAN_LIQUIDATOR_V8`, `GONDI_PURCHASE_BUNDLER_V8` overrides on Anvil), and `MslV6` handling with EIP-712 domain version `3.2`.
+- NEW: `lenderRefinanceDisabled` on single-NFT and collection offer inputs (optional, defaults to `false`) lets a lender refuse refinances of the loans their offer funds. On v3.2 it is part of the lender-signed `LoanOffer`, and a loan is flagged when any funding offer sets it. `refinanceFull` and `refinancePartial` against a flagged loan revert with `LenderRefinanceDisabledError`, while repayment and borrower-funded refinances (`refinanceFromOffers`) keep working.
+- NEW: `borrowerAddress` on an offer is part of the lender-signed `LoanOffer` from v3.2, so an offer can name the only borrower allowed to take it. The zero address, which the SDK still fills in when no borrower is given, leaves the offer open to anyone; taking a named offer as anyone else reverts with `InvalidBorrowerError`.
+- NEW: `isLoanVersion` returns `isV3_2`.
+- ENHANCEMENT: `listOffers` and `listLoans` select `lenderRefinanceDisabled`, so offers passed to `emitLoan` and loans passed to contract calls carry the flag.
+- ENHANCEMENT: the default MultiSourceLoan contract resolves to v3.2 where it is deployed and falls back to v3.1 otherwise.
+
+**Notes:**
+
+- Loans and offers fetched outside the SDK must include `lenderRefinanceDisabled` for v3.2 contract calls; the field defaults to `false` when absent, which only matches unflagged loans and offers.
+
+---
+
 # New Features 0.30.4
 
 ### Important
