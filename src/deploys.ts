@@ -1,7 +1,6 @@
 import { Address, Chain, Hash, isAddress, zeroAddress } from 'viem';
-import { mainnet } from 'viem/chains';
+import { hyperliquid, mainnet, robinhood } from 'viem/chains';
 
-import { hyperliquid } from '@/blockchain';
 import { entries } from '@/utils/object';
 import { areSameAddress } from '@/utils/string';
 
@@ -177,14 +176,14 @@ const buildContractsByChain = (): Record<number, Contracts> => ({
       '2': zeroAddress,
       '3': zeroAddress,
       '3.1': '0x6ad675624ec8320e5806858cd5db101a0b927fd9',
-      '3.2': zeroAddress, // TODO(MSL-v3.2): not deployed to hyperliquid yet
+      '3.2': zeroAddress,
     },
     AuctionLoanLiquidator: {
       '1': zeroAddress,
       '2': zeroAddress,
       '3': zeroAddress,
       '3.1': '0xb166ec953fef89c6ee2e39e60fbd49b19cf4c6ad',
-      '3.2': zeroAddress, // TODO(MSL-v3.2): not deployed to hyperliquid yet
+      '3.2': zeroAddress,
     },
     UserVault: {
       '2': zeroAddress,
@@ -195,7 +194,37 @@ const buildContractsByChain = (): Record<number, Contracts> => ({
       '3': zeroAddress,
       '3.1': '0xfaaff69da43b8195e5b0945c4fea4476e4264157',
       '3.1_PB_V2': zeroAddress, // Hyperevm does not support PurchaseBundlerV2
-      '3.2': zeroAddress, // TODO(MSL-v3.2): not deployed to hyperliquid yet
+      '3.2': zeroAddress,
+    },
+    Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
+    Aave: zeroAddress,
+    Cryptopunks: zeroAddress,
+  },
+  [robinhood.id]: {
+    MultiSourceLoan: {
+      '1': zeroAddress,
+      '2': zeroAddress,
+      '3': zeroAddress,
+      '3.1': zeroAddress,
+      '3.2': zeroAddress, // TODO(robinhood): fill in with the deployment
+    },
+    AuctionLoanLiquidator: {
+      '1': zeroAddress,
+      '2': zeroAddress,
+      '3': zeroAddress,
+      '3.1': zeroAddress,
+      '3.2': zeroAddress, // TODO(robinhood): fill in with the deployment
+    },
+    UserVault: {
+      '2': zeroAddress,
+      '3': zeroAddress, // TODO(robinhood): fill in with the deployment
+    },
+    PurchaseBundler: {
+      '2': zeroAddress,
+      '3': zeroAddress,
+      '3.1': zeroAddress,
+      '3.1_PB_V2': zeroAddress,
+      '3.2': zeroAddress, // TODO(robinhood): fill in with the deployment
     },
     Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
     Aave: zeroAddress,
@@ -211,11 +240,17 @@ export const getContracts = (chain: Pick<Chain, 'id'>): Contracts => {
   return contracts;
 };
 
-export const getVersionFromMslAddress = (chain: Pick<Chain, 'id'>, address: Address) => {
-  const contracts = getContracts(chain);
-  const version = entries(contracts.MultiSourceLoan).find(([_, versionAddress]) =>
-    areSameAddress(versionAddress, address),
+const findDeployedVersion = <Version extends string>(
+  deployments: Record<Version, Address>,
+  address: Address,
+) =>
+  entries(deployments).find(
+    ([_, versionAddress]) =>
+      !areSameAddress(versionAddress, zeroAddress) && areSameAddress(versionAddress, address),
   )?.[0];
+
+export const getVersionFromMslAddress = (chain: Pick<Chain, 'id'>, address: Address) => {
+  const version = findDeployedVersion(getContracts(chain).MultiSourceLoan, address);
   if (!version) {
     throw new Error(`No version found for MSL contract ${address}`);
   }
@@ -226,10 +261,7 @@ export const getVersionFromPurchaseBundlerAddress = (
   chain: Pick<Chain, 'id'>,
   address: Address,
 ) => {
-  const contracts = getContracts(chain);
-  const version = entries(contracts.PurchaseBundler).find(([_, versionAddress]) =>
-    areSameAddress(versionAddress, address),
-  )?.[0];
+  const version = findDeployedVersion(getContracts(chain).PurchaseBundler, address);
   if (!version) {
     throw new Error(`No version found for PurchaseBundler contract ${address}`);
   }
@@ -237,10 +269,7 @@ export const getVersionFromPurchaseBundlerAddress = (
 };
 
 export const getVersionFromUserVaultAddress = (chain: Pick<Chain, 'id'>, address: Address) => {
-  const contracts = getContracts(chain);
-  const version = entries(contracts.UserVault).find(([_, versionAddress]) =>
-    areSameAddress(versionAddress, address),
-  )?.[0];
+  const version = findDeployedVersion(getContracts(chain).UserVault, address);
   if (!version) {
     throw new Error(`No version found for UserVault contract ${address}`);
   }
@@ -251,8 +280,39 @@ export const getApiKeys = (): ApiKeys => ({
   infuraApiKey: '9b7006cb0b0b42f1813ae9418741fbb5',
 });
 
-export const getCurrencies = (): Currencies => ({
-  WETH_ADDRESS: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-  ETH_ADDRESS: zeroAddress,
-  USDC_ADDRESS: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+const buildCurrenciesByChain = (): Record<number, Currencies> => ({
+  // Anvil forks mainnet, so it shares mainnet's currencies.
+  [anvilChainId()]: {
+    WETH_ADDRESS: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+    ETH_ADDRESS: zeroAddress,
+    USDC_ADDRESS: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+  },
+  [mainnet.id]: {
+    WETH_ADDRESS: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+    ETH_ADDRESS: zeroAddress,
+    USDC_ADDRESS: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+  },
+  [hyperliquid.id]: {
+    WETH_ADDRESS: '0x5555555555555555555555555555555555555555',
+    ETH_ADDRESS: zeroAddress,
+    USDC_ADDRESS: '0xb88339CB7199b77E23DB6E890353E22632Ba630f',
+  },
+  [robinhood.id]: {
+    WETH_ADDRESS: '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73',
+    ETH_ADDRESS: zeroAddress,
+    USDC_ADDRESS: '0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168', // It's USDG
+  },
 });
+
+/**
+ * Well-known currency addresses for a chain. Defaults to mainnet for
+ * backwards compatibility. `USDC_ADDRESS` carries the chain's dollar stable
+ * (USDG on Robinhood Chain, where no viable USDC exists).
+ */
+export const getCurrencies = (chain: Pick<Chain, 'id'> = mainnet): Currencies => {
+  const currencies = buildCurrenciesByChain()[chain.id];
+  if (!currencies) {
+    throw new Error(`No currencies found for chain ${chain.id}`);
+  }
+  return currencies;
+};

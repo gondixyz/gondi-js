@@ -1,3 +1,27 @@
+# New Features 0.32.0
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.32.0.
+
+## Table of Contents
+
+- [Robinhood Chain scaffolding](#robinhood-chain-scaffolding-0320) adds the chain, its currencies, and marketplace routing ahead of the contract deployment
+- [Version lookups skip undeployed slots](#version-lookups-skip-undeployed-slots-0320) so a zero address can no longer resolve to a placeholder version
+
+## Robinhood Chain scaffolding (0.32.0)
+
+- NEW: `robinhood` chain export (chain id 4663) and a contract registry entry. Gondi lending contracts are not deployed there yet — every slot holds the zero address and fills in with the deployment; Seaport is live at its canonical address.
+- ENHANCEMENT: `getCurrencies(chain)` is chain-aware (defaulting to mainnet for backwards compatibility) and the purchase-bundler flash-loan path resolves the wrapped native for the wallet's chain instead of always mainnet WETH. On Robinhood Chain `USDC_ADDRESS` carries USDG, the chain's dollar stable.
+- ENHANCEMENT: `isNativeCurrency` recognizes the Robinhood native-ETH sentinel; OpenSea order fulfillment maps the chain to its `robinhood` slug.
+- ENHANCEMENT: the `hyperliquid` and `robinhood` chain exports now come from `viem/chains` (full chain definitions instead of `{ id }` stubs). The viem peer requirement is raised to `^2.55.13`, the first release shipping both definitions.
+
+## Version lookups skip undeployed slots (0.32.0)
+
+- FIX: `getVersionFromMslAddress`, `getVersionFromPurchaseBundlerAddress`, and `getVersionFromUserVaultAddress` no longer match undeployed zero-address slots; looking up the zero address now throws instead of silently resolving to a placeholder version.
+
 # New Features 0.31.0
 
 ### Important
