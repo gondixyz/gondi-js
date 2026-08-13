@@ -192,7 +192,9 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
         {
           borrowArgs: {
             pool: Aave,
-            assets: isNativeCurrency ? [getCurrencies().WETH_ADDRESS] : [purchaseCurrency],
+            assets: isNativeCurrency
+              ? [getCurrencies(this.wallet.chain).WETH_ADDRESS]
+              : [purchaseCurrency],
             amounts: isNativeCurrency ? [price - initialPayment] : [price], // TODO: This could be improved to be price-initialPayment everytime
           },
           executeSellArgs: {

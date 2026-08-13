@@ -4,7 +4,7 @@ import { Wallet } from '@/clients/contracts';
 import { type OnStepChange } from '@/gondi';
 import { withRetriedReceiptWait } from '@/utils/blockchain';
 
-export const addStepCallback = (props: { wallet: Wallet; onStepChange: OnStepChange }) => {
+export const addStepCallback = (props: { wallet: Wallet; onStepChange: OnStepChange }): Wallet => {
   const { wallet, onStepChange } = props;
   const bcClient = withRetriedReceiptWait(
     createPublicClient({

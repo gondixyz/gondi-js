@@ -108,12 +108,10 @@ export const zeroHex: HexString = `0x0`;
 export const REORG_SAFETY_BUFFER = 5n * 60n;
 
 export const __ETH_ADDRESS = zeroAddress;
-export const __HYPE_ADDRESS = '0x0000000000000000000000000000000000000999';
+export const __HYPE_ADDRESS = '0x0000000000000000000000000000000000000999'; // synthetic sentinel
+export const __RETH_ADDRESS = '0x0000000000000000000000000000000000004663'; // synthetic sentinel
 
 export const isNativeCurrency = (address: Address) =>
-  areSameAddress(address, __ETH_ADDRESS) || areSameAddress(address, __HYPE_ADDRESS);
-
-// TODO: replace with viem/chains after upgrading viem
-export const hyperliquid = {
-  id: 999 as const,
-};
+  [__ETH_ADDRESS, __HYPE_ADDRESS, __RETH_ADDRESS].some((nativeAddress) =>
+    areSameAddress(address, nativeAddress),
+  );
