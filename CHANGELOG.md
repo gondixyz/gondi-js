@@ -1,3 +1,20 @@
+# New Features 0.33.0
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.33.0.
+
+## Table of Contents
+
+- [Robinhood Chain deployment addresses](#robinhood-chain-deployment-addresses-0330) fill the contract registry with the deployed, on-chain verified contracts
+
+## Robinhood Chain deployment addresses (0.33.0)
+
+- NEW: the Robinhood Chain (chain id 4663) contract registry now carries the deployed and on-chain verified contracts: MultiSourceLoan `'3.1'` (`0x0e79e08e9E35388382b7FebB26Bc73F80465e2fB`), AuctionLoanLiquidator `'3.1'` (`0xF4b2c5735247c74F40D7505EF2B5bA368651A5C8`), UserVault `'3'` (`0xcf0DF26aE14D132084E95EE8a9426d53eb027cb7`), and PurchaseBundler `'3.1_PB_V2'` (`0xfa13dfde6fdf37A2CB4151195f95940285F70754`). PurchaseBundler `'3.1'` stays at the zero address in favour of `'3.1_PB_V2'`, matching mainnet.
+- ENHANCEMENT: with the registry filled, version lookups and the default contract resolution work on Robinhood Chain: MultiSourceLoan resolves to `'3.1'`, the purchase bundler resolves to the PB_V2 client, and the UserVault default resolves to `'3'`. Aave has no deployment on the chain, so the sell-and-repay flash-loan paths remain unavailable there by design; Cryptopunks likewise stays at the zero address.
+
 # New Features 0.32.0
 
 ### Important

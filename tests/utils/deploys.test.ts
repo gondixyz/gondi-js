@@ -49,6 +49,30 @@ describe('robinhood chain support', () => {
     expect(getContracts(robinhood).Seaport).toBe('0x0000000000000068F116a894984e2DB1123eB395');
   });
 
+  test('deployed msl resolves to 3.1', () => {
+    const address = getContracts(robinhood).MultiSourceLoan['3.1'];
+
+    expect(getVersionFromMslAddress(robinhood, address)).toBe('3.1');
+  });
+
+  test('deployed purchase bundler resolves to the PB_V2 version', () => {
+    const address = getContracts(robinhood).PurchaseBundler['3.1_PB_V2'];
+
+    expect(getVersionFromPurchaseBundlerAddress(robinhood, address)).toBe('3.1_PB_V2');
+  });
+
+  test('deployed user vault resolves to 3', () => {
+    const address = getContracts(robinhood).UserVault['3'];
+
+    expect(getVersionFromUserVaultAddress(robinhood, address)).toBe('3');
+  });
+
+  test('the zero address never matches an undeployed purchase bundler slot', () => {
+    expect(() => getVersionFromPurchaseBundlerAddress(robinhood, zeroAddress)).toThrow(
+      'No version found',
+    );
+  });
+
   test('native sentinel is recognized', () => {
     expect(isNativeCurrency(__RETH_ADDRESS)).toBe(true);
   });

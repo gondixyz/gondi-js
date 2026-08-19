@@ -205,26 +205,26 @@ const buildContractsByChain = (): Record<number, Contracts> => ({
       '1': zeroAddress,
       '2': zeroAddress,
       '3': zeroAddress,
-      '3.1': zeroAddress,
-      '3.2': zeroAddress, // TODO(robinhood): fill in with the deployment
+      '3.1': '0x0e79e08e9E35388382b7FebB26Bc73F80465e2fB',
+      '3.2': zeroAddress,
     },
     AuctionLoanLiquidator: {
       '1': zeroAddress,
       '2': zeroAddress,
       '3': zeroAddress,
-      '3.1': zeroAddress,
-      '3.2': zeroAddress, // TODO(robinhood): fill in with the deployment
+      '3.1': '0xF4b2c5735247c74F40D7505EF2B5bA368651A5C8',
+      '3.2': zeroAddress,
     },
     UserVault: {
       '2': zeroAddress,
-      '3': zeroAddress, // TODO(robinhood): fill in with the deployment
+      '3': '0xcf0DF26aE14D132084E95EE8a9426d53eb027cb7',
     },
     PurchaseBundler: {
       '2': zeroAddress,
       '3': zeroAddress,
-      '3.1': zeroAddress,
-      '3.1_PB_V2': zeroAddress,
-      '3.2': zeroAddress, // TODO(robinhood): fill in with the deployment
+      '3.1': zeroAddress, // This is not used in favour of 3.1_PB_V2
+      '3.1_PB_V2': '0xfa13dfde6fdf37A2CB4151195f95940285F70754',
+      '3.2': zeroAddress,
     },
     Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
     Aave: zeroAddress,
