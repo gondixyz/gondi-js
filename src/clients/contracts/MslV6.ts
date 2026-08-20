@@ -1,4 +1,12 @@
-import { Address, decodeFunctionData, encodeFunctionData, Hash, Hex, zeroAddress } from 'viem';
+import {
+  Address,
+  decodeFunctionData,
+  encodeFunctionData,
+  Hash,
+  Hex,
+  PublicClient,
+  zeroAddress,
+} from 'viem';
 
 import {
   ExecutionDataV6,
@@ -46,15 +54,18 @@ export class MslV6 extends BaseContract<
     walletClient,
     address,
     version,
+    publicClient,
   }: {
     walletClient: Wallet;
     address: Address;
     version: MslV6Version;
+    publicClient?: PublicClient;
   }) {
     super({
       walletClient,
       address,
       abi: MSL_V6_ABI_BY_VERSION[version],
+      publicClient,
     });
     this.version = version;
   }

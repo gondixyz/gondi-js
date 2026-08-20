@@ -39,7 +39,7 @@ export interface KeyedClient {
 
 type Erc721Or1155ABI = typeof erc721ABI | typeof erc1155Abi;
 
-type MslArgs = { walletClient: Wallet; address: Address };
+type MslArgs = { walletClient: Wallet; address: Address; publicClient?: PublicClient };
 
 export class Contracts {
   publicClient: GondiPublicClient;
@@ -95,13 +95,18 @@ export class Contracts {
       address,
       abi,
       walletClient: this.walletClient,
+      publicClient: this.publicClient,
     });
   }
 
   Msl(address: Address) {
     const version = getVersionFromMslAddress(this.walletClient.chain, address);
 
-    return this._Msls[version]({ walletClient: this.walletClient, address });
+    return this._Msls[version]({
+      walletClient: this.walletClient,
+      address,
+      publicClient: this.publicClient,
+    });
   }
 
   /**
@@ -117,6 +122,7 @@ export class Contracts {
     return new All({
       walletClient: this.walletClient,
       address: contracts.AuctionLoanLiquidator[version],
+      publicClient: this.publicClient,
     });
   }
 
@@ -146,6 +152,7 @@ export class Contracts {
       walletClient: this.walletClient,
       address: resolvedAddress,
       msl,
+      publicClient: this.publicClient,
     });
   }
 
@@ -156,6 +163,7 @@ export class Contracts {
     return new UserVault({
       walletClient: this.walletClient,
       address,
+      publicClient: this.publicClient,
     });
   }
 
@@ -174,6 +182,7 @@ export class Contracts {
       address,
       abi: erc721ABI,
       walletClient: this.walletClient,
+      publicClient: this.publicClient,
     });
   }
 
@@ -182,6 +191,7 @@ export class Contracts {
       address,
       abi: oldErc721Abi,
       walletClient: this.walletClient,
+      publicClient: this.publicClient,
     });
   }
 
@@ -190,6 +200,7 @@ export class Contracts {
       address,
       abi: cryptopunksABI,
       walletClient: this.walletClient,
+      publicClient: this.publicClient,
     });
   }
 
@@ -198,6 +209,7 @@ export class Contracts {
       address,
       abi: erc1155Abi,
       walletClient: this.walletClient,
+      publicClient: this.publicClient,
     });
   }
 
@@ -205,6 +217,7 @@ export class Contracts {
     return new OldERC721Wrapper({
       walletClient: this.walletClient,
       contractAddress: address,
+      publicClient: this.publicClient,
     });
   }
 
@@ -212,6 +225,7 @@ export class Contracts {
     return new Erc20({
       address,
       walletClient: this.walletClient,
+      publicClient: this.publicClient,
     });
   }
 
@@ -220,6 +234,7 @@ export class Contracts {
       walletClient: this.walletClient,
       address,
       msl,
+      publicClient: this.publicClient,
     });
   }
 }

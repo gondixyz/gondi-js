@@ -1,4 +1,4 @@
-import { Address, encodeAbiParameters } from 'viem';
+import { Address, encodeAbiParameters, PublicClient } from 'viem';
 
 import { LoanV4 } from '@/blockchain';
 import { Wallet } from '@/clients/contracts';
@@ -44,11 +44,20 @@ export class AllV4 extends BaseContract<typeof auctionLoanLiquidatorABIV4> {
     },
   ];
 
-  constructor({ walletClient, address }: { walletClient: Wallet; address: Address }) {
+  constructor({
+    walletClient,
+    address,
+    publicClient,
+  }: {
+    walletClient: Wallet;
+    address: Address;
+    publicClient?: PublicClient;
+  }) {
     super({
       walletClient,
       address,
       abi: auctionLoanLiquidatorABIV4,
+      publicClient,
     });
   }
 

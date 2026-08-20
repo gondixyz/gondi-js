@@ -1,4 +1,4 @@
-import { Address, decodeFunctionData, encodeFunctionData, Hash, Hex } from 'viem';
+import { Address, decodeFunctionData, encodeFunctionData, Hash, Hex, PublicClient } from 'viem';
 
 import {
   LoanV5,
@@ -27,11 +27,20 @@ type RepayArgs = {
 export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
   version = '2' as const;
 
-  constructor({ walletClient, address }: { walletClient: Wallet; address: Address }) {
+  constructor({
+    walletClient,
+    address,
+    publicClient,
+  }: {
+    walletClient: Wallet;
+    address: Address;
+    publicClient?: PublicClient;
+  }) {
     super({
       walletClient,
       address,
       abi: multiSourceLoanABIV5,
+      publicClient,
     });
   }
 

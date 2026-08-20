@@ -47,17 +47,21 @@ export class BaseContract<TAbi extends Abi> {
     walletClient,
     address,
     abi,
+    publicClient,
   }: {
     walletClient: Wallet;
     address: Address;
     abi: TAbi;
+    publicClient?: PublicClient;
   }) {
     this.wallet = walletClient;
-    const bcClient = withRetriedReceiptWait(
-      createPublicClient({
-        transport: () => createTransport(walletClient.transport),
-      }),
-    );
+    const bcClient =
+      publicClient ??
+      withRetriedReceiptWait(
+        createPublicClient({
+          transport: () => createTransport(walletClient.transport),
+        }),
+      );
     this.bcClient = bcClient;
     this.address = address;
     this.abi = abi;

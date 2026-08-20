@@ -1,4 +1,4 @@
-import { Address } from 'viem';
+import { Address, PublicClient } from 'viem';
 
 import { Wallet } from '@/clients/contracts';
 import { BaseContract } from '@/clients/contracts/BaseContract';
@@ -8,14 +8,17 @@ export class OldERC721Wrapper extends BaseContract<typeof oldErc721WrapperAbi> {
   constructor({
     walletClient,
     contractAddress,
+    publicClient,
   }: {
     walletClient: Wallet;
     contractAddress: Address;
+    publicClient?: PublicClient;
   }) {
     super({
       walletClient,
       address: contractAddress,
       abi: oldErc721WrapperAbi,
+      publicClient,
     });
   }
 
