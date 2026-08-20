@@ -54,6 +54,13 @@ import { isFulfillAdvancedOrderFunctionName } from './clients/opensea/types';
 
 interface GondiProps {
   wallet: Wallet;
+  /**
+   * Dedicated public client for read operations: transaction simulations,
+   * receipt polling and contract reads. Must be connected to the same chain as
+   * `wallet`. When omitted, a public client is derived from the wallet's own
+   * transport, so every read goes through the wallet provider's RPC.
+   */
+  publicClient?: GondiPublicClient;
   apiClient?: ApiProps['apiClient'];
   openseaApiKey?: string;
   onStepChange?: OnStepChange;
@@ -89,14 +96,15 @@ export class Gondi {
   apiClient: Api;
   openseaClient: Opensea;
 
-  constructor({ wallet, apiClient, openseaApiKey, onStepChange }: GondiProps) {
+  constructor({ wallet, publicClient, apiClient, openseaApiKey, onStepChange }: GondiProps) {
     this.wallet = wallet;
     this.account = wallet.account;
     this.bcClient = withRetriedReceiptWait(
-      createPublicClient({
-        chain: wallet.chain,
-        transport: () => createTransport(wallet.transport),
-      }),
+      publicClient ??
+        createPublicClient({
+          chain: wallet.chain,
+          transport: () => createTransport(wallet.transport),
+        }),
     );
     this.contracts = new Contracts(this.bcClient, wallet);
     this.apiClient = new Api({ wallet, apiClient, onStepChange });
@@ -108,9 +116,10 @@ export class Gondi {
       onStepChange: OnStepChange;
     },
   ) {
-    const { wallet, onStepChange } = props;
+    const { wallet, publicClient, onStepChange } = props;
     const walletWithSteps = addStepCallback({
       wallet,
+      publicClient,
       onStepChange,
     });
     return new Gondi({ ...props, wallet: walletWithSteps });

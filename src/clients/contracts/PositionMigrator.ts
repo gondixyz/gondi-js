@@ -1,5 +1,5 @@
 import { AbiParametersToPrimitiveTypes, ExtractAbiFunction } from 'abitype';
-import { Address, Hex, zeroAddress } from 'viem';
+import { Address, Hex, PublicClient, zeroAddress } from 'viem';
 
 import { Wallet } from '@/clients/contracts';
 import { MslV5 } from '@/clients/contracts/MslV5';
@@ -66,15 +66,18 @@ export class PositionMigrator extends BaseContract<typeof positionMigratorAbi> {
     address,
     walletClient,
     msl,
+    publicClient,
   }: {
     address: Address;
     msl: MslV6;
     walletClient: Wallet;
+    publicClient?: PublicClient;
   }) {
     super({
       walletClient,
       address,
       abi: positionMigratorAbi,
+      publicClient,
     });
     this.msl = msl;
   }

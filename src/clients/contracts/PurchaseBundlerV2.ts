@@ -1,5 +1,5 @@
 import { Maybe } from 'graphql/jsutils/Maybe';
-import { Address, decodeAbiParameters, Hex } from 'viem';
+import { Address, decodeAbiParameters, Hex, PublicClient } from 'viem';
 
 import { Wallet } from '@/clients/contracts';
 import { MslV5 } from '@/clients/contracts/MslV5';
@@ -18,15 +18,18 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
     address,
     walletClient,
     msl,
+    publicClient,
   }: {
     address: Address;
     msl: MslV5 | MslV6;
     walletClient: Wallet;
+    publicClient?: PublicClient;
   }) {
     super({
       walletClient,
       address,
       abi: purchaseBundlerV2ABI,
+      publicClient,
     });
     this.msl = msl;
   }

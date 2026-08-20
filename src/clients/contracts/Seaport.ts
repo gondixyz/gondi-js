@@ -1,4 +1,4 @@
-import { Address, Hash, Hex } from 'viem';
+import { Address, Hash, Hex, PublicClient } from 'viem';
 
 import { zeroAddress, zeroHash } from '@/blockchain';
 import { Wallet } from '@/clients/contracts';
@@ -43,13 +43,20 @@ interface AdvancedOrder {
 }
 
 export class Seaport extends BaseContract<typeof seaportABI> {
-  constructor({ walletClient }: { walletClient: Wallet }) {
+  constructor({
+    walletClient,
+    publicClient,
+  }: {
+    walletClient: Wallet;
+    publicClient?: PublicClient;
+  }) {
     const { Seaport } = getContracts(walletClient.chain);
 
     super({
       walletClient,
       address: Seaport,
       abi: seaportABI,
+      publicClient,
     });
   }
 

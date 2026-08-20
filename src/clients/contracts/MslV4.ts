@@ -1,4 +1,4 @@
-import { Address, decodeFunctionData, Hash, Hex, zeroAddress } from 'viem';
+import { Address, decodeFunctionData, Hash, Hex, PublicClient, zeroAddress } from 'viem';
 
 import { LoanV4, OfferV4, RenegotiationV4 } from '@/blockchain';
 import { Wallet } from '@/clients/contracts';
@@ -16,11 +16,20 @@ import { MslV6 } from './MslV6';
 export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
   version = '1' as const;
 
-  constructor({ walletClient, address }: { walletClient: Wallet; address: Address }) {
+  constructor({
+    walletClient,
+    address,
+    publicClient,
+  }: {
+    walletClient: Wallet;
+    address: Address;
+    publicClient?: PublicClient;
+  }) {
     super({
       walletClient,
       address,
       abi: multiSourceLoanABIV4,
+      publicClient,
     });
   }
 

@@ -1,4 +1,4 @@
-import { Address, decodeFunctionData, Hex } from 'viem';
+import { Address, decodeFunctionData, Hex, PublicClient } from 'viem';
 
 import { Wallet } from '@/clients/contracts';
 import { erc20ABI } from '@/generated/blockchain/v5';
@@ -6,11 +6,20 @@ import { erc20ABI } from '@/generated/blockchain/v5';
 import { BaseContract } from './BaseContract';
 
 export class Erc20 extends BaseContract<typeof erc20ABI> {
-  constructor({ address, walletClient }: { address: Address; walletClient: Wallet }) {
+  constructor({
+    address,
+    walletClient,
+    publicClient,
+  }: {
+    address: Address;
+    walletClient: Wallet;
+    publicClient?: PublicClient;
+  }) {
     super({
       walletClient,
       address,
       abi: erc20ABI,
+      publicClient,
     });
   }
 

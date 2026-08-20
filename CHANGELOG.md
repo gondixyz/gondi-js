@@ -1,3 +1,31 @@
+# New Features 0.34.0
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.34.0.
+
+## Table of Contents
+
+- [Dedicated public client](#dedicated-public-client-0340) optional `publicClient` to run reads, simulations and receipt polling on your own RPC instead of the wallet's transport
+
+---
+
+## Dedicated public client 0.34.0
+
+**Description:**
+
+- NEW: `Gondi` (and `Gondi.create`) accept an optional `publicClient`. When provided, every read operation — pre-broadcast transaction simulations (`safeContractWrite`), `waitForTransactionReceipt` polling (including the `onStepChange` wallet wrapper) and contract reads — goes through that client instead of a client derived from the wallet's transport. This avoids wallet-provider RPC flakiness (rate limits, load-balanced nodes with inconsistent state) that could surface as spurious failures after a transaction had already landed on-chain. The client must be connected to the same chain as `wallet`. When omitted, behavior is unchanged: reads keep using the wallet's transport.
+- ENHANCEMENT: contract wrappers now share the `Gondi` instance's public client (with its receipt-wait retries) instead of each deriving their own from the wallet's transport, extending the 0.30.2 receipt-polling fix to the contract-level `waitTxInBlock` calls.
+
+```typescript
+const publicClient = createPublicClient({ chain: mainnet, transport: http(MY_RPC_URL) });
+const gondi = Gondi.create({ wallet, publicClient, onStepChange });
+```
+
+---
+
 # New Features 0.33.0
 
 ### Important

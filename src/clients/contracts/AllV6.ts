@@ -1,4 +1,4 @@
-import { Address } from 'viem';
+import { Address, PublicClient } from 'viem';
 
 import { Auction, LoanV6 } from '@/blockchain';
 import { Wallet } from '@/clients/contracts';
@@ -8,11 +8,20 @@ import { millisToSeconds } from '@/utils/dates';
 import { BaseContract } from './BaseContract';
 
 export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorABIV6> {
-  constructor({ walletClient, address }: { walletClient: Wallet; address: Address }) {
+  constructor({
+    walletClient,
+    address,
+    publicClient,
+  }: {
+    walletClient: Wallet;
+    address: Address;
+    publicClient?: PublicClient;
+  }) {
     super({
       walletClient,
       address,
       abi: auctionWithBuyoutLoanLiquidatorABIV6,
+      publicClient,
     });
   }
 

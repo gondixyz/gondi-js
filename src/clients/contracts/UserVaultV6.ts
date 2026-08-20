@@ -1,4 +1,4 @@
-import { Address } from 'viem';
+import { Address, PublicClient } from 'viem';
 
 import { Wallet } from '@/clients/contracts';
 import { userVaultAbi as userVaultABIV6 } from '@/generated/blockchain/v6';
@@ -14,11 +14,20 @@ import {
 import { BaseContract } from './BaseContract';
 
 export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
-  constructor({ walletClient, address }: { walletClient: Wallet; address: Address }) {
+  constructor({
+    walletClient,
+    address,
+    publicClient,
+  }: {
+    walletClient: Wallet;
+    address: Address;
+    publicClient?: PublicClient;
+  }) {
     super({
       walletClient,
       address,
       abi: userVaultABIV6,
+      publicClient,
     });
   }
 
