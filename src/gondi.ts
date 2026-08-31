@@ -46,7 +46,7 @@ import {
   renegotiationToMslRenegotiation,
 } from '@/utils/loan';
 import { max, mulDivUp } from '@/utils/number';
-import { isNative, isOpensea } from '@/utils/orders';
+import { assertHideableOrder, isNative, isOpensea } from '@/utils/orders';
 import { calculateProratedOriginationFee } from '@/utils/originationFee';
 import { isDefined, OptionalNullable } from '@/utils/types';
 
@@ -556,11 +556,27 @@ export class Gondi {
     });
   }
 
-  async hideOrder({ id }: { id: number }) {
+  /**
+   * Hides a bid. `isAsk` is required so a listing is rejected here rather than
+   * by the API, which refuses it either way.
+   *
+   * @deprecated Listings can no longer be hidden — cancel one on-chain instead.
+   * Still hides bids.
+   */
+  async hideOrder({ id, isAsk }: { id: number; isAsk: boolean }) {
+    assertHideableOrder(isAsk);
     return this.apiClient.hideOrder({ id });
   }
 
-  async showOrder({ id }: { id: number }) {
+  /**
+   * Unhides a bid. `isAsk` is required so a listing is rejected here rather than
+   * by the API, which refuses it either way.
+   *
+   * @deprecated Listings can no longer be hidden — a listing hidden before that
+   * change stays hidden and is cancelled on-chain. Still unhides bids.
+   */
+  async showOrder({ id, isAsk }: { id: number; isAsk: boolean }) {
+    assertHideableOrder(isAsk);
     return this.apiClient.showOrder({ id });
   }
 
