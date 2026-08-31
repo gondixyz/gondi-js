@@ -1,3 +1,37 @@
+# New Features 0.36.0
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.36.0.
+
+## Table of Contents
+
+- [MSL v3.2 on mainnet](#msl-v32-on-mainnet-0360) the v3.2 deployment addresses, so `lenderRefinanceDisabled` offers resolve on Ethereum
+
+---
+
+## MSL v3.2 on mainnet 0.36.0
+
+**Description:**
+
+- NEW: mainnet addresses for the v3.2 loan suite. `MultiSourceLoan`, `AuctionLoanLiquidator` and `PurchaseBundler` resolve their `3.2` entries to real deployments instead of `zeroAddress`.
+
+Every consumer that keys off deployment presence follows automatically: `getVersionFromMslAddress` resolves a v3.2 loan instead of throwing, and version lookups that skip `zeroAddress` entries now include `3.2`. Offers carrying `lenderRefinanceDisabled` can be signed for the v3.2 contract on Ethereum, and loans on it can be repaid, refinanced and migrated through the SDK.
+
+| Contract              | Address                                      |
+| --------------------- | -------------------------------------------- |
+| MultiSourceLoan       | `0xE365fF3cad44d19cb7aBa81df8ffd6818A66Ac0a` |
+| AuctionLoanLiquidator | `0xe6Ef33216348dDb2303a19Bb970e83d6508FabA5` |
+| PurchaseBundler       | `0x2B5E66c44B223b9D3B192e697F58795febCd6C10` |
+
+**Reason:**
+
+The v3.2 suite is deployed and verified on Ethereum. Until these addresses shipped, the SDK resolved `3.2` to `zeroAddress` on mainnet, so no v3.2 loan or offer could be addressed there.
+
+---
+
 # Breaking Changes 0.35.0
 
 ### Important
