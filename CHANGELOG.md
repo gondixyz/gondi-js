@@ -1,3 +1,50 @@
+# Breaking Changes 0.35.0
+
+### Important
+
+---
+
+This document outlines the breaking changes introduced in our codebase for version 0.35.0. Please review these changes carefully to ensure a smooth migration.
+
+## Table of Contents
+
+- [Listings can no longer be hidden](#listings-can-no-longer-be-hidden-0350) `hideOrder()` and `showOrder()` are bid-only and now require `isAsk`
+
+---
+
+## Listings can no longer be hidden (0.35.0)
+
+**Description:**
+
+Hiding a listing off-chain is gone. Cancelling a listing on-chain is the only supported way to take it down, and a listing hidden before this change stays hidden — it is cancelled rather than brought back.
+
+- BREAKING: `hideOrder()` and `showOrder()` now require an `isAsk` argument. Passing `true` throws; the call is never sent.
+- DEPRECATED: both methods, which apply to bids only. The API rejects a listing in either direction.
+
+**Reason:**
+
+The API refuses to hide or unhide a listing, so relaying one costs a round trip to a call that always fails. Making `isAsk` required means the caller states the side up front and gets a local error instead, and no caller can silently keep hiding listings against an API that no longer allows it.
+
+**Migration Steps:**
+
+Pass `isAsk` on every call, and replace listing hides with an on-chain cancellation:
+
+```typescript
+// Before
+await gondi.hideOrder({ id: order.id });
+
+// After — a bid
+await gondi.hideOrder({ id: order.id, isAsk: order.isAsk });
+
+// After — a listing
+await gondi.cancelOrder({
+  cancelCalldata: order.cancelCalldata,
+  marketPlaceAddress: order.marketPlaceAddress,
+});
+```
+
+---
+
 # New Features 0.34.0
 
 ### Important
