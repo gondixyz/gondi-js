@@ -146,14 +146,14 @@ const buildContractsByChain = (): Record<number, Contracts> => ({
       '2': '0x478f6F994C6fb3cf3e444a489b3AD9edB8cCaE16',
       '3': '0xf65b99ce6dc5f6c556172bcc0ff27d3665a7d9a8',
       '3.1': '0xf41B389E0C1950dc0B16C9498eaE77131CC08A56',
-      '3.2': zeroAddress, // TODO(MSL-v3.2): not deployed to mainnet yet
+      '3.2': '0xE365fF3cad44d19cb7aBa81df8ffd6818A66Ac0a',
     },
     AuctionLoanLiquidator: {
       '1': '0x237e4421C742d843Fdd96D22294D338507e17091',
       '2': '0x97d34635b605c2f1630d6b4c6c5d222b8a2ca47d',
       '3': '0x2995ae7233fa89b314b5a707465b57a582f440f0',
       '3.1': '0x2995ae7233fa89b314b5a707465b57a582f440f0',
-      '3.2': zeroAddress, // TODO(MSL-v3.2): not deployed to mainnet yet
+      '3.2': '0xe6Ef33216348dDb2303a19Bb970e83d6508FabA5',
     },
     UserVault: {
       '2': '0x14a6Dcebb2Bb73aae1b199CCAadA75247b81976D',
@@ -164,7 +164,7 @@ const buildContractsByChain = (): Record<number, Contracts> => ({
       '3': '0xcea7eea12c6fc82d0318704b9d35a4192c2d260a',
       '3.1': zeroAddress, // This is not used in favour of 3.1_PB_V2
       '3.1_PB_V2': '0xf46a58cada29ff34cf62f72357d2b37815506feb',
-      '3.2': zeroAddress, // TODO(MSL-v3.2): not deployed to mainnet yet
+      '3.2': '0x2B5E66c44B223b9D3B192e697F58795febCd6C10',
     },
     Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
     Aave: '0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2',
