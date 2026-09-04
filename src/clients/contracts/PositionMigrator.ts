@@ -9,6 +9,7 @@ import { positionMigratorAbi } from '@/generated/blockchain/positionMigrator';
 import { SECONDS_IN_HOUR } from '@/utils/dates';
 import { getTotalOwed } from '@/utils/loan';
 import { max } from '@/utils/number';
+import { sanitizeTypedDataMessage } from '@/utils/typedData';
 
 import { BaseContract } from './BaseContract';
 
@@ -34,32 +35,34 @@ export class PositionMigrator extends BaseContract<typeof positionMigratorAbi> {
   }
 
   async signMigrationArgs({ structToSign }: { structToSign: SmartMigrateArgs['migrationArgs'] }) {
-    return this.wallet.signTypedData({
-      domain: this.getDomain(),
-      primaryType: 'PositionMigrationArgs',
-      types: {
-        PositionMigrationArgs: [
-          { name: 'close', type: 'Position' },
-          { name: 'open', type: 'Position' },
-          { name: 'borrowArgs', type: 'AaveBorrowArgs' },
-          { name: 'approvalContract', type: 'address' },
-          { name: 'migrator', type: 'address' },
-          { name: 'nonce', type: 'uint256' },
-        ],
-        AaveBorrowArgs: [
-          { name: 'pool', type: 'address' },
-          { name: 'recipient', type: 'address' },
-          { name: 'assets', type: 'address[]' },
-          { name: 'amounts', type: 'uint256[]' },
-        ],
-        Position: [
-          { name: 'contractAddress', type: 'address' },
-          { name: 'callData', type: 'bytes' },
-          { name: 'value', type: 'uint256' },
-        ],
-      },
-      message: structToSign,
-    });
+    return this.wallet.signTypedData(
+      sanitizeTypedDataMessage({
+        domain: this.getDomain(),
+        primaryType: 'PositionMigrationArgs',
+        types: {
+          PositionMigrationArgs: [
+            { name: 'close', type: 'Position' },
+            { name: 'open', type: 'Position' },
+            { name: 'borrowArgs', type: 'AaveBorrowArgs' },
+            { name: 'approvalContract', type: 'address' },
+            { name: 'migrator', type: 'address' },
+            { name: 'nonce', type: 'uint256' },
+          ],
+          AaveBorrowArgs: [
+            { name: 'pool', type: 'address' },
+            { name: 'recipient', type: 'address' },
+            { name: 'assets', type: 'address[]' },
+            { name: 'amounts', type: 'uint256[]' },
+          ],
+          Position: [
+            { name: 'contractAddress', type: 'address' },
+            { name: 'callData', type: 'bytes' },
+            { name: 'value', type: 'uint256' },
+          ],
+        },
+        message: structToSign,
+      }),
+    );
   }
 
   constructor({

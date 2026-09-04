@@ -8,6 +8,7 @@ import { millisToSeconds, SECONDS_IN_MIN } from '@/utils/dates';
 import { getMslLoanId } from '@/utils/loan';
 import { sumBy } from '@/utils/number';
 import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
+import { sanitizeTypedDataMessage } from '@/utils/typedData';
 
 import { BaseContract } from './BaseContract';
 import { MslV5 } from './MslV5';
@@ -43,57 +44,61 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
   }
 
   async signOffer({ structToSign }: { structToSign: OfferV4 }) {
-    return this.wallet.signTypedData({
-      domain: this.getDomain(),
-      primaryType: 'LoanOffer',
-      types: {
-        LoanOffer: [
-          { name: 'offerId', type: 'uint256' },
-          { name: 'lender', type: 'address' },
-          { name: 'fee', type: 'uint256' },
-          { name: 'borrower', type: 'address' },
-          { name: 'capacity', type: 'uint256' },
-          { name: 'signer', type: 'address' },
-          { name: 'requiresLiquidation', type: 'bool' },
-          { name: 'nftCollateralAddress', type: 'address' },
-          { name: 'nftCollateralTokenId', type: 'uint256' },
-          { name: 'principalAddress', type: 'address' },
-          { name: 'principalAmount', type: 'uint256' },
-          { name: 'aprBps', type: 'uint256' },
-          { name: 'expirationTime', type: 'uint256' },
-          { name: 'duration', type: 'uint256' },
-          { name: 'validators', type: 'OfferValidator[]' },
-        ],
-        OfferValidator: [
-          { name: 'validator', type: 'address' },
-          { name: 'arguments', type: 'bytes' },
-        ],
-      },
-      message: structToSign,
-    });
+    return this.wallet.signTypedData(
+      sanitizeTypedDataMessage({
+        domain: this.getDomain(),
+        primaryType: 'LoanOffer',
+        types: {
+          LoanOffer: [
+            { name: 'offerId', type: 'uint256' },
+            { name: 'lender', type: 'address' },
+            { name: 'fee', type: 'uint256' },
+            { name: 'borrower', type: 'address' },
+            { name: 'capacity', type: 'uint256' },
+            { name: 'signer', type: 'address' },
+            { name: 'requiresLiquidation', type: 'bool' },
+            { name: 'nftCollateralAddress', type: 'address' },
+            { name: 'nftCollateralTokenId', type: 'uint256' },
+            { name: 'principalAddress', type: 'address' },
+            { name: 'principalAmount', type: 'uint256' },
+            { name: 'aprBps', type: 'uint256' },
+            { name: 'expirationTime', type: 'uint256' },
+            { name: 'duration', type: 'uint256' },
+            { name: 'validators', type: 'OfferValidator[]' },
+          ],
+          OfferValidator: [
+            { name: 'validator', type: 'address' },
+            { name: 'arguments', type: 'bytes' },
+          ],
+        },
+        message: structToSign,
+      }),
+    );
   }
 
   async signRenegotiationOffer({ structToSign }: { structToSign: RenegotiationV4 }) {
-    return this.wallet.signTypedData({
-      domain: this.getDomain(),
-      primaryType: 'RenegotiationOffer',
-      types: {
-        RenegotiationOffer: [
-          { name: 'renegotiationId', type: 'uint256' },
-          { name: 'loanId', type: 'uint256' },
-          { name: 'lender', type: 'address' },
-          { name: 'fee', type: 'uint256' },
-          { name: 'signer', type: 'address' },
-          { name: 'targetPrincipal', type: 'uint256[]' },
-          { name: 'principalAmount', type: 'uint256' },
-          { name: 'aprBps', type: 'uint256' },
-          { name: 'expirationTime', type: 'uint256' },
-          { name: 'duration', type: 'uint256' },
-          { name: 'strictImprovement', type: 'bool' },
-        ],
-      },
-      message: structToSign,
-    });
+    return this.wallet.signTypedData(
+      sanitizeTypedDataMessage({
+        domain: this.getDomain(),
+        primaryType: 'RenegotiationOffer',
+        types: {
+          RenegotiationOffer: [
+            { name: 'renegotiationId', type: 'uint256' },
+            { name: 'loanId', type: 'uint256' },
+            { name: 'lender', type: 'address' },
+            { name: 'fee', type: 'uint256' },
+            { name: 'signer', type: 'address' },
+            { name: 'targetPrincipal', type: 'uint256[]' },
+            { name: 'principalAmount', type: 'uint256' },
+            { name: 'aprBps', type: 'uint256' },
+            { name: 'expirationTime', type: 'uint256' },
+            { name: 'duration', type: 'uint256' },
+            { name: 'strictImprovement', type: 'bool' },
+          ],
+        },
+        message: structToSign,
+      }),
+    );
   }
 
   async cancelOffer({ id }: { id: bigint }) {
