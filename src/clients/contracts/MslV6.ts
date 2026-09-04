@@ -29,6 +29,7 @@ import { millisToSeconds, SECONDS_IN_DAY, secondsToMillis } from '@/utils/dates'
 import { getMslLoanId, getRemainingSeconds, LoanToMslLoanType } from '@/utils/loan';
 import { bpsToPercentage, sumBy } from '@/utils/number';
 import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
+import { sanitizeTypedDataMessage } from '@/utils/typedData';
 
 import { BaseContract } from './BaseContract';
 
@@ -121,54 +122,60 @@ export class MslV6 extends BaseContract<
   }
 
   async signOffer({ structToSign }: { structToSign: OfferV6 | OfferV8 }) {
-    return this.wallet.signTypedData({
-      domain: this.getDomain(),
-      primaryType: 'LoanOffer',
-      types: {
-        LoanOffer: this.loanOfferType(),
-        OfferValidator: [
-          { name: 'validator', type: 'address' },
-          { name: 'arguments', type: 'bytes' },
-        ],
-      },
-      message: structToSign,
-    });
+    return this.wallet.signTypedData(
+      sanitizeTypedDataMessage({
+        domain: this.getDomain(),
+        primaryType: 'LoanOffer',
+        types: {
+          LoanOffer: this.loanOfferType(),
+          OfferValidator: [
+            { name: 'validator', type: 'address' },
+            { name: 'arguments', type: 'bytes' },
+          ],
+        },
+        message: structToSign,
+      }),
+    );
   }
 
   async signRenegotiationOffer({ structToSign }: { structToSign: RenegotiationV6 }) {
-    return this.wallet.signTypedData({
-      domain: this.getDomain(),
-      primaryType: 'RenegotiationOffer',
-      types: {
-        RenegotiationOffer: [
-          { name: 'renegotiationId', type: 'uint256' },
-          { name: 'loanId', type: 'uint256' },
-          { name: 'lender', type: 'address' },
-          { name: 'fee', type: 'uint256' },
-          { name: 'trancheIndex', type: 'uint256[]' },
-          { name: 'principalAmount', type: 'uint256' },
-          { name: 'aprBps', type: 'uint256' },
-          { name: 'expirationTime', type: 'uint256' },
-          { name: 'duration', type: 'uint256' },
-        ],
-      },
-      message: structToSign,
-    });
+    return this.wallet.signTypedData(
+      sanitizeTypedDataMessage({
+        domain: this.getDomain(),
+        primaryType: 'RenegotiationOffer',
+        types: {
+          RenegotiationOffer: [
+            { name: 'renegotiationId', type: 'uint256' },
+            { name: 'loanId', type: 'uint256' },
+            { name: 'lender', type: 'address' },
+            { name: 'fee', type: 'uint256' },
+            { name: 'trancheIndex', type: 'uint256[]' },
+            { name: 'principalAmount', type: 'uint256' },
+            { name: 'aprBps', type: 'uint256' },
+            { name: 'expirationTime', type: 'uint256' },
+            { name: 'duration', type: 'uint256' },
+          ],
+        },
+        message: structToSign,
+      }),
+    );
   }
 
   async signRepaymentData({ structToSign }: { structToSign: SignableRepaymentDataV6 }) {
-    return this.wallet.signTypedData({
-      domain: this.getDomain(),
-      primaryType: 'SignableRepaymentData',
-      types: {
-        SignableRepaymentData: [
-          { name: 'loanId', type: 'uint256' },
-          { name: 'callbackData', type: 'bytes' },
-          { name: 'shouldDelegate', type: 'bool' },
-        ],
-      },
-      message: structToSign,
-    });
+    return this.wallet.signTypedData(
+      sanitizeTypedDataMessage({
+        domain: this.getDomain(),
+        primaryType: 'SignableRepaymentData',
+        types: {
+          SignableRepaymentData: [
+            { name: 'loanId', type: 'uint256' },
+            { name: 'callbackData', type: 'bytes' },
+            { name: 'shouldDelegate', type: 'bool' },
+          ],
+        },
+        message: structToSign,
+      }),
+    );
   }
 
   async signExecutionData<T extends ExecutionDataV6 | ExecutionDataV7 | ExecutionDataV8>({
@@ -176,24 +183,26 @@ export class MslV6 extends BaseContract<
   }: {
     structToSign: T;
   }) {
-    return this.wallet.signTypedData({
-      domain: this.getDomain(),
-      primaryType: 'ExecutionData',
-      types: {
-        ExecutionData: this.executionDataType(),
-        OfferExecution: [
-          { name: 'offer', type: 'LoanOffer' },
-          { name: 'amount', type: 'uint256' },
-          { name: 'lenderOfferSignature', type: 'bytes' },
-        ],
-        LoanOffer: this.loanOfferType(),
-        OfferValidator: [
-          { name: 'validator', type: 'address' },
-          { name: 'arguments', type: 'bytes' },
-        ],
-      },
-      message: structToSign,
-    });
+    return this.wallet.signTypedData(
+      sanitizeTypedDataMessage({
+        domain: this.getDomain(),
+        primaryType: 'ExecutionData',
+        types: {
+          ExecutionData: this.executionDataType(),
+          OfferExecution: [
+            { name: 'offer', type: 'LoanOffer' },
+            { name: 'amount', type: 'uint256' },
+            { name: 'lenderOfferSignature', type: 'bytes' },
+          ],
+          LoanOffer: this.loanOfferType(),
+          OfferValidator: [
+            { name: 'validator', type: 'address' },
+            { name: 'arguments', type: 'bytes' },
+          ],
+        },
+        message: structToSign,
+      }),
+    );
   }
 
   async cancelOffer({ id }: { id: bigint }) {

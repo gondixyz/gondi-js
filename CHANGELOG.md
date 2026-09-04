@@ -1,3 +1,29 @@
+# Bug Fixes 0.36.1
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.36.1.
+
+## Table of Contents
+
+- [Typed data messages reduced to the EIP-712 fields](#typed-data-messages-reduced-to-the-eip-712-fields-0361) so wallets only receive the struct being signed
+
+---
+
+## Typed data messages reduced to the EIP-712 fields 0.36.1
+
+**Description:**
+
+- FIX: every locally built `eth_signTypedData_v4` request (`signOffer`, `signRenegotiationOffer`, `signRepaymentData`, `signExecutionData` and the position migration signature) now strips the message down to the fields declared in its EIP-712 `types` before it reaches the wallet.
+
+Structs assembled by spreading API objects used to carry every extra property along: nested NFT and collection metadata, image URLs, lender names and balances. Those extras never affect the EIP-712 hash - signatures are byte-for-byte identical before and after this change - but they were serialized into the wallet request, bloating the signing prompt and tripping wallet security heuristics. Rabby (>= v0.93.99) scans unrecognized typed data for URLs and warns "The transaction is not associated with the website that initiated it" when any URL host differs from the connected site, which flagged refinance and BNPL signatures containing CDN image URLs.
+
+**Reason:**
+
+Wallets should only be shown the data that is actually being signed. Reducing the message to the typed fields removes the scary Rabby warning, keeps the signing prompt readable, and stops leaking unrelated API data to wallet extensions.
+
 # New Features 0.36.0
 
 ### Important
