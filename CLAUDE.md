@@ -11,6 +11,8 @@ Gondi.js is a TypeScript SDK for NFT-backed lending on Ethereum. It provides fun
 - **Install**: `bun install`
 - **Build**: `bun run build` (esbuild bundle + tsc declarations + tsc-alias)
 - **Lint**: `bun run lint` (prettier check + eslint)
+- **Test**: `bun run test` (`bun test tests/`)
+- **Verify**: `bun run verify` (lint, which includes the format check, then tests; what CI runs)
 - **Lint fix**: `bun run lint-fix`
 - **Format**: `bun run fmt`
 - **GraphQL codegen**: `bun run gql:types` (requires `GONDI_API` env var or defaults to `https://api.gondi.xyz/lending/graphql`; uses `.env` file)
@@ -22,11 +24,10 @@ Pre-commit hook runs `bun lint && bun fmt-check`.
 
 ### Entry Point & Core Class
 
-`src/index.ts` exports the `Gondi` class (from `src/gondi.ts`) as the main SDK entry point. `Gondi` orchestrates three client layers:
+`src/index.ts` exports the `Gondi` class (from `src/gondi.ts`) as the main SDK entry point. `Gondi` orchestrates two client layers:
 
 - **`contracts`** (`src/clients/contracts/`) — Smart contract wrappers using viem
 - **`apiClient`** (`src/clients/api/`) — GraphQL API client using Apollo (no-cache policy everywhere)
-- **`openseaClient`** (`src/clients/opensea/`) — OpenSea marketplace integration
 
 ### Contract Versioning
 

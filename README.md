@@ -17,6 +17,8 @@ You can install it via npm:
 npm install --save gondi
 # or
 yarn add gondi
+# or
+bun add gondi
 ```
 
 ## Getting Started

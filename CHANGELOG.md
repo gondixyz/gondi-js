@@ -1,3 +1,59 @@
+# Breaking Changes 0.37.0
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.37.0.
+
+## Table of Contents
+
+- [OpenSea bids are fulfilled through the Gondi API](#opensea-bids-are-fulfilled-through-the-gondi-api-0370) so no OpenSea API key is needed client-side
+
+---
+
+## OpenSea bids are fulfilled through the Gondi API 0.37.0
+
+**Description:**
+
+- BREAKING: the `openseaClient` field and the `src/clients/opensea` module are gone. `sellNft` no longer calls the OpenSea API from the client.
+- BREAKING: the `openseaApiKey` constructor option is removed. The API key never leaves the server anymore, so the SDK has no use for it.
+- ENHANCEMENT: `sellNft` fetches the calldata through `apiClient.getSaleCalldata` for Native and OpenSea bids alike and sends it to the order's marketplace. The API settles OpenSea bids as a Seaport match, so the seller no longer approves WETH before accepting a token-specific bid. For both marketplaces the result is `{ txHash, waitTxInBlock }`, and `waitTxInBlock()` resolves to the transaction receipt only after verifying the Seaport `OrderFulfilled` event was emitted; the OpenSea path used to merge the parsed event arguments into the result instead.
+
+**Reason:**
+
+Fulfilling an OpenSea bid needs OpenSea fulfillment data, which requires an OpenSea API key. Fetching it client-side meant every consumer had to ship that key. The Gondi API already holds one, so it now builds the calldata server-side.
+
+**Migration Steps:**
+
+- Remove `openseaApiKey` from `new Gondi({...})` and `Gondi.create({...})`; passing it is now a type error.
+- Replace any use of `gondi.openseaClient.fulfillOrder(...)` with `gondi.sellNft(...)`, or call `gondi.apiClient.getSaleCalldata(...)` directly to get the calldata.
+- If you read `OrderFulfilled` event arguments from the `sellNft` result, parse them from the receipt's `logs` instead.
+
+# Bug Fixes 0.36.2
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.36.2.
+
+## Table of Contents
+
+- [Native sales priced with every native sentinel](#native-sales-priced-with-every-native-sentinel-0362) so `sellNft` works on chains whose native currency marker is not the zero address
+
+---
+
+## Native sales priced with every native sentinel 0.36.2
+
+**Description:**
+
+- FIX: `sellNft` decided whether an order is priced in the native currency by comparing `order.currencyAddress` to the zero address. Chains such as HyperEVM and Robinhood mark their native currency with a non-zero synthetic sentinel, so a native ask on those chains was fulfilled with `value: 0` (an underfunded transaction) and the OpenSea approval branch treated the sentinel as an ERC-20 to approve. Both checks now go through the existing `isNativeCurrency` helper, which recognizes the zero address and every native sentinel.
+
+**Reason:**
+
+The zero address is only one of the native currency markers. Every native-vs-ERC20 decision must use `isNativeCurrency` so all chains fulfill sales with the correct transaction value.
+
 # Bug Fixes 0.36.1
 
 ### Important
