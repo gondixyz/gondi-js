@@ -11,8 +11,8 @@
       "request": "launch",
       "cwd": "${workspaceFolder}/examples",
       "program": "${input:example}.ts",
-      "runtimeExecutable": "yarn",
-      "runtimeArgs": ["tsx"],
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["x", "tsx"],
       "console": "integratedTerminal"
     }
   ],

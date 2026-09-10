@@ -7,10 +7,10 @@ import {
   createTransport,
   Hash,
   Hex,
+  parseEventLogs,
   TransactionReceipt,
   TypedDataDefinition,
 } from 'viem';
-import { getAddress } from 'viem';
 
 import { addStepCallback } from '@/addStepCallback';
 import { Auction, isNativeCurrency, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
@@ -19,8 +19,8 @@ import { buildSiweMessage } from '@/clients/api/siwe';
 import { Contracts, GondiPublicClient, Wallet } from '@/clients/contracts';
 import { PurchaseBundlerV1 } from '@/clients/contracts/PurchaseBundlerV1';
 import { PurchaseBundlerV2 } from '@/clients/contracts/PurchaseBundlerV2';
-import { Opensea } from '@/clients/opensea';
 import { getContracts } from '@/deploys';
+import { seaportABI } from '@/generated/blockchain/seaport';
 import {
   BnplOrderInput,
   BulkNftOrdersInput,
@@ -50,8 +50,6 @@ import { assertHideableOrder, isNative, isOpensea } from '@/utils/orders';
 import { calculateProratedOriginationFee } from '@/utils/originationFee';
 import { isDefined, OptionalNullable } from '@/utils/types';
 
-import { isFulfillAdvancedOrderFunctionName } from './clients/opensea/types';
-
 interface GondiProps {
   wallet: Wallet;
   /**
@@ -62,7 +60,6 @@ interface GondiProps {
    */
   publicClient?: GondiPublicClient;
   apiClient?: ApiProps['apiClient'];
-  openseaApiKey?: string;
   onStepChange?: OnStepChange;
 }
 
@@ -94,9 +91,8 @@ export class Gondi {
   account: Account;
   bcClient: GondiPublicClient;
   apiClient: Api;
-  openseaClient: Opensea;
 
-  constructor({ wallet, publicClient, apiClient, openseaApiKey, onStepChange }: GondiProps) {
+  constructor({ wallet, publicClient, apiClient, onStepChange }: GondiProps) {
     this.wallet = wallet;
     this.account = wallet.account;
     this.bcClient = withRetriedReceiptWait(
@@ -108,7 +104,6 @@ export class Gondi {
     );
     this.contracts = new Contracts(this.bcClient, wallet);
     this.apiClient = new Api({ wallet, apiClient, onStepChange });
-    this.openseaClient = new Opensea({ apiKey: openseaApiKey ?? process.env.OPENSEA_API_KEY });
   }
 
   static create(
@@ -1304,12 +1299,22 @@ export class Gondi {
     });
   }
 
+  /**
+   * Sells `nft` into `order`, a Native or OpenSea bid. The Gondi API builds the
+   * sale calldata for both marketplaces, so OpenSea bids need no client-side
+   * OpenSea credentials and no approval beyond the collateral's.
+   */
   async sellNft({
     order,
     nft,
   }: {
     order: {
       id: string;
+      /**
+       * The order's currency as reported by the Gondi API. A native-currency order carries the
+       * zero address on Ethereum, but a synthetic sentinel on other chains (`__HYPE_ADDRESS` on
+       * HyperEVM, `__RETH_ADDRESS` on Robinhood) — check it with `isNativeCurrency`.
+       */
       currencyAddress: Address;
       originalId: string;
       marketPlace: string;
@@ -1326,69 +1331,33 @@ export class Gondi {
       throw new Error(`Sell not supported for marketplace ${order.marketPlace}`);
     }
 
-    if (isNative(order.marketPlace)) {
-      const { saleCalldata } = await this.apiClient.getSaleCalldata({
-        orderId: Number(order.id),
-        nftId: Number(nft.id),
-        taker: this.wallet.account.address,
-      });
-
-      if (!saleCalldata || isEmptyCalldata(saleCalldata))
-        throw new Error(`No sale calldata available for native order ${order.id}`);
-
-      const price = order.currencyAddress === zeroAddress ? order.price : 0n;
-      return this.contracts
-        .GenericContract(order.marketPlaceAddress)
-        .sendTransactionData(saleCalldata, price);
-    }
-
-    const fulfillOrder = await this.openseaClient.fulfillOrder({
-      hash: order.originalId,
-      protocolAddress: order.marketPlaceAddress,
-      fulfiller: { address: this.wallet.account.address },
-      consideration: {
-        contract: nft.collectionAddress,
-        token_id: nft.tokenId.toString(),
-      },
-      chainId: this.wallet.chain.id,
+    const { saleCalldata } = await this.apiClient.getSaleCalldata({
+      orderId: Number(order.id),
+      nftId: Number(nft.id),
+      taker: this.wallet.account.address,
     });
 
-    if (
-      isFulfillAdvancedOrderFunctionName(fulfillOrder.functionName) &&
-      order.currencyAddress !== zeroAddress &&
-      fulfillOrder.fee > 0n
-    ) {
-      // This approval is needed since fulfillAdvancedOrder
-      // first transfers the offers to the fulfiller
-      // and then the fulfiller transfers the considerations
-      // meaning that the fulfiller needs to be able to transfer the currency
-      const props = {
-        tokenAddress: order.currencyAddress,
-        amount: fulfillOrder.fee,
-        to: order.marketPlaceAddress,
-      };
-      const isApproved = await this.isApprovedToken(props);
-      if (!isApproved) {
-        const { waitTxInBlock } = await this.approveToken(props);
-        await waitTxInBlock();
-      }
-    }
+    if (!saleCalldata || isEmptyCalldata(saleCalldata))
+      throw new Error(`No sale calldata available for order ${order.id}`);
 
-    const contract = this.contracts.GenericContract(getAddress(fulfillOrder.to));
-    const txHash = await contract.safeContractWrite[fulfillOrder.functionName](
-      fulfillOrder.functionArgs,
-      { value: BigInt(fulfillOrder.value) },
-    );
+    const value = isNativeCurrency(order.currencyAddress) ? order.price : 0n;
+    const { txHash, waitTxInBlock } = await this.contracts
+      .GenericContract(order.marketPlaceAddress)
+      .sendTransactionData(saleCalldata, value);
 
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
+        const receipt = await waitTxInBlock();
+        const events = parseEventLogs({
+          abi: seaportABI,
+          eventName: 'OrderFulfilled',
+          logs: receipt.logs,
         });
-        const events = contract.parseEventLogs(fulfillOrder.eventName, receipt.logs);
-        if (events.length === 0) throw new Error(`${fulfillOrder.eventName} not set`);
-        return { ...events[0].args, ...receipt };
+        if (events.length === 0) {
+          throw new Error('Sale not executed');
+        }
+        return receipt;
       },
     };
   }

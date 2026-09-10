@@ -107,10 +107,20 @@ export const zeroHex: HexString = `0x0`;
 
 export const REORG_SAFETY_BUFFER = 5n * 60n;
 
+/** Native ETH marker on Ethereum mainnet: the zero address. */
 export const __ETH_ADDRESS = zeroAddress;
-export const __HYPE_ADDRESS = '0x0000000000000000000000000000000000000999'; // synthetic sentinel
-export const __RETH_ADDRESS = '0x0000000000000000000000000000000000004663'; // synthetic sentinel
+/** Synthetic sentinel the Gondi API uses for native HYPE on HyperEVM. */
+export const __HYPE_ADDRESS = '0x0000000000000000000000000000000000000999';
+/** Synthetic sentinel the Gondi API uses for native ETH on the Robinhood chain. */
+export const __RETH_ADDRESS = '0x0000000000000000000000000000000000004663';
 
+/**
+ * Whether a currency address returned by the Gondi API represents a chain's native currency.
+ *
+ * The zero address only marks native ETH on Ethereum; HyperEVM and Robinhood orders carry the
+ * synthetic sentinels above instead, so never compare a currency address against the zero
+ * address to decide native-ness.
+ */
 export const isNativeCurrency = (address: Address) =>
   [__ETH_ADDRESS, __HYPE_ADDRESS, __RETH_ADDRESS].some((nativeAddress) =>
     areSameAddress(address, nativeAddress),
