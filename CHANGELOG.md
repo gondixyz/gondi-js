@@ -1,3 +1,28 @@
+# Bug Fixes 0.37.1
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.37.1.
+
+## Table of Contents
+
+- [Tagged calldata is sent as a named contract write](#tagged-calldata-is-sent-as-a-named-contract-write-0371) so transaction steps report the function name again
+
+---
+
+## Tagged calldata is sent as a named contract write 0.37.1
+
+**Description:**
+
+- FIX: `sendTransactionData` used to broadcast any calldata carrying bytes past the ABI-encoded arguments as a raw transaction, so `onStepChange` received the 4-byte selector (`0xf2d12b12`) instead of `matchAdvancedOrders` for every Seaport sale, purchase and trade built by the Gondi API, which appends an attribution tag to that calldata. The trailing bytes are now passed to viem as `dataSuffix`, so the call goes through the simulated, named write path and steps report the function name, while the tag still reaches the chain unchanged.
+- `safeContractWrite` accepts `dataSuffix` in its options (`SafeContractWriteOptions`).
+
+**Reason:**
+
+Integrators key their step descriptions by function name. A raw send has no name to report, and the tag is the only reason those sends were raw.
+
 # Breaking Changes 0.37.0
 
 ### Important
@@ -28,6 +53,7 @@ Fulfilling an OpenSea bid needs OpenSea fulfillment data, which requires an Open
 
 - Remove `openseaApiKey` from `new Gondi({...})` and `Gondi.create({...})`; passing it is now a type error.
 - Replace any use of `gondi.openseaClient.fulfillOrder(...)` with `gondi.sellNft(...)`, or call `gondi.apiClient.getSaleCalldata(...)` directly to get the calldata.
+- Grant the collection approval yourself before calling `sellNft`: `setApprovalForAll` on the NFT contract to `order.marketPlaceAddress` (Seaport, for Native and OpenSea bids alike), for example through `gondi.approveNFTForAll`. `sellNft` grants no approval, and the WETH allowance the OpenSea path used to grant for `fulfillAdvancedOrder` is no longer needed.
 - If you read `OrderFulfilled` event arguments from the `sellNft` result, parse them from the receipt's `logs` instead.
 
 # Bug Fixes 0.36.2

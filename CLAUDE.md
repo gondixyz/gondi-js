@@ -121,6 +121,11 @@ After transactions, events are parsed with `parseEventLogs`. Always validate the
 
 ## Workflow
 
+- **Shared rules**: when this package is checked out as a subdirectory of a
+  wider repository, the `AGENTS.md` one level above it carries the development
+  workflow, the Git and PR conventions, and the review flow; this guide then
+  covers only what is specific to the SDK. Standalone, this guide is the whole
+  of it.
 - **Plan first**: Always enter plan mode before starting any task to align on approach before making changes.
 - **Post-change steps**: See the `Maintenance Guidelines` section below for detailed requirements on version bumping, changelog updates, and documentation generation.
 
@@ -174,5 +179,4 @@ When reviewing PRs (including @claude reviews), ensure:
   - Install Claude GitHub App: https://github.com/apps/claude
   - Or run `/install-github-app` from Claude Code CLI
   - Workflow triggers on @claude mentions in PR comments
-  - Reviews are informational and don't block merges
 - Pre-commit hooks run `bun lint && bun fmt-check`
