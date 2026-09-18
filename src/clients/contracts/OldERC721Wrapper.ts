@@ -3,6 +3,7 @@ import { Address, PublicClient } from 'viem';
 import { Wallet } from '@/clients/contracts';
 import { BaseContract } from '@/clients/contracts/BaseContract';
 import { oldErc721WrapperAbi } from '@/generated/blockchain/oldERC721Wrapper';
+import { assertTransactionSucceeded } from '@/utils/blockchain';
 
 export class OldERC721Wrapper extends BaseContract<typeof oldErc721WrapperAbi> {
   constructor({
@@ -27,7 +28,8 @@ export class OldERC721Wrapper extends BaseContract<typeof oldErc721WrapperAbi> {
 
     return {
       txHash,
-      waitMined: () => this.bcClient.waitForTransactionReceipt({ hash: txHash }),
+      waitMined: async () =>
+        assertTransactionSucceeded(await this.bcClient.waitForTransactionReceipt({ hash: txHash })),
     };
   }
 
@@ -36,10 +38,8 @@ export class OldERC721Wrapper extends BaseContract<typeof oldErc721WrapperAbi> {
 
     return {
       txHash,
-      waitMined: () =>
-        this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        }),
+      waitMined: async () =>
+        assertTransactionSucceeded(await this.bcClient.waitForTransactionReceipt({ hash: txHash })),
     };
   }
 }

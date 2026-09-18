@@ -1,6 +1,7 @@
 import {
   PublicClient,
   TransactionNotFoundError,
+  TransactionReceipt,
   TransactionReceiptNotFoundError,
   WaitForTransactionReceiptTimeoutError,
 } from 'viem';
@@ -8,6 +9,22 @@ import {
 import { HexString } from '@/blockchain';
 
 export const isEmptyCalldata = (calldata: HexString) => calldata === '0x';
+
+/**
+ * Returns the receipt of a mined transaction, or throws when it reverted.
+ *
+ * IMPLEMENTATION NOTE: viem's `waitForTransactionReceipt` resolves with the
+ * receipt whatever its outcome and reports a revert only through
+ * `receipt.status === 'reverted'`
+ * (https://viem.sh/docs/actions/public/waitForTransactionReceipt#returns), so a
+ * caller that awaits the receipt alone treats a reverted transaction as mined.
+ */
+export const assertTransactionSucceeded = (receipt: TransactionReceipt) => {
+  if (receipt.status === 'reverted') {
+    throw new Error(`Transaction reverted: ${receipt.transactionHash}`);
+  }
+  return receipt;
+};
 
 /**
  * Total time a receipt wait keeps trying before giving up on a broadcast

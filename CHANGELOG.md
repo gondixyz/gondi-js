@@ -1,3 +1,33 @@
+# Bug Fixes 0.37.2
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.37.2.
+
+## Table of Contents
+
+- [Reverted transactions reject instead of reporting success](#reverted-transactions-reject-instead-of-reporting-success-0372)
+
+---
+
+## Reverted transactions reject instead of reporting success 0.37.2
+
+**Description:**
+
+- FIX: with `onStepChange` set, every contract write and raw transaction waited for its receipt and then reported a `success` step, even when the transaction reverted on-chain, and the SDK method resolved normally. A reverted transaction now rejects with `Transaction reverted: <hash>` after the `broadcasted` step, and no `success` step is sent.
+- FIX: `OldERC721Wrapper.wrapOldERC721` and `unwrap` returned a `waitMined` that resolved with the receipt of a reverted transaction. It now rejects the same way.
+- `assertTransactionSucceeded` (`src/utils/blockchain.ts`) does the check for both.
+
+**Reason:**
+
+viem's `waitForTransactionReceipt` resolves for reverted transactions and only reports the revert in `receipt.status`. A caller that treats the resolved promise or the `success` step as final showed a reverted transaction, such as a repayment, as completed.
+
+**Migration Steps:**
+
+None for correct callers. Code that previously continued after a reverted write now gets a rejection, and should handle it the same way as any other failed transaction.
+
 # Bug Fixes 0.37.1
 
 ### Important
