@@ -2,7 +2,7 @@ import { Address, createPublicClient, createTransport, PublicClient } from 'viem
 
 import { Wallet } from '@/clients/contracts';
 import { type OnStepChange } from '@/gondi';
-import { withRetriedReceiptWait } from '@/utils/blockchain';
+import { assertTransactionSucceeded, withRetriedReceiptWait } from '@/utils/blockchain';
 
 export const addStepCallback = (props: {
   wallet: Wallet;
@@ -78,7 +78,7 @@ export const addStepCallback = (props: {
     await sendWaitingTransactionStep(to, functionName);
     const txHash = await originalWriteContract(params);
     await sendPendingTransactionStep(to, functionName);
-    await bcClient.waitForTransactionReceipt({ hash: txHash });
+    assertTransactionSucceeded(await bcClient.waitForTransactionReceipt({ hash: txHash }));
     await sendSuccessTransactionStep(to, functionName);
     return txHash;
   };
@@ -90,7 +90,7 @@ export const addStepCallback = (props: {
     await sendWaitingTransactionStep(to, selector);
     const txHash = await originalSendTransaction(params);
     await sendPendingTransactionStep(to, selector);
-    await bcClient.waitForTransactionReceipt({ hash: txHash });
+    assertTransactionSucceeded(await bcClient.waitForTransactionReceipt({ hash: txHash }));
     await sendSuccessTransactionStep(to, selector);
     return txHash;
   };
