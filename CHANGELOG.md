@@ -1,3 +1,31 @@
+# Breaking Changes 0.38.0
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.38.0.
+
+## Table of Contents
+
+- [collections() no longer returns statistics.numberOfOffers](#collections-no-longer-returns-statisticsnumberofoffers-0380) because the field it read is deprecated and always answered 0
+
+---
+
+## collections() no longer returns statistics.numberOfOffers 0.38.0
+
+**Description:**
+
+- BREAKING: `gondi.collections(...)` no longer selects `statistics.numberOfOffers`, so the field is gone from each returned collection and from the `CollectionsQuery` type.
+
+**Reason:**
+
+`CollectionStatistics.numberOfOffers(currencyAddress:)` is deprecated in the API in favour of `numberOfOffersForCurrencies`, and it answered 0 for every collection regardless of the currency passed, so the value was never usable.
+
+**Migration Steps:**
+
+- If you read `collection.statistics.numberOfOffers`, drop it: it was always 0. There is no single-currency replacement on this query; query `numberOfOffersForCurrencies` against the API directly if you need the count.
+
 # Bug Fixes 0.37.2
 
 ### Important
