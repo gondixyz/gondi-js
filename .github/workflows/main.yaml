@@ -47,13 +47,21 @@ jobs:
             echo "Tag v${{ env.PACKAGE_VERSION }} does not exist, proceeding with release"
           fi
 
-      # TODO: Use OIDC
+      # Trusted publishing (OIDC, no token) needs npm >= 11.5.1, which needs Node >= 22.14: https://docs.npmjs.com/trusted-publishers
+      - uses: actions/setup-node@v4
+        if: steps.check_tag.outputs.tag_exists == 'false'
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Upgrade npm for trusted publishing
+        if: steps.check_tag.outputs.tag_exists == 'false'
+        run: npm install -g npm@^11.5.1
+
       - name: NPM Publish
         id: npm_publish
         if: steps.check_tag.outputs.tag_exists == 'false'
         run: npx can-npm-publish --verbose && npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_SECRET }}
 
       - name: Push Tag to GitHub
         if: steps.check_tag.outputs.tag_exists == 'false' && steps.npm_publish.outcome == 'success'
