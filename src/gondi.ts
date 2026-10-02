@@ -50,6 +50,9 @@ import { assertHideableOrder, isNative, isOpensea } from '@/utils/orders';
 import { calculateProratedOriginationFee } from '@/utils/originationFee';
 import { isDefined, OptionalNullable } from '@/utils/types';
 
+/** The most orders `cancelOrders` takes at once: the API's cancel calldata limit. */
+const MAX_CANCEL_ORDERS = 50;
+
 interface GondiProps {
   wallet: Wallet;
   /**
@@ -412,6 +415,49 @@ export class Gondi {
     return this.contracts
       .GenericContract(order.marketPlaceAddress)
       .sendTransactionData(order.cancelCalldata);
+  }
+
+  /**
+   * Cancels the wallet's trade orders by id, at most 50 per call, with one API call.
+   *
+   * `cancelTradeOrders` cancels the bids that `cancelsOffChain` (restricted to the GONDI signed
+   * zone, so they only fill with a signature the API issues) without a transaction, and returns
+   * the Seaport cancel calldata of the rest, sent as one transaction per marketplace.
+   *
+   * An off-chain cancel is final once the last fill signature already issued for the bid expires,
+   * a few minutes at most. Pass `onChain: true` to cancel every order on-chain instead, final as
+   * soon as the transaction is mined.
+   *
+   * @returns The ids cancelled off-chain, and one `{ txHash, waitTxInBlock }` per on-chain cancel.
+   */
+  async cancelOrders({ orderIds, onChain = false }: { orderIds: number[]; onChain?: boolean }) {
+    if (orderIds.length === 0 || orderIds.length > MAX_CANCEL_ORDERS) {
+      throw new Error(`Between 1 and ${MAX_CANCEL_ORDERS} orders can be cancelled at once`);
+    }
+    const { offChainOrderIds, cancelOrdersCalldata } = onChain
+      ? {
+          offChainOrderIds: [],
+          ...(await this.apiClient.getCancelOrdersCalldata({
+            maker: this.wallet.account.address,
+            orderIds,
+          })),
+        }
+      : await this.cancelOrdersOffChain(orderIds);
+    const transactions = [];
+    for (const { calldata, marketPlaceAddress } of cancelOrdersCalldata) {
+      transactions.push(await this.cancelOrder({ cancelCalldata: calldata, marketPlaceAddress }));
+    }
+    return { offChainOrderIds, transactions };
+  }
+
+  private async cancelOrdersOffChain(orderIds: number[]) {
+    const {
+      cancelTradeOrders: { cancelledOrders, cancelOrdersCalldata },
+    } = await this.apiClient.cancelTradeOrders({ orderIds });
+    return {
+      offChainOrderIds: cancelledOrders.map(({ id }) => Number(id)),
+      cancelOrdersCalldata,
+    };
   }
 
   async cancelOffer({ id, contractAddress }: { id: bigint; contractAddress: Address }) {

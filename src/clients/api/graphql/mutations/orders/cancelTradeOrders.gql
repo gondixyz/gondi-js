@@ -1,0 +1,11 @@
+mutation cancelTradeOrders($orderIds: [Int64!]!) {
+  cancelTradeOrders(orderIds: $orderIds) {
+    cancelledOrders {
+      id
+    }
+    cancelOrdersCalldata {
+      calldata
+      marketPlaceAddress
+    }
+  }
+}

@@ -304,6 +304,10 @@ type BulkNFTOrdersResult {
 union BulkNFTOrdersResultSignatureRequest = BulkNFTOrdersResult | SignatureRequest
 
 type BuyNowPayLaterOrder implements Event & Node & Order {
+  """
+  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone.
+  """
+  cancelsOffChain: Boolean!
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
@@ -344,6 +348,19 @@ union BuyNowPayLaterOrderSignatureRequestExtraSeaportData = BuyNowPayLaterOrder 
 type CancelAllOrdersCalldata {
   calldata: Hex!
   marketPlaceAddress: Address!
+}
+
+type CancelTradeOrdersResult {
+  """
+  The on-chain cancel of `onChainOrderIds`, one transaction per marketplace, as `getCancelOrdersCalldata` returns it.
+  """
+  cancelOrdersCalldata: [CancelAllOrdersCalldata!]!
+
+  """Orders cancelled without a transaction."""
+  cancelledOrders: [Order!]!
+
+  """Orders that still need Seaport's on-chain cancel."""
+  onChainOrderIds: [Int64!]!
 }
 
 """An NFT collection."""
@@ -528,6 +545,10 @@ type CollectionOfferStatistics {
 }
 
 type CollectionOrder implements Event & Node & Order {
+  """
+  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone.
+  """
+  cancelsOffChain: Boolean!
   collection: Collection!
   collectionId: Int!
   createdDate: DateTime!
@@ -1798,6 +1819,10 @@ type MultiSourceLoanHistory implements Node {
 }
 
 type MultipleTraitOrder implements Event & Node & Order {
+  """
+  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone.
+  """
+  cancelsOffChain: Boolean!
   collection: Collection!
   collectionId: Int!
   createdDate: DateTime!
@@ -1853,6 +1878,11 @@ type Mutation {
   Adds or updates a loan top-up request.A top-up request is only a suggestion for potential lenders to show your intentions and the terms you want.
   """
   addOrUpdateTopUpRequest(desiredAprBps: BigInt = null, desiredTopUp: BigInt = null, loanId: String!): TopUpRequest!
+
+  """
+  Cancels the caller's trade orders that have `cancelsOffChain` without a transaction, and returns the ids of the rest with the calldata of their Seaport on-chain cancel.
+  """
+  cancelTradeOrders(orderIds: [Int64!]!): CancelTradeOrdersResult!
   createApiKey: Credential! @deprecated(reason: "This endpoint is deprecated.")
   deleteProfilePicture(userId: Int!): User!
   editUser(user: EditUserInput!): User!
@@ -2396,6 +2426,10 @@ input OffersSortInput {
 }
 
 interface Order implements Event & Node {
+  """
+  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone.
+  """
+  cancelsOffChain: Boolean!
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
@@ -3155,6 +3189,10 @@ type SearchERC20Balance {
 }
 
 type SellAndRepayOrder implements Event & Node & Order {
+  """
+  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone.
+  """
+  cancelsOffChain: Boolean!
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
@@ -3298,6 +3336,10 @@ input SingleNFTOfferInput {
 }
 
 type SingleNFTOrder implements Event & Node & Order {
+  """
+  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone.
+  """
+  cancelsOffChain: Boolean!
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
@@ -3497,6 +3539,11 @@ type StatByCollection {
 
 type StealthMaskedOrder implements Event & Node & Order {
   artist: Artist
+
+  """
+  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone.
+  """
+  cancelsOffChain: Boolean!
   collection: Collection
   createdDate: DateTime!
   currency: Currency!
@@ -3654,6 +3701,10 @@ input TraitKeyValueOptionsInput {
 }
 
 type TraitOrder implements Event & Node & Order {
+  """
+  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone.
+  """
+  cancelsOffChain: Boolean!
   collection: Collection!
   collectionId: Int!
   createdDate: DateTime!

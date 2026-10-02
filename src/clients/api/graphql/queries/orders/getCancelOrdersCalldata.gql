@@ -1,0 +1,6 @@
+query getCancelOrdersCalldata($maker: Address!, $orderIds: [Int64!]!) {
+  cancelOrdersCalldata: getCancelOrdersCalldata(maker: $maker, orderIds: $orderIds) {
+    calldata
+    marketPlaceAddress
+  }
+}

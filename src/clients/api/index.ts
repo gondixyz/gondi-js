@@ -62,6 +62,8 @@ export class Api {
   unhideRenegotiationOffer;
   hideOrder;
   showOrder;
+  cancelTradeOrders;
+  getCancelOrdersCalldata;
   collectionStepsById;
 
   constructor({ apiClient, wallet, onStepChange }: Props) {
@@ -88,6 +90,8 @@ export class Api {
     this.unhideRenegotiationOffer = this.api.unhideRenegotiationOffer;
     this.hideOrder = this.api.hideOrder;
     this.showOrder = this.api.showOrder;
+    this.cancelTradeOrders = this.api.cancelTradeOrders;
+    this.getCancelOrdersCalldata = this.api.getCancelOrdersCalldata;
     this.collectionStepsById = this.api.collectionStepsById;
   }
 
