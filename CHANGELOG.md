@@ -1,3 +1,35 @@
+# New Features 0.39.0
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.39.0.
+
+## Table of Contents
+
+- [cancelOrders cancels signed-zone bids without a transaction](#cancelorders-cancels-signed-zone-bids-without-a-transaction-0390)
+
+---
+
+## cancelOrders cancels signed-zone bids without a transaction 0.39.0
+
+**Description:**
+
+- NEW: `gondi.cancelOrders({ orderIds, onChain? })` cancels the wallet's trade orders by id, at most 50 per call.
+  - One API call (`cancelTradeOrders`) cancels the bids restricted to the GONDI signed zone (`cancelsOffChain`) without a transaction, and returns the Seaport cancel calldata of every other live order, sent as one transaction per marketplace, as `cancelOrder` sends it. Orders that are already cancelled, filled or expired are skipped.
+  - `onChain: true` cancels every order on-chain, including signed-zone bids.
+  - It resolves to `{ offChainOrderIds, transactions }`, one `{ txHash, waitTxInBlock }` per transaction. With `onStepChange` set, the API call and each transaction report their steps.
+- NEW: orders returned by the API carry `cancelsOffChain`.
+
+**Reason:**
+
+A signed-zone bid only fills with a short-lived signature the API issues, so the API stops signing once the bid is cancelled. An off-chain cancel is final once the last signature already issued for the bid expires, a few minutes at most. An on-chain cancel is final as soon as it is mined, which is what `onChain: true` is for.
+
+**Migration Steps:**
+
+None. `cancelOrder` is unchanged.
+
 # Breaking Changes 0.38.0
 
 ### Important

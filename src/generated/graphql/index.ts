@@ -356,6 +356,8 @@ export type BulkNftOrdersResultSignatureRequest = BulkNftOrdersResult | Signatur
 
 export type BuyNowPayLaterOrder = Event & Node & Order & {
   __typename?: 'BuyNowPayLaterOrder';
+  /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone. */
+  cancelsOffChain: Scalars['Boolean'];
   createdDate: Scalars['DateTime'];
   currency: Currency;
   currencyAddress: Scalars['Address'];
@@ -397,6 +399,16 @@ export type CancelAllOrdersCalldata = {
   __typename?: 'CancelAllOrdersCalldata';
   calldata: Scalars['Hex'];
   marketPlaceAddress: Scalars['Address'];
+};
+
+export type CancelTradeOrdersResult = {
+  __typename?: 'CancelTradeOrdersResult';
+  /** The on-chain cancel of `onChainOrderIds`, one transaction per marketplace, as `getCancelOrdersCalldata` returns it. */
+  cancelOrdersCalldata: Array<CancelAllOrdersCalldata>;
+  /** Orders cancelled without a transaction. */
+  cancelledOrders: Array<Order>;
+  /** Orders that still need Seaport's on-chain cancel. */
+  onChainOrderIds: Array<Scalars['Int64']>;
 };
 
 /** An NFT collection. */
@@ -629,6 +641,8 @@ export type CollectionOfferStatistics = {
 
 export type CollectionOrder = Event & Node & Order & {
   __typename?: 'CollectionOrder';
+  /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone. */
+  cancelsOffChain: Scalars['Boolean'];
   collection: Collection;
   collectionId: Scalars['Int'];
   createdDate: Scalars['DateTime'];
@@ -2093,6 +2107,8 @@ export type MultiSourceLoanHistory = Node & {
 
 export type MultipleTraitOrder = Event & Node & Order & {
   __typename?: 'MultipleTraitOrder';
+  /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone. */
+  cancelsOffChain: Scalars['Boolean'];
   collection: Collection;
   collectionId: Scalars['Int'];
   createdDate: Scalars['DateTime'];
@@ -2139,6 +2155,8 @@ export type Mutation = {
   addOrUpdateRenegotiationRequest: RenegotiationRequest;
   /** Adds or updates a loan top-up request.A top-up request is only a suggestion for potential lenders to show your intentions and the terms you want. */
   addOrUpdateTopUpRequest: TopUpRequest;
+  /** Cancels the caller's trade orders that have `cancelsOffChain` without a transaction, and returns the ids of the rest with the calldata of their Seaport on-chain cancel. */
+  cancelTradeOrders: CancelTradeOrdersResult;
   /** @deprecated This endpoint is deprecated. */
   createApiKey: Credential;
   deleteProfilePicture: User;
@@ -2248,6 +2266,11 @@ export type MutationAddOrUpdateTopUpRequestArgs = {
   desiredAprBps?: InputMaybe<Scalars['BigInt']>;
   desiredTopUp?: InputMaybe<Scalars['BigInt']>;
   loanId: Scalars['String'];
+};
+
+
+export type MutationCancelTradeOrdersArgs = {
+  orderIds: Array<Scalars['Int64']>;
 };
 
 
@@ -2963,6 +2986,8 @@ export type OffersSortInput = {
 };
 
 export type Order = {
+  /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone. */
+  cancelsOffChain: Scalars['Boolean'];
   createdDate: Scalars['DateTime'];
   currency: Currency;
   currencyAddress: Scalars['Address'];
@@ -4228,6 +4253,8 @@ export type SearchErc20Balance = {
 
 export type SellAndRepayOrder = Event & Node & Order & {
   __typename?: 'SellAndRepayOrder';
+  /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone. */
+  cancelsOffChain: Scalars['Boolean'];
   createdDate: Scalars['DateTime'];
   currency: Currency;
   currencyAddress: Scalars['Address'];
@@ -4376,6 +4403,8 @@ export type SingleNftOfferInput = {
 
 export type SingleNftOrder = Event & Node & Order & {
   __typename?: 'SingleNFTOrder';
+  /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone. */
+  cancelsOffChain: Scalars['Boolean'];
   createdDate: Scalars['DateTime'];
   currency: Currency;
   currencyAddress: Scalars['Address'];
@@ -4581,6 +4610,8 @@ export type StatByCollection = {
 export type StealthMaskedOrder = Event & Node & Order & {
   __typename?: 'StealthMaskedOrder';
   artist?: Maybe<Artist>;
+  /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone. */
+  cancelsOffChain: Scalars['Boolean'];
   collection?: Maybe<Collection>;
   createdDate: Scalars['DateTime'];
   currency: Currency;
@@ -4763,6 +4794,8 @@ export type TraitKeyValueOptionsInput = {
 
 export type TraitOrder = Event & Node & Order & {
   __typename?: 'TraitOrder';
+  /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone. */
+  cancelsOffChain: Scalars['Boolean'];
   collection: Collection;
   collectionId: Scalars['Int'];
   createdDate: Scalars['DateTime'];
@@ -5249,6 +5282,13 @@ export type UnhideOfferMutationVariables = Exact<{
 
 export type UnhideOfferMutation = { __typename?: 'Mutation', showOffer: { __typename?: 'CollectionOffer', id: string } | { __typename?: 'SingleNFTOffer', id: string } };
 
+export type CancelTradeOrdersMutationVariables = Exact<{
+  orderIds: Array<Scalars['Int64']> | Scalars['Int64'];
+}>;
+
+
+export type CancelTradeOrdersMutation = { __typename?: 'Mutation', cancelTradeOrders: { __typename?: 'CancelTradeOrdersResult', cancelledOrders: Array<{ __typename?: 'BuyNowPayLaterOrder', id: string } | { __typename?: 'CollectionOrder', id: string } | { __typename?: 'MultipleTraitOrder', id: string } | { __typename?: 'SellAndRepayOrder', id: string } | { __typename?: 'SingleNFTOrder', id: string } | { __typename?: 'StealthMaskedOrder', id: string } | { __typename?: 'TraitOrder', id: string }>, cancelOrdersCalldata: Array<{ __typename?: 'CancelAllOrdersCalldata', calldata: Hex, marketPlaceAddress: Address }> } };
+
 export type HideOrderMutationVariables = Exact<{
   id: Scalars['Int64'];
 }>;
@@ -5451,6 +5491,14 @@ export type ListOffersQueryVariables = Exact<{
 
 
 export type ListOffersQuery = { __typename?: 'Query', result: { __typename?: 'OfferConnection', pageInfo: { __typename?: 'PageInfo', endCursor?: string | null, hasNextPage: boolean }, edges: Array<{ __typename?: 'OfferEdge', node: { __typename?: 'CollectionOffer', id: string, offerId: bigint, lenderAddress?: Address | null, borrowerAddress?: Address | null, signerAddress?: Address | null, contractAddress: Address, requiresLiquidation?: boolean | null, principalAddress: Address, principalAmount: bigint, aprBps: bigint, fee: bigint, capacity: bigint, expirationTime: bigint, duration: bigint, status: string, offerHash?: Hash | null, signature?: Hex | null, createdDate?: Date | null, repayment: bigint, hidden?: boolean | null, maxSeniorRepayment: bigint, lenderRefinanceDisabled: boolean, collection: { __typename?: 'Collection', id: string, slug: string, contractData: { __typename?: 'ContractData', contractAddress: Address } }, currency: { __typename?: 'Currency', symbol: string, decimals: number, address: Address }, validators: Array<{ __typename?: 'OfferValidator', arguments: Hex, validator: Address }> } | { __typename?: 'SingleNFTOffer', id: string, offerId: bigint, lenderAddress?: Address | null, borrowerAddress?: Address | null, signerAddress?: Address | null, contractAddress: Address, requiresLiquidation?: boolean | null, principalAddress: Address, principalAmount: bigint, aprBps: bigint, fee: bigint, capacity: bigint, expirationTime: bigint, duration: bigint, status: string, offerHash?: Hash | null, signature?: Hex | null, createdDate?: Date | null, repayment: bigint, hidden?: boolean | null, maxSeniorRepayment: bigint, lenderRefinanceDisabled: boolean, nft: { __typename?: 'NFT', id: string, tokenId: bigint, collection?: { __typename?: 'Collection', id: string, slug: string, contractData: { __typename?: 'ContractData', contractAddress: Address } } | null }, currency: { __typename?: 'Currency', symbol: string, decimals: number, address: Address }, validators: Array<{ __typename?: 'OfferValidator', arguments: Hex, validator: Address }> } }> } };
+
+export type GetCancelOrdersCalldataQueryVariables = Exact<{
+  maker: Scalars['Address'];
+  orderIds: Array<Scalars['Int64']> | Scalars['Int64'];
+}>;
+
+
+export type GetCancelOrdersCalldataQuery = { __typename?: 'Query', cancelOrdersCalldata: Array<{ __typename?: 'CancelAllOrdersCalldata', calldata: Hex, marketPlaceAddress: Address }> };
 
 export type GetSaleCalldataQueryVariables = Exact<{
   orderId: Scalars['Int64'];
@@ -5668,8 +5716,9 @@ export type BulkNFTOrdersResultKeySpecifier = ('orders' | BulkNFTOrdersResultKey
 export type BulkNFTOrdersResultFieldPolicy = {
 	orders?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type BuyNowPayLaterOrderKeySpecifier = ('createdDate' | 'currency' | 'currencyAddress' | 'emitCalldata' | 'evmOrder' | 'executions' | 'expiration' | 'feeMetadata' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'maker' | 'makerName' | 'marketPlace' | 'marketPlaceAddress' | 'maxExecutions' | 'netAmount' | 'nft' | 'nftId' | 'nonce' | 'orderType' | 'originalId' | 'price' | 'signature' | 'startTime' | 'status' | 'stealth' | 'taker' | 'takerName' | 'timestamp' | 'updatedDate' | BuyNowPayLaterOrderKeySpecifier)[];
+export type BuyNowPayLaterOrderKeySpecifier = ('cancelsOffChain' | 'createdDate' | 'currency' | 'currencyAddress' | 'emitCalldata' | 'evmOrder' | 'executions' | 'expiration' | 'feeMetadata' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'maker' | 'makerName' | 'marketPlace' | 'marketPlaceAddress' | 'maxExecutions' | 'netAmount' | 'nft' | 'nftId' | 'nonce' | 'orderType' | 'originalId' | 'price' | 'signature' | 'startTime' | 'status' | 'stealth' | 'taker' | 'takerName' | 'timestamp' | 'updatedDate' | BuyNowPayLaterOrderKeySpecifier)[];
 export type BuyNowPayLaterOrderFieldPolicy = {
+	cancelsOffChain?: FieldPolicy<any> | FieldReadFunction<any>,
 	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
 	currency?: FieldPolicy<any> | FieldReadFunction<any>,
 	currencyAddress?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -5708,6 +5757,12 @@ export type CancelAllOrdersCalldataKeySpecifier = ('calldata' | 'marketPlaceAddr
 export type CancelAllOrdersCalldataFieldPolicy = {
 	calldata?: FieldPolicy<any> | FieldReadFunction<any>,
 	marketPlaceAddress?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type CancelTradeOrdersResultKeySpecifier = ('cancelOrdersCalldata' | 'cancelledOrders' | 'onChainOrderIds' | CancelTradeOrdersResultKeySpecifier)[];
+export type CancelTradeOrdersResultFieldPolicy = {
+	cancelOrdersCalldata?: FieldPolicy<any> | FieldReadFunction<any>,
+	cancelledOrders?: FieldPolicy<any> | FieldReadFunction<any>,
+	onChainOrderIds?: FieldPolicy<any> | FieldReadFunction<any>
 };
 export type CollectionKeySpecifier = ('actionsEnabled' | 'artistArtworksCount' | 'artistFloorPrice' | 'artistNumberOfSales1d' | 'artistTotalVolume1d' | 'artistUniqueCollectorsCount' | 'artists' | 'bannerImage' | 'collectionUrl' | 'contractData' | 'description' | 'discordUrl' | 'editionIds' | 'externalUrl' | 'hasTransferValidator' | 'holderStatistics' | 'id' | 'image' | 'imageId' | 'itemType' | 'maxNetPrincipalOffer' | 'name' | 'nftsCount' | 'previewNfts' | 'rarityEnabled' | 'royalties' | 'slug' | 'statistics' | 'supply' | 'traitOffersEnabled' | 'twitterUsername' | 'uniqueCollectors' | 'verified' | 'whitelistedSupply' | 'wrappedCollection' | 'wrappedCollectionId' | 'wrapperCollections' | CollectionKeySpecifier)[];
 export type CollectionFieldPolicy = {
@@ -5849,8 +5904,9 @@ export type CollectionOfferStatisticsFieldPolicy = {
 	acceptedLoans?: FieldPolicy<any> | FieldReadFunction<any>,
 	consumedCapacity?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type CollectionOrderKeySpecifier = ('collection' | 'collectionId' | 'createdDate' | 'currency' | 'currencyAddress' | 'evmOrder' | 'executions' | 'expiration' | 'feeMetadata' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'maker' | 'makerName' | 'marketPlace' | 'marketPlaceAddress' | 'maxExecutions' | 'netAmount' | 'nonce' | 'orderType' | 'originalId' | 'price' | 'signature' | 'startTime' | 'status' | 'stealth' | 'taker' | 'takerName' | 'timestamp' | 'updatedDate' | CollectionOrderKeySpecifier)[];
+export type CollectionOrderKeySpecifier = ('cancelsOffChain' | 'collection' | 'collectionId' | 'createdDate' | 'currency' | 'currencyAddress' | 'evmOrder' | 'executions' | 'expiration' | 'feeMetadata' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'maker' | 'makerName' | 'marketPlace' | 'marketPlaceAddress' | 'maxExecutions' | 'netAmount' | 'nonce' | 'orderType' | 'originalId' | 'price' | 'signature' | 'startTime' | 'status' | 'stealth' | 'taker' | 'takerName' | 'timestamp' | 'updatedDate' | CollectionOrderKeySpecifier)[];
 export type CollectionOrderFieldPolicy = {
+	cancelsOffChain?: FieldPolicy<any> | FieldReadFunction<any>,
 	collection?: FieldPolicy<any> | FieldReadFunction<any>,
 	collectionId?: FieldPolicy<any> | FieldReadFunction<any>,
 	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -6737,8 +6793,9 @@ export type MultiSourceLoanHistoryFieldPolicy = {
 	sources?: FieldPolicy<any> | FieldReadFunction<any>,
 	startTime?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type MultipleTraitOrderKeySpecifier = ('collection' | 'collectionId' | 'createdDate' | 'currency' | 'currencyAddress' | 'evmOrder' | 'executions' | 'expiration' | 'feeMetadata' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'maker' | 'makerName' | 'marketPlace' | 'marketPlaceAddress' | 'maxExecutions' | 'netAmount' | 'nonce' | 'orderType' | 'originalId' | 'price' | 'signature' | 'startTime' | 'status' | 'stealth' | 'taker' | 'takerName' | 'timestamp' | 'traits' | 'updatedDate' | MultipleTraitOrderKeySpecifier)[];
+export type MultipleTraitOrderKeySpecifier = ('cancelsOffChain' | 'collection' | 'collectionId' | 'createdDate' | 'currency' | 'currencyAddress' | 'evmOrder' | 'executions' | 'expiration' | 'feeMetadata' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'maker' | 'makerName' | 'marketPlace' | 'marketPlaceAddress' | 'maxExecutions' | 'netAmount' | 'nonce' | 'orderType' | 'originalId' | 'price' | 'signature' | 'startTime' | 'status' | 'stealth' | 'taker' | 'takerName' | 'timestamp' | 'traits' | 'updatedDate' | MultipleTraitOrderKeySpecifier)[];
 export type MultipleTraitOrderFieldPolicy = {
+	cancelsOffChain?: FieldPolicy<any> | FieldReadFunction<any>,
 	collection?: FieldPolicy<any> | FieldReadFunction<any>,
 	collectionId?: FieldPolicy<any> | FieldReadFunction<any>,
 	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -6773,13 +6830,14 @@ export type MultipleTraitOrderFieldPolicy = {
 	traits?: FieldPolicy<any> | FieldReadFunction<any>,
 	updatedDate?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type MutationKeySpecifier = ('acceptLinkedWallets' | 'addListingsOfNftsFromUser' | 'addOrUpdateListing' | 'addOrUpdateRenegotiationRequest' | 'addOrUpdateTopUpRequest' | 'createApiKey' | 'deleteProfilePicture' | 'editUser' | 'followCollection' | 'followCollections' | 'generateCollectionOfferToBeSigned' | 'generateRenegotiationOfferToBeSigned' | 'generateSignInNonce' | 'generateSingleNftOfferToBeSigned' | 'hideAllOffers' | 'hideOffer' | 'hideOffers' | 'hideOrder' | 'hideRenegotiation' | 'linkWalletAddress' | 'markNotificationIdsAsRead' | 'markNotificationsAsRead' | 'publishBulkOrdersForNfts' | 'publishBuyNowPayLaterOrder' | 'publishDealOrder' | 'publishOrderForCollection' | 'publishOrderForNft' | 'publishOrderForTrait' | 'publishSellAndRepayOrder' | 'recordItemVisit' | 'refreshNftMetadata' | 'removeLinkedWallets' | 'removeListing' | 'removeListingsOfNftsFromUser' | 'removeRenegotiationRequest' | 'removeTopUpRequest' | 'resendVerificationEmail' | 'saveRenegotiationSignedOffer' | 'saveSignedCollectionOffer' | 'saveSignedSingleNftOffer' | 'setReferral' | 'showOffer' | 'showOrder' | 'showRenegotiation' | 'signInWithEthereum' | 'unfollowCollection' | 'uploadProfilePicture' | 'verifyMailValidationCode' | MutationKeySpecifier)[];
+export type MutationKeySpecifier = ('acceptLinkedWallets' | 'addListingsOfNftsFromUser' | 'addOrUpdateListing' | 'addOrUpdateRenegotiationRequest' | 'addOrUpdateTopUpRequest' | 'cancelTradeOrders' | 'createApiKey' | 'deleteProfilePicture' | 'editUser' | 'followCollection' | 'followCollections' | 'generateCollectionOfferToBeSigned' | 'generateRenegotiationOfferToBeSigned' | 'generateSignInNonce' | 'generateSingleNftOfferToBeSigned' | 'hideAllOffers' | 'hideOffer' | 'hideOffers' | 'hideOrder' | 'hideRenegotiation' | 'linkWalletAddress' | 'markNotificationIdsAsRead' | 'markNotificationsAsRead' | 'publishBulkOrdersForNfts' | 'publishBuyNowPayLaterOrder' | 'publishDealOrder' | 'publishOrderForCollection' | 'publishOrderForNft' | 'publishOrderForTrait' | 'publishSellAndRepayOrder' | 'recordItemVisit' | 'refreshNftMetadata' | 'removeLinkedWallets' | 'removeListing' | 'removeListingsOfNftsFromUser' | 'removeRenegotiationRequest' | 'removeTopUpRequest' | 'resendVerificationEmail' | 'saveRenegotiationSignedOffer' | 'saveSignedCollectionOffer' | 'saveSignedSingleNftOffer' | 'setReferral' | 'showOffer' | 'showOrder' | 'showRenegotiation' | 'signInWithEthereum' | 'unfollowCollection' | 'uploadProfilePicture' | 'verifyMailValidationCode' | MutationKeySpecifier)[];
 export type MutationFieldPolicy = {
 	acceptLinkedWallets?: FieldPolicy<any> | FieldReadFunction<any>,
 	addListingsOfNftsFromUser?: FieldPolicy<any> | FieldReadFunction<any>,
 	addOrUpdateListing?: FieldPolicy<any> | FieldReadFunction<any>,
 	addOrUpdateRenegotiationRequest?: FieldPolicy<any> | FieldReadFunction<any>,
 	addOrUpdateTopUpRequest?: FieldPolicy<any> | FieldReadFunction<any>,
+	cancelTradeOrders?: FieldPolicy<any> | FieldReadFunction<any>,
 	createApiKey?: FieldPolicy<any> | FieldReadFunction<any>,
 	deleteProfilePicture?: FieldPolicy<any> | FieldReadFunction<any>,
 	editUser?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -7051,8 +7109,9 @@ export type OfferValidatorFieldPolicy = {
 	offerId?: FieldPolicy<any> | FieldReadFunction<any>,
 	validator?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type OrderKeySpecifier = ('createdDate' | 'currency' | 'currencyAddress' | 'evmOrder' | 'executions' | 'expiration' | 'feeMetadata' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'maker' | 'makerName' | 'marketPlace' | 'marketPlaceAddress' | 'maxExecutions' | 'netAmount' | 'nonce' | 'orderType' | 'originalId' | 'price' | 'signature' | 'startTime' | 'status' | 'stealth' | 'taker' | 'takerName' | 'timestamp' | 'updatedDate' | OrderKeySpecifier)[];
+export type OrderKeySpecifier = ('cancelsOffChain' | 'createdDate' | 'currency' | 'currencyAddress' | 'evmOrder' | 'executions' | 'expiration' | 'feeMetadata' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'maker' | 'makerName' | 'marketPlace' | 'marketPlaceAddress' | 'maxExecutions' | 'netAmount' | 'nonce' | 'orderType' | 'originalId' | 'price' | 'signature' | 'startTime' | 'status' | 'stealth' | 'taker' | 'takerName' | 'timestamp' | 'updatedDate' | OrderKeySpecifier)[];
 export type OrderFieldPolicy = {
+	cancelsOffChain?: FieldPolicy<any> | FieldReadFunction<any>,
 	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
 	currency?: FieldPolicy<any> | FieldReadFunction<any>,
 	currencyAddress?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -7358,8 +7417,9 @@ export type SearchERC20BalanceFieldPolicy = {
 	address?: FieldPolicy<any> | FieldReadFunction<any>,
 	amount?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type SellAndRepayOrderKeySpecifier = ('createdDate' | 'currency' | 'currencyAddress' | 'evmOrder' | 'executions' | 'expiration' | 'feeMetadata' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'loan' | 'loanId' | 'maker' | 'makerName' | 'marketPlace' | 'marketPlaceAddress' | 'maxExecutions' | 'netAmount' | 'nft' | 'nftId' | 'nonce' | 'orderType' | 'originalId' | 'price' | 'repaymentCalldata' | 'signature' | 'startTime' | 'status' | 'stealth' | 'taker' | 'takerName' | 'timestamp' | 'updatedDate' | SellAndRepayOrderKeySpecifier)[];
+export type SellAndRepayOrderKeySpecifier = ('cancelsOffChain' | 'createdDate' | 'currency' | 'currencyAddress' | 'evmOrder' | 'executions' | 'expiration' | 'feeMetadata' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'loan' | 'loanId' | 'maker' | 'makerName' | 'marketPlace' | 'marketPlaceAddress' | 'maxExecutions' | 'netAmount' | 'nft' | 'nftId' | 'nonce' | 'orderType' | 'originalId' | 'price' | 'repaymentCalldata' | 'signature' | 'startTime' | 'status' | 'stealth' | 'taker' | 'takerName' | 'timestamp' | 'updatedDate' | SellAndRepayOrderKeySpecifier)[];
 export type SellAndRepayOrderFieldPolicy = {
+	cancelsOffChain?: FieldPolicy<any> | FieldReadFunction<any>,
 	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
 	currency?: FieldPolicy<any> | FieldReadFunction<any>,
 	currencyAddress?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -7454,8 +7514,9 @@ export type SingleNFTOfferCollectionOfferRenegotiationEdgeFieldPolicy = {
 	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
 	node?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type SingleNFTOrderKeySpecifier = ('createdDate' | 'currency' | 'currencyAddress' | 'evmOrder' | 'executions' | 'expiration' | 'feeMetadata' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'maker' | 'makerName' | 'marketPlace' | 'marketPlaceAddress' | 'maxExecutions' | 'netAmount' | 'nft' | 'nftId' | 'nonce' | 'orderType' | 'originalId' | 'price' | 'signature' | 'startTime' | 'status' | 'stealth' | 'taker' | 'takerName' | 'timestamp' | 'updatedDate' | SingleNFTOrderKeySpecifier)[];
+export type SingleNFTOrderKeySpecifier = ('cancelsOffChain' | 'createdDate' | 'currency' | 'currencyAddress' | 'evmOrder' | 'executions' | 'expiration' | 'feeMetadata' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'maker' | 'makerName' | 'marketPlace' | 'marketPlaceAddress' | 'maxExecutions' | 'netAmount' | 'nft' | 'nftId' | 'nonce' | 'orderType' | 'originalId' | 'price' | 'signature' | 'startTime' | 'status' | 'stealth' | 'taker' | 'takerName' | 'timestamp' | 'updatedDate' | SingleNFTOrderKeySpecifier)[];
 export type SingleNFTOrderFieldPolicy = {
+	cancelsOffChain?: FieldPolicy<any> | FieldReadFunction<any>,
 	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
 	currency?: FieldPolicy<any> | FieldReadFunction<any>,
 	currencyAddress?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -7578,9 +7639,10 @@ export type StatByCollectionFieldPolicy = {
 	collection?: FieldPolicy<any> | FieldReadFunction<any>,
 	value?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type StealthMaskedOrderKeySpecifier = ('artist' | 'collection' | 'createdDate' | 'currency' | 'currencyAddress' | 'evmOrder' | 'executions' | 'expiration' | 'feeMetadata' | 'fees' | 'hidden' | 'highestBidTrait' | 'id' | 'isAsk' | 'isPrivate' | 'itemType' | 'maker' | 'makerName' | 'marketPlace' | 'marketPlaceAddress' | 'maxExecutions' | 'netAmount' | 'nonce' | 'orderType' | 'originalId' | 'price' | 'revealedGroup' | 'signature' | 'startTime' | 'status' | 'stealth' | 'taker' | 'takerName' | 'timestamp' | 'updatedDate' | StealthMaskedOrderKeySpecifier)[];
+export type StealthMaskedOrderKeySpecifier = ('artist' | 'cancelsOffChain' | 'collection' | 'createdDate' | 'currency' | 'currencyAddress' | 'evmOrder' | 'executions' | 'expiration' | 'feeMetadata' | 'fees' | 'hidden' | 'highestBidTrait' | 'id' | 'isAsk' | 'isPrivate' | 'itemType' | 'maker' | 'makerName' | 'marketPlace' | 'marketPlaceAddress' | 'maxExecutions' | 'netAmount' | 'nonce' | 'orderType' | 'originalId' | 'price' | 'revealedGroup' | 'signature' | 'startTime' | 'status' | 'stealth' | 'taker' | 'takerName' | 'timestamp' | 'updatedDate' | StealthMaskedOrderKeySpecifier)[];
 export type StealthMaskedOrderFieldPolicy = {
 	artist?: FieldPolicy<any> | FieldReadFunction<any>,
+	cancelsOffChain?: FieldPolicy<any> | FieldReadFunction<any>,
 	collection?: FieldPolicy<any> | FieldReadFunction<any>,
 	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
 	currency?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -7701,8 +7763,9 @@ export type TraitKeyValueOptionsFieldPolicy = {
 	key?: FieldPolicy<any> | FieldReadFunction<any>,
 	values?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type TraitOrderKeySpecifier = ('collection' | 'collectionId' | 'createdDate' | 'currency' | 'currencyAddress' | 'edition' | 'evmOrder' | 'executions' | 'expiration' | 'feeMetadata' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'maker' | 'makerName' | 'marketPlace' | 'marketPlaceAddress' | 'maxExecutions' | 'netAmount' | 'nonce' | 'orderType' | 'originalId' | 'price' | 'signature' | 'startTime' | 'status' | 'stealth' | 'taker' | 'takerName' | 'timestamp' | 'trait' | 'traitId' | 'updatedDate' | TraitOrderKeySpecifier)[];
+export type TraitOrderKeySpecifier = ('cancelsOffChain' | 'collection' | 'collectionId' | 'createdDate' | 'currency' | 'currencyAddress' | 'edition' | 'evmOrder' | 'executions' | 'expiration' | 'feeMetadata' | 'fees' | 'hidden' | 'id' | 'isAsk' | 'isPrivate' | 'maker' | 'makerName' | 'marketPlace' | 'marketPlaceAddress' | 'maxExecutions' | 'netAmount' | 'nonce' | 'orderType' | 'originalId' | 'price' | 'signature' | 'startTime' | 'status' | 'stealth' | 'taker' | 'takerName' | 'timestamp' | 'trait' | 'traitId' | 'updatedDate' | TraitOrderKeySpecifier)[];
 export type TraitOrderFieldPolicy = {
+	cancelsOffChain?: FieldPolicy<any> | FieldReadFunction<any>,
 	collection?: FieldPolicy<any> | FieldReadFunction<any>,
 	collectionId?: FieldPolicy<any> | FieldReadFunction<any>,
 	createdDate?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -7981,6 +8044,10 @@ export type StrictTypedTypePolicies = {
 	CancelAllOrdersCalldata?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | CancelAllOrdersCalldataKeySpecifier | (() => undefined | CancelAllOrdersCalldataKeySpecifier),
 		fields?: CancelAllOrdersCalldataFieldPolicy,
+	},
+	CancelTradeOrdersResult?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | CancelTradeOrdersResultKeySpecifier | (() => undefined | CancelTradeOrdersResultKeySpecifier),
+		fields?: CancelTradeOrdersResultFieldPolicy,
 	},
 	Collection?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | CollectionKeySpecifier | (() => undefined | CollectionKeySpecifier),
@@ -8842,6 +8909,19 @@ export const UnhideOfferDocument = gql`
   }
 }
     `;
+export const CancelTradeOrdersDocument = gql`
+    mutation cancelTradeOrders($orderIds: [Int64!]!) {
+  cancelTradeOrders(orderIds: $orderIds) {
+    cancelledOrders {
+      id
+    }
+    cancelOrdersCalldata {
+      calldata
+      marketPlaceAddress
+    }
+  }
+}
+    `;
 export const HideOrderDocument = gql`
     mutation hideOrder($id: Int64!) {
   hideOrder(orderIdInt64: $id) {
@@ -9462,6 +9542,17 @@ export const ListOffersDocument = gql`
   }
 }
     `;
+export const GetCancelOrdersCalldataDocument = gql`
+    query getCancelOrdersCalldata($maker: Address!, $orderIds: [Int64!]!) {
+  cancelOrdersCalldata: getCancelOrdersCalldata(
+    maker: $maker
+    orderIds: $orderIds
+  ) {
+    calldata
+    marketPlaceAddress
+  }
+}
+    `;
 export const GetSaleCalldataDocument = gql`
     query getSaleCalldata($orderId: Int64!, $nftId: Int!, $taker: Address!) {
   saleCalldata: getOrderSaleCalldata(
@@ -9500,6 +9591,9 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
     },
     unhideOffer(variables: UnhideOfferMutationVariables, options?: C): Promise<UnhideOfferMutation> {
       return requester<UnhideOfferMutation, UnhideOfferMutationVariables>(UnhideOfferDocument, variables, options) as Promise<UnhideOfferMutation>;
+    },
+    cancelTradeOrders(variables: CancelTradeOrdersMutationVariables, options?: C): Promise<CancelTradeOrdersMutation> {
+      return requester<CancelTradeOrdersMutation, CancelTradeOrdersMutationVariables>(CancelTradeOrdersDocument, variables, options) as Promise<CancelTradeOrdersMutation>;
     },
     hideOrder(variables: HideOrderMutationVariables, options?: C): Promise<HideOrderMutation> {
       return requester<HideOrderMutation, HideOrderMutationVariables>(HideOrderDocument, variables, options) as Promise<HideOrderMutation>;
@@ -9572,6 +9666,9 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
     },
     listOffers(variables: ListOffersQueryVariables, options?: C): Promise<ListOffersQuery> {
       return requester<ListOffersQuery, ListOffersQueryVariables>(ListOffersDocument, variables, options) as Promise<ListOffersQuery>;
+    },
+    getCancelOrdersCalldata(variables: GetCancelOrdersCalldataQueryVariables, options?: C): Promise<GetCancelOrdersCalldataQuery> {
+      return requester<GetCancelOrdersCalldataQuery, GetCancelOrdersCalldataQueryVariables>(GetCancelOrdersCalldataDocument, variables, options) as Promise<GetCancelOrdersCalldataQuery>;
     },
     getSaleCalldata(variables: GetSaleCalldataQueryVariables, options?: C): Promise<GetSaleCalldataQuery> {
       return requester<GetSaleCalldataQuery, GetSaleCalldataQueryVariables>(GetSaleCalldataDocument, variables, options) as Promise<GetSaleCalldataQuery>;
