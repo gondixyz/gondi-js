@@ -91,3 +91,28 @@ describe('robinhood chain support', () => {
     expect(() => getCurrencies({ id: 424242 })).toThrow('No currencies found');
   });
 });
+
+describe('cross-currency deployments', () => {
+  test('unsupported chains have no activated cross-currency infrastructure', () => {
+    for (const chain of [hyperliquid, robinhood]) {
+      const contracts = getContracts(chain);
+      expect(contracts.PositionMigrator).toBe(zeroAddress);
+      expect(contracts.MigratorManager).toBe(zeroAddress);
+      expect(contracts.UniversalRouter).toBe(zeroAddress);
+      expect(contracts.Permit2).toBe(zeroAddress);
+      expect(contracts.UniswapQuoterV2).toBe(zeroAddress);
+    }
+  });
+  test('local deployment overrides are read on each call', () => {
+    const previous = process.env.GONDI_POSITION_MIGRATOR;
+    try {
+      process.env.GONDI_POSITION_MIGRATOR = '0x0000000000000000000000000000000000001234';
+      expect(getContracts({ id: 31337 }).PositionMigrator).toBe(
+        process.env.GONDI_POSITION_MIGRATOR,
+      );
+    } finally {
+      if (previous === undefined) delete process.env.GONDI_POSITION_MIGRATOR;
+      else process.env.GONDI_POSITION_MIGRATOR = previous;
+    }
+  });
+});

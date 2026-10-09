@@ -1,3 +1,41 @@
+# New Features 0.40.0
+
+### Important
+
+Cross-currency replacement requires the Ethereum migrator route to be activated. It supports
+v3.1/v3.2 loans and USDC/WETH only. Existing renegotiation methods are unchanged.
+
+## Table of Contents
+
+- [Atomic cross-currency loan replacement](#atomic-cross-currency-loan-replacement-0400)
+
+## Atomic cross-currency loan replacement 0.40.0
+
+**Description:**
+
+- NEW: `quoteCrossCurrencyRenegotiation({ loan, loanId, executionData, slippageBps? })`
+  returns repayment in the old currency and funding, fees, maximum top-up and minimum surplus
+  in the new currency. Quotes expire after at most 120 seconds; default slippage is 1%.
+- NEW: `crossCurrencyRenegotiation({ ...input, quote })` atomically swaps, repays the old
+  loan, and originates a separate replacement loan. Unused swap input returns to the borrower.
+- FIX: `mulDivUp` returns zero for a zero product, including zero-APR repayment and existing
+  buy-now-pay-later principal calculations.
+- FIX: Repayment interest clamps elapsed time to zero before a tranche starts.
+- NEW: exported `CrossCurrencyRenegotiationInput` and `CrossCurrencyRenegotiationQuote` types.
+- Both currency directions support all v3.1/v3.2 source and destination pairs. The selected
+  signed offers determine the destination; no automatic migration is required. Quotes include
+  the destination's current lender protocol fee, which is rechecked before execution.
+
+**Migration Steps:**
+
+Use an initial quote to approve `oldCurrencyApprovalAmount` to the old loan contract (the
+repayment ceiling through maturity), and approve the NFT to the replacement contract.
+Then obtain and confirm a fresh quote, set the migrator allowance to exactly that quote's
+`maximumFlashRepayment`, and execute **the same quote** before expiry. If it expires, obtain
+and confirm a new quote and update the exact migrator approval; the earlier stable approvals
+remain reusable while the old loan is unchanged.
+`waitTxInBlock()` returns both the old loan ID and the new loan ID.
+
 # New Features 0.39.0
 
 ### Important

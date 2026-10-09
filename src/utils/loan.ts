@@ -105,21 +105,29 @@ interface TrancheOwed {
   startTime: bigint;
 }
 
-const getInterest = (amount: bigint, aprBps: bigint, duration: bigint) => {
-  return mulDivUp(amount, aprBps * duration, BPS * BigInt(SECONDS_IN_YEAR));
-};
-
 export const getTotalOwed = (
   loan: { tranche: readonly TrancheOwed[] } | { source: readonly TrancheOwed[] },
   bufferSeconds: bigint,
 ) => {
-  const now = BigInt(millisToSeconds(Date.now()));
+  return getTotalOwedAt(loan, BigInt(millisToSeconds(Date.now())) + bufferSeconds);
+};
+
+/** Computes total repayment at a block timestamp, rounding interest up for each tranche. */
+export const getTotalOwedAt = (
+  loan: { tranche: readonly TrancheOwed[] } | { source: readonly TrancheOwed[] },
+  timestamp: bigint,
+) => {
   return sumBigInt(
     ...('tranche' in loan ? loan.tranche : loan.source).map(
-      (source) =>
-        source.principalAmount +
-        source.accruedInterest +
-        getInterest(source.principalAmount, source.aprBps, now - source.startTime + bufferSeconds),
+      (source) => source.principalAmount + source.accruedInterest + getInterest(source, timestamp),
     ),
   );
 };
+
+/** Rounds each tranche's interest up, with no accrual before its start time. */
+const getInterest = (source: TrancheOwed, timestamp: bigint) =>
+  mulDivUp(
+    source.principalAmount * source.aprBps,
+    timestamp > source.startTime ? timestamp - source.startTime : 0n,
+    BPS * BigInt(SECONDS_IN_YEAR),
+  );

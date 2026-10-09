@@ -17,6 +17,12 @@ import { Auction, isNativeCurrency, zeroAddress, zeroHash, zeroHex } from '@/blo
 import { Api, Props as ApiProps } from '@/clients/api';
 import { buildSiweMessage } from '@/clients/api/siwe';
 import { Contracts, GondiPublicClient, Wallet } from '@/clients/contracts';
+import {
+  CrossCurrencyRenegotiation,
+  CrossCurrencyRenegotiationInput,
+  CrossCurrencyRenegotiationQuote,
+} from '@/clients/contracts/CrossCurrencyRenegotiation';
+import { MslV6 } from '@/clients/contracts/MslV6';
 import { PurchaseBundlerV1 } from '@/clients/contracts/PurchaseBundlerV1';
 import { PurchaseBundlerV2 } from '@/clients/contracts/PurchaseBundlerV2';
 import { getContracts } from '@/deploys';
@@ -727,6 +733,39 @@ export class Gondi {
       previousMsl,
       repaymentCalldata,
       emitCalldata,
+    });
+  }
+
+  /** Quotes atomic USDC/WETH loan replacement, including capped borrower spending. */
+  async quoteCrossCurrencyRenegotiation(input: CrossCurrencyRenegotiationInput) {
+    return this._crossCurrencyRenegotiationClient(input).quote(input);
+  }
+
+  /**
+   * Prepare old-currency repayment and NFT approvals before obtaining the final quote.
+   * Approve its exact maximumFlashRepayment, then execute that same quote before expiry.
+   */
+  async crossCurrencyRenegotiation(
+    input: CrossCurrencyRenegotiationInput & {
+      quote: CrossCurrencyRenegotiationQuote;
+    },
+  ) {
+    return this._crossCurrencyRenegotiationClient(input).execute(input);
+  }
+
+  private _crossCurrencyRenegotiationClient(input: CrossCurrencyRenegotiationInput) {
+    const previousMsl = this.contracts.Msl(input.loan.contractAddress);
+    const offer = input.executionData.offerExecution[0]?.offer;
+    if (!offer) throw new Error('At least one replacement offer is required');
+    const msl = this.contracts.Msl(offer.contractAddress);
+    if (!(previousMsl instanceof MslV6) || !(msl instanceof MslV6)) {
+      throw new Error('Cross-currency replacement supports Ethereum v3.1/v3.2 loans only');
+    }
+    return new CrossCurrencyRenegotiation({
+      previousMsl,
+      msl,
+      walletClient: this.wallet,
+      publicClient: this.bcClient,
     });
   }
 
