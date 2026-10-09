@@ -45,6 +45,7 @@ interface Contracts {
   Aave: Address;
   PositionMigrator: Address;
   MigratorManager: Address;
+  MethodManager: Address;
   UniversalRouter: Address;
   Permit2: Address;
   UniswapQuoterV2: Address;
@@ -82,6 +83,7 @@ const buildContractsByChain = (): Record<number, Contracts> => ({
   [anvilChainId()]: {
     PositionMigrator: ensureAddress(process.env.GONDI_POSITION_MIGRATOR) ?? zeroAddress,
     MigratorManager: ensureAddress(process.env.GONDI_MIGRATOR_MANAGER) ?? zeroAddress,
+    MethodManager: ensureAddress(process.env.GONDI_METHOD_MANAGER) ?? zeroAddress,
     UniversalRouter: ensureAddress(process.env.GONDI_UNIVERSAL_ROUTER) ?? zeroAddress,
     Permit2: ensureAddress(process.env.GONDI_PERMIT2) ?? zeroAddress,
     UniswapQuoterV2: ensureAddress(process.env.GONDI_UNISWAP_QUOTER_V2) ?? zeroAddress,
@@ -153,6 +155,7 @@ const buildContractsByChain = (): Record<number, Contracts> => ({
   [mainnet.id]: {
     PositionMigrator: '0xDCd85fEe491De4B1fc11CbC0Ba0e78537732f5b8',
     MigratorManager: '0x8FB98cC4999de00f6ACe797A195381C0b90C1487',
+    MethodManager: '0x4eCC15Ded6E2EB38cCE6B0bD0bb0E417813F8f09',
     UniversalRouter: '0x66a9893cc07d91d95644aedd05d03f95e1dba8af',
     Permit2: '0x000000000022D473030F116dDEE9F6B43aC78BA3',
     UniswapQuoterV2: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
@@ -188,6 +191,7 @@ const buildContractsByChain = (): Record<number, Contracts> => ({
   [hyperliquid.id]: {
     PositionMigrator: zeroAddress,
     MigratorManager: zeroAddress,
+    MethodManager: zeroAddress,
     UniversalRouter: zeroAddress,
     Permit2: zeroAddress,
     UniswapQuoterV2: zeroAddress,
@@ -223,6 +227,7 @@ const buildContractsByChain = (): Record<number, Contracts> => ({
   [robinhood.id]: {
     PositionMigrator: zeroAddress,
     MigratorManager: zeroAddress,
+    MethodManager: zeroAddress,
     UniversalRouter: zeroAddress,
     Permit2: zeroAddress,
     UniswapQuoterV2: zeroAddress,

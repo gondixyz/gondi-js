@@ -5,15 +5,25 @@ import {
   Address,
   createPublicClient,
   createTransport,
+  decodeFunctionData,
+  erc20Abi,
   Hash,
   Hex,
+  keccak256,
   parseEventLogs,
   TransactionReceipt,
   TypedDataDefinition,
 } from 'viem';
 
 import { addStepCallback } from '@/addStepCallback';
-import { Auction, isNativeCurrency, zeroAddress, zeroHash, zeroHex } from '@/blockchain';
+import {
+  Auction,
+  ExecutionDataV7,
+  isNativeCurrency,
+  zeroAddress,
+  zeroHash,
+  zeroHex,
+} from '@/blockchain';
 import { Api, Props as ApiProps } from '@/clients/api';
 import { buildSiweMessage } from '@/clients/api/siwe';
 import { Contracts, GondiPublicClient, Wallet } from '@/clients/contracts';
@@ -27,6 +37,7 @@ import { PurchaseBundlerV1 } from '@/clients/contracts/PurchaseBundlerV1';
 import { PurchaseBundlerV2 } from '@/clients/contracts/PurchaseBundlerV2';
 import { getContracts } from '@/deploys';
 import { seaportABI } from '@/generated/blockchain/seaport';
+import { multiSourceLoanAbi } from '@/generated/blockchain/v7';
 import {
   BnplOrderInput,
   BulkNftOrdersInput,
@@ -45,6 +56,13 @@ import * as model from '@/model';
 import { NftStandard } from '@/model';
 import { isEmptyCalldata, withRetriedReceiptWait } from '@/utils/blockchain';
 import {
+  assertCreditPurchaseExecution,
+  assertCreditPurchaseRoute,
+  CreditPurchaseInput,
+  CreditPurchaseQuote,
+  quoteCreditPurchase,
+} from '@/utils/creditPurchase';
+import {
   BPS,
   isLoanVersion,
   loanToMslLoan,
@@ -54,6 +72,7 @@ import {
 import { max, mulDivUp } from '@/utils/number';
 import { assertHideableOrder, isNative, isOpensea } from '@/utils/orders';
 import { calculateProratedOriginationFee } from '@/utils/originationFee';
+import { areSameAddress } from '@/utils/string';
 import { isDefined, OptionalNullable } from '@/utils/types';
 
 /** The most orders `cancelOrders` takes at once: the API's cancel calldata limit. */
@@ -350,6 +369,7 @@ export class Gondi {
     repaymentCalldata,
     sellAndRepaySwapData,
     repayFlashLoanSwapParams,
+    creditPurchaseQuote,
   }: {
     amounts: bigint[];
     purchaseBundlerAddress?: Address;
@@ -357,6 +377,7 @@ export class Gondi {
     loanDuration: bigint;
     offers: OfferFromExecutionOffer[];
     tokenId: bigint;
+    creditPurchaseQuote?: CreditPurchaseQuote;
     repaymentCalldata?: Hex | null | undefined;
     sellAndRepaySwapData?: Maybe<Hex>;
     repayFlashLoanSwapParams?: Maybe<{
@@ -365,6 +386,17 @@ export class Gondi {
       swapData: Hex;
     }>;
   }) {
+    if (creditPurchaseQuote) {
+      return this._buyWithCreditPurchase({
+        amounts,
+        contractAddress,
+        loanDuration,
+        offers,
+        tokenId,
+        repaymentCalldata,
+        creditPurchaseQuote,
+      });
+    }
     const orderInput: BnplOrderInput = {
       amounts,
       contractAddress,
@@ -415,6 +447,161 @@ export class Gondi {
       emitCalldata: response.emitCalldata,
       value: isNativeCurrency(response.currencyAddress) ? max(0n, response.price - borrowed) : 0n,
     });
+  }
+
+  /** Verifies the confirmed nested purchase independently from legacy BNPL signing. */
+  private async _buyWithCreditPurchase({
+    amounts,
+    contractAddress,
+    loanDuration,
+    offers,
+    tokenId,
+    repaymentCalldata,
+    creditPurchaseQuote,
+  }: Parameters<Gondi['buyNowPayLater']>[0] & { creditPurchaseQuote: CreditPurchaseQuote }) {
+    const orderInput: BnplOrderInput = {
+      amounts,
+      contractAddress,
+      loanDuration,
+      offerIds: offers.map((offer) => offer.id),
+      tokenId,
+    };
+
+    if (
+      amounts.length !== offers.length ||
+      !offers.length ||
+      amounts.some((amount) => amount <= 0n)
+    )
+      throw new Error('Offer amounts must match the selected buyer offers');
+    const borrowed = amounts.reduce((acc, amount, index) => {
+      const fee = mulDivUp(offers[index].fee, amount, offers[index].principalAmount);
+      return acc + amount - fee;
+    }, 0n);
+
+    const quote = creditPurchaseQuote;
+    const deployments = getContracts(this.wallet.chain);
+    if (
+      this.wallet.chain.id !== 1 ||
+      offers.some(
+        (offer) => !areSameAddress(offer.contractAddress, deployments.MultiSourceLoan['3.1']),
+      )
+    )
+      throw new Error('Nested purchase requires homogeneous v3.1 buyer offers');
+    if (
+      borrowed !== quote.netPrincipal ||
+      offers.some((offer) => !areSameAddress(offer.principalAddress, quote.loanCurrency))
+    )
+      throw new Error('Buyer funding changed; confirm a new quote');
+    if (
+      !repaymentCalldata ||
+      keccak256(repaymentCalldata) !== quote.repaymentHash ||
+      !areSameAddress(quote.buyer, this.wallet.account.address) ||
+      !areSameAddress(quote.buyerBundler, deployments.PurchaseBundler['3.1_PB_V2']) ||
+      !areSameAddress(quote.sellerContract, deployments.MultiSourceLoan['3.2']) ||
+      !areSameAddress(quote.sellerBundler, deployments.PurchaseBundler['3.2'])
+    )
+      throw new Error('The purchase quote does not match this buyer and seller route');
+    if (!areSameAddress(contractAddress, quote.nftCollateralAddress) || tokenId !== quote.tokenId)
+      throw new Error('Purchase collateral changed; confirm a new quote');
+    const block = await this.bcClient.getBlock();
+    if (block.timestamp >= quote.deadline)
+      throw new Error('Purchase quote expired; refresh and confirm again');
+    const seller = this.contracts.Msl(quote.sellerContract);
+    if (!(seller instanceof MslV6)) throw new Error('Unsupported seller contract');
+    if ((await seller.contract.read.getLoanHash([quote.loanId])) !== quote.loanHash)
+      throw new Error('Seller loan changed; confirm a new quote');
+    await assertCreditPurchaseRoute(this.bcClient, quote);
+    if (!isNativeCurrency(quote.purchaseCurrency)) {
+      const allowance = await this.bcClient.readContract({
+        address: quote.purchaseCurrency,
+        abi: erc20Abi,
+        functionName: 'allowance',
+        args: [quote.buyer, quote.buyerBundler],
+      });
+      if (allowance !== quote.initialPayment)
+        throw new Error('Approve exactly the quoted initial payment to the buyer bundler');
+    }
+    orderInput.creditPurchaseExecution = {
+      orderId: quote.orderId,
+      price: quote.price,
+      initialPayment: quote.initialPayment,
+      loanSwapData: quote.loanSwapData,
+      repaymentSwapData: quote.repaymentSwapData,
+      expirationTime: quote.deadline,
+    };
+    const confirmedExecution: ExecutionDataV7 = {
+      offerExecution: offers.map((offer, index) => {
+        if (!offer.signature || !offer.lenderAddress)
+          throw new Error('Signed buyer offer required');
+        return {
+          offer: {
+            ...offer,
+            lender: offer.lenderAddress,
+            validators: offer.offerValidators,
+            maxSeniorRepayment: offer.maxSeniorRepayment ?? 0n,
+          },
+          amount: amounts[index],
+          lenderOfferSignature: offer.signature,
+        };
+      }),
+      loanId: 0n,
+      nftCollateralAddress: contractAddress,
+      tokenId,
+      duration: loanDuration,
+      expirationTime: quote.deadline,
+      principalReceiver: quote.buyerBundler,
+      callbackData: quote.callbackData,
+    };
+    let response = await this.apiClient.publishBuyNowPayLaterOrder(orderInput);
+    while (response.__typename !== 'BuyNowPayLaterOrder') {
+      if (response.__typename === 'ExtraSeaportData') {
+        orderInput.extraSeaportData = response.extraData;
+      } else if (response.__typename === 'SignatureRequest') {
+        if (response.key !== 'emitSignature')
+          throw new Error('API execution differs from the confirmed purchase quote');
+        const typed = response.typedData as TypedDataDefinition;
+        assertCreditPurchaseExecution(confirmedExecution, typed.message);
+        await assertCreditPurchaseRoute(this.bcClient, creditPurchaseQuote);
+        const buyerMsl = this.contracts.Msl(offers[0].contractAddress);
+        if (!(buyerMsl instanceof MslV6)) throw new Error('Unsupported buyer contract');
+        orderInput.emitSignature = await buyerMsl.signExecutionData({
+          structToSign: confirmedExecution,
+        });
+      }
+      response = await this.apiClient.publishBuyNowPayLaterOrder(orderInput);
+    }
+    const decoded = decodeFunctionData({ abi: multiSourceLoanAbi, data: response.emitCalldata });
+    if (decoded.functionName !== 'emitLoan') throw new Error('Unexpected buyer execution');
+    const execution = decoded.args[0];
+    if (
+      response.price !== creditPurchaseQuote.price ||
+      !areSameAddress(response.currencyAddress, creditPurchaseQuote.purchaseCurrency) ||
+      !areSameAddress(execution.borrower, creditPurchaseQuote.buyer) ||
+      !areSameAddress(
+        execution.executionData.principalReceiver,
+        creditPurchaseQuote.buyerBundler,
+      ) ||
+      execution.executionData.callbackData !== creditPurchaseQuote.callbackData ||
+      execution.executionData.expirationTime !== creditPurchaseQuote.deadline
+    )
+      throw new Error('Published execution differs from the confirmed purchase quote');
+    assertCreditPurchaseExecution(confirmedExecution, execution.executionData);
+    await assertCreditPurchaseRoute(this.bcClient, creditPurchaseQuote);
+    return this.contracts
+      .PurchaseBundler(creditPurchaseQuote.buyerBundler, offers[0].contractAddress)
+      .buy({
+        emitCalldata: response.emitCalldata,
+        value: isNativeCurrency(creditPurchaseQuote.purchaseCurrency)
+          ? creditPurchaseQuote.initialPayment
+          : 0n,
+      });
+  }
+
+  /** Quotes capped buyer funding for v3.1 credit against an Ethereum v3.2 seller. */
+  async quoteCreditPurchase(input: CreditPurchaseInput): Promise<CreditPurchaseQuote> {
+    const sellerMsl = this.contracts.Msl(input.sellerContract);
+    if (!(sellerMsl instanceof MslV6)) throw new Error('Unsupported seller contract');
+    return quoteCreditPurchase({ input, wallet: this.wallet, client: this.bcClient, sellerMsl });
   }
 
   async cancelOrder(order: { cancelCalldata: Hex; marketPlaceAddress: Address }) {

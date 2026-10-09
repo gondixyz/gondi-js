@@ -1,3 +1,33 @@
+# New Features 0.41.0
+
+### Important
+
+Nested purchases require the seller executeSell selector to be enabled, zero module taxes, initialized router swap approvals, and the exact quoted buyer allowance. Lowering a larger existing allowance deliberately limits this transaction's spending consent; a later legacy purchase can request its usual approval again.
+
+### Table of Contents
+
+- [Credit purchases of v3.2 seller loans](#credit-purchases-of-v32-seller-loans-0410)
+
+## Credit purchases of v3.2 seller loans 0.41.0
+
+**Description:**
+
+- NEW: `quoteCreditPurchase` fixes the buyer's maximum initial payment and settlement callback
+  for v3.1 USDC/WETH buyer loans against v3.2 sell-and-repay listings in USDC, WETH or native ETH.
+  Full and partial buyer financing are supported. Quotes expire within 120 seconds.
+- `buyNowPayLater({ ...input, creditPurchaseQuote })` uses the v3.1 buyer bundler to call the
+  v3.2 seller bundler. It repays the seller loan and escrows the NFT in the buyer's v3.1 loan
+  without an outer Aave flash loan. The signed terms and returned API calldata must match the
+  confirmed quote. Calls without `creditPurchaseQuote` keep their existing route.
+- NEW: exported `CreditPurchaseInput` and `CreditPurchaseQuote` types.
+
+**Migration Steps:**
+
+Activate the seller bundler's `executeSell` selector in the deployed method manager, require
+zero extra buyer-bundler taxes for that module, and initialize swap approvals. Set the buyer's
+listing-currency allowance to exactly `quote.initialPayment`, or send only that amount as native
+ETH. Refresh expired quotes before signing. Protected v3.2 buyer offers are unsupported.
+
 # New Features 0.40.0
 
 ### Important

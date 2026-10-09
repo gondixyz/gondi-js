@@ -116,3 +116,9 @@ describe('cross-currency deployments', () => {
     }
   });
 });
+
+test('keeps the credit method manager in the chain deployment registry', () => {
+  expect(getContracts(mainnet).MethodManager).toBe('0x4eCC15Ded6E2EB38cCE6B0bD0bb0E417813F8f09');
+  expect(getContracts(hyperliquid).MethodManager).toBe(zeroAddress);
+  expect(getContracts(robinhood).MethodManager).toBe(zeroAddress);
+});

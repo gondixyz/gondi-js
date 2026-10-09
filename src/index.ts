@@ -8,6 +8,7 @@ export {
   TokenStandardType,
 } from '@/generated/graphql';
 export type { OnStepChange } from '@/gondi';
+export type { CreditPurchaseInput, CreditPurchaseQuote } from '@/utils/creditPurchase';
 export type {
   CrossCurrencyRenegotiationInput,
   CrossCurrencyRenegotiationQuote,
