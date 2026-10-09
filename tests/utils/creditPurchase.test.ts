@@ -1,9 +1,11 @@
 import { describe, expect, mock, test } from 'bun:test';
 import {
+  type Address,
   decodeAbiParameters,
   decodeFunctionData,
   encodeAbiParameters,
   encodePacked,
+  type Hex,
   zeroAddress,
 } from 'viem';
 import { mainnet } from 'viem/chains';
@@ -27,6 +29,88 @@ const base = {
   exactInput: false,
   deadline: 100n,
 };
+const swapInputTypes = [
+  { type: 'address' },
+  { type: 'uint256' },
+  { type: 'uint256' },
+  { type: 'bytes' },
+  { type: 'bool' },
+] as const;
+
+/** Encodes the seller's `PurchaseBundlerV2` callback for a listing paid in `purchaseCurrency`. */
+const sellerCallback = ({
+  value,
+  purchaseCurrency,
+}: {
+  value: bigint;
+  purchaseCurrency: Address;
+}) =>
+  encodeAbiParameters(
+    [PurchaseBundlerV2.EXECUTION_INFO],
+    [
+      {
+        reservoirExecutionInfo: { module: zeroAddress, data: '0x', value },
+        contractMustBeOwner: true,
+        purchaseCurrency,
+        amount: 98n,
+        swapData: '0x',
+        swapValue: 0n,
+        maxSlippage: 0n,
+      },
+    ],
+  );
+
+/** Fakes the seller's v3.2 loan whose repayment calldata carries `callbackData`. */
+const sellerMslFake = (callbackData: Hex) => ({
+  decodeRepaymentCalldata: () => ({
+    data: { loanId: 1n, callbackData },
+    loan: {
+      startTime: 0n,
+      duration: 1000n,
+      principalAddress: WETH_ADDRESS,
+      nftCollateralAddress: zeroAddress,
+      nftCollateralTokenId: 7n,
+    },
+  }),
+  contract: { read: { getLoanHash: async () => '0x' + '11'.repeat(32) } },
+});
+
+/** Fakes the on-chain reads of an open, untaxed and approved credit purchase route. */
+const routeReadContract = () => {
+  const deployments = getContracts(mainnet);
+  return mock(async ({ functionName, address }) => {
+    if (functionName === 'paused') return false;
+    if (functionName === 'getMultiSourceLoanAddress')
+      return address === deployments.PurchaseBundler['3.1_PB_V2']
+        ? deployments.MultiSourceLoan['3.1']
+        : deployments.MultiSourceLoan['3.2'];
+    if (functionName === 'getTaxes') return { buyTax: 0n, sellTax: 0n };
+    if (functionName === 'allowance') return 1000n;
+    return true;
+  });
+};
+
+/** Quotes buying a native-ETH listing with WETH credit, overriding the default input. */
+const quoteNativeListing = (input: { price: bigint; repaymentSwapData?: Hex }) =>
+  quoteCreditPurchase({
+    input: {
+      orderId: 1,
+      sellerContract: getContracts(mainnet).MultiSourceLoan['3.2'],
+      repaymentCalldata: '0x1234',
+      loanCurrency: WETH_ADDRESS,
+      netPrincipal: 60n,
+      offerExpirations: [500n],
+      ...input,
+    },
+    wallet: { chain: mainnet, account: { address: zeroAddress } },
+    client: { getBlock: async () => ({ timestamp: 100n }), readContract: routeReadContract() },
+    sellerMsl: sellerMslFake(
+      sellerCallback({
+        value: 100n,
+        purchaseCurrency: PurchaseBundlerV2.ETH_SENTINEL as Address,
+      }),
+    ),
+  } as never);
 
 describe('credit purchase swaps', () => {
   test('keeps exact-output spending bounded in buyer loan currency', () => {
@@ -34,18 +118,7 @@ describe('credit purchase swaps', () => {
     const decoded = decodeFunctionData({ abi: universalRouterExecuteAbi, data: encoded });
     expect(decoded.args[0]).toBe('0x01');
     expect(decoded.args[2]).toBe(100n);
-    expect(
-      decodeAbiParameters(
-        [
-          { type: 'address' },
-          { type: 'uint256' },
-          { type: 'uint256' },
-          { type: 'bytes' },
-          { type: 'bool' },
-        ],
-        decoded.args[1][0],
-      ),
-    ).toEqual([
+    expect(decodeAbiParameters(swapInputTypes, decoded.args[1][0])).toEqual([
       '0x0000000000000000000000000000000000000001',
       10n,
       20n,
@@ -59,16 +132,7 @@ describe('credit purchase swaps', () => {
       data: buildCreditPurchaseSwap({ ...base, exactInput: true }),
     });
     expect(decoded.args[0]).toBe('0x00');
-    const input = decodeAbiParameters(
-      [
-        { type: 'address' },
-        { type: 'uint256' },
-        { type: 'uint256' },
-        { type: 'bytes' },
-        { type: 'bool' },
-      ],
-      decoded.args[1][0],
-    );
+    const input = decodeAbiParameters(swapInputTypes, decoded.args[1][0]);
     expect(input.slice(1, 3)).toEqual([20n, 10n]);
   });
   test('unwraps WETH for an ETH listing without claiming the debt is ETH', () => {
@@ -150,105 +214,47 @@ test('rejects changed collateral, duration, funding or callback before signing',
 });
 
 test('quotes the gross native purchase price while the seller callback records net sale proceeds', async () => {
-  const deployments = getContracts(mainnet);
-  const callbackData = encodeAbiParameters(
-    [PurchaseBundlerV2.EXECUTION_INFO],
-    [
-      {
-        reservoirExecutionInfo: { module: zeroAddress, data: '0x', value: 100n },
-        contractMustBeOwner: true,
-        purchaseCurrency: PurchaseBundlerV2.ETH_SENTINEL as `0x${string}`,
-        amount: 98n,
-        swapData: '0x',
-        swapValue: 0n,
-        maxSlippage: 0n,
-      },
-    ],
-  );
-  const client = {
-    getBlock: async () => ({ timestamp: 100n }),
-    readContract: mock(async ({ functionName, address }) => {
-      if (functionName === 'paused') return false;
-      if (functionName === 'getMultiSourceLoanAddress')
-        return address === deployments.PurchaseBundler['3.1_PB_V2']
-          ? deployments.MultiSourceLoan['3.1']
-          : deployments.MultiSourceLoan['3.2'];
-      if (functionName === 'getTaxes') return { buyTax: 0n, sellTax: 0n };
-      if (functionName === 'allowance') return 1000n;
-      return true;
-    }),
-  };
-  const sellerMsl = {
-    decodeRepaymentCalldata: () => ({
-      data: { loanId: 1n, callbackData },
-      loan: {
-        startTime: 0n,
-        duration: 1000n,
-        principalAddress: WETH_ADDRESS,
-        nftCollateralAddress: zeroAddress,
-        nftCollateralTokenId: 7n,
-      },
-    }),
-    contract: { read: { getLoanHash: async () => '0x' + '11'.repeat(32) } },
-  };
-  const quote = await quoteCreditPurchase({
-    input: {
-      orderId: 1,
-      price: 100n,
-      sellerContract: deployments.MultiSourceLoan['3.2'],
-      repaymentCalldata: '0x1234',
-      repaymentSwapData: '0xab',
-      loanCurrency: WETH_ADDRESS,
-      netPrincipal: 60n,
-      offerExpirations: [500n],
-    },
-    wallet: { chain: mainnet, account: { address: zeroAddress } },
-    client,
-    sellerMsl,
-  } as never);
-  await expect(
-    quoteCreditPurchase({
-      input: {
-        orderId: 1,
-        price: 97n,
-        sellerContract: deployments.MultiSourceLoan['3.2'],
-        repaymentCalldata: '0x1234',
-        loanCurrency: WETH_ADDRESS,
-        netPrincipal: 60n,
-        offerExpirations: [500n],
-      },
-      wallet: { chain: mainnet, account: { address: zeroAddress } },
-      client,
-      sellerMsl,
-    } as never),
-  ).rejects.toThrow('listing price');
+  const quote = await quoteNativeListing({ price: 100n, repaymentSwapData: '0xab' });
   expect(quote.purchaseCurrency).toBe(zeroAddress);
   expect(quote.loanCurrency).toBe(WETH_ADDRESS);
   expect(quote.initialPayment).toBe(40n);
   expect(
     decodeFunctionData({ abi: universalRouterExecuteAbi, data: quote.loanSwapData }).args[0],
   ).toBe('0x020c');
-  client.readContract.mockImplementation(async ({ functionName }) =>
-    functionName === 'getTaxes' ? { buyTax: 1n, sellTax: 0n } : true,
-  );
-  await expect(assertCreditPurchaseRoute(client as never, quote)).rejects.toThrow('taxes changed');
-  client.readContract.mockImplementation(async ({ functionName }) =>
-    functionName === 'getTaxes'
-      ? { buyTax: 0n, sellTax: 0n }
-      : functionName === 'isWhitelisted'
-        ? false
-        : 1000n,
-  );
-  await expect(assertCreditPurchaseRoute(client as never, quote)).rejects.toThrow('not enabled');
-  client.readContract.mockImplementation(async ({ functionName }) =>
-    functionName === 'getTaxes'
-      ? { buyTax: 0n, sellTax: 0n }
-      : functionName === 'allowance'
-        ? 0n
-        : true,
-  );
-  await expect(assertCreditPurchaseRoute(client as never, quote)).rejects.toThrow(
+});
+
+test('rejects a changed listing price', async () => {
+  await expect(quoteNativeListing({ price: 97n })).rejects.toThrow('listing price');
+});
+
+test.each([
+  [
+    'taxes changed',
+    async ({ functionName }: { functionName: string }) =>
+      functionName === 'getTaxes' ? { buyTax: 1n, sellTax: 0n } : true,
+  ],
+  [
+    'not enabled',
+    async ({ functionName }: { functionName: string }) =>
+      functionName === 'getTaxes'
+        ? { buyTax: 0n, sellTax: 0n }
+        : functionName === 'isWhitelisted'
+          ? false
+          : 1000n,
+  ],
+  [
     'approval initialized',
+    async ({ functionName }: { functionName: string }) =>
+      functionName === 'getTaxes'
+        ? { buyTax: 0n, sellTax: 0n }
+        : functionName === 'allowance'
+          ? 0n
+          : true,
+  ],
+] as const)('rejects a credit purchase route failing with "%s"', async (message, readContract) => {
+  const quote = await quoteNativeListing({ price: 100n, repaymentSwapData: '0xab' });
+  await expect(assertCreditPurchaseRoute({ readContract } as never, quote)).rejects.toThrow(
+    message,
   );
 });
 
@@ -266,30 +272,7 @@ for (const [
 ] as const) {
   test(`bounds ${expectedCommand === '0x01' ? 'full' : 'partial'} cross-currency credit with explicit rounding`, async () => {
     const deployments = getContracts(mainnet);
-    const callbackData = encodeAbiParameters(
-      [PurchaseBundlerV2.EXECUTION_INFO],
-      [
-        {
-          reservoirExecutionInfo: { module: zeroAddress, data: '0x', value: 0n },
-          contractMustBeOwner: true,
-          purchaseCurrency: WETH_ADDRESS,
-          amount: 98n,
-          swapData: '0x',
-          swapValue: 0n,
-          maxSlippage: 0n,
-        },
-      ],
-    );
-    const readContract = mock(async ({ functionName, address }) => {
-      if (functionName === 'paused') return false;
-      if (functionName === 'getMultiSourceLoanAddress')
-        return address === deployments.PurchaseBundler['3.1_PB_V2']
-          ? deployments.MultiSourceLoan['3.1']
-          : deployments.MultiSourceLoan['3.2'];
-      if (functionName === 'getTaxes') return { buyTax: 0n, sellTax: 0n };
-      if (functionName === 'allowance') return 1000n;
-      return true;
-    });
+    const readContract = routeReadContract();
     const simulateContract = mock(async ({ functionName }) => ({
       result: [functionName === 'quoteExactOutput' ? quotedInput : quotedOutput, [], [], 0n],
     }));
@@ -307,19 +290,7 @@ for (const [
       },
       wallet: { chain: mainnet, account: { address: zeroAddress } },
       client: { getBlock: async () => ({ timestamp: 100n }), readContract, simulateContract },
-      sellerMsl: {
-        decodeRepaymentCalldata: () => ({
-          data: { loanId: 1n, callbackData },
-          loan: {
-            startTime: 0n,
-            duration: 1000n,
-            principalAddress: WETH_ADDRESS,
-            nftCollateralAddress: zeroAddress,
-            nftCollateralTokenId: 7n,
-          },
-        }),
-        contract: { read: { getLoanHash: async () => '0x' + '11'.repeat(32) } },
-      },
+      sellerMsl: sellerMslFake(sellerCallback({ value: 0n, purchaseCurrency: WETH_ADDRESS })),
     } as never);
     expect(result.initialPayment).toBe(expectedPayment);
     expect(result.inputAmount).toBe(expectedCommand === '0x01' ? 103n : netPrincipal);
@@ -328,16 +299,7 @@ for (const [
       data: result.loanSwapData,
     });
     expect(decoded.args[0]).toBe(expectedCommand);
-    const amounts = decodeAbiParameters(
-      [
-        { type: 'address' },
-        { type: 'uint256' },
-        { type: 'uint256' },
-        { type: 'bytes' },
-        { type: 'bool' },
-      ],
-      decoded.args[1][0],
-    );
+    const amounts = decodeAbiParameters(swapInputTypes, decoded.args[1][0]);
     expect(amounts.slice(1, 3)).toEqual(expectedAmounts);
     expect(simulateContract).toHaveBeenCalledTimes(expectedCommand === '0x01' ? 1 : 2);
     expect(

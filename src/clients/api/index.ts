@@ -18,6 +18,7 @@ import {
   SingleNftOrderInput,
   SingleNftSignedOfferInput,
   TraitOrderInput,
+  TraitSignedOfferInput,
 } from '@/generated/graphql';
 import { OnStepChange } from '@/gondi';
 import { RenegotiationOffer } from '@/model';
@@ -45,6 +46,7 @@ export class Api {
   getSaleCalldata;
   generateSingleNftOfferHash;
   generateCollectionOfferHash;
+  generateTraitOfferHash;
   generateRenegotiationOfferHash;
   nftIdBySlugTokenId;
   nftIdByContractAddressAndTokenId;
@@ -73,6 +75,7 @@ export class Api {
     this.getSaleCalldata = this.api.getSaleCalldata;
     this.generateSingleNftOfferHash = this.api.generateSingleNftOfferHash;
     this.generateCollectionOfferHash = this.api.generateCollectionOfferHash;
+    this.generateTraitOfferHash = this.api.generateTraitOfferHash;
     this.generateRenegotiationOfferHash = this.api.generateRenegotiationOfferHash;
     this.nftIdBySlugTokenId = this.api.nftIdBySlugTokenId;
     this.nftIdByContractAddressAndTokenId = this.api.nftIdByContractAddressAndTokenId;
@@ -157,6 +160,22 @@ export class Api {
       borrowerAddress: offerInput.borrowerAddress || zeroAddress,
     };
     const response = await this.api.saveCollectionOffer({ offer });
+    const nftCollateralAddress =
+      response.offer.collection?.contractData?.contractAddress || zeroAddress;
+    return {
+      id: response.offer.id,
+      nftCollateralAddress,
+      nftCollateralTokenId: 0n,
+      ...offerInput,
+    };
+  }
+
+  async saveTraitOffer(offerInput: TraitSignedOfferInput) {
+    const offer = {
+      ...offerInput,
+      borrowerAddress: offerInput.borrowerAddress || zeroAddress,
+    };
+    const response = await this.api.saveTraitOffer({ offer });
     const nftCollateralAddress =
       response.offer.collection?.contractData?.contractAddress || zeroAddress;
     return {

@@ -12,24 +12,25 @@ import { CreditPurchaseQuote } from '@/utils/creditPurchase';
 const deployments = getContracts(mainnet);
 const { USDC_ADDRESS } = getCurrencies(mainnet);
 const buyer = '0x0000000000000000000000000000000000000001';
-const publish = mock(async () => ({
+const defaultPublish = async () => ({
   __typename: 'BuyNowPayLaterOrder',
   price: 100n,
   currencyAddress: USDC_ADDRESS,
   emitCalldata: '0x1234',
-}));
+});
+const publish = mock(defaultPublish);
 const buy = mock(async () => ({ txHash: '0xtx' }));
 const executeSellWithLoan = mock(async () => ({ txHash: '0xtx' }));
 const PurchaseBundler = mock(() => ({ buy, executeSellWithLoan }));
-const readContract = mock(async ({ functionName }: { functionName: string }) =>
-  functionName === 'getLoanHash'
-    ? '0x' + '11'.repeat(32)
-    : functionName === 'allowance'
-      ? 10n
+const defaultReadContract =
+  ({ allowance = 10n } = {}) =>
+  async ({ functionName }: { functionName: string }) =>
+    functionName === 'allowance'
+      ? allowance
       : functionName === 'getTaxes'
         ? { buyTax: 0n, sellTax: 0n }
-        : true,
-);
+        : true;
+const readContract = mock(defaultReadContract());
 const signExecutionData = mock(async () => '0x12');
 const signTypedData = mock(async () => '0x12');
 const sellerMsl = Object.assign(Object.create(MslV6.prototype), {
@@ -96,23 +97,10 @@ const args = {
 } as Parameters<InstanceType<typeof Gondi>['buyNowPayLater']>[0];
 beforeEach(() => {
   publish.mockReset();
-  publish.mockImplementation(async () => ({
-    __typename: 'BuyNowPayLaterOrder',
-    price: 100n,
-    currencyAddress: USDC_ADDRESS,
-    emitCalldata: '0x1234',
-  }));
+  publish.mockImplementation(defaultPublish);
   signExecutionData.mockClear();
   signTypedData.mockClear();
-  readContract.mockImplementation(async ({ functionName }) =>
-    functionName === 'getLoanHash'
-      ? '0x' + '11'.repeat(32)
-      : functionName === 'allowance'
-        ? 10n
-        : functionName === 'getTaxes'
-          ? { buyTax: 0n, sellTax: 0n }
-          : true,
-  );
+  readContract.mockImplementation(defaultReadContract());
   buy.mockClear();
   executeSellWithLoan.mockClear();
   PurchaseBundler.mockClear();
@@ -233,13 +221,7 @@ for (const currencyAddress of [USDC_ADDRESS, zeroAddress]) {
   });
 }
 test('rejects an allowance larger than the confirmed spending cap', async () => {
-  readContract.mockImplementation(async ({ functionName }) =>
-    functionName === 'allowance'
-      ? 11n
-      : functionName === 'getTaxes'
-        ? { buyTax: 0n, sellTax: 0n }
-        : true,
-  );
+  readContract.mockImplementation(defaultReadContract({ allowance: 11n }));
   await expect(gondi.buyNowPayLater({ ...args, creditPurchaseQuote: quote })).rejects.toThrow(
     'exactly',
   );

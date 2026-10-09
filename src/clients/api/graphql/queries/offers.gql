@@ -85,6 +85,29 @@ query listOffers(
             }
           }
         }
+        ... on SetOffer {
+          collection {
+            id
+            slug
+            contractData {
+              contractAddress
+            }
+          }
+        }
+        ... on TraitOffer {
+          collection {
+            id
+            slug
+            contractData {
+              contractAddress
+            }
+          }
+          traits {
+            id
+            type
+            value
+          }
+        }
       }
     }
   }

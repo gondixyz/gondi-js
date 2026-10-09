@@ -1,0 +1,22 @@
+mutation generateTraitOfferHash($offerInput: TraitOfferInput!) {
+  offer: generateTraitOfferToBeSigned(offerInput: $offerInput) {
+    offerHash
+    offerId
+    lenderAddress
+    signerAddress
+    borrowerAddress
+    collateralAddress
+    fee
+
+    validators {
+      validator
+      arguments
+    }
+
+    collection {
+      contractData {
+        contractAddress
+      }
+    }
+  }
+}

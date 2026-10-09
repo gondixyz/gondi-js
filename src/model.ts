@@ -14,6 +14,7 @@ import {
   SingleNftOfferInput as ApiSingleNftOfferInput,
   SingleNftSignedOfferInput,
   TermsFilter,
+  TraitOfferInput as ApiTraitOfferInput,
   UserFilter,
 } from '@/generated/graphql';
 import { Optional } from '@/utils/types';
@@ -55,6 +56,13 @@ export type CollectionOffer = UnsignedCollectionOffer & {
   signature: Hash;
   nftCollateralTokenId: 0n;
 } & MaxSeniorRepaymentArg;
+
+/** Terms of a loan offer on the NFTs of a collection carrying every one of `traitIds`; the API fills the validator. */
+export type TraitOfferInput = Optional<
+  ApiTraitOfferInput,
+  'borrowerAddress' | 'lenderAddress' | 'signerAddress' | 'offerValidators' | 'contractAddress'
+> &
+  MaxSeniorRepaymentArg;
 
 export type RenegotiationInput = Optional<
   ApiRenegotiationInput,
