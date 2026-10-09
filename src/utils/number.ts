@@ -71,6 +71,6 @@ export const max: MaxFunction = <T extends number | bigint>(a?: T, b?: T) => {
   return a < b ? b : a;
 };
 
-export const mulDivUp = (a: bigint, b: bigint, c: bigint) => (a * b - 1n) / c + 1n;
+export const mulDivUp = (a: bigint, b: bigint, c: bigint) => (a * b + c - 1n) / c;
 
 export const mulDivDown = (a: bigint, b: bigint, c: bigint) => (a * b) / c;

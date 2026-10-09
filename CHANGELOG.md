@@ -1,3 +1,108 @@
+# New Features 0.42.0
+
+### Important
+
+The new purchase route requires API execution support, initialized bundler swap approvals and
+enabled marketplace methods. Quote preparation requests no wallet signature. Quotes expire
+within 120 seconds. Protected v3.2 buyer offers and taxed nested modules fail closed.
+
+### Table of Contents
+
+- [Buyer currency purchases](#buyer-currency-purchases-0420)
+
+## Buyer currency purchases 0.42.0
+
+**Description:**
+
+- NEW: `quoteBuyWithLoan` prepares unsigned USDC/WETH financing of ETH/WETH/USDC listings,
+  including ordinary purchases, v3.1 flash resales and v3.2 nested resales.
+- ENHANCEMENT: `buyNowPayLater({ ...input, buyWithLoanQuote })` executes the exact quoted listing,
+  signed offers, marketplace payments, swaps and deadline. Existing `creditPurchaseQuote`
+  execution and calls without a purchase quote retain their existing routes.
+- NEW: exported `BuyWithLoanInput` and discriminated `BuyWithLoanQuote` types.
+- ENHANCEMENT: `CreditPurchaseQuote.inputAmount` and nested `BuyWithLoanQuote.inputAmount`
+  expose the canonical buyer-token swap budget, including full-funding slippage bounds or
+  partial-funding input. Wallet allowances still come from `approvalCaps`.
+- ENHANCEMENT: quotes read the live flash premium and expose exact token spending consent in
+  `approvalCaps`; execution rechecks allowances and seller state after signing.
+
+**Migration Steps:**
+
+Prepare and confirm a quote, then set every token allowance in `quote.approvalCaps` to exactly
+its `amount` for `quote.buyerBundler`, including zero amounts. Native ETH flash purchases financed
+with USDC require revoking the WETH allowance to zero so the flash repayment cannot fall back to
+unquoted WETH. Send only `quote.initialPayment` as native ETH when the listing is native.
+Execute the same quote before its deadline. If it expires or seller state or route permissions
+change, prepare and confirm a fresh quote and update every exact allowance before execution.
+
+# New Features 0.41.0
+
+### Important
+
+Nested purchases require the seller executeSell selector to be enabled, zero module taxes, initialized router swap approvals, and the exact quoted buyer allowance. Lowering a larger existing allowance deliberately limits this transaction's spending consent; a later legacy purchase can request its usual approval again.
+
+### Table of Contents
+
+- [Credit purchases of v3.2 seller loans](#credit-purchases-of-v32-seller-loans-0410)
+
+## Credit purchases of v3.2 seller loans 0.41.0
+
+**Description:**
+
+- NEW: `quoteCreditPurchase` fixes the buyer's maximum initial payment and settlement callback
+  for v3.1 USDC/WETH buyer loans against v3.2 sell-and-repay listings in USDC, WETH or native ETH.
+  Full and partial buyer financing are supported. Quotes expire within 120 seconds.
+- `buyNowPayLater({ ...input, creditPurchaseQuote })` uses the v3.1 buyer bundler to call the
+  v3.2 seller bundler. It repays the seller loan and escrows the NFT in the buyer's v3.1 loan
+  without an outer Aave flash loan. The signed terms and returned API calldata must match the
+  confirmed quote. Calls without `creditPurchaseQuote` keep their existing route.
+- NEW: exported `CreditPurchaseInput` and `CreditPurchaseQuote` types.
+
+**Migration Steps:**
+
+Activate the seller bundler's `executeSell` selector in the deployed method manager, require
+zero extra buyer-bundler taxes for that module, and initialize swap approvals. Set the buyer's
+listing-currency allowance to exactly `quote.initialPayment`, or send only that amount as native
+ETH. Refresh expired quotes before signing. Protected v3.2 buyer offers are unsupported.
+
+# New Features 0.40.0
+
+### Important
+
+Cross-currency replacement requires the Ethereum migrator route to be activated. It supports
+v3.1/v3.2 loans and USDC/WETH only. Existing renegotiation methods are unchanged.
+
+## Table of Contents
+
+- [Atomic cross-currency loan replacement](#atomic-cross-currency-loan-replacement-0400)
+
+## Atomic cross-currency loan replacement 0.40.0
+
+**Description:**
+
+- NEW: `quoteCrossCurrencyRenegotiation({ loan, loanId, executionData, slippageBps? })`
+  returns repayment in the old currency and funding, fees, maximum top-up and minimum surplus
+  in the new currency. Quotes expire after at most 120 seconds; default slippage is 1%.
+- NEW: `crossCurrencyRenegotiation({ ...input, quote })` atomically swaps, repays the old
+  loan, and originates a separate replacement loan. Unused swap input returns to the borrower.
+- FIX: `mulDivUp` returns zero for a zero product, including zero-APR repayment and existing
+  buy-now-pay-later principal calculations.
+- FIX: Repayment interest clamps elapsed time to zero before a tranche starts.
+- NEW: exported `CrossCurrencyRenegotiationInput` and `CrossCurrencyRenegotiationQuote` types.
+- Both currency directions support all v3.1/v3.2 source and destination pairs. The selected
+  signed offers determine the destination; no automatic migration is required. Quotes include
+  the destination's current lender protocol fee, which is rechecked before execution.
+
+**Migration Steps:**
+
+Use an initial quote to approve `oldCurrencyApprovalAmount` to the old loan contract (the
+repayment ceiling through maturity), and approve the NFT to the replacement contract.
+Then obtain and confirm a fresh quote, set the migrator allowance to exactly that quote's
+`maximumFlashRepayment`, and execute **the same quote** before expiry. If it expires, obtain
+and confirm a new quote and update the exact migrator approval; the earlier stable approvals
+remain reusable while the old loan is unchanged.
+`waitTxInBlock()` returns both the old loan ID and the new loan ID.
+
 # New Features 0.39.0
 
 ### Important
