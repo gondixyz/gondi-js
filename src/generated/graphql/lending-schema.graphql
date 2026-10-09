@@ -433,7 +433,7 @@ type BuyNowPayLaterOrder implements Event & Node & Order {
   currency: Currency!
   currencyAddress: Address!
   emitCalldata: Hex!
-  evmOrder: JSON
+  evmOrder(integerStrings: Boolean! = false): JSON
   executions: Int!
   expiration: DateTime!
   feeMetadata: OrderFeeMetadata
@@ -727,7 +727,7 @@ type CollectionOrder implements Event & Node & Order {
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
-  evmOrder: JSON
+  evmOrder(integerStrings: Boolean! = false): JSON
   executions: Int!
   expiration: DateTime!
   feeMetadata: OrderFeeMetadata
@@ -946,6 +946,7 @@ input CreditPurchaseExecutionInput {
   orderId: Int64!
   price: BigInt!
   repaymentSwapData: Hex!
+  totalPrice: BigInt = null
 }
 
 type Currency implements Node {
@@ -2359,7 +2360,7 @@ type MultipleTraitOrder implements Event & Node & Order {
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
-  evmOrder: JSON
+  evmOrder(integerStrings: Boolean! = false): JSON
   executions: Int!
   expiration: DateTime!
   feeMetadata: OrderFeeMetadata
@@ -3108,7 +3109,7 @@ interface Order implements Event & Node {
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
-  evmOrder: JSON
+  evmOrder(integerStrings: Boolean! = false): JSON
   executions: Int!
   expiration: DateTime!
   feeMetadata: OrderFeeMetadata
@@ -4538,7 +4539,7 @@ type SellAndRepayOrder implements Event & Node & Order {
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
-  evmOrder: JSON
+  evmOrder(integerStrings: Boolean! = false): JSON
   executions: Int!
   expiration: DateTime!
   feeMetadata: OrderFeeMetadata
@@ -4589,7 +4590,7 @@ type SetBidOrder implements Event & Node & Order {
   currency: Currency!
   currencyAddress: Address!
   eligibleTokenCount: Int!
-  evmOrder: JSON
+  evmOrder(integerStrings: Boolean! = false): JSON
   executions: Int!
   expiration: DateTime!
   feeMetadata: OrderFeeMetadata
@@ -4738,7 +4739,7 @@ type SingleNFTOrder implements Event & Node & Order {
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
-  evmOrder: JSON
+  evmOrder(integerStrings: Boolean! = false): JSON
   executions: Int!
   expiration: DateTime!
   feeMetadata: OrderFeeMetadata
@@ -4955,7 +4956,7 @@ type StealthMaskedOrder implements Event & Node & Order {
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
-  evmOrder: JSON
+  evmOrder(integerStrings: Boolean! = false): JSON
   executions: Int!
   expiration: DateTime!
   feeMetadata: OrderFeeMetadata
@@ -5172,7 +5173,7 @@ type TraitOrder implements Event & Node & Order {
   Edition this trait order targets, when the trait_id is the synthetic trait of an edition. Null for ordinary trait orders.
   """
   edition: Edition
-  evmOrder: JSON
+  evmOrder(integerStrings: Boolean! = false): JSON
   executions: Int!
   expiration: DateTime!
   feeMetadata: OrderFeeMetadata

@@ -1,3 +1,40 @@
+# New Features 0.42.0
+
+### Important
+
+The new purchase route requires API execution support, initialized bundler swap approvals and
+enabled marketplace methods. Quote preparation requests no wallet signature. Quotes expire
+within 120 seconds. Protected v3.2 buyer offers and taxed nested modules fail closed.
+
+### Table of Contents
+
+- [Buyer currency purchases](#buyer-currency-purchases-0420)
+
+## Buyer currency purchases 0.42.0
+
+**Description:**
+
+- NEW: `quoteBuyWithLoan` prepares unsigned USDC/WETH financing of ETH/WETH/USDC listings,
+  including ordinary purchases, v3.1 flash resales and v3.2 nested resales.
+- ENHANCEMENT: `buyNowPayLater({ ...input, buyWithLoanQuote })` executes the exact quoted listing,
+  signed offers, marketplace payments, swaps and deadline. Existing `creditPurchaseQuote`
+  execution and calls without a purchase quote retain their existing routes.
+- NEW: exported `BuyWithLoanInput` and discriminated `BuyWithLoanQuote` types.
+- ENHANCEMENT: `CreditPurchaseQuote.inputAmount` and nested `BuyWithLoanQuote.inputAmount`
+  expose the canonical buyer-token swap budget, including full-funding slippage bounds or
+  partial-funding input. Wallet allowances still come from `approvalCaps`.
+- ENHANCEMENT: quotes read the live flash premium and expose exact token spending consent in
+  `approvalCaps`; execution rechecks allowances and seller state after signing.
+
+**Migration Steps:**
+
+Prepare and confirm a quote, then set every token allowance in `quote.approvalCaps` to exactly
+its `amount` for `quote.buyerBundler`, including zero amounts. Native ETH flash purchases financed
+with USDC require revoking the WETH allowance to zero so the flash repayment cannot fall back to
+unquoted WETH. Send only `quote.initialPayment` as native ETH when the listing is native.
+Execute the same quote before its deadline. If it expires or seller state or route permissions
+change, prepare and confirm a fresh quote and update every exact allowance before execution.
+
 # New Features 0.41.0
 
 ### Important

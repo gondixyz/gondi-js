@@ -26,7 +26,7 @@ import {
   universalRouterExecuteAbi,
 } from '@/utils/crossCurrencyRenegotiation';
 import { BPS } from '@/utils/loan';
-import { max, min } from '@/utils/number';
+import { min, mulDivUp } from '@/utils/number';
 import { areSameAddress } from '@/utils/string';
 
 const executeSellSelector = toFunctionSelector(
@@ -54,6 +54,7 @@ export type CreditPurchaseQuote = Readonly<{
   loanCurrency: Address;
   purchaseCurrency: Address;
   netPrincipal: bigint;
+  inputAmount: bigint;
   initialPayment: bigint;
   deadline: bigint;
   loanId: bigint;
@@ -299,56 +300,17 @@ export const quoteCreditPurchase = async ({
   )
     throw new Error('The nested credit purchase route is not enabled');
   if (loanHash === zeroHash) throw new Error('The seller loan is no longer active');
-  const outputCurrency = native ? currencies.WETH_ADDRESS : purchaseCurrency;
-  let funded = min(input.price - requested, input.netPrincipal);
-  let limit = funded;
-  let exactInput = false;
-  if (!areSameAddress(input.loanCurrency, outputCurrency)) {
-    const path = encodePacked(
-      ['address', 'uint24', 'address'],
-      [outputCurrency, 500, input.loanCurrency],
-    );
-    const needed = input.price - requested;
-    if (needed > 0n) {
-      const quoted = await client.simulateContract({
-        address: deployments.UniswapQuoterV2,
-        abi: quoterAbi,
-        functionName: 'quoteExactOutput',
-        args: [path, needed],
-      });
-      limit = (quoted.result[0] * (BPS + slippage) + BPS - 1n) / BPS;
-      funded = needed;
-      if (limit > input.netPrincipal) {
-        const partial = await client.simulateContract({
-          address: deployments.UniswapQuoterV2,
-          abi: quoterAbi,
-          functionName: 'quoteExactInput',
-          args: [
-            encodePacked(
-              ['address', 'uint24', 'address'],
-              [input.loanCurrency, 500, outputCurrency],
-            ),
-            input.netPrincipal,
-          ],
-        });
-        funded = min(needed, (partial.result[0] * (BPS - slippage)) / BPS);
-        limit = input.netPrincipal;
-        exactInput = true;
-      }
-    } else funded = 0n;
-  }
-  const initialPayment = max(requested, input.price - funded);
-  const loanSwapData =
-    funded === 0n
-      ? '0x'
-      : buildCreditPurchaseSwap({
-          loanCurrency: input.loanCurrency,
-          purchaseCurrency,
-          amount: funded,
-          limit,
-          exactInput,
-          deadline,
-        });
+  const { initialPayment, inputAmount, loanSwapData } = await quotePurchaseFunding({
+    client,
+    loanCurrency: input.loanCurrency,
+    purchaseCurrency,
+    price: input.price,
+    netPrincipal: input.netPrincipal,
+    deadline,
+    slippageBps: slippage,
+    minimumInitialPayment: requested,
+    route: 'nested',
+  });
   const repaymentSwapData = input.repaymentSwapData ?? '0x';
   if (
     !areSameAddress(repayment.loan.principalAddress, sellerCallback.purchaseCurrency) &&
@@ -396,6 +358,7 @@ export const quoteCreditPurchase = async ({
     loanCurrency: input.loanCurrency,
     purchaseCurrency,
     netPrincipal: input.netPrincipal,
+    inputAmount,
     initialPayment,
     deadline,
     loanId: repayment.data.loanId,
@@ -409,4 +372,99 @@ export const quoteCreditPurchase = async ({
   });
   await assertCreditPurchaseRoute(client, quote);
   return quote;
+};
+
+/** Quotes each amount in its token units and includes route-specific flash settlement. */
+export const quotePurchaseFunding = async ({
+  client,
+  loanCurrency,
+  purchaseCurrency,
+  price,
+  netPrincipal,
+  deadline,
+  slippageBps,
+  minimumInitialPayment,
+  route,
+  premiumBps = 0n,
+}: {
+  client: GondiPublicClient;
+  loanCurrency: Address;
+  purchaseCurrency: Address;
+  price: bigint;
+  netPrincipal: bigint;
+  deadline: bigint;
+  slippageBps: bigint;
+  minimumInitialPayment: bigint;
+  route: 'ordinary' | 'flash' | 'nested';
+  premiumBps?: bigint;
+}) => {
+  if (
+    price <= 0n ||
+    netPrincipal <= 0n ||
+    netPrincipal >= 2n ** 160n ||
+    slippageBps < 0n ||
+    slippageBps >= BPS ||
+    premiumBps < 0n ||
+    premiumBps > BPS ||
+    minimumInitialPayment < 0n ||
+    minimumInitialPayment > price
+  )
+    throw new Error('Invalid purchase spending limits');
+  const native = isNativeCurrency(purchaseCurrency);
+  const outputCurrency = native ? getCurrencies(mainnet).WETH_ADDRESS : purchaseCurrency;
+  const flash = route === 'flash';
+  const flashPrincipal = native ? price - minimumInitialPayment : price;
+  const needed = flash
+    ? flashPrincipal +
+      mulDivUp(flashPrincipal, premiumBps, BPS) -
+      (native ? 0n : minimumInitialPayment)
+    : price - minimumInitialPayment;
+  let funded = min(needed, netPrincipal);
+  let inputAmount = funded;
+  let exactInput = false;
+  if (needed > 0n && !areSameAddress(loanCurrency, outputCurrency)) {
+    const deployments = getContracts(mainnet);
+    const quoted = await client.simulateContract({
+      address: deployments.UniswapQuoterV2,
+      abi: quoterAbi,
+      functionName: 'quoteExactOutput',
+      args: [
+        encodePacked(['address', 'uint24', 'address'], [outputCurrency, 500, loanCurrency]),
+        needed,
+      ],
+    });
+    inputAmount = mulDivUp(quoted.result[0], BPS + slippageBps, BPS);
+    funded = needed;
+    if (inputAmount > netPrincipal) {
+      const partial = await client.simulateContract({
+        address: deployments.UniswapQuoterV2,
+        abi: quoterAbi,
+        functionName: 'quoteExactInput',
+        args: [
+          encodePacked(['address', 'uint24', 'address'], [loanCurrency, 500, outputCurrency]),
+          netPrincipal,
+        ],
+      });
+      funded = min(needed, (partial.result[0] * (BPS - slippageBps)) / BPS);
+      inputAmount = netPrincipal;
+      exactInput = true;
+    }
+  }
+  const initialPayment = flash
+    ? native
+      ? price - min(flashPrincipal, (funded * BPS) / (BPS + premiumBps))
+      : price + mulDivUp(price, premiumBps, BPS) - funded
+    : price - funded;
+  const loanSwapData =
+    funded === 0n || (flash && areSameAddress(loanCurrency, outputCurrency))
+      ? '0x'
+      : buildCreditPurchaseSwap({
+          loanCurrency,
+          purchaseCurrency: flash ? outputCurrency : purchaseCurrency,
+          amount: funded,
+          limit: inputAmount,
+          exactInput,
+          deadline,
+        });
+  return { initialPayment, inputAmount, funded, loanSwapData: loanSwapData as Hex };
 };

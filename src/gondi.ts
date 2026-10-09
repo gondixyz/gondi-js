@@ -56,6 +56,12 @@ import * as model from '@/model';
 import { NftStandard } from '@/model';
 import { isEmptyCalldata, withRetriedReceiptWait } from '@/utils/blockchain';
 import {
+  buyWithLoan,
+  BuyWithLoanInput,
+  BuyWithLoanQuote,
+  quoteBuyWithLoan,
+} from '@/utils/buyWithLoan';
+import {
   assertCreditPurchaseExecution,
   assertCreditPurchaseRoute,
   CreditPurchaseInput,
@@ -370,6 +376,7 @@ export class Gondi {
     sellAndRepaySwapData,
     repayFlashLoanSwapParams,
     creditPurchaseQuote,
+    buyWithLoanQuote,
   }: {
     amounts: bigint[];
     purchaseBundlerAddress?: Address;
@@ -378,6 +385,7 @@ export class Gondi {
     offers: OfferFromExecutionOffer[];
     tokenId: bigint;
     creditPurchaseQuote?: CreditPurchaseQuote;
+    buyWithLoanQuote?: BuyWithLoanQuote;
     repaymentCalldata?: Hex | null | undefined;
     sellAndRepaySwapData?: Maybe<Hex>;
     repayFlashLoanSwapParams?: Maybe<{
@@ -386,6 +394,16 @@ export class Gondi {
       swapData: Hex;
     }>;
   }) {
+    if (creditPurchaseQuote && buyWithLoanQuote) throw new Error('Choose one purchase quote API');
+    if (buyWithLoanQuote)
+      return buyWithLoan(this, {
+        amounts,
+        contractAddress,
+        loanDuration,
+        offers,
+        tokenId,
+        buyWithLoanQuote,
+      });
     if (creditPurchaseQuote) {
       return this._buyWithCreditPurchase({
         amounts,
@@ -595,6 +613,11 @@ export class Gondi {
           ? creditPurchaseQuote.initialPayment
           : 0n,
       });
+  }
+
+  /** Quotes ordinary, v3.1 flash and v3.2 nested purchases without signing or publishing an active order. */
+  async quoteBuyWithLoan(input: BuyWithLoanInput): Promise<BuyWithLoanQuote> {
+    return quoteBuyWithLoan(this, input);
   }
 
   /** Quotes capped buyer funding for v3.1 credit against an Ethereum v3.2 seller. */

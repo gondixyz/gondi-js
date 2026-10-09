@@ -495,6 +495,10 @@ export type BuyNowPayLaterOrder = Event &
     updatedDate: Scalars['DateTime'];
   };
 
+export type BuyNowPayLaterOrderEvmOrderArgs = {
+  integerStrings?: Scalars['Boolean'];
+};
+
 export type BuyNowPayLaterOrderPlatformFeesArgs = {
   operation: PlatformFeeOperationType;
 };
@@ -809,6 +813,10 @@ export type CollectionOrder = Event &
     updatedDate: Scalars['DateTime'];
   };
 
+export type CollectionOrderEvmOrderArgs = {
+  integerStrings?: Scalars['Boolean'];
+};
+
 export type CollectionOrderPlatformFeesArgs = {
   operation: PlatformFeeOperationType;
 };
@@ -1080,6 +1088,7 @@ export type CreditPurchaseExecutionInput = {
   orderId: Scalars['Int64'];
   price: Scalars['BigInt'];
   repaymentSwapData: Scalars['Hex'];
+  totalPrice?: InputMaybe<Scalars['BigInt']>;
 };
 
 export type Currency = Node & {
@@ -2523,6 +2532,10 @@ export type MultipleTraitOrder = Event &
     updatedDate: Scalars['DateTime'];
   };
 
+export type MultipleTraitOrderEvmOrderArgs = {
+  integerStrings?: Scalars['Boolean'];
+};
+
 export type MultipleTraitOrderPlatformFeesArgs = {
   operation: PlatformFeeOperationType;
 };
@@ -3408,6 +3421,10 @@ export type Order = {
   takerName?: Maybe<Scalars['String']>;
   timestamp: Scalars['DateTime'];
   updatedDate: Scalars['DateTime'];
+};
+
+export type OrderEvmOrderArgs = {
+  integerStrings?: Scalars['Boolean'];
 };
 
 export type OrderPlatformFeesArgs = {
@@ -4853,6 +4870,10 @@ export type SellAndRepayOrder = Event &
     updatedDate: Scalars['DateTime'];
   };
 
+export type SellAndRepayOrderEvmOrderArgs = {
+  integerStrings?: Scalars['Boolean'];
+};
+
 export type SellAndRepayOrderPlatformFeesArgs = {
   operation: PlatformFeeOperationType;
 };
@@ -4905,6 +4926,10 @@ export type SetBidOrder = Event &
     timestamp: Scalars['DateTime'];
     updatedDate: Scalars['DateTime'];
   };
+
+export type SetBidOrderEvmOrderArgs = {
+  integerStrings?: Scalars['Boolean'];
+};
 
 export type SetBidOrderPlatformFeesArgs = {
   operation: PlatformFeeOperationType;
@@ -5063,6 +5088,10 @@ export type SingleNftOrder = Event &
     timestamp: Scalars['DateTime'];
     updatedDate: Scalars['DateTime'];
   };
+
+export type SingleNftOrderEvmOrderArgs = {
+  integerStrings?: Scalars['Boolean'];
+};
 
 export type SingleNftOrderPlatformFeesArgs = {
   operation: PlatformFeeOperationType;
@@ -5283,6 +5312,10 @@ export type StealthMaskedOrder = Event &
     timestamp: Scalars['DateTime'];
     updatedDate: Scalars['DateTime'];
   };
+
+export type StealthMaskedOrderEvmOrderArgs = {
+  integerStrings?: Scalars['Boolean'];
+};
 
 export type StealthMaskedOrderPlatformFeesArgs = {
   operation: PlatformFeeOperationType;
@@ -5521,6 +5554,10 @@ export type TraitOrder = Event &
     traitId: Scalars['Int'];
     updatedDate: Scalars['DateTime'];
   };
+
+export type TraitOrderEvmOrderArgs = {
+  integerStrings?: Scalars['Boolean'];
+};
 
 export type TraitOrderPlatformFeesArgs = {
   operation: PlatformFeeOperationType;
@@ -6907,6 +6944,170 @@ export type ListOffersQuery = {
               arguments: Hex;
               validator: Address;
             }>;
+          };
+    }>;
+  };
+};
+
+export type BuyWithLoanListingQueryVariables = Exact<{
+  orderId: Scalars['Int64'];
+  buyer: Scalars['Address'];
+}>;
+
+export type BuyWithLoanListingQuery = {
+  __typename?: 'Query';
+  listOrdersV2: {
+    __typename?: 'OrderConnection';
+    edges: Array<{
+      __typename?: 'OrderEdge';
+      node:
+        | {
+            __typename: 'BuyNowPayLaterOrder';
+            id: string;
+            price: bigint;
+            currencyAddress: Address;
+            expiration: Date;
+            status: string;
+            isAsk: boolean;
+            maker: Address;
+            taker: Address;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+            platformFees: Array<{ __typename?: 'PlatformFee'; bps: bigint; beneficiary: Address }>;
+          }
+        | {
+            __typename: 'CollectionOrder';
+            id: string;
+            price: bigint;
+            currencyAddress: Address;
+            expiration: Date;
+            status: string;
+            isAsk: boolean;
+            maker: Address;
+            taker: Address;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+            platformFees: Array<{ __typename?: 'PlatformFee'; bps: bigint; beneficiary: Address }>;
+          }
+        | {
+            __typename: 'MultipleTraitOrder';
+            id: string;
+            price: bigint;
+            currencyAddress: Address;
+            expiration: Date;
+            status: string;
+            isAsk: boolean;
+            maker: Address;
+            taker: Address;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+            platformFees: Array<{ __typename?: 'PlatformFee'; bps: bigint; beneficiary: Address }>;
+          }
+        | {
+            __typename: 'SellAndRepayOrder';
+            repaymentCalldata: Hex;
+            id: string;
+            price: bigint;
+            currencyAddress: Address;
+            expiration: Date;
+            status: string;
+            isAsk: boolean;
+            maker: Address;
+            taker: Address;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+            loan: {
+              __typename?: 'MultiSourceLoan';
+              address: Address;
+              loanId: number;
+              status: string;
+              principalAddress: Address;
+              startTime: Date;
+              duration: bigint;
+            };
+            nft: {
+              __typename?: 'NFT';
+              tokenId: bigint;
+              collection?: {
+                __typename?: 'Collection';
+                contractData: {
+                  __typename?: 'ContractData';
+                  contractAddress: Address;
+                  blockchain: string;
+                };
+              } | null;
+            };
+            platformFees: Array<{ __typename?: 'PlatformFee'; bps: bigint; beneficiary: Address }>;
+          }
+        | {
+            __typename: 'SetBidOrder';
+            id: string;
+            price: bigint;
+            currencyAddress: Address;
+            expiration: Date;
+            status: string;
+            isAsk: boolean;
+            maker: Address;
+            taker: Address;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+            platformFees: Array<{ __typename?: 'PlatformFee'; bps: bigint; beneficiary: Address }>;
+          }
+        | {
+            __typename: 'SingleNFTOrder';
+            evmOrder?: object | null;
+            signature: Hex;
+            id: string;
+            price: bigint;
+            currencyAddress: Address;
+            expiration: Date;
+            status: string;
+            isAsk: boolean;
+            maker: Address;
+            taker: Address;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+            nft: {
+              __typename?: 'NFT';
+              tokenId: bigint;
+              collection?: {
+                __typename?: 'Collection';
+                contractData: {
+                  __typename?: 'ContractData';
+                  contractAddress: Address;
+                  blockchain: string;
+                };
+              } | null;
+            };
+            platformFees: Array<{ __typename?: 'PlatformFee'; bps: bigint; beneficiary: Address }>;
+          }
+        | {
+            __typename: 'StealthMaskedOrder';
+            id: string;
+            price: bigint;
+            currencyAddress: Address;
+            expiration: Date;
+            status: string;
+            isAsk: boolean;
+            maker: Address;
+            taker: Address;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+            platformFees: Array<{ __typename?: 'PlatformFee'; bps: bigint; beneficiary: Address }>;
+          }
+        | {
+            __typename: 'TraitOrder';
+            id: string;
+            price: bigint;
+            currencyAddress: Address;
+            expiration: Date;
+            status: string;
+            isAsk: boolean;
+            maker: Address;
+            taker: Address;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+            platformFees: Array<{ __typename?: 'PlatformFee'; bps: bigint; beneficiary: Address }>;
           };
     }>;
   };
@@ -14194,6 +14395,64 @@ export const ListOffersDocument = gql`
     }
   }
 `;
+export const BuyWithLoanListingDocument = gql`
+  query buyWithLoanListing($orderId: Int64!, $buyer: Address!) {
+    listOrdersV2(idsInt64: [$orderId], first: 1, side: ASK, taker: $buyer) {
+      edges {
+        node {
+          __typename
+          id
+          price
+          currencyAddress
+          expiration
+          status
+          isAsk
+          maker
+          taker
+          marketPlace
+          marketPlaceAddress
+          platformFees(operation: BUY_NOW_PAY_LATER) {
+            bps
+            beneficiary
+          }
+          ... on SingleNFTOrder {
+            evmOrder(integerStrings: true)
+            signature
+            nft {
+              tokenId
+              collection {
+                contractData {
+                  contractAddress
+                  blockchain
+                }
+              }
+            }
+          }
+          ... on SellAndRepayOrder {
+            repaymentCalldata
+            loan {
+              address
+              loanId
+              status
+              principalAddress
+              startTime
+              duration
+            }
+            nft {
+              tokenId
+              collection {
+                contractData {
+                  contractAddress
+                  blockchain
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
 export const GetCancelOrdersCalldataDocument = gql`
   query getCancelOrdersCalldata($maker: Address!, $orderIds: [Int64!]!) {
     cancelOrdersCalldata: getCancelOrdersCalldata(maker: $maker, orderIds: $orderIds) {
@@ -14541,6 +14800,16 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
         variables,
         options,
       ) as Promise<ListOffersQuery>;
+    },
+    buyWithLoanListing(
+      variables: BuyWithLoanListingQueryVariables,
+      options?: C,
+    ): Promise<BuyWithLoanListingQuery> {
+      return requester<BuyWithLoanListingQuery, BuyWithLoanListingQueryVariables>(
+        BuyWithLoanListingDocument,
+        variables,
+        options,
+      ) as Promise<BuyWithLoanListingQuery>;
     },
     getCancelOrdersCalldata(
       variables: GetCancelOrdersCalldataQueryVariables,

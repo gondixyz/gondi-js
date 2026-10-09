@@ -35,6 +35,7 @@ import { seaportABI } from '@/generated/blockchain/seaport';
  * `GONDI_FORK_URL=http://127.0.0.1:18547 bun test --loader .graphql:text tests/fork/`.
  * Anvil impersonation funds synthetic fixtures and enables local whitelist entries.
  * Snapshots restore the fork, including all admin changes, even after a failure.
+ * Receipt polling tolerates Anvil snapshots reusing block heights without a new-block watcher.
  * https://getfoundry.sh/anvil/reference/
  */
 test.skipIf(!process.env.GONDI_FORK_URL)(
@@ -53,6 +54,19 @@ test.skipIf(!process.env.GONDI_FORK_URL)(
     if (!(await client.request({ method: 'web3_clientVersion' })).toLowerCase().includes('anvil'))
       throw new Error('Local fork required');
     if ((await client.getChainId()) !== 1) throw new Error('Ethereum fork required');
+    const readMinedReceipt = client.getTransactionReceipt.bind(client);
+    client.waitForTransactionReceipt = async ({ hash }) => {
+      const deadline = Date.now() + 60000;
+      for (;;) {
+        try {
+          return await readMinedReceipt({ hash });
+        } catch (error) {
+          if (error.name !== 'TransactionReceiptNotFoundError' || Date.now() >= deadline)
+            throw error;
+          await new Promise((resolve) => setTimeout(resolve, 25));
+        }
+      }
+    };
     const { Gondi } = await import('@/gondi');
     let replacements = 0;
     let sales = 0;
@@ -724,18 +738,17 @@ test.skipIf(!process.env.GONDI_FORK_URL)(
           principal,
           910003n,
         );
-        const netPrincipal = principal - incoming.offer.fee;
         const buyerMsl = new MslV6({
           address: buyerDeployment.address,
           version: '3.1',
           walletClient: roles.buyer,
           publicClient: client,
         });
+        const methodAbi = parseAbi([
+          'function owner() view returns (address)',
+          'function addAddress(address,bytes4[])',
+        ]);
         if (replacement.version === '3.2') {
-          const methodAbi = parseAbi([
-            'function owner() view returns (address)',
-            'function addAddress(address,bytes4[])',
-          ]);
           const admin = await client.readContract({
             address: methodManager,
             abi: methodAbi,
@@ -745,197 +758,169 @@ test.skipIf(!process.env.GONDI_FORK_URL)(
             oldDeployment.bundler,
             ['0x7239e3e9'],
           ]);
-          await send(roles.buyer, {
-            address: buyerDeployment.bundler,
-            abi: purchaseBundlerV2ABI,
-            functionName: 'approveForSwap',
-            args: [buyerCurrency],
-          });
-          const sdk = new Gondi({ wallet: roles.buyer, publicClient: client });
-          const quote = await sdk.quoteCreditPurchase({
-            orderId: 1,
-            price,
-            sellerContract: oldDeployment.address,
-            repaymentCalldata,
-            repaymentSwapData: sellerSwap,
-            loanCurrency: buyerCurrency,
-            netPrincipal,
-            offerExpirations: [incoming.offer.expirationTime],
-          });
-          if (partial && quote.initialPayment === 0n)
-            throw new Error('Partial funding did not require a contribution');
-          if (!native) {
-            if (quote.initialPayment > 0n)
-              await fund(roles.buyer, listingCurrency, quote.initialPayment);
-            await send(roles.buyer, {
-              address: listingCurrency,
-              abi: erc20,
-              functionName: 'approve',
-              args: [buyerDeployment.bundler, quote.initialPayment],
-            });
-          }
-          const execution = {
-            offerExecution: [incoming],
-            loanId: 0n,
-            nftCollateralAddress: nft,
-            tokenId: 1n,
-            duration: incoming.offer.duration,
-            expirationTime: quote.deadline,
-            principalReceiver: buyerDeployment.bundler,
-            callbackData: quote.callbackData,
-          };
-          sdk.apiClient.publishBuyNowPayLaterOrder = async (input) =>
-            input.emitSignature
-              ? {
-                  __typename: 'BuyNowPayLaterOrder',
+        }
+        await send(roles.buyer, {
+          address: buyerDeployment.bundler,
+          abi: purchaseBundlerV2ABI,
+          functionName: 'approveForSwap',
+          args: [buyerCurrency],
+        });
+        const sdk = new Gondi({ wallet: roles.buyer, publicClient: client });
+        const offers = [
+          {
+            ...incoming.offer,
+            id: 'buyer-offer',
+            contractAddress: buyerDeployment.address,
+            lenderAddress: incoming.offer.lender,
+            signature: incoming.lenderOfferSignature,
+            offerValidators: [],
+          },
+        ];
+        const expiration = (await client.getBlock()).timestamp + 3600n;
+        sdk.apiClient.api.buyWithLoanListing = async () => ({
+          listOrdersV2: {
+            edges: [
+              {
+                node: {
+                  __typename: 'SellAndRepayOrder',
+                  id: '1',
                   price,
                   currencyAddress: listingCurrency,
-                  emitCalldata: encodeFunctionData({
-                    abi: buyerDeployment.abi,
-                    functionName: 'emitLoan',
-                    args: [
-                      {
-                        executionData: execution,
-                        borrower: roles.buyer.account.address,
-                        borrowerOfferSignature: input.emitSignature,
-                      },
-                    ],
-                  }),
-                }
-              : {
-                  __typename: 'SignatureRequest',
-                  key: 'emitSignature',
-                  typedData: {
-                    domain: buyerMsl.getDomain(),
-                    types: {
-                      ExecutionData: buyerMsl.executionDataType(),
-                      OfferExecution: [
-                        { name: 'offer', type: 'LoanOffer' },
-                        { name: 'amount', type: 'uint256' },
-                        { name: 'lenderOfferSignature', type: 'bytes' },
-                      ],
-                      LoanOffer: buyerMsl.loanOfferType(),
-                      OfferValidator: [
-                        { name: 'validator', type: 'address' },
-                        { name: 'arguments', type: 'bytes' },
-                      ],
-                    },
-                    primaryType: 'ExecutionData',
-                    message: execution,
+                  isAsk: true,
+                  status: 'Active',
+                  maker: roles.borrower.account.address,
+                  taker: zeroAddress,
+                  marketPlace: 'NATIVE',
+                  marketPlaceAddress: seaport,
+                  platformFees: [],
+                  expiration: new Date(Number(expiration) * 1000),
+                  nft: {
+                    tokenId: 1n,
+                    collection: { contractData: { contractAddress: nft, blockchain: 'ETHEREUM' } },
                   },
-                };
-          const buyerBefore = await listingBalance(roles.buyer.account.address);
-          result = await (
-            await sdk.buyNowPayLater({
-              amounts: [principal],
-              purchaseBundlerAddress: oldDeployment.bundler,
-              contractAddress: nft,
-              loanDuration: incoming.offer.duration,
-              offers: [
-                {
-                  ...incoming.offer,
-                  id: 'buyer-offer',
-                  contractAddress: buyerDeployment.address,
-                  lenderAddress: incoming.offer.lender,
-                  signature: incoming.lenderOfferSignature,
-                  offerValidators: [],
+                  repaymentCalldata,
+                  loan: {
+                    address: oldDeployment.address,
+                    loanId: String(replacement.loanId),
+                    status: 'loan_initiated',
+                    principalAddress: replacement.currency,
+                    startTime: new Date(Number(replacement.loan.startTime) * 1000),
+                    duration: replacement.loan.duration,
+                  },
                 },
-              ],
-              tokenId: 1n,
-              repaymentCalldata,
-              creditPurchaseQuote: quote,
-            })
-          ).waitTxInBlock();
-          const maximumDebit =
-            quote.initialPayment + (native ? result.gasUsed * result.effectiveGasPrice : 0n);
-          if ((await listingBalance(roles.buyer.account.address)) < buyerBefore - maximumDebit)
-            throw new Error('Buyer spent more than the confirmed contribution');
-        } else {
+              },
+            ],
+          },
+        });
+        sdk.apiClient.publishBuyNowPayLaterOrder = async (input) => {
+          const consent = input.creditPurchaseExecution;
+          if (!consent) throw new Error('Missing bounded execution');
+          const callbackData =
+            replacement.version === '3.2'
+              ? encodeAbiParameters(
+                  [PurchaseBundlerV2.EXECUTION_INFO],
+                  [
+                    {
+                      reservoirExecutionInfo: {
+                        module: oldDeployment.bundler,
+                        value: native ? price : 0n,
+                        data: encodeFunctionData({
+                          abi: purchaseBundlerV2ABI,
+                          functionName: 'executeSell',
+                          args: [
+                            [native ? PurchaseBundlerV2.ETH_SENTINEL : listingCurrency],
+                            [price],
+                            [nft],
+                            [1n],
+                            seaport,
+                            [repaymentCalldata],
+                            consent.repaymentSwapData === '0x' ? [] : [consent.repaymentSwapData],
+                          ],
+                        }),
+                      },
+                      contractMustBeOwner: true,
+                      purchaseCurrency: native ? PurchaseBundlerV2.ETH_SENTINEL : listingCurrency,
+                      amount: consent.initialPayment,
+                      swapValue: 0n,
+                      swapData: consent.loanSwapData,
+                      maxSlippage: 0n,
+                    },
+                  ],
+                )
+              : '0x';
           const execution = {
             offerExecution: [incoming],
             loanId: 0n,
             nftCollateralAddress: nft,
             tokenId: 1n,
             duration: incoming.offer.duration,
-            expirationTime: incoming.offer.expirationTime,
-            principalReceiver: roles.buyer.account.address,
-            callbackData: '0x',
+            expirationTime: consent.expirationTime,
+            principalReceiver:
+              replacement.version === '3.2' ? buyerDeployment.bundler : roles.buyer.account.address,
+            callbackData,
           };
-          const borrowerOfferSignature = await buyerMsl.signExecutionData({
-            structToSign: execution,
+          return input.emitSignature
+            ? {
+                __typename: 'BuyNowPayLaterOrder',
+                price,
+                currencyAddress: listingCurrency,
+                emitCalldata: encodeFunctionData({
+                  abi: buyerDeployment.abi,
+                  functionName: 'emitLoan',
+                  args: [
+                    {
+                      executionData: execution,
+                      borrower: roles.buyer.account.address,
+                      borrowerOfferSignature: input.emitSignature,
+                    },
+                  ],
+                }),
+              }
+            : {
+                __typename: 'SignatureRequest',
+                key: 'emitSignature',
+                typedData: buyerMsl.getExecutionTypedData(execution),
+              };
+        };
+        const quote = await sdk.quoteBuyWithLoan({
+          orderId: 1,
+          amounts: [principal],
+          contractAddress: nft,
+          tokenId: 1n,
+          loanDuration: incoming.offer.duration,
+          offers,
+          sellAndRepaySwapData: sellerSwap,
+        });
+        if (partial && quote.initialPayment === 0n)
+          throw new Error('Partial funding did not require a contribution');
+        for (const approval of quote.approvalCaps) {
+          if (approval.amount > 0n) await fund(roles.buyer, approval.currency, approval.amount);
+          await send(roles.buyer, {
+            address: approval.currency,
+            abi: erc20,
+            functionName: 'approve',
+            args: [quote.buyerBundler, approval.amount],
           });
-          const emitCalldata = encodeFunctionData({
-            abi: buyerDeployment.abi,
-            functionName: 'emitLoan',
-            args: [
-              {
-                executionData: execution,
-                borrower: roles.buyer.account.address,
-                borrowerOfferSignature,
-              },
-            ],
-          });
-          const flashCurrency = native ? weth : listingCurrency;
-          const owed = price + (price * 5n + 9999n) / 10000n;
-          let repayFlashLoanSwapParams;
-          if (buyerCurrency !== flashCurrency) {
-            const maximumInput =
-              ((await conversion(buyerCurrency, flashCurrency, owed)) * 101n) / 100n + 1n;
-            repayFlashLoanSwapParams = {
-              inputCurrency: buyerCurrency,
-              inputAmount: maximumInput,
-              swapData: buildCreditPurchaseSwap({
-                loanCurrency: buyerCurrency,
-                purchaseCurrency: flashCurrency,
-                amount: owed,
-                limit: maximumInput,
-                exactInput: false,
-                deadline: (await client.getBlock()).timestamp + 3600n,
-              }),
-            };
-            await send(roles.buyer, {
-              address: buyerCurrency,
-              abi: erc20,
-              functionName: 'approve',
-              args: [oldDeployment.bundler, maximumInput],
-            });
-            await send(roles.buyer, {
-              address: oldDeployment.bundler,
-              abi: purchaseBundlerV2ABI,
-              functionName: 'approveForSwap',
-              args: [buyerCurrency],
-            });
-          } else
-            await send(roles.buyer, {
-              address: buyerCurrency,
-              abi: erc20,
-              functionName: 'approve',
-              args: [oldDeployment.bundler, owed],
-            });
-          if (!native)
-            await send(roles.buyer, {
-              address: listingCurrency,
-              abi: erc20,
-              functionName: 'approve',
-              args: [oldDeployment.bundler, owed],
-            });
-          const pb = new PurchaseBundlerV2({
-            address: oldDeployment.bundler,
-            msl: buyerMsl,
-            walletClient: roles.buyer,
-            publicClient: client,
-          });
-          result = await (
-            await pb.executeSellWithLoan({
-              repaymentCalldata,
-              emitCalldata,
-              price,
-              initialPayment: 0n,
-              executeSellSwapData: sellerSwap === '0x' ? undefined : sellerSwap,
-              repayFlashLoanSwapParams,
-            })
-          ).waitTxInBlock();
         }
+        const buyerBefore = await listingBalance(roles.buyer.account.address);
+        result = await (
+          await sdk.buyNowPayLater({
+            amounts: [principal],
+            purchaseBundlerAddress: buyerDeployment.bundler,
+            contractAddress: nft,
+            tokenId: 1n,
+            loanDuration: incoming.offer.duration,
+            offers,
+            buyWithLoanQuote: quote,
+          })
+        ).waitTxInBlock();
+        const maximumDebit =
+          quote.initialPayment + (native ? result.gasUsed * result.effectiveGasPrice : 0n);
+        if (
+          buyerCurrency !== listingCurrency &&
+          (await listingBalance(roles.buyer.account.address)) < buyerBefore - maximumDebit
+        )
+          throw new Error('Buyer spent more than the confirmed contribution');
         if (
           (
             await client.readContract({
@@ -1013,7 +998,7 @@ test.skipIf(!process.env.GONDI_FORK_URL)(
                 checkpoint = await client.request({ method: 'evm_snapshot', params: [] });
               }
             }
-            if (newVersion === '3.2') {
+            {
               for (const listing of [usdc, weth, zeroAddress])
                 for (const buyerCurrency of [usdc, weth]) {
                   await sale(replacement, listing, buyerCurrency, true, true);
@@ -1025,7 +1010,7 @@ test.skipIf(!process.env.GONDI_FORK_URL)(
             baseline = await client.request({ method: 'evm_snapshot', params: [] });
           }
       expect(replacements).toBe(8);
-      expect(sales).toBe(96);
+      expect(sales).toBe(120);
     } finally {
       await client.request({ method: 'evm_revert', params: [baseline] });
       console.log('FORK_RESTORED');

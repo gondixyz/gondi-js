@@ -322,6 +322,7 @@ for (const [
       },
     } as never);
     expect(result.initialPayment).toBe(expectedPayment);
+    expect(result.inputAmount).toBe(expectedCommand === '0x01' ? 103n : netPrincipal);
     const decoded = decodeFunctionData({
       abi: universalRouterExecuteAbi,
       data: result.loanSwapData,

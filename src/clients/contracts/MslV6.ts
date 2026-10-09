@@ -178,31 +178,36 @@ export class MslV6 extends BaseContract<
     );
   }
 
+  /** Builds the canonical authorization without requesting a wallet signature. */
+  getExecutionTypedData<T extends ExecutionDataV6 | ExecutionDataV7 | ExecutionDataV8>(
+    structToSign: T,
+  ) {
+    return sanitizeTypedDataMessage({
+      domain: this.getDomain(),
+      primaryType: 'ExecutionData',
+      types: {
+        ExecutionData: this.executionDataType(),
+        OfferExecution: [
+          { name: 'offer', type: 'LoanOffer' },
+          { name: 'amount', type: 'uint256' },
+          { name: 'lenderOfferSignature', type: 'bytes' },
+        ],
+        LoanOffer: this.loanOfferType(),
+        OfferValidator: [
+          { name: 'validator', type: 'address' },
+          { name: 'arguments', type: 'bytes' },
+        ],
+      },
+      message: structToSign,
+    });
+  }
+
   async signExecutionData<T extends ExecutionDataV6 | ExecutionDataV7 | ExecutionDataV8>({
     structToSign,
   }: {
     structToSign: T;
   }) {
-    return this.wallet.signTypedData(
-      sanitizeTypedDataMessage({
-        domain: this.getDomain(),
-        primaryType: 'ExecutionData',
-        types: {
-          ExecutionData: this.executionDataType(),
-          OfferExecution: [
-            { name: 'offer', type: 'LoanOffer' },
-            { name: 'amount', type: 'uint256' },
-            { name: 'lenderOfferSignature', type: 'bytes' },
-          ],
-          LoanOffer: this.loanOfferType(),
-          OfferValidator: [
-            { name: 'validator', type: 'address' },
-            { name: 'arguments', type: 'bytes' },
-          ],
-        },
-        message: structToSign,
-      }),
-    );
+    return this.wallet.signTypedData(this.getExecutionTypedData(structToSign));
   }
 
   async cancelOffer({ id }: { id: bigint }) {

@@ -1,0 +1,56 @@
+query buyWithLoanListing($orderId: Int64!, $buyer: Address!) {
+  listOrdersV2(idsInt64: [$orderId], first: 1, side: ASK, taker: $buyer) {
+    edges {
+      node {
+        __typename
+        id
+        price
+        currencyAddress
+        expiration
+        status
+        isAsk
+        maker
+        taker
+        marketPlace
+        marketPlaceAddress
+        platformFees(operation: BUY_NOW_PAY_LATER) {
+          bps
+          beneficiary
+        }
+        ... on SingleNFTOrder {
+          evmOrder(integerStrings: true)
+          signature
+          nft {
+            tokenId
+            collection {
+              contractData {
+                contractAddress
+                blockchain
+              }
+            }
+          }
+        }
+        ... on SellAndRepayOrder {
+          repaymentCalldata
+          loan {
+            address
+            loanId
+            status
+            principalAddress
+            startTime
+            duration
+          }
+          nft {
+            tokenId
+            collection {
+              contractData {
+                contractAddress
+                blockchain
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
