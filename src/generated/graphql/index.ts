@@ -2572,7 +2572,9 @@ export type Mutation = {
   generateSignInNonce: Scalars['String'];
   /** This is the first step of the single NFT loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_signed_single_nft_offer. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 5, 15 or 45 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details. */
   generateSingleNftOfferToBeSigned: SingleNftOffer;
-  /** Hides all loan offers from a user for a given contract address.  */
+  /** This is the first step of the trait loan offer flow: an offer any NFT carrying every one of the traits can borrow against. This step populates some fields of the offer, among them the validator holding the token ids that carry them now. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 5, 15 or 45 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details. */
+  generateTraitOfferToBeSigned: TraitOffer;
+  /** Hides all loan offers from a user for a given contract address. */
   hideAllOffers: Array<Offer>;
   /** Hides a loan offer. */
   hideOffer: Offer;
@@ -2618,6 +2620,8 @@ export type Mutation = {
   saveSignedCollectionOffer: CollectionOffer;
   /** This is the second step of the single NFT loan offer flow after generate_single_nft_offer_to_be_signed. It saves the signed offer. `duration` is re-validated against the allowed values (multiples of 30 days, or 5, 15 or 45 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active single-NFT offers and renegotiations for the same (NFT, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveOffersLimitReachedError. Refer to gondi-js examples for more details. */
   saveSignedSingleNftOffer: SingleNftOffer;
+  /** This is the second step of the trait loan offer flow after generate_trait_offer_to_be_signed. It saves the signed offer, as long as its validator is still the one the traits produce: if the NFTs carrying them changed since the first step, it fails with INVALID_OFFER_VALIDATORS_ERROR and the offer has to be generated again. `duration` is re-validated against the allowed values (multiples of 30 days, or 5, 15 or 45 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active offers for the same (traits, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveTraitOffersLimitReachedError. Refer to gondi-js examples for more details. */
+  saveSignedTraitOffer: TraitOffer;
   setReferral?: Maybe<Scalars['Void']>;
   /** Unhides a loan offer. */
   showOffer: Offer;
@@ -2715,6 +2719,10 @@ export type MutationGenerateSignInNonceArgs = {
 
 export type MutationGenerateSingleNftOfferToBeSignedArgs = {
   offerInput: SingleNftOfferInput;
+};
+
+export type MutationGenerateTraitOfferToBeSignedArgs = {
+  offerInput: TraitOfferInput;
 };
 
 export type MutationHideAllOffersArgs = {
@@ -2830,6 +2838,10 @@ export type MutationSaveSignedCollectionOfferArgs = {
 
 export type MutationSaveSignedSingleNftOfferArgs = {
   signedOfferInput: SingleNftSignedOfferInput;
+};
+
+export type MutationSaveSignedTraitOfferArgs = {
+  signedOfferInput: TraitSignedOfferInput;
 };
 
 export type MutationSetReferralArgs = {
@@ -3725,7 +3737,7 @@ export type Query = {
   listNftDelegations: DelegationConnection;
   /** NFTs any wallet of your account follows, most recently followed first. An NFT followed from two of your wallets appears once. */
   listNftFollows: NftConnection;
-  listNftOffersAndRenegotiations: SingleNftOfferCollectionOfferRenegotiationConnection;
+  listNftOffersAndRenegotiations: SingleNftOfferCollectionOfferSetOfferTraitOfferRenegotiationConnection;
   listNftStrategyDeployments: NftStrategyDeploymentConnection;
   listNfts: NftConnection;
   /**
@@ -4935,6 +4947,54 @@ export type SetBidOrderPlatformFeesArgs = {
   operation: PlatformFeeOperationType;
 };
 
+export type SetOffer = Event &
+  Node &
+  Offer & {
+    __typename?: 'SetOffer';
+    aprBps: Scalars['BigInt'];
+    availablePrincipalAmount: Scalars['BigInt'];
+    borrowerAddress?: Maybe<Scalars['Address']>;
+    borrowerName?: Maybe<Scalars['String']>;
+    capacity: Scalars['BigInt'];
+    collateralAddress?: Maybe<Scalars['Address']>;
+    collection: Collection;
+    collectionId?: Maybe<Scalars['Int']>;
+    consumedCapacity: Scalars['BigInt'];
+    contractAddress: Scalars['Address'];
+    createdDate?: Maybe<Scalars['DateTime']>;
+    currency: Currency;
+    duration: Scalars['BigInt'];
+    expirationTime: Scalars['BigInt'];
+    fee: Scalars['BigInt'];
+    hidden?: Maybe<Scalars['Boolean']>;
+    id: Scalars['String'];
+    lenderAddress?: Maybe<Scalars['Address']>;
+    lenderAllowance?: Maybe<Scalars['BigInt']>;
+    lenderAvailableBalance?: Maybe<Scalars['BigInt']>;
+    lenderName?: Maybe<Scalars['String']>;
+    lenderRefinanceDisabled: Scalars['Boolean'];
+    maxPrincipal: Scalars['BigInt'];
+    maxSeniorRepayment: Scalars['BigInt'];
+    /**
+     * Deprecated field: use maxSeniorRepayment instead.
+     * @deprecated Use maxSeniorRepayment instead.
+     */
+    maxTrancheFloor: Scalars['BigInt'];
+    netPrincipal: Scalars['BigInt'];
+    nftId?: Maybe<Scalars['Int']>;
+    offerHash?: Maybe<Scalars['Hash']>;
+    offerId: Scalars['BigInt'];
+    principalAddress: Scalars['Address'];
+    principalAmount: Scalars['BigInt'];
+    repayment: Scalars['BigInt'];
+    requiresLiquidation?: Maybe<Scalars['Boolean']>;
+    signature?: Maybe<Scalars['Signature']>;
+    signerAddress?: Maybe<Scalars['Address']>;
+    status: Scalars['String'];
+    timestamp: Scalars['DateTime'];
+    validators: Array<OfferValidator>;
+  };
+
 export type SignatureRequest = {
   __typename?: 'SignatureRequest';
   key: Scalars['String'];
@@ -5009,22 +5069,24 @@ export type SingleNftOffer = Event &
     validators: Array<OfferValidator>;
   };
 
-export type SingleNftOfferCollectionOfferRenegotiation =
+export type SingleNftOfferCollectionOfferSetOfferTraitOfferRenegotiation =
   | CollectionOffer
   | Renegotiation
-  | SingleNftOffer;
+  | SetOffer
+  | SingleNftOffer
+  | TraitOffer;
 
-export type SingleNftOfferCollectionOfferRenegotiationConnection = {
-  __typename?: 'SingleNFTOfferCollectionOfferRenegotiationConnection';
-  edges: Array<SingleNftOfferCollectionOfferRenegotiationEdge>;
+export type SingleNftOfferCollectionOfferSetOfferTraitOfferRenegotiationConnection = {
+  __typename?: 'SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiationConnection';
+  edges: Array<SingleNftOfferCollectionOfferSetOfferTraitOfferRenegotiationEdge>;
   pageInfo: PageInfo;
   totalCount: Scalars['Int'];
 };
 
-export type SingleNftOfferCollectionOfferRenegotiationEdge = {
-  __typename?: 'SingleNFTOfferCollectionOfferRenegotiationEdge';
+export type SingleNftOfferCollectionOfferSetOfferTraitOfferRenegotiationEdge = {
+  __typename?: 'SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiationEdge';
   cursor: Scalars['String'];
-  node: SingleNftOfferCollectionOfferRenegotiation;
+  node: SingleNftOfferCollectionOfferSetOfferTraitOfferRenegotiation;
 };
 
 export type SingleNftOfferInput = {
@@ -5510,6 +5572,75 @@ export type TraitMarketFilter = {
   showLowOffers?: Scalars['Boolean'];
 };
 
+export type TraitOffer = Event &
+  Node &
+  Offer & {
+    __typename?: 'TraitOffer';
+    aprBps: Scalars['BigInt'];
+    availablePrincipalAmount: Scalars['BigInt'];
+    borrowerAddress?: Maybe<Scalars['Address']>;
+    borrowerName?: Maybe<Scalars['String']>;
+    capacity: Scalars['BigInt'];
+    collateralAddress?: Maybe<Scalars['Address']>;
+    collection: Collection;
+    collectionId?: Maybe<Scalars['Int']>;
+    consumedCapacity: Scalars['BigInt'];
+    contractAddress: Scalars['Address'];
+    createdDate?: Maybe<Scalars['DateTime']>;
+    currency: Currency;
+    duration: Scalars['BigInt'];
+    expirationTime: Scalars['BigInt'];
+    fee: Scalars['BigInt'];
+    hidden?: Maybe<Scalars['Boolean']>;
+    id: Scalars['String'];
+    lenderAddress?: Maybe<Scalars['Address']>;
+    lenderAllowance?: Maybe<Scalars['BigInt']>;
+    lenderAvailableBalance?: Maybe<Scalars['BigInt']>;
+    lenderName?: Maybe<Scalars['String']>;
+    lenderRefinanceDisabled: Scalars['Boolean'];
+    maxPrincipal: Scalars['BigInt'];
+    maxSeniorRepayment: Scalars['BigInt'];
+    /**
+     * Deprecated field: use maxSeniorRepayment instead.
+     * @deprecated Use maxSeniorRepayment instead.
+     */
+    maxTrancheFloor: Scalars['BigInt'];
+    netPrincipal: Scalars['BigInt'];
+    nftId?: Maybe<Scalars['Int']>;
+    offerHash?: Maybe<Scalars['Hash']>;
+    offerId: Scalars['BigInt'];
+    principalAddress: Scalars['Address'];
+    principalAmount: Scalars['BigInt'];
+    repayment: Scalars['BigInt'];
+    requiresLiquidation?: Maybe<Scalars['Boolean']>;
+    signature?: Maybe<Scalars['Signature']>;
+    signerAddress?: Maybe<Scalars['Address']>;
+    status: Scalars['String'];
+    timestamp: Scalars['DateTime'];
+    traits: Array<Trait>;
+    validators: Array<OfferValidator>;
+  };
+
+export type TraitOfferInput = {
+  aprBps: Scalars['BigInt'];
+  borrowerAddress: Scalars['Address'];
+  capacity: Scalars['BigInt'];
+  contractAddress: Scalars['Address'];
+  duration: Scalars['BigInt'];
+  expirationTime: Scalars['BigInt'];
+  fee: Scalars['BigInt'];
+  lenderAddress: Scalars['Address'];
+  lenderRefinanceDisabled?: Scalars['Boolean'];
+  maxSeniorRepayment?: InputMaybe<Scalars['BigInt']>;
+  maxTrancheFloor?: InputMaybe<Scalars['BigInt']>;
+  offerValidators: Array<OfferValidatorInput>;
+  principalAddress: Scalars['Address'];
+  principalAmount: Scalars['BigInt'];
+  requiresLiquidation?: InputMaybe<Scalars['Boolean']>;
+  signerAddress?: InputMaybe<Scalars['Address']>;
+  traitIds: Array<Scalars['Int']>;
+};
+
 export type TraitOrder = Event &
   Node &
   Order & {
@@ -5583,6 +5714,29 @@ export type TraitOrderSignatureRequest = MultipleTraitOrder | SignatureRequest |
 export type TraitRangeOptionsInput = {
   key: Scalars['String'];
   range: RangeInput;
+};
+
+export type TraitSignedOfferInput = {
+  aprBps: Scalars['BigInt'];
+  borrowerAddress: Scalars['Address'];
+  capacity: Scalars['BigInt'];
+  contractAddress: Scalars['Address'];
+  duration: Scalars['BigInt'];
+  expirationTime: Scalars['BigInt'];
+  fee: Scalars['BigInt'];
+  lenderAddress: Scalars['Address'];
+  lenderRefinanceDisabled?: Scalars['Boolean'];
+  maxSeniorRepayment?: InputMaybe<Scalars['BigInt']>;
+  maxTrancheFloor?: InputMaybe<Scalars['BigInt']>;
+  offerHash: Scalars['Hash'];
+  offerId: Scalars['BigInt'];
+  offerValidators: Array<OfferValidatorInput>;
+  principalAddress: Scalars['Address'];
+  principalAmount: Scalars['BigInt'];
+  requiresLiquidation?: InputMaybe<Scalars['Boolean']>;
+  signature: Scalars['Signature'];
+  signerAddress?: InputMaybe<Scalars['Address']>;
+  traitIds: Array<Scalars['Int']>;
 };
 
 export type TraitStatistics = {
@@ -6080,7 +6234,9 @@ export type HideOfferMutation = {
   __typename?: 'Mutation';
   hideOffer:
     | { __typename?: 'CollectionOffer'; id: string }
-    | { __typename?: 'SingleNFTOffer'; id: string };
+    | { __typename?: 'SetOffer'; id: string }
+    | { __typename?: 'SingleNFTOffer'; id: string }
+    | { __typename?: 'TraitOffer'; id: string };
 };
 
 export type HideOffersMutationVariables = Exact<{
@@ -6091,7 +6247,10 @@ export type HideOffersMutationVariables = Exact<{
 export type HideOffersMutation = {
   __typename?: 'Mutation';
   hideOffers: Array<
-    { __typename?: 'CollectionOffer'; id: string } | { __typename?: 'SingleNFTOffer'; id: string }
+    | { __typename?: 'CollectionOffer'; id: string }
+    | { __typename?: 'SetOffer'; id: string }
+    | { __typename?: 'SingleNFTOffer'; id: string }
+    | { __typename?: 'TraitOffer'; id: string }
   >;
 };
 
@@ -6143,6 +6302,46 @@ export type SaveSingleNftOfferMutation = {
   };
 };
 
+export type GenerateTraitOfferHashMutationVariables = Exact<{
+  offerInput: TraitOfferInput;
+}>;
+
+export type GenerateTraitOfferHashMutation = {
+  __typename?: 'Mutation';
+  offer: {
+    __typename?: 'TraitOffer';
+    offerHash?: Hash | null;
+    offerId: bigint;
+    lenderAddress?: Address | null;
+    signerAddress?: Address | null;
+    borrowerAddress?: Address | null;
+    collateralAddress?: Address | null;
+    fee: bigint;
+    validators: Array<{ __typename?: 'OfferValidator'; validator: Address; arguments: Hex }>;
+    collection: {
+      __typename?: 'Collection';
+      contractData: { __typename?: 'ContractData'; contractAddress: Address };
+    };
+  };
+};
+
+export type SaveTraitOfferMutationVariables = Exact<{
+  offer: TraitSignedOfferInput;
+}>;
+
+export type SaveTraitOfferMutation = {
+  __typename?: 'Mutation';
+  offer: {
+    __typename?: 'TraitOffer';
+    id: string;
+    status: string;
+    collection: {
+      __typename?: 'Collection';
+      contractData: { __typename?: 'ContractData'; contractAddress: Address };
+    };
+  };
+};
+
 export type UnhideOfferMutationVariables = Exact<{
   contract: Scalars['Address'];
   id: Scalars['String'];
@@ -6152,7 +6351,9 @@ export type UnhideOfferMutation = {
   __typename?: 'Mutation';
   showOffer:
     | { __typename?: 'CollectionOffer'; id: string }
-    | { __typename?: 'SingleNFTOffer'; id: string };
+    | { __typename?: 'SetOffer'; id: string }
+    | { __typename?: 'SingleNFTOffer'; id: string }
+    | { __typename?: 'TraitOffer'; id: string };
 };
 
 export type CancelTradeOrdersMutationVariables = Exact<{
@@ -6681,7 +6882,9 @@ export type ListLoansQuery = {
         lenderRefinanceDisabled: boolean;
         offer:
           | { __typename?: 'CollectionOffer'; offerId: bigint; signerAddress?: Address | null }
-          | { __typename?: 'SingleNFTOffer'; offerId: bigint; signerAddress?: Address | null };
+          | { __typename?: 'SetOffer'; offerId: bigint; signerAddress?: Address | null }
+          | { __typename?: 'SingleNFTOffer'; offerId: bigint; signerAddress?: Address | null }
+          | { __typename?: 'TraitOffer'; offerId: bigint; signerAddress?: Address | null };
         currency: { __typename?: 'Currency'; symbol: string; decimals: number; address: Address };
         repaidActivity?: {
           __typename?: 'LoanRepaid';
@@ -6899,6 +7102,48 @@ export type ListOffersQuery = {
             }>;
           }
         | {
+            __typename?: 'SetOffer';
+            id: string;
+            offerId: bigint;
+            lenderAddress?: Address | null;
+            borrowerAddress?: Address | null;
+            signerAddress?: Address | null;
+            contractAddress: Address;
+            requiresLiquidation?: boolean | null;
+            principalAddress: Address;
+            principalAmount: bigint;
+            aprBps: bigint;
+            fee: bigint;
+            capacity: bigint;
+            expirationTime: bigint;
+            duration: bigint;
+            status: string;
+            offerHash?: Hash | null;
+            signature?: Hex | null;
+            createdDate?: Date | null;
+            repayment: bigint;
+            hidden?: boolean | null;
+            maxSeniorRepayment: bigint;
+            lenderRefinanceDisabled: boolean;
+            collection: {
+              __typename?: 'Collection';
+              id: string;
+              slug: string;
+              contractData: { __typename?: 'ContractData'; contractAddress: Address };
+            };
+            currency: {
+              __typename?: 'Currency';
+              symbol: string;
+              decimals: number;
+              address: Address;
+            };
+            validators: Array<{
+              __typename?: 'OfferValidator';
+              arguments: Hex;
+              validator: Address;
+            }>;
+          }
+        | {
             __typename?: 'SingleNFTOffer';
             id: string;
             offerId: bigint;
@@ -6933,6 +7178,49 @@ export type ListOffersQuery = {
                 contractData: { __typename?: 'ContractData'; contractAddress: Address };
               } | null;
             };
+            currency: {
+              __typename?: 'Currency';
+              symbol: string;
+              decimals: number;
+              address: Address;
+            };
+            validators: Array<{
+              __typename?: 'OfferValidator';
+              arguments: Hex;
+              validator: Address;
+            }>;
+          }
+        | {
+            __typename?: 'TraitOffer';
+            id: string;
+            offerId: bigint;
+            lenderAddress?: Address | null;
+            borrowerAddress?: Address | null;
+            signerAddress?: Address | null;
+            contractAddress: Address;
+            requiresLiquidation?: boolean | null;
+            principalAddress: Address;
+            principalAmount: bigint;
+            aprBps: bigint;
+            fee: bigint;
+            capacity: bigint;
+            expirationTime: bigint;
+            duration: bigint;
+            status: string;
+            offerHash?: Hash | null;
+            signature?: Hex | null;
+            createdDate?: Date | null;
+            repayment: bigint;
+            hidden?: boolean | null;
+            maxSeniorRepayment: bigint;
+            lenderRefinanceDisabled: boolean;
+            collection: {
+              __typename?: 'Collection';
+              id: string;
+              slug: string;
+              contractData: { __typename?: 'ContractData'; contractAddress: Address };
+            };
+            traits: Array<{ __typename?: 'Trait'; id: string; type: string; value: string }>;
             currency: {
               __typename?: 'Currency';
               symbol: string;
@@ -9878,6 +10166,7 @@ export type MutationKeySpecifier = (
   | 'generateRenegotiationOfferToBeSigned'
   | 'generateSignInNonce'
   | 'generateSingleNftOfferToBeSigned'
+  | 'generateTraitOfferToBeSigned'
   | 'hideAllOffers'
   | 'hideOffer'
   | 'hideOffers'
@@ -9904,6 +10193,7 @@ export type MutationKeySpecifier = (
   | 'saveRenegotiationSignedOffer'
   | 'saveSignedCollectionOffer'
   | 'saveSignedSingleNftOffer'
+  | 'saveSignedTraitOffer'
   | 'setReferral'
   | 'showOffer'
   | 'showOrder'
@@ -9935,6 +10225,7 @@ export type MutationFieldPolicy = {
   generateRenegotiationOfferToBeSigned?: FieldPolicy<any> | FieldReadFunction<any>;
   generateSignInNonce?: FieldPolicy<any> | FieldReadFunction<any>;
   generateSingleNftOfferToBeSigned?: FieldPolicy<any> | FieldReadFunction<any>;
+  generateTraitOfferToBeSigned?: FieldPolicy<any> | FieldReadFunction<any>;
   hideAllOffers?: FieldPolicy<any> | FieldReadFunction<any>;
   hideOffer?: FieldPolicy<any> | FieldReadFunction<any>;
   hideOffers?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -9961,6 +10252,7 @@ export type MutationFieldPolicy = {
   saveRenegotiationSignedOffer?: FieldPolicy<any> | FieldReadFunction<any>;
   saveSignedCollectionOffer?: FieldPolicy<any> | FieldReadFunction<any>;
   saveSignedSingleNftOffer?: FieldPolicy<any> | FieldReadFunction<any>;
+  saveSignedTraitOffer?: FieldPolicy<any> | FieldReadFunction<any>;
   setReferral?: FieldPolicy<any> | FieldReadFunction<any>;
   showOffer?: FieldPolicy<any> | FieldReadFunction<any>;
   showOrder?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -11199,6 +11491,87 @@ export type SetBidOrderFieldPolicy = {
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   updatedDate?: FieldPolicy<any> | FieldReadFunction<any>;
 };
+export type SetOfferKeySpecifier = (
+  | 'aprBps'
+  | 'availablePrincipalAmount'
+  | 'borrowerAddress'
+  | 'borrowerName'
+  | 'capacity'
+  | 'collateralAddress'
+  | 'collection'
+  | 'collectionId'
+  | 'consumedCapacity'
+  | 'contractAddress'
+  | 'createdDate'
+  | 'currency'
+  | 'duration'
+  | 'expirationTime'
+  | 'fee'
+  | 'hidden'
+  | 'id'
+  | 'lenderAddress'
+  | 'lenderAllowance'
+  | 'lenderAvailableBalance'
+  | 'lenderName'
+  | 'lenderRefinanceDisabled'
+  | 'maxPrincipal'
+  | 'maxSeniorRepayment'
+  | 'maxTrancheFloor'
+  | 'netPrincipal'
+  | 'nftId'
+  | 'offerHash'
+  | 'offerId'
+  | 'principalAddress'
+  | 'principalAmount'
+  | 'repayment'
+  | 'requiresLiquidation'
+  | 'signature'
+  | 'signerAddress'
+  | 'status'
+  | 'timestamp'
+  | 'validators'
+  | SetOfferKeySpecifier
+)[];
+export type SetOfferFieldPolicy = {
+  aprBps?: FieldPolicy<any> | FieldReadFunction<any>;
+  availablePrincipalAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  borrowerAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  borrowerName?: FieldPolicy<any> | FieldReadFunction<any>;
+  capacity?: FieldPolicy<any> | FieldReadFunction<any>;
+  collateralAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  collection?: FieldPolicy<any> | FieldReadFunction<any>;
+  collectionId?: FieldPolicy<any> | FieldReadFunction<any>;
+  consumedCapacity?: FieldPolicy<any> | FieldReadFunction<any>;
+  contractAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  createdDate?: FieldPolicy<any> | FieldReadFunction<any>;
+  currency?: FieldPolicy<any> | FieldReadFunction<any>;
+  duration?: FieldPolicy<any> | FieldReadFunction<any>;
+  expirationTime?: FieldPolicy<any> | FieldReadFunction<any>;
+  fee?: FieldPolicy<any> | FieldReadFunction<any>;
+  hidden?: FieldPolicy<any> | FieldReadFunction<any>;
+  id?: FieldPolicy<any> | FieldReadFunction<any>;
+  lenderAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  lenderAllowance?: FieldPolicy<any> | FieldReadFunction<any>;
+  lenderAvailableBalance?: FieldPolicy<any> | FieldReadFunction<any>;
+  lenderName?: FieldPolicy<any> | FieldReadFunction<any>;
+  lenderRefinanceDisabled?: FieldPolicy<any> | FieldReadFunction<any>;
+  maxPrincipal?: FieldPolicy<any> | FieldReadFunction<any>;
+  maxSeniorRepayment?: FieldPolicy<any> | FieldReadFunction<any>;
+  maxTrancheFloor?: FieldPolicy<any> | FieldReadFunction<any>;
+  netPrincipal?: FieldPolicy<any> | FieldReadFunction<any>;
+  nftId?: FieldPolicy<any> | FieldReadFunction<any>;
+  offerHash?: FieldPolicy<any> | FieldReadFunction<any>;
+  offerId?: FieldPolicy<any> | FieldReadFunction<any>;
+  principalAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  principalAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  repayment?: FieldPolicy<any> | FieldReadFunction<any>;
+  requiresLiquidation?: FieldPolicy<any> | FieldReadFunction<any>;
+  signature?: FieldPolicy<any> | FieldReadFunction<any>;
+  signerAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  status?: FieldPolicy<any> | FieldReadFunction<any>;
+  timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
+  validators?: FieldPolicy<any> | FieldReadFunction<any>;
+};
 export type SignatureRequestKeySpecifier = ('key' | 'typedData' | SignatureRequestKeySpecifier)[];
 export type SignatureRequestFieldPolicy = {
   key?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -11287,23 +11660,23 @@ export type SingleNFTOfferFieldPolicy = {
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   validators?: FieldPolicy<any> | FieldReadFunction<any>;
 };
-export type SingleNFTOfferCollectionOfferRenegotiationConnectionKeySpecifier = (
+export type SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiationConnectionKeySpecifier = (
   | 'edges'
   | 'pageInfo'
   | 'totalCount'
-  | SingleNFTOfferCollectionOfferRenegotiationConnectionKeySpecifier
+  | SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiationConnectionKeySpecifier
 )[];
-export type SingleNFTOfferCollectionOfferRenegotiationConnectionFieldPolicy = {
+export type SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiationConnectionFieldPolicy = {
   edges?: FieldPolicy<any> | FieldReadFunction<any>;
   pageInfo?: FieldPolicy<any> | FieldReadFunction<any>;
   totalCount?: FieldPolicy<any> | FieldReadFunction<any>;
 };
-export type SingleNFTOfferCollectionOfferRenegotiationEdgeKeySpecifier = (
+export type SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiationEdgeKeySpecifier = (
   | 'cursor'
   | 'node'
-  | SingleNFTOfferCollectionOfferRenegotiationEdgeKeySpecifier
+  | SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiationEdgeKeySpecifier
 )[];
-export type SingleNFTOfferCollectionOfferRenegotiationEdgeFieldPolicy = {
+export type SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiationEdgeFieldPolicy = {
   cursor?: FieldPolicy<any> | FieldReadFunction<any>;
   node?: FieldPolicy<any> | FieldReadFunction<any>;
 };
@@ -11828,6 +12201,89 @@ export type TraitKeyValueOptionsKeySpecifier = (
 export type TraitKeyValueOptionsFieldPolicy = {
   key?: FieldPolicy<any> | FieldReadFunction<any>;
   values?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type TraitOfferKeySpecifier = (
+  | 'aprBps'
+  | 'availablePrincipalAmount'
+  | 'borrowerAddress'
+  | 'borrowerName'
+  | 'capacity'
+  | 'collateralAddress'
+  | 'collection'
+  | 'collectionId'
+  | 'consumedCapacity'
+  | 'contractAddress'
+  | 'createdDate'
+  | 'currency'
+  | 'duration'
+  | 'expirationTime'
+  | 'fee'
+  | 'hidden'
+  | 'id'
+  | 'lenderAddress'
+  | 'lenderAllowance'
+  | 'lenderAvailableBalance'
+  | 'lenderName'
+  | 'lenderRefinanceDisabled'
+  | 'maxPrincipal'
+  | 'maxSeniorRepayment'
+  | 'maxTrancheFloor'
+  | 'netPrincipal'
+  | 'nftId'
+  | 'offerHash'
+  | 'offerId'
+  | 'principalAddress'
+  | 'principalAmount'
+  | 'repayment'
+  | 'requiresLiquidation'
+  | 'signature'
+  | 'signerAddress'
+  | 'status'
+  | 'timestamp'
+  | 'traits'
+  | 'validators'
+  | TraitOfferKeySpecifier
+)[];
+export type TraitOfferFieldPolicy = {
+  aprBps?: FieldPolicy<any> | FieldReadFunction<any>;
+  availablePrincipalAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  borrowerAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  borrowerName?: FieldPolicy<any> | FieldReadFunction<any>;
+  capacity?: FieldPolicy<any> | FieldReadFunction<any>;
+  collateralAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  collection?: FieldPolicy<any> | FieldReadFunction<any>;
+  collectionId?: FieldPolicy<any> | FieldReadFunction<any>;
+  consumedCapacity?: FieldPolicy<any> | FieldReadFunction<any>;
+  contractAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  createdDate?: FieldPolicy<any> | FieldReadFunction<any>;
+  currency?: FieldPolicy<any> | FieldReadFunction<any>;
+  duration?: FieldPolicy<any> | FieldReadFunction<any>;
+  expirationTime?: FieldPolicy<any> | FieldReadFunction<any>;
+  fee?: FieldPolicy<any> | FieldReadFunction<any>;
+  hidden?: FieldPolicy<any> | FieldReadFunction<any>;
+  id?: FieldPolicy<any> | FieldReadFunction<any>;
+  lenderAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  lenderAllowance?: FieldPolicy<any> | FieldReadFunction<any>;
+  lenderAvailableBalance?: FieldPolicy<any> | FieldReadFunction<any>;
+  lenderName?: FieldPolicy<any> | FieldReadFunction<any>;
+  lenderRefinanceDisabled?: FieldPolicy<any> | FieldReadFunction<any>;
+  maxPrincipal?: FieldPolicy<any> | FieldReadFunction<any>;
+  maxSeniorRepayment?: FieldPolicy<any> | FieldReadFunction<any>;
+  maxTrancheFloor?: FieldPolicy<any> | FieldReadFunction<any>;
+  netPrincipal?: FieldPolicy<any> | FieldReadFunction<any>;
+  nftId?: FieldPolicy<any> | FieldReadFunction<any>;
+  offerHash?: FieldPolicy<any> | FieldReadFunction<any>;
+  offerId?: FieldPolicy<any> | FieldReadFunction<any>;
+  principalAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  principalAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  repayment?: FieldPolicy<any> | FieldReadFunction<any>;
+  requiresLiquidation?: FieldPolicy<any> | FieldReadFunction<any>;
+  signature?: FieldPolicy<any> | FieldReadFunction<any>;
+  signerAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  status?: FieldPolicy<any> | FieldReadFunction<any>;
+  timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
+  traits?: FieldPolicy<any> | FieldReadFunction<any>;
+  validators?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type TraitOrderKeySpecifier = (
   | 'cancelsOffChain'
@@ -13304,6 +13760,10 @@ export type StrictTypedTypePolicies = {
     keyFields?: false | SetBidOrderKeySpecifier | (() => undefined | SetBidOrderKeySpecifier);
     fields?: SetBidOrderFieldPolicy;
   };
+  SetOffer?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?: false | SetOfferKeySpecifier | (() => undefined | SetOfferKeySpecifier);
+    fields?: SetOfferFieldPolicy;
+  };
   SignatureRequest?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?:
       | false
@@ -13315,22 +13775,29 @@ export type StrictTypedTypePolicies = {
     keyFields?: false | SingleNFTOfferKeySpecifier | (() => undefined | SingleNFTOfferKeySpecifier);
     fields?: SingleNFTOfferFieldPolicy;
   };
-  SingleNFTOfferCollectionOfferRenegotiationConnection?: Omit<
+  SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiationConnection?: Omit<
     TypePolicy,
     'fields' | 'keyFields'
   > & {
     keyFields?:
       | false
-      | SingleNFTOfferCollectionOfferRenegotiationConnectionKeySpecifier
-      | (() => undefined | SingleNFTOfferCollectionOfferRenegotiationConnectionKeySpecifier);
-    fields?: SingleNFTOfferCollectionOfferRenegotiationConnectionFieldPolicy;
+      | SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiationConnectionKeySpecifier
+      | (() =>
+          | undefined
+          | SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiationConnectionKeySpecifier);
+    fields?: SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiationConnectionFieldPolicy;
   };
-  SingleNFTOfferCollectionOfferRenegotiationEdge?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+  SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiationEdge?: Omit<
+    TypePolicy,
+    'fields' | 'keyFields'
+  > & {
     keyFields?:
       | false
-      | SingleNFTOfferCollectionOfferRenegotiationEdgeKeySpecifier
-      | (() => undefined | SingleNFTOfferCollectionOfferRenegotiationEdgeKeySpecifier);
-    fields?: SingleNFTOfferCollectionOfferRenegotiationEdgeFieldPolicy;
+      | SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiationEdgeKeySpecifier
+      | (() =>
+          | undefined
+          | SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiationEdgeKeySpecifier);
+    fields?: SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiationEdgeFieldPolicy;
   };
   SingleNFTOrder?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | SingleNFTOrderKeySpecifier | (() => undefined | SingleNFTOrderKeySpecifier);
@@ -13459,6 +13926,10 @@ export type StrictTypedTypePolicies = {
       | TraitKeyValueOptionsKeySpecifier
       | (() => undefined | TraitKeyValueOptionsKeySpecifier);
     fields?: TraitKeyValueOptionsFieldPolicy;
+  };
+  TraitOffer?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?: false | TraitOfferKeySpecifier | (() => undefined | TraitOfferKeySpecifier);
+    fields?: TraitOfferFieldPolicy;
   };
   TraitOrder?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | TraitOrderKeySpecifier | (() => undefined | TraitOrderKeySpecifier);
@@ -13714,6 +14185,41 @@ export const SaveSingleNftOfferDocument = gql`
           contractData {
             contractAddress
           }
+        }
+      }
+    }
+  }
+`;
+export const GenerateTraitOfferHashDocument = gql`
+  mutation generateTraitOfferHash($offerInput: TraitOfferInput!) {
+    offer: generateTraitOfferToBeSigned(offerInput: $offerInput) {
+      offerHash
+      offerId
+      lenderAddress
+      signerAddress
+      borrowerAddress
+      collateralAddress
+      fee
+      validators {
+        validator
+        arguments
+      }
+      collection {
+        contractData {
+          contractAddress
+        }
+      }
+    }
+  }
+`;
+export const SaveTraitOfferDocument = gql`
+  mutation saveTraitOffer($offer: TraitSignedOfferInput!) {
+    offer: saveSignedTraitOffer(signedOfferInput: $offer) {
+      id
+      status
+      collection {
+        contractData {
+          contractAddress
         }
       }
     }
@@ -14390,6 +14896,29 @@ export const ListOffersDocument = gql`
               }
             }
           }
+          ... on SetOffer {
+            collection {
+              id
+              slug
+              contractData {
+                contractAddress
+              }
+            }
+          }
+          ... on TraitOffer {
+            collection {
+              id
+              slug
+              contractData {
+                contractAddress
+              }
+            }
+            traits {
+              id
+              type
+              value
+            }
+          }
         }
       }
     }
@@ -14546,6 +15075,26 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
         variables,
         options,
       ) as Promise<SaveSingleNftOfferMutation>;
+    },
+    generateTraitOfferHash(
+      variables: GenerateTraitOfferHashMutationVariables,
+      options?: C,
+    ): Promise<GenerateTraitOfferHashMutation> {
+      return requester<GenerateTraitOfferHashMutation, GenerateTraitOfferHashMutationVariables>(
+        GenerateTraitOfferHashDocument,
+        variables,
+        options,
+      ) as Promise<GenerateTraitOfferHashMutation>;
+    },
+    saveTraitOffer(
+      variables: SaveTraitOfferMutationVariables,
+      options?: C,
+    ): Promise<SaveTraitOfferMutation> {
+      return requester<SaveTraitOfferMutation, SaveTraitOfferMutationVariables>(
+        SaveTraitOfferDocument,
+        variables,
+        options,
+      ) as Promise<SaveTraitOfferMutation>;
     },
     unhideOffer(
       variables: UnhideOfferMutationVariables,

@@ -89,6 +89,19 @@ const offer = await gondi.makeCollectionOffer({
 });
 ```
 
+#### Trait Offer
+
+```javascript
+const offer = await gondi.makeTraitOffer({
+    traitIds, // The NFT must carry every one of these traits.
+    ... // Same as Single NFT Offer
+});
+```
+
+The API resolves the traits to the NFTs carrying them when the offer is generated and encodes
+that set in the offer's validator, so the offer keeps matching those NFTs afterwards. It is
+available where the API has trait loan offers enabled.
+
 ### Listing Offers
 
 ```javascript

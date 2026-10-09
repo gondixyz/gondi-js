@@ -43,9 +43,11 @@ import {
   BulkNftOrdersInput,
   CollectionOrderInput,
   DealInput,
+  GenerateCollectionOfferHashMutation,
   MarketplaceEnum,
   NftOrderInput,
   OffersSortField,
+  OfferValidatorInput,
   Ordering,
   SingleNftOrderInput,
   SingleNftSignedOfferInput,
@@ -83,6 +85,28 @@ import { isDefined, OptionalNullable } from '@/utils/types';
 
 /** The most orders `cancelOrders` takes at once: the API's cancel calldata limit. */
 const MAX_CANCEL_ORDERS = 50;
+
+/** An offer any NFT of a set, a collection or the NFTs carrying some traits, can borrow against. */
+type MakeOfferInput = model.CollectionOfferInput | model.TraitOfferInput;
+
+/** The fields `_makeOffer` fills in before asking the API for the offer to sign. */
+type MakeOfferDefaults = {
+  lenderAddress: Address;
+  signerAddress: Address;
+  borrowerAddress: Address;
+  requiresLiquidation: boolean;
+  lenderRefinanceDisabled: boolean;
+  contractAddress: Address;
+  offerValidators: OfferValidatorInput[];
+};
+
+/** The fields the lender's signature adds to a set offer before it is saved. */
+type MakeOfferSignedFields = MakeOfferDefaults & {
+  fee: bigint;
+  offerHash: Hash;
+  offerId: bigint;
+  signature: Hex;
+};
 
 interface GondiProps {
   wallet: Wallet;
@@ -239,26 +263,64 @@ export class Gondi {
 
   /** @internal */
   async _makeCollectionOffer(offer: model.CollectionOfferInput, mslContractAddress?: Address) {
-    const contract = this.contracts.Msl(mslContractAddress ?? this.getDefaults().Msl);
-    const contractAddress = contract.address;
+    return await this._makeOffer({
+      offer,
+      mslContractAddress,
+      generateOfferHash: (offerInput) => this.apiClient.generateCollectionOfferHash({ offerInput }),
+      saveOffer: (signedOffer) => this.apiClient.saveCollectionOffer(signedOffer),
+    });
+  }
 
-    const offerInput = {
-      ...offer,
-      lenderAddress: offer.lenderAddress ? offer.lenderAddress : this.account.address,
+  /** A loan offer any NFT of the collection carrying every one of `offer.traitIds` can borrow against. */
+  async makeTraitOffer(offer: model.TraitOfferInput) {
+    return await this._makeTraitOffer(offer);
+  }
+
+  /** @internal */
+  async _makeTraitOffer(offer: model.TraitOfferInput, mslContractAddress?: Address) {
+    return await this._makeOffer({
+      offer,
+      mslContractAddress,
+      generateOfferHash: (offerInput) => this.apiClient.generateTraitOfferHash({ offerInput }),
+      saveOffer: (signedOffer) => this.apiClient.saveTraitOffer(signedOffer),
+    });
+  }
+
+  /**
+   * Signs and saves an offer any NFT of a set can borrow against, with
+   * `nftCollateralTokenId` 0 in the signed struct. `generateOfferHash` and
+   * `saveOffer` are the set type's two API calls; everything else, the struct
+   * the contract verifies included, is shared by every set type.
+   * @internal
+   */
+  async _makeOffer<TOffer extends MakeOfferInput, TSaved>({
+    offer,
+    mslContractAddress,
+    generateOfferHash,
+    saveOffer,
+  }: {
+    offer: TOffer;
+    mslContractAddress?: Address;
+    generateOfferHash: (
+      offerInput: TOffer & MakeOfferDefaults,
+    ) => Promise<{ offer: Omit<GenerateCollectionOfferHashMutation['offer'], '__typename'> }>;
+    saveOffer: (signedOffer: TOffer & MakeOfferSignedFields) => Promise<TSaved>;
+  }) {
+    const contract = this.contracts.Msl(mslContractAddress ?? this.getDefaults().Msl);
+
+    const baseOffer: MakeOfferInput = offer;
+    const defaults: MakeOfferDefaults = {
+      lenderAddress: baseOffer.lenderAddress ? baseOffer.lenderAddress : this.account.address,
       signerAddress: this.account.address,
-      borrowerAddress: offer.borrowerAddress ?? zeroAddress,
-      requiresLiquidation: !!offer.requiresLiquidation,
-      lenderRefinanceDisabled: !!offer.lenderRefinanceDisabled,
-      contractAddress,
-      offerValidators: [
-        // This is ignored by the API but it was required in the mutation
-        {
-          validator: zeroAddress,
-          arguments: zeroHex,
-        },
-      ],
+      borrowerAddress: baseOffer.borrowerAddress ?? zeroAddress,
+      requiresLiquidation: !!baseOffer.requiresLiquidation,
+      lenderRefinanceDisabled: !!baseOffer.lenderRefinanceDisabled,
+      contractAddress: contract.address,
+      // This is ignored by the API but it was required in the mutation
+      offerValidators: [{ validator: zeroAddress, arguments: zeroHex }],
     };
-    const response = await this.apiClient.generateCollectionOfferHash({ offerInput });
+    const offerInput = { ...offer, ...defaults };
+    const response = await generateOfferHash(offerInput);
     const collateralAddress = response.offer.collateralAddress;
 
     if (!collateralAddress) throw new Error('Invalid collection');
@@ -266,11 +328,12 @@ export class Gondi {
     const { offerHash, offerId, validators, lenderAddress, signerAddress, borrowerAddress, fee } =
       response.offer;
     const structToSign = {
-      ...offerInput,
+      ...baseOffer,
+      ...defaults,
       fee,
-      lender: lenderAddress ?? offerInput.lenderAddress,
-      signer: signerAddress ?? offerInput.signerAddress,
-      borrower: borrowerAddress ?? offerInput.borrowerAddress,
+      lender: lenderAddress ?? defaults.lenderAddress,
+      signer: signerAddress ?? defaults.signerAddress,
+      borrower: borrowerAddress ?? defaults.borrowerAddress,
       nftCollateralTokenId: 0n,
       nftCollateralAddress: collateralAddress,
       validators,
@@ -290,7 +353,7 @@ export class Gondi {
       offerId,
       signature,
     };
-    return await this.apiClient.saveCollectionOffer(signedOffer);
+    return await saveOffer(signedOffer);
   }
 
   async makeOrder(orderInput: SingleNftOrderInput | CollectionOrderInput | TraitOrderInput) {
@@ -1664,7 +1727,8 @@ export class Gondi {
 
 type MakeOfferType =
   | Omit<Awaited<ReturnType<Gondi['makeSingleNftOffer']>>, 'nftId'>
-  | Omit<Awaited<ReturnType<Gondi['makeCollectionOffer']>>, 'collectionId'>;
+  | Omit<Awaited<ReturnType<Gondi['makeCollectionOffer']>>, 'collectionId'>
+  | Omit<Awaited<ReturnType<Gondi['makeTraitOffer']>>, 'traitIds'>;
 
 type OfferFromExecutionOffer = OptionalNullable<
   MakeOfferType,

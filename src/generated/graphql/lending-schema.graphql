@@ -2482,6 +2482,11 @@ type Mutation {
   generateSingleNftOfferToBeSigned(offerInput: SingleNFTOfferInput!): SingleNFTOffer!
 
   """
+  This is the first step of the trait loan offer flow: an offer any NFT carrying every one of the traits can borrow against. This step populates some fields of the offer, among them the validator holding the token ids that carry them now. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 5, 15 or 45 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details.
+  """
+  generateTraitOfferToBeSigned(offerInput: TraitOfferInput!): TraitOffer!
+
+  """
   Hides all loan offers from a user for a given contract address.
   """
   hideAllOffers(contractAddress: Address!, minOfferId: String!): [Offer!]!
@@ -2600,6 +2605,11 @@ type Mutation {
   This is the second step of the single NFT loan offer flow after generate_single_nft_offer_to_be_signed. It saves the signed offer. `duration` is re-validated against the allowed values (multiples of 30 days, or 5, 15 or 45 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active single-NFT offers and renegotiations for the same (NFT, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveOffersLimitReachedError. Refer to gondi-js examples for more details.
   """
   saveSignedSingleNftOffer(signedOfferInput: SingleNFTSignedOfferInput!): SingleNFTOffer!
+
+  """
+  This is the second step of the trait loan offer flow after generate_trait_offer_to_be_signed. It saves the signed offer, as long as its validator is still the one the traits produce: if the NFTs carrying them changed since the first step, it fails with INVALID_OFFER_VALIDATORS_ERROR and the offer has to be generated again. `duration` is re-validated against the allowed values (multiples of 30 days, or 5, 15 or 45 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active offers for the same (traits, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveTraitOffersLimitReachedError. Refer to gondi-js examples for more details.
+  """
+  saveSignedTraitOffer(signedOfferInput: TraitSignedOfferInput!): TraitOffer!
   setReferral(referrerId: Int!): Void
 
   """
@@ -3981,7 +3991,7 @@ type Query {
     sortBy: OffersSortInput = null
     statuses: [OfferStatus!] = null
     terms: TermsFilter = null
-  ): SingleNFTOfferCollectionOfferRenegotiationConnection!
+  ): SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiationConnection!
   listNftStrategyDeployments(after: String, first: Int = null): NftStrategyDeploymentConnection!
   listNfts(
     after: String
@@ -4626,6 +4636,51 @@ type SetBidOrder implements Event & Node & Order {
   updatedDate: DateTime!
 }
 
+type SetOffer implements Event & Node & Offer {
+  aprBps: BigInt!
+  availablePrincipalAmount: BigInt!
+  borrowerAddress: Address
+  borrowerName: String
+  capacity: BigInt!
+  collateralAddress: Address
+  collection: Collection!
+  collectionId: Int
+  consumedCapacity: BigInt!
+  contractAddress: Address!
+  createdDate: DateTime
+  currency: Currency!
+  duration: BigInt!
+  expirationTime: BigInt!
+  fee: BigInt!
+  hidden: Boolean
+  id: String!
+  lenderAddress: Address
+  lenderAllowance: BigInt
+  lenderAvailableBalance: BigInt
+  lenderName: String
+  lenderRefinanceDisabled: Boolean!
+  maxPrincipal: BigInt!
+  maxSeniorRepayment: BigInt!
+
+  """
+  Deprecated field: use maxSeniorRepayment instead.
+  """
+  maxTrancheFloor: BigInt! @deprecated(reason: "Use maxSeniorRepayment instead.")
+  netPrincipal: BigInt!
+  nftId: Int
+  offerHash: Hash
+  offerId: BigInt!
+  principalAddress: Address!
+  principalAmount: BigInt!
+  repayment: BigInt!
+  requiresLiquidation: Boolean
+  signature: Signature
+  signerAddress: Address
+  status: String!
+  timestamp: DateTime!
+  validators: [OfferValidator!]!
+}
+
 scalar Signature
 
 type SignatureRequest {
@@ -4698,17 +4753,22 @@ type SingleNFTOffer implements Event & Node & Offer {
   validators: [OfferValidator!]!
 }
 
-union SingleNFTOfferCollectionOfferRenegotiation = CollectionOffer | Renegotiation | SingleNFTOffer
+union SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiation =
+  | CollectionOffer
+  | Renegotiation
+  | SetOffer
+  | SingleNFTOffer
+  | TraitOffer
 
-type SingleNFTOfferCollectionOfferRenegotiationConnection {
-  edges: [SingleNFTOfferCollectionOfferRenegotiationEdge!]!
+type SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiationConnection {
+  edges: [SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiationEdge!]!
   pageInfo: PageInfo!
   totalCount: Int!
 }
 
-type SingleNFTOfferCollectionOfferRenegotiationEdge {
+type SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiationEdge {
   cursor: String!
-  node: SingleNFTOfferCollectionOfferRenegotiation!
+  node: SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiation!
 }
 
 input SingleNFTOfferInput {
@@ -5158,6 +5218,72 @@ input TraitMarketFilter {
   showLowOffers: Boolean! = false
 }
 
+type TraitOffer implements Event & Node & Offer {
+  aprBps: BigInt!
+  availablePrincipalAmount: BigInt!
+  borrowerAddress: Address
+  borrowerName: String
+  capacity: BigInt!
+  collateralAddress: Address
+  collection: Collection!
+  collectionId: Int
+  consumedCapacity: BigInt!
+  contractAddress: Address!
+  createdDate: DateTime
+  currency: Currency!
+  duration: BigInt!
+  expirationTime: BigInt!
+  fee: BigInt!
+  hidden: Boolean
+  id: String!
+  lenderAddress: Address
+  lenderAllowance: BigInt
+  lenderAvailableBalance: BigInt
+  lenderName: String
+  lenderRefinanceDisabled: Boolean!
+  maxPrincipal: BigInt!
+  maxSeniorRepayment: BigInt!
+
+  """
+  Deprecated field: use maxSeniorRepayment instead.
+  """
+  maxTrancheFloor: BigInt! @deprecated(reason: "Use maxSeniorRepayment instead.")
+  netPrincipal: BigInt!
+  nftId: Int
+  offerHash: Hash
+  offerId: BigInt!
+  principalAddress: Address!
+  principalAmount: BigInt!
+  repayment: BigInt!
+  requiresLiquidation: Boolean
+  signature: Signature
+  signerAddress: Address
+  status: String!
+  timestamp: DateTime!
+  traits: [Trait!]!
+  validators: [OfferValidator!]!
+}
+
+input TraitOfferInput {
+  aprBps: BigInt!
+  borrowerAddress: Address!
+  capacity: BigInt!
+  contractAddress: Address!
+  duration: BigInt!
+  expirationTime: BigInt!
+  fee: BigInt!
+  lenderAddress: Address!
+  lenderRefinanceDisabled: Boolean! = false
+  maxSeniorRepayment: BigInt = null
+  maxTrancheFloor: BigInt = null
+  offerValidators: [OfferValidatorInput!]!
+  principalAddress: Address!
+  principalAmount: BigInt!
+  requiresLiquidation: Boolean = null
+  signerAddress: Address = null
+  traitIds: [Int!]!
+}
+
 type TraitOrder implements Event & Node & Order {
   """
   Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone.
@@ -5225,6 +5351,29 @@ union TraitOrderSignatureRequest = MultipleTraitOrder | SignatureRequest | Trait
 input TraitRangeOptionsInput {
   key: String!
   range: RangeInput!
+}
+
+input TraitSignedOfferInput {
+  aprBps: BigInt!
+  borrowerAddress: Address!
+  capacity: BigInt!
+  contractAddress: Address!
+  duration: BigInt!
+  expirationTime: BigInt!
+  fee: BigInt!
+  lenderAddress: Address!
+  lenderRefinanceDisabled: Boolean! = false
+  maxSeniorRepayment: BigInt = null
+  maxTrancheFloor: BigInt = null
+  offerHash: Hash!
+  offerId: BigInt!
+  offerValidators: [OfferValidatorInput!]!
+  principalAddress: Address!
+  principalAmount: BigInt!
+  requiresLiquidation: Boolean = null
+  signature: Signature!
+  signerAddress: Address = null
+  traitIds: [Int!]!
 }
 
 type TraitStatistics {

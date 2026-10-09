@@ -1,3 +1,51 @@
+# New Features 0.43.0
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.43.0.
+
+## Table of Contents
+
+- [makeTraitOffer places a loan offer on the NFTs carrying a set of traits](#maketraitoffer-places-a-loan-offer-on-the-nfts-carrying-a-set-of-traits-0430)
+- [offers() returns set and trait offers](#offers-returns-set-and-trait-offers-0430)
+
+---
+
+## makeTraitOffer places a loan offer on the NFTs carrying a set of traits 0.43.0
+
+**Description:**
+
+- NEW: `gondi.makeTraitOffer({ traitIds, ...terms })` signs and saves a loan offer that any NFT of the collection carrying every one of `traitIds` can borrow against. The terms are those of `makeCollectionOffer`, with `traitIds` in place of `collectionId`.
+  - The API resolves the traits to the NFTs carrying them and returns the offer's validator with that set encoded; the SDK signs what the API returns and saves it, as the collection offer flow does.
+  - Saving fails with `INVALID_OFFER_VALIDATORS_ERROR` when the NFTs carrying the traits changed between the two steps; generate again. A lender may hold at most two active offers for the same traits, contract, duration and currency.
+  - It is available where the API has trait loan offers enabled; elsewhere the mutations do not exist and the call fails with a GraphQL validation error.
+
+**Reason:**
+
+A collection offer reaches every NFT of a collection and an item offer one NFT; nothing covered the NFTs sharing a trait. The protocol's token-set validators now let a lender sign a set of token ids, and the API builds that set from traits.
+
+**Migration Steps:**
+
+- None. Existing methods are unchanged.
+
+---
+
+## offers() returns set and trait offers 0.43.0
+
+**Description:**
+
+- NEW: `gondi.offers(...)` nodes can now be `SetOffer` or `TraitOffer`, both with `collection`; a `TraitOffer` also carries `traits { id type value }`. Their other fields are the `Offer` interface's, as for a `CollectionOffer`.
+
+**Reason:**
+
+The API lists the offers `makeTraitOffer` creates, and the ones recorded from on-chain loans, beside collection offers.
+
+**Migration Steps:**
+
+- Code that switches on `__typename` and treats anything that is not a `SingleNFTOffer` as a collection offer keeps working; code that matched `'CollectionOffer'` exactly should also accept `'SetOffer'` and `'TraitOffer'` where it reads `collection`.
+
 # New Features 0.42.0
 
 ### Important

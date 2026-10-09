@@ -1,0 +1,11 @@
+mutation saveTraitOffer($offer: TraitSignedOfferInput!) {
+  offer: saveSignedTraitOffer(signedOfferInput: $offer) {
+    id
+    status
+    collection {
+      contractData {
+        contractAddress
+      }
+    }
+  }
+}
