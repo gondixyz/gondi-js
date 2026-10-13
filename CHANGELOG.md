@@ -1,3 +1,35 @@
+# Bug Fixes 0.43.1
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.43.1.
+
+## Table of Contents
+
+- [Borrower-signed loans expire within minutes](#borrower-signed-loans-expire-within-minutes-0431)
+
+---
+
+## Borrower-signed loans expire within minutes 0.43.1
+
+**Description:**
+
+- FIX: `buyNowPayLater` without a purchase quote now sends `emitExpirationTime`, five minutes ahead, so the borrower's signed loan execution data expires then instead of when the listing does.
+- FIX: `efficientRefinanceFromOffers` and any `encodeEmitLoan({ withSignature: true })` call without an explicit `expirationTime` sign execution data that expires after five minutes instead of a day. `emitLoan` and `revokeDelegationsAndEmitLoan`, which the borrower sends without a signature, keep the one-day default.
+
+**Reason:**
+
+A borrower's signature on loan execution data has no reason to outlive the transaction that carries it.
+
+**Migration Steps:**
+
+- Upgrade before using `buyNowPayLater` without a purchase quote: the API requires `emitExpirationTime` on `BNPLOrderInput` unless `creditPurchaseExecution` is set, and refuses earlier versions' requests.
+- A purchase or refinance whose transaction is not mined within five minutes of signing reverts with `ExpiredOfferError`; sign again.
+
+---
+
 # New Features 0.43.0
 
 ### Important

@@ -227,3 +227,9 @@ test('rejects an allowance larger than the confirmed spending cap', async () => 
   );
   expect(publish).not.toHaveBeenCalled();
 });
+test('signs the legacy route with an emit deadline minutes away', async () => {
+  const now = BigInt(Math.floor(Date.now() / 1000));
+  await gondi.buyNowPayLater(args);
+  const [orderInput] = publish.mock.calls[0] as unknown as [{ emitExpirationTime: bigint }];
+  expect(Number(orderInput.emitExpirationTime - now)).toBeWithin(300, 302);
+});
