@@ -328,6 +328,11 @@ input BNPLOrderInput {
   amounts: [BigInt!]!
   contractAddress: Address!
   creditPurchaseExecution: CreditPurchaseExecutionInput = null
+
+  """
+  When the borrower's signed loan execution data expires, at most the server's configured lifetime ahead (five minutes by default). Required unless creditPurchaseExecution sets the deadline.
+  """
+  emitExpirationTime: BigInt = null
   emitSignature: Signature = null
   extraSeaportData: Hex = null
   loanDuration: BigInt!

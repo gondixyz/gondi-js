@@ -351,6 +351,8 @@ export type BnplOrderInput = {
   amounts: Array<Scalars['BigInt']>;
   contractAddress: Scalars['Address'];
   creditPurchaseExecution?: InputMaybe<CreditPurchaseExecutionInput>;
+  /** When the borrower's signed loan execution data expires, at most the server's configured lifetime ahead (five minutes by default). Required unless creditPurchaseExecution sets the deadline. */
+  emitExpirationTime?: InputMaybe<Scalars['BigInt']>;
   emitSignature?: InputMaybe<Scalars['Signature']>;
   extraSeaportData?: InputMaybe<Scalars['Hex']>;
   loanDuration: Scalars['BigInt'];

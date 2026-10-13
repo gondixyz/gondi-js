@@ -1,6 +1,6 @@
 {
   "name": "gondi",
-  "version": "0.43.0",
+  "version": "0.43.1",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.mjs",
@@ -35,6 +35,18 @@
     "url": "git+https://github.com/gondixyz/gondi-js.git"
   },
   "homepage": "https://gondixyz.github.io/gondi-js",
+  "keywords": [
+    "nft",
+    "nft-lending",
+    "nft-loans",
+    "defi",
+    "lending",
+    "yield",
+    "ethereum",
+    "hyperevm",
+    "sdk",
+    "ai-agent"
+  ],
   "devDependencies": {
     "@graphql-codegen/add": "^5.0.0",
     "@graphql-codegen/cli": "^3.3.1",

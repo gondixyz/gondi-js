@@ -107,6 +107,9 @@ export const zeroHex: HexString = `0x0`;
 
 export const REORG_SAFETY_BUFFER = 5n * 60n;
 
+/** How long a borrower's signed loan execution data stays valid once it is sent on-chain. */
+export const BORROWER_SIGNATURE_LIFETIME = 5n * 60n;
+
 /** Native ETH marker on Ethereum mainnet: the zero address. */
 export const __ETH_ADDRESS = zeroAddress;
 /** Synthetic sentinel the Gondi API uses for native HYPE on HyperEVM. */

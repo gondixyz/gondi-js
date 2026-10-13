@@ -18,6 +18,7 @@ import {
 import { addStepCallback } from '@/addStepCallback';
 import {
   Auction,
+  BORROWER_SIGNATURE_LIFETIME,
   ExecutionDataV7,
   isNativeCurrency,
   zeroAddress,
@@ -70,6 +71,7 @@ import {
   CreditPurchaseQuote,
   quoteCreditPurchase,
 } from '@/utils/creditPurchase';
+import { millisToSeconds } from '@/utils/dates';
 import {
   BPS,
   isLoanVersion,
@@ -484,6 +486,7 @@ export class Gondi {
       loanDuration,
       offerIds: offers.map((offer) => offer.id),
       tokenId,
+      emitExpirationTime: BigInt(millisToSeconds(Date.now())) + BORROWER_SIGNATURE_LIFETIME,
     };
 
     const borrowed = amounts.reduce((acc, amount, index) => {

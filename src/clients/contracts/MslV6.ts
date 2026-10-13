@@ -9,6 +9,7 @@ import {
 } from 'viem';
 
 import {
+  BORROWER_SIGNATURE_LIFETIME,
   ExecutionDataV6,
   ExecutionDataV7,
   ExecutionDataV8,
@@ -281,15 +282,25 @@ export class MslV6 extends BaseContract<
     throw new Error('Not implemented for V3');
   }
 
-  private mapEmitLoanToMslEmitLoanArgs({
-    offerExecution,
-    nftCollateralAddress,
-    tokenId,
-    duration,
-    principalReceiver,
-    expirationTime,
-    callbackData,
-  }: EmitLoanArgs) {
+  /**
+   * Maps SDK emit arguments to the contract's `LoanExecutionData`.
+   *
+   * @remarks
+   * Without an `expirationTime` the execution data expires `lifetime` seconds from now: a day for
+   * a loan the borrower sends, `BORROWER_SIGNATURE_LIFETIME` when the borrower signs it.
+   */
+  private mapEmitLoanToMslEmitLoanArgs(
+    {
+      offerExecution,
+      nftCollateralAddress,
+      tokenId,
+      duration,
+      principalReceiver,
+      expirationTime,
+      callbackData,
+    }: EmitLoanArgs,
+    lifetime = BigInt(SECONDS_IN_DAY),
+  ) {
     const executionData = {
       offerExecution: offerExecution.map(({ offer, amount, ...rest }) => ({
         ...rest,
@@ -308,7 +319,7 @@ export class MslV6 extends BaseContract<
       loanId: 0n, // This is only checked for refi from offers not borrower initiated
       tokenId,
       duration,
-      expirationTime: expirationTime ?? BigInt(millisToSeconds(Date.now()) + SECONDS_IN_DAY),
+      expirationTime: expirationTime ?? BigInt(millisToSeconds(Date.now())) + lifetime,
       principalReceiver: principalReceiver ?? this.wallet.account.address,
       callbackData: callbackData ?? ('0x' as Hash), // Tipically, no callback data is expected here, only for BNPL [PB call]
     };
@@ -810,7 +821,10 @@ export class MslV6 extends BaseContract<
     emitArgs: EmitLoanArgs;
     withSignature: boolean;
   }) {
-    const emitLoanArgs = this.mapEmitLoanToMslEmitLoanArgs(emitArgs);
+    const emitLoanArgs = this.mapEmitLoanToMslEmitLoanArgs(
+      emitArgs,
+      withSignature ? BORROWER_SIGNATURE_LIFETIME : undefined,
+    );
     if (withSignature) {
       emitLoanArgs.borrowerOfferSignature = await this.signExecutionData({
         structToSign: emitLoanArgs.executionData,
