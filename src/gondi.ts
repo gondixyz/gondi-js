@@ -37,6 +37,7 @@ import { MslV6 } from '@/clients/contracts/MslV6';
 import { PurchaseBundlerV1 } from '@/clients/contracts/PurchaseBundlerV1';
 import { PurchaseBundlerV2 } from '@/clients/contracts/PurchaseBundlerV2';
 import { getContracts } from '@/deploys';
+import { FlaggedNftError } from '@/errors';
 import { seaportABI } from '@/generated/blockchain/seaport';
 import { multiSourceLoanAbi } from '@/generated/blockchain/v7';
 import {
@@ -121,6 +122,14 @@ interface GondiProps {
   publicClient?: GondiPublicClient;
   apiClient?: ApiProps['apiClient'];
   onStepChange?: OnStepChange;
+  /**
+   * Skips the flagged-NFT lookup `emitLoan`, `revokeDelegationsAndEmitLoan`,
+   * `refinanceFromOffers`, `efficientRefinanceFromOffers` and
+   * `crossCurrencyRenegotiation` run before
+   * sending, saving an API call. Only for callers that already keep flagged
+   * NFTs out of those flows themselves, such as the GONDI web app.
+   */
+  skipFlaggedNftCheck?: boolean;
 }
 
 type Step =
@@ -151,9 +160,17 @@ export class Gondi {
   account: Account;
   bcClient: GondiPublicClient;
   apiClient: Api;
+  skipFlaggedNftCheck: boolean;
 
-  constructor({ wallet, publicClient, apiClient, onStepChange }: GondiProps) {
+  constructor({
+    wallet,
+    publicClient,
+    apiClient,
+    onStepChange,
+    skipFlaggedNftCheck = false,
+  }: GondiProps) {
     this.wallet = wallet;
+    this.skipFlaggedNftCheck = skipFlaggedNftCheck;
     this.account = wallet.account;
     this.bcClient = withRetriedReceiptWait(
       publicClient ??
@@ -940,7 +957,30 @@ export class Gondi {
     });
   }
 
+  /**
+   * Throws `FlaggedNftError` when the API flags the collateral NFT or an NFT it wraps.
+   * An NFT the API does not know throws `NOT_FOUND`, and an API that does not answer
+   * throws its own error: a loan is only sent once the API confirms the NFT is not flagged.
+   */
+  private async assertNftNotFlagged({
+    nftCollateralAddress,
+    tokenId,
+  }: Pick<EmitLoanArgs, 'nftCollateralAddress' | 'tokenId'>) {
+    if (this.skipFlaggedNftCheck) return;
+    const { nft } = await this.apiClient.nftFlaggedByContractAddressAndTokenId({
+      contractAddress: nftCollateralAddress,
+      tokenId,
+    });
+    if (!nft) {
+      throw new Error(`NFT ${nftCollateralAddress} #${tokenId} not found`);
+    }
+    if (nft.isFlagged || nft.wrapsNfts?.some((wrappedNft) => wrappedNft.isFlagged)) {
+      throw new FlaggedNftError({ nftCollateralAddress, tokenId });
+    }
+  }
+
   async emitLoan(args: EmitLoanArgs) {
+    await this.assertNftNotFlagged(args);
     const contractAddress = args.offerExecution[0].offer.contractAddress;
     return this.contracts.Msl(contractAddress).emitLoan(args);
   }
@@ -954,6 +994,7 @@ export class Gondi {
     loanId: bigint;
     executionData: EmitLoanArgs;
   }) {
+    await this.assertNftNotFlagged(executionData);
     return this.contracts.Msl(loan.contractAddress).refinanceFromOffers({
       loan: loanToMslLoan(loan),
       loanId,
@@ -972,6 +1013,7 @@ export class Gondi {
     loanId: bigint;
     executionData: EmitLoanArgs;
   }) {
+    await this.assertNftNotFlagged(executionData);
     const previousMsl = this.contracts.Msl(loan.contractAddress);
     const nextMsl = this.contracts.Msl(
       executionData.offerExecution[0]?.offer?.contractAddress ?? zeroAddress,
@@ -1026,6 +1068,7 @@ export class Gondi {
       quote: CrossCurrencyRenegotiationQuote;
     },
   ) {
+    await this.assertNftNotFlagged(input.executionData);
     return this._crossCurrencyRenegotiationClient(input).execute(input);
   }
 
@@ -1320,6 +1363,7 @@ export class Gondi {
     delegations: Address[];
     emit: Parameters<Gondi['emitLoan']>[0];
   }) {
+    await this.assertNftNotFlagged(emit);
     const contractAddress = emit.offerExecution[0].offer.contractAddress;
     return this.contracts.Msl(contractAddress).revokeDelegationsAndEmitLoan({ delegations, emit });
   }

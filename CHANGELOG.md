@@ -1,3 +1,49 @@
+# New Features 0.44.0
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.44.0.
+
+## Table of Contents
+
+- [Borrowing against a flagged NFT throws FlaggedNftError](#borrowing-against-a-flagged-nft-throws-flaggednfterror-0440)
+
+---
+
+## Borrowing against a flagged NFT throws FlaggedNftError 0.44.0
+
+**Description:**
+
+- NEW: `emitLoan`, `revokeDelegationsAndEmitLoan`, `refinanceFromOffers`, `efficientRefinanceFromOffers` and `crossCurrencyRenegotiation` ask the API whether the collateral NFT, or an NFT it wraps, is flagged (for example reported as stolen) and throw `FlaggedNftError` before sending when it is. `FlaggedNftError` is exported from the package root and carries `nftCollateralAddress` and `tokenId`.
+  - An NFT the API does not know throws `NOT_FOUND`, and an API that does not answer throws its error: the loan is only sent once the API confirms the NFT is not flagged.
+- NEW: `skipFlaggedNftCheck` on the `Gondi` constructor and `Gondi.create` turns the check off, for callers that already keep flagged NFTs out of their borrow flows.
+
+**Reason:**
+
+A collection offer's signature covers every token of the collection, so the protocol cannot stop a flagged NFT from taking it, and the GONDI web app is the only place that gated it. Integrators building on the SDK now get the same guard without having to know about flags.
+
+**Migration Steps:**
+
+- Catch `FlaggedNftError` where a borrow can target a user-chosen NFT:
+
+```typescript
+import { FlaggedNftError } from 'gondi';
+
+try {
+  await gondi.emitLoan(args);
+} catch (error) {
+  if (error instanceof FlaggedNftError) {
+    // tell the user this NFT cannot be borrowed against
+  }
+}
+```
+
+- Pass `skipFlaggedNftCheck: true` only if your app already checks `isFlagged` itself.
+
+---
+
 # Bug Fixes 0.43.1
 
 ### Important

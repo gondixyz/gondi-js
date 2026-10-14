@@ -1,3 +1,4 @@
+export { FlaggedNftError } from '@/errors';
 export { Gondi } from '@/gondi';
 export {
   LoanStatusType,
