@@ -6932,6 +6932,21 @@ export type ListLoansQuery = {
   };
 };
 
+export type NftFlaggedByContractAddressAndTokenIdQueryVariables = Exact<{
+  contractAddress: Scalars['Address'];
+  tokenId: Scalars['BigInt'];
+}>;
+
+export type NftFlaggedByContractAddressAndTokenIdQuery = {
+  __typename?: 'Query';
+  nft?: {
+    __typename?: 'NFT';
+    id: string;
+    isFlagged?: boolean | null;
+    wrapsNfts?: Array<{ __typename?: 'NFT'; id: string; isFlagged?: boolean | null }> | null;
+  } | null;
+};
+
 export type NftIdByContractAddressAndTokenIdQueryVariables = Exact<{
   contractAddress: Scalars['Address'];
   tokenId: Scalars['BigInt'];
@@ -14738,6 +14753,18 @@ export const ListLoansDocument = gql`
     }
   }
 `;
+export const NftFlaggedByContractAddressAndTokenIdDocument = gql`
+  query nftFlaggedByContractAddressAndTokenId($contractAddress: Address!, $tokenId: BigInt!) {
+    nft: getNftByContractAddressAndTokenId(contractAddress: $contractAddress, tokenId: $tokenId) {
+      id
+      isFlagged
+      wrapsNfts {
+        id
+        isFlagged
+      }
+    }
+  }
+`;
 export const NftIdByContractAddressAndTokenIdDocument = gql`
   query nftIdByContractAddressAndTokenId($contractAddress: Address!, $tokenId: BigInt!) {
     nft: getNftByContractAddressAndTokenId(contractAddress: $contractAddress, tokenId: $tokenId) {
@@ -15314,6 +15341,19 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
         variables,
         options,
       ) as Promise<ListLoansQuery>;
+    },
+    nftFlaggedByContractAddressAndTokenId(
+      variables: NftFlaggedByContractAddressAndTokenIdQueryVariables,
+      options?: C,
+    ): Promise<NftFlaggedByContractAddressAndTokenIdQuery> {
+      return requester<
+        NftFlaggedByContractAddressAndTokenIdQuery,
+        NftFlaggedByContractAddressAndTokenIdQueryVariables
+      >(
+        NftFlaggedByContractAddressAndTokenIdDocument,
+        variables,
+        options,
+      ) as Promise<NftFlaggedByContractAddressAndTokenIdQuery>;
     },
     nftIdByContractAddressAndTokenId(
       variables: NftIdByContractAddressAndTokenIdQueryVariables,

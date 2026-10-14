@@ -50,6 +50,7 @@ export class Api {
   generateRenegotiationOfferHash;
   nftIdBySlugTokenId;
   nftIdByContractAddressAndTokenId;
+  nftFlaggedByContractAddressAndTokenId;
   collections;
   collectionIdBySlug;
   collectionsIdByContractAddress;
@@ -79,6 +80,7 @@ export class Api {
     this.generateRenegotiationOfferHash = this.api.generateRenegotiationOfferHash;
     this.nftIdBySlugTokenId = this.api.nftIdBySlugTokenId;
     this.nftIdByContractAddressAndTokenId = this.api.nftIdByContractAddressAndTokenId;
+    this.nftFlaggedByContractAddressAndTokenId = this.api.nftFlaggedByContractAddressAndTokenId;
     this.collectionIdBySlug = this.api.collectionIdBySlug;
     this.collectionsIdByContractAddress = this.api.collectionsIdByContractAddress;
     this.collections = this.api.collections;

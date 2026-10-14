@@ -1,0 +1,10 @@
+query nftFlaggedByContractAddressAndTokenId($contractAddress: Address!, $tokenId: BigInt!) {
+  nft: getNftByContractAddressAndTokenId(contractAddress: $contractAddress, tokenId: $tokenId) {
+    id
+    isFlagged
+    wrapsNfts {
+      id
+      isFlagged
+    }
+  }
+}
