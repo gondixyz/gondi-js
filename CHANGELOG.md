@@ -1,3 +1,22 @@
+# New Features 0.45.0
+
+## Important
+
+This release adds optional unsigned publication metadata for loan offers and full loan replacements. Existing calls and signed EIP-712 payloads remain compatible.
+
+## Table of Contents
+
+- [NEW: Loan offer publication](#new-loan-offer-publication)
+- [FIX: Signed publication retries](#fix-signed-publication-retries)
+
+## NEW: Loan offer publication
+
+Optional `LoanOfferPublicationInput` lists the offer IDs a publication replaces, for single NFT offers, collection offers and full replacements. Item offers and replacements can be checked before signing. Collection publications remain globally admitted and are evaluated independently for each NFT.
+
+## FIX: Signed publication retries
+
+Retrying an unchanged publication reuses its signed nonce and payload. Full replacements retain both the renegotiation and matching fallback signatures after a failed API save.
+
 # New Features 0.44.0
 
 ### Important

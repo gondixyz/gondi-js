@@ -14,7 +14,10 @@ import {
   ListListingsQueryVariables,
   ListLoansQueryVariables,
   ListOffersQueryVariables,
+  LoanOfferPublicationInput,
   NftOrderInput,
+  RenegotiationOfferInput,
+  SingleNftOfferInput,
   SingleNftOrderInput,
   SingleNftSignedOfferInput,
   TraitOrderInput,
@@ -100,12 +103,42 @@ export class Api {
     this.collectionStepsById = this.api.collectionStepsById;
   }
 
-  async saveSingleNftOffer(offerInput: SingleNftSignedOfferInput) {
+  /** Check competition before asking the wallet to sign; saving rechecks atomically. */
+  async previewSingleNftPublication(
+    offerInput: SingleNftOfferInput,
+    publication: LoanOfferPublicationInput,
+  ) {
+    const { preview } = await this.api.previewItemLoanOfferCompetition({
+      offerInput,
+      replacementIds: publication.replacementIds,
+    });
+    if (!preview.complete || !preview.qualifies)
+      throw new Error(preview.reason ?? 'INSUFFICIENT_IMPROVEMENT');
+    return preview;
+  }
+
+  async previewRenegotiationPublication(
+    renegotiationInput: RenegotiationOfferInput,
+    publication: LoanOfferPublicationInput,
+  ) {
+    const { preview } = await this.api.previewRenegotiationCompetition({
+      renegotiationInput,
+      replacementIds: publication.replacementIds,
+    });
+    if (!preview.complete || !preview.qualifies)
+      throw new Error(preview.reason ?? 'INSUFFICIENT_IMPROVEMENT');
+    return preview;
+  }
+
+  async saveSingleNftOffer(
+    offerInput: SingleNftSignedOfferInput,
+    publication?: LoanOfferPublicationInput,
+  ) {
     const offer = {
       ...offerInput,
       borrowerAddress: offerInput.borrowerAddress || zeroAddress,
     };
-    const response = await this.api.saveSingleNftOffer({ offer });
+    const response = await this.api.saveSingleNftOffer({ offer, publication });
     const nftCollateralAddress =
       response.offer.nft.collection?.contractData?.contractAddress || zeroAddress;
     return {
@@ -156,12 +189,15 @@ export class Api {
     return response.result;
   }
 
-  async saveCollectionOffer(offerInput: CollectionSignedOfferInput) {
+  async saveCollectionOffer(
+    offerInput: CollectionSignedOfferInput,
+    publication?: LoanOfferPublicationInput,
+  ) {
     const offer = {
       ...offerInput,
       borrowerAddress: offerInput.borrowerAddress || zeroAddress,
     };
-    const response = await this.api.saveCollectionOffer({ offer });
+    const response = await this.api.saveCollectionOffer({ offer, publication });
     const nftCollateralAddress =
       response.offer.collection?.contractData?.contractAddress || zeroAddress;
     return {
@@ -191,8 +227,13 @@ export class Api {
   async saveRefinanceOffer(
     renegotiation: RenegotiationOffer,
     fallbackOffer?: SingleNftSignedOfferInput,
+    publication?: LoanOfferPublicationInput,
   ) {
-    const response = await this.api.saveRenegotiationOffer({ renegotiation, fallbackOffer });
+    const response = await this.api.saveRenegotiationOffer({
+      renegotiation,
+      fallbackOffer,
+      publication,
+    });
     return { ...renegotiation, id: response.renegotiation.id };
   }
 
