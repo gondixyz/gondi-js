@@ -1,5 +1,5 @@
-import { expect, mock, test } from 'bun:test';
-import { decodeFunctionData } from 'viem';
+import { describe, expect, mock, test } from 'bun:test';
+import { decodeFunctionData, Hex } from 'viem';
 
 import { MslV6 } from '@/clients/contracts/MslV6';
 import { multiSourceLoanAbi } from '@/generated/blockchain/v7';
@@ -49,4 +49,139 @@ test('keeps a day for an emit the borrower sends unsigned', async () => {
     args: [{ executionData: { expirationTime: bigint } }];
   };
   expect(Number(args[0].executionData.expirationTime - now)).toBeWithin(86400, 86402);
+});
+
+const MSL_ADDRESS = '0x00000000000000000000000000000000000000Aa';
+const LENDER = '0x0000000000000000000000000000000000000003';
+const COLLECTION = '0x0000000000000000000000000000000000000004';
+const TX_HASH = '0x01';
+
+const emitArgsFor = (tokenId: bigint, offerId: bigint): EmitLoanArgs =>
+  ({
+    offerExecution: [
+      {
+        offer: {
+          offerId,
+          lenderAddress: LENDER,
+          fee: 0n,
+          capacity: 0n,
+          nftCollateralAddress: COLLECTION,
+          nftCollateralTokenId: 0n,
+          principalAddress: borrower,
+          principalAmount: 10n,
+          aprBps: 100n,
+          expirationTime: 1n,
+          duration: 30n,
+          maxSeniorRepayment: 0n,
+          offerValidators: [],
+          contractAddress: MSL_ADDRESS,
+        },
+        lenderOfferSignature: '0x12',
+      },
+    ],
+    nftCollateralAddress: COLLECTION,
+    tokenId,
+    duration: 30n,
+  }) as unknown as EmitLoanArgs;
+
+const loanEmittedEvent = (loanId: bigint, tokenId: bigint) => ({
+  args: {
+    loanId,
+    offerId: [],
+    fee: 0n,
+    loan: { borrower, nftCollateralAddress: COLLECTION, nftCollateralTokenId: tokenId },
+  },
+});
+
+const mslEmitting = (events: ReturnType<typeof loanEmittedEvent>[]) => {
+  const multicall = mock(async () => TX_HASH);
+  const emitLoan = mock(async () => TX_HASH);
+  const msl = Object.assign(Object.create(MslV6.prototype), {
+    abi: multiSourceLoanAbi,
+    version: '3.1',
+    wallet: { account: { address: borrower } },
+    contract: { address: MSL_ADDRESS },
+    safeContractWrite: { multicall, emitLoan },
+    bcClient: { waitForTransactionReceipt: async () => ({ transactionHash: TX_HASH, logs: [] }) },
+    parseEventLogs: (eventName: string) => (eventName === 'LoanEmitted' ? events : []),
+  }) as MslV6;
+  return { msl, multicall, emitLoan };
+};
+
+describe('emitLoan', () => {
+  test('returns the emitted loan under its SDK ids', async () => {
+    const { msl } = mslEmitting([loanEmittedEvent(9n, 1n)]);
+
+    const { waitTxInBlock } = await msl.emitLoan(emitArgsFor(1n, 5n));
+
+    expect(await waitTxInBlock()).toEqual({
+      loan: {
+        id: `${MSL_ADDRESS.toLowerCase()}.9`,
+        borrower,
+        nftCollateralAddress: COLLECTION,
+        nftCollateralTokenId: 1n,
+        contractAddress: MSL_ADDRESS,
+      },
+      loanId: 9n,
+      offerIds: [`${MSL_ADDRESS.toLowerCase()}.${LENDER}.5`],
+      transactionHash: TX_HASH,
+      logs: [],
+    } as unknown as Awaited<ReturnType<typeof waitTxInBlock>>);
+  });
+});
+
+describe('emitLoans', () => {
+  test('sends every loan as an emitLoan call of one multicall, in input order', async () => {
+    const { msl, multicall } = mslEmitting([]);
+
+    await msl.emitLoans([emitArgsFor(1n, 5n), emitArgsFor(2n, 6n)]);
+
+    expect(multicall).toHaveBeenCalledTimes(1);
+    const [[calls]] = multicall.mock.calls[0] as unknown as [[Hex[]]];
+    const decodedCalls = calls.map(
+      (call) =>
+        decodeFunctionData({ abi: multiSourceLoanAbi, data: call }) as unknown as {
+          functionName: string;
+          args: [{ borrower: string; executionData: { tokenId: bigint } }];
+        },
+    );
+    expect(decodedCalls.map(({ functionName }) => functionName)).toEqual(['emitLoan', 'emitLoan']);
+    expect(decodedCalls.map(({ args }) => args[0].executionData.tokenId)).toEqual([1n, 2n]);
+    expect(decodedCalls.map(({ args }) => args[0].borrower)).toEqual([borrower, borrower]);
+  });
+
+  test('pairs each loan with the LoanEmitted event of its collateral', async () => {
+    const { msl } = mslEmitting([loanEmittedEvent(12n, 2n), loanEmittedEvent(11n, 1n)]);
+
+    const { waitTxInBlock } = await msl.emitLoans([emitArgsFor(1n, 5n), emitArgsFor(2n, 6n)]);
+    const { loans, transactionHash } = await waitTxInBlock();
+
+    expect(transactionHash).toBe(TX_HASH);
+    expect(loans.map(({ loanId }) => loanId)).toEqual([11n, 12n]);
+    expect(loans.map(({ loan }) => loan.id)).toEqual([
+      `${MSL_ADDRESS.toLowerCase()}.11`,
+      `${MSL_ADDRESS.toLowerCase()}.12`,
+    ]);
+    expect(loans.map(({ loan }) => loan.contractAddress)).toEqual([MSL_ADDRESS, MSL_ADDRESS]);
+    expect(loans.map(({ offerIds }) => offerIds)).toEqual([
+      [`${MSL_ADDRESS.toLowerCase()}.${LENDER}.5`],
+      [`${MSL_ADDRESS.toLowerCase()}.${LENDER}.6`],
+    ]);
+  });
+
+  test('throws when fewer loans are emitted than were sent', async () => {
+    const { msl } = mslEmitting([loanEmittedEvent(11n, 1n)]);
+
+    const { waitTxInBlock } = await msl.emitLoans([emitArgsFor(1n, 5n), emitArgsFor(2n, 6n)]);
+
+    await expect(waitTxInBlock()).rejects.toThrow('Loans not emitted');
+  });
+
+  test('throws when a loan has no LoanEmitted event for its collateral', async () => {
+    const { msl } = mslEmitting([loanEmittedEvent(11n, 1n), loanEmittedEvent(13n, 3n)]);
+
+    const { waitTxInBlock } = await msl.emitLoans([emitArgsFor(1n, 5n), emitArgsFor(2n, 6n)]);
+
+    await expect(waitTxInBlock()).rejects.toThrow(`No LoanEmitted event for ${COLLECTION} #2`);
+  });
 });

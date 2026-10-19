@@ -125,7 +125,7 @@ interface GondiProps {
   apiClient?: ApiProps['apiClient'];
   onStepChange?: OnStepChange;
   /**
-   * Skips the flagged-NFT lookup `emitLoan`, `revokeDelegationsAndEmitLoan`,
+   * Skips the flagged-NFT lookup `emitLoan`, `emitLoans`, `revokeDelegationsAndEmitLoan`,
    * `refinanceFromOffers`, `efficientRefinanceFromOffers` and
    * `crossCurrencyRenegotiation` run before
    * sending, saving an API call. Only for callers that already keep flagged
@@ -1126,6 +1126,37 @@ export class Gondi {
     await this.assertNftNotFlagged(args);
     const contractAddress = args.offerExecution[0].offer.contractAddress;
     return this.contracts.Msl(contractAddress).emitLoan(args);
+  }
+
+  /**
+   * Emits several loans in one transaction: either every loan is emitted or none is.
+   *
+   * Every offer of every loan must belong to the same MultiSourceLoan contract, of version 3 or
+   * later, and each NFT goes through the flagged-NFT check `emitLoan` runs before anything is sent.
+   * `waitTxInBlock` resolves to `loans`, one per item and in the same order, each shaped as
+   * `emitLoan` returns it.
+   *
+   * IMPLEMENTATION NOTE: each loan is an encoded `emitLoan` call inside the contract's
+   * `multicall(bytes[])`, which `MultiSourceLoan` inherits from `Multicall`
+   * (florida-contracts `src/lib/loans/MultiSourceLoan.sol`, `src/lib/Multicall.sol`). It
+   * delegatecalls the calls in order, so `msg.sender` stays the borrower, and reverts the whole
+   * transaction with `MulticallFailed(index, reason)` as soon as one of them fails.
+   */
+  async emitLoans(loans: EmitLoanArgs[]) {
+    if (loans.length === 0) throw new Error('At least one loan must be emitted');
+    const contractAddress = loans[0].offerExecution[0].offer.contractAddress;
+    const offers = loans.flatMap(({ offerExecution }) => offerExecution);
+    if (!offers.every(({ offer }) => areSameAddress(offer.contractAddress, contractAddress))) {
+      throw new Error('Every loan must use offers of the same MultiSourceLoan contract');
+    }
+
+    const msl = this.contracts.Msl(contractAddress);
+    if (!(msl instanceof MslV6)) {
+      throw new Error('emitLoans needs a MultiSourceLoan contract of version 3 or later');
+    }
+
+    await Promise.all(loans.map((loan) => this.assertNftNotFlagged(loan)));
+    return msl.emitLoans(loans);
   }
 
   async refinanceFromOffers({

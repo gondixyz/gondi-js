@@ -1,3 +1,41 @@
+# New Features 0.46.0
+
+### Important
+
+---
+
+This document outlines the changes introduced in our codebase for version 0.46.0.
+
+## Table of Contents
+
+- [emitLoans emits several loans in one transaction](#emitloans-emits-several-loans-in-one-transaction-0460)
+
+---
+
+## emitLoans emits several loans in one transaction 0.46.0
+
+**Description:**
+
+- NEW: `gondi.emitLoans(loans)` takes a list of `emitLoan` arguments and sends them as one transaction, through the MultiSourceLoan contract's `multicall`: either every loan is emitted or none is.
+  - Every offer of every loan must belong to the same MultiSourceLoan contract, of version 3 or later; an empty list, mixed contracts or an older contract throw before anything is sent.
+  - Each NFT goes through the flagged-NFT check `emitLoan` runs, and `skipFlaggedNftCheck` turns it off as it does there.
+  - `waitTxInBlock()` resolves to `loans`, one per item and in the same order, each with the `loan`, `loanId` and `offerIds` `emitLoan` returns, alongside the transaction receipt.
+
+**Reason:**
+
+Borrowing against several NFTs took one transaction, and one wallet confirmation, per NFT.
+
+**Migration Steps:**
+
+- None. Existing methods are unchanged.
+
+```typescript
+const { waitTxInBlock } = await gondi.emitLoans([firstLoanArgs, secondLoanArgs]);
+const { loans } = await waitTxInBlock();
+```
+
+---
+
 # New Features 0.45.0
 
 ## Important

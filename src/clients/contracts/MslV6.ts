@@ -4,6 +4,7 @@ import {
   encodeFunctionData,
   Hash,
   Hex,
+  parseEventLogs,
   PublicClient,
   zeroAddress,
 } from 'viem';
@@ -29,7 +30,7 @@ import { EmitLoanArgs } from '@/gondi';
 import { millisToSeconds, SECONDS_IN_DAY, secondsToMillis } from '@/utils/dates';
 import { getMslLoanId, getRemainingSeconds, LoanToMslLoanType } from '@/utils/loan';
 import { bpsToPercentage, sumBy } from '@/utils/number';
-import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
+import { areSameAddress, CONTRACT_DOMAIN_NAME } from '@/utils/string';
 import { sanitizeTypedDataMessage } from '@/utils/typedData';
 
 import { BaseContract } from './BaseContract';
@@ -46,6 +47,10 @@ const MSL_V6_ABI_BY_VERSION = {
 } as const;
 
 export type MslV6Version = keyof typeof MSL_V6_ABI_BY_VERSION;
+
+type LoanEmittedArgs = ReturnType<
+  typeof parseEventLogs<(typeof MSL_V6_ABI_BY_VERSION)[MslV6Version], true, 'LoanEmitted'>
+>[number]['args'];
 
 export class MslV6 extends BaseContract<
   typeof multiSourceLoanAbiV6 | typeof multiSourceLoanAbiV7 | typeof multiSourceLoanAbiV8
@@ -331,6 +336,29 @@ export class MslV6 extends BaseContract<
     };
   }
 
+  /**
+   * Shapes a `LoanEmitted` event as `emitLoan` returns it: the loan under its SDK id
+   * (`<contract>.<loanId>`) with its contract address, its on-chain id, and the SDK ids
+   * (`<contract>.<lender>.<offerId>`) of the offers its execution data spent.
+   */
+  private toEmittedLoan(
+    { loanId, loan }: LoanEmittedArgs,
+    { executionData }: ReturnType<MslV6['mapEmitLoanToMslEmitLoanArgs']>,
+  ) {
+    return {
+      loan: {
+        id: `${this.contract.address.toLowerCase()}.${loanId}`,
+        ...loan,
+        contractAddress: this.contract.address,
+      },
+      loanId,
+      offerIds: executionData.offerExecution.map(
+        ({ offer }) =>
+          `${this.contract.address.toLowerCase()}.${offer.lender.toLowerCase()}.${offer.offerId}`,
+      ),
+    };
+  }
+
   async emitLoan(emitArgs: EmitLoanArgs) {
     const mslEmitArgs = this.mapEmitLoanToMslEmitLoanArgs(emitArgs);
     const txHash = await this.safeContractWrite.emitLoan([mslEmitArgs]);
@@ -343,22 +371,52 @@ export class MslV6 extends BaseContract<
         });
         const events = this.parseEventLogs('LoanEmitted', receipt.logs);
         if (events.length === 0) throw new Error('Loan not emitted');
-        const args = events[0].args;
-        return {
-          loan: {
-            id: `${this.contract.address.toLowerCase()}.${args.loanId}`,
-            ...args.loan,
-            contractAddress: this.contract.address,
-          },
-          loanId: args.loanId,
-          offerIds: mslEmitArgs.executionData.offerExecution.map(
-            ({ offer }) =>
-              `${this.contract.address.toLowerCase()}.${offer.lender.toLowerCase()}.${
-                offer.offerId
-              }`,
-          ),
-          ...receipt,
-        };
+        return { ...this.toEmittedLoan(events[0].args, mslEmitArgs), ...receipt };
+      },
+    };
+  }
+
+  /**
+   * Emits one loan per item of `emitArgs` in a single transaction, as one `emitLoan` call each
+   * inside the contract's `multicall`, which reverts every loan when one of them fails.
+   *
+   * @remarks
+   * `waitTxInBlock` resolves to `loans`, in the order of `emitArgs`, each shaped as `emitLoan`
+   * returns it. Each item is paired with the `LoanEmitted` event of its collateral
+   * (`nftCollateralAddress`, `tokenId`) rather than by position, so a result can never
+   * describe another item's loan; two items with the same collateral, which cannot both be
+   * emitted, would take their events in order. It throws when the transaction emitted a
+   * different number of loans than it was sent, or none for an item's collateral.
+   */
+  async emitLoans(emitArgs: EmitLoanArgs[]) {
+    const mslEmits = emitArgs.map((emit) => this.mapEmitLoanToMslEmitLoanArgs(emit));
+    const encodedEmitLoans = mslEmits.map((mslEmit) =>
+      encodeFunctionData({ abi: this.abi, functionName: 'emitLoan', args: [mslEmit] }),
+    );
+    const txHash = await this.safeContractWrite.multicall([encodedEmitLoans]);
+
+    return {
+      txHash,
+      waitTxInBlock: async () => {
+        const receipt = await this.bcClient.waitForTransactionReceipt({ hash: txHash });
+        const events = this.parseEventLogs('LoanEmitted', receipt.logs);
+        if (events.length !== emitArgs.length) throw new Error('Loans not emitted');
+
+        const unpairedEvents = [...events];
+        const loans = mslEmits.map((mslEmit) => {
+          const { nftCollateralAddress, tokenId } = mslEmit.executionData;
+          const eventIndex = unpairedEvents.findIndex(
+            ({ args: { loan } }) =>
+              areSameAddress(loan.nftCollateralAddress, nftCollateralAddress) &&
+              loan.nftCollateralTokenId === tokenId,
+          );
+          if (eventIndex === -1) {
+            throw new Error(`No LoanEmitted event for ${nftCollateralAddress} #${tokenId}`);
+          }
+          const [event] = unpairedEvents.splice(eventIndex, 1);
+          return this.toEmittedLoan(event.args, mslEmit);
+        });
+        return { loans, ...receipt };
       },
     };
   }
