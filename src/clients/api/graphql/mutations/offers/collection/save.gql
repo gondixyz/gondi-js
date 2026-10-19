@@ -1,5 +1,8 @@
-mutation saveCollectionOffer($offer: CollectionSignedOfferInput!) {
-  offer: saveSignedCollectionOffer(signedOfferInput: $offer) {
+mutation saveCollectionOffer(
+  $offer: CollectionSignedOfferInput!
+  $publication: LoanOfferPublicationInput
+) {
+  offer: saveSignedCollectionOffer(signedOfferInput: $offer, publication: $publication) {
     id
     status
     collection {

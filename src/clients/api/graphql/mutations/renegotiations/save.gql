@@ -1,9 +1,11 @@
 mutation saveRenegotiationOffer(
   $renegotiation: SignedRenegotiationOfferInput!
+  $publication: LoanOfferPublicationInput
   $fallbackOffer: SingleNFTSignedOfferInput
 ) {
   renegotiation: saveRenegotiationSignedOffer(
     signedRenegotiationInput: $renegotiation
+    publication: $publication
     fallbackOfferInput: $fallbackOffer
   ) {
     id

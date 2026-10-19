@@ -39,6 +39,54 @@ enum AddressType {
   EOA
 }
 
+type ApprovalExposure {
+  contractAddress: Address!
+
+  """
+  Held NFTs valued at their collection floor in USD.
+  """
+  exposedValueUsd: Float
+
+  """
+  Indexed NFTs the owner holds in the contract; null when GONDI does not index the contract.
+  """
+  heldCount: Int
+
+  """
+  Whether the operator is a GONDI contract, Seaport or the OpenSea conduit, rather than a third party that could move the NFTs.
+  """
+  isStandard: Boolean!
+
+  """
+  The 20 most valuable held NFTs, highest floor first.
+  """
+  nfts: [ExposedNft!]!
+  operator: Address!
+
+  """
+  What the operator is; null when the explorer lookup fails.
+  """
+  operatorKind: OperatorKind
+
+  """
+  The operator's verified contract name; null for wallets, unverified contracts and when the explorer lookup fails.
+  """
+  operatorName: String
+  owner: Address!
+}
+
+type ApprovalExposures {
+  """
+  The 200 most exposed grants, highest exposed value first.
+  """
+  exposures: [ApprovalExposure!]!
+
+  """
+  Wallets with more approval events than one request reads: their oldest grants and the most recent block window are checked, grants made in between may be missing.
+  """
+  incompleteOwners: [Address!]!
+}
+
 """
 An artist or creator linked to NFTs or collections.
 """
@@ -48,6 +96,11 @@ type Artist implements Node {
   bio: String
   collectionsCount: Int!
   ethMintAddresses: [String!]!
+
+  """
+  Number of wallets following this artist.
+  """
+  followersCount: Int!
   id: String!
   image: Asset
 
@@ -60,6 +113,11 @@ type Artist implements Node {
   name: String!
 
   """
+  NFTs of the artist the wallets hold, reached through the NFT's own artist link or its collection's, with the custody rules of listArtistHolders. For ERC1155 this counts tokens held, not units.
+  """
+  numberOfNftsOwned(walletAddresses: [Address!]!): Int!
+
+  """
   NFTs of the artist with an ask visible to the requesting wallet.
   """
   numberOfPricedNfts(marketplaces: [MarketPlaceType!] = null): Int!
@@ -70,6 +128,70 @@ type Artist implements Node {
   uniqueCollectors: Int!
   volume1d: Float!
   websites: [String!]!
+}
+
+"""
+One artist work, an edition's copies when grouping editions, or the remaining works in a collection.
+"""
+type ArtistCatalogEntry {
+  """
+  Earliest indexed mint among the entry's works, the value the FIRST_MINT_DATE sort orders by. Only resolved under that sort: null on other sorts, and when no mint was indexed.
+  """
+  firstMintDate: DateTime
+  id: ID!
+  item: ArtistCatalogItem!
+
+  """
+  How many NFTs the entry stands for: one for a work of its own, the copies of an edition, or the collection's grouped works.
+  """
+  itemsCount: Int!
+
+  """
+  The latest sale among the NFTs the entry stands for: the work itself, or the edition's or collection's grouped works under the same item-type filter.
+  """
+  lastSale: Sale
+
+  """
+  Up to four of the NFTs an edition or collection entry groups; empty for a work of its own.
+  """
+  previewNfts: [NFT!]!
+  price: CurrencyAmount
+  sales1d: Int!
+
+  """
+  The highest sampled bid among the NFTs the entry stands for, gross of fees, in its own currency: the value the TOP_OFFER sort orders by.
+  """
+  topOffer: CurrencyAmount
+  volume1d: Float!
+}
+
+type ArtistCatalogEntryConnection {
+  edges: [ArtistCatalogEntryEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type ArtistCatalogEntryEdge {
+  cursor: String!
+  node: ArtistCatalogEntry!
+}
+
+"""
+The work an artist catalog entry stands for.
+"""
+union ArtistCatalogItem = Collection | Edition | NFT
+
+enum ArtistCatalogSortField {
+  FIRST_MINT_DATE
+  PRICE
+  SALES_1D
+  TOP_OFFER
+  VOLUME_1D
+}
+
+input ArtistCatalogSortInput {
+  field: ArtistCatalogSortField!
+  order: Ordering!
 }
 
 input ArtistCollectionInput {
@@ -136,9 +258,15 @@ type ArtistHolder {
   ownedAmount: Int!
 
   """
-  Up to 10 of the NFTs by the artist the wallet holds.
+  Held NFTs by the artist whose item type is PFP; an NFT without a classified item type is not counted.
+  """
+  pfpsOwned: Int!
+
+  """
+  Up to 24 of the NFTs by the artist the wallet holds.
   """
   previewItems: [NFT!]!
+  profilePictureUrl: String
 
   """
   Held NFTs by the artist whose item type is a series piece; an NFT without a classified item type is not counted.
@@ -157,12 +285,24 @@ type ArtistHolderEdge {
   node: ArtistHolder!
 }
 
+"""
+Union of collection, edition, NFT and item-type selections, intersected with the artist. Empty selections mean all artist artworks.
+"""
+input ArtistHolderScopeInput {
+  collectionIds: [Int!] = null
+  editionIds: [Int!] = null
+  itemTypes: [ItemType!] = null
+  matchAll: Boolean! = false
+  nftIds: [Int!] = null
+}
+
 enum ArtistHolderSortField {
   EDITIONS_OWNED
   FIRST_ACQUIRED
   LAST_ACQUIRED
   ONE_OF_ONES_OWNED
   OWNED_AMOUNT
+  PFPS_OWNED
   SERIES_OWNED
 }
 
@@ -189,6 +329,7 @@ enum ArtistSortField {
   ARTWORKS_COUNT
   COLLECTIONS_COUNT
   NAME
+  OWNERS_TOTAL_VALUE
   SALES_1D
   TOTAL_VOLUME
   UNIQUE_COLLECTORS
@@ -198,6 +339,7 @@ enum ArtistSortField {
 input ArtistSortInput {
   field: ArtistSortField!
   order: Ordering!
+  owners: [Address!] = null
 }
 
 enum ArtistType {
@@ -347,6 +489,7 @@ type Bid implements Node {
   auctionId: String!
   bidder: Address!
   bidderName: String
+  bidderProfilePictureUrl: String
   id: String!
   indexInBlock: Int!
   timestamp: DateTime!
@@ -412,6 +555,27 @@ input BigIntInterval {
   min: BigInt = null
 }
 
+"""
+An open loan on Blur's Blend as the Blend backfill last replayed it: the fields Blend hashes into liens(lienId). Rows lag the chain since the last backfill, so check one against the contract before acting on it.
+"""
+type BlendLien {
+  amount: BigInt!
+  auctionDuration: BigInt!
+  auctionStartBlock: BigInt!
+  borrower: Address!
+  collection: Address!
+
+  """
+  The block of the last event the backfill applied to the lien.
+  """
+  lastEventBlock: BigInt!
+  lender: Address!
+  lienId: BigInt!
+  rate: BigInt!
+  startTime: BigInt!
+  tokenId: BigInt!
+}
+
 enum BlockchainEnum {
   ETHEREUM
   HYPERLIQUID
@@ -449,6 +613,7 @@ type BuyNowPayLaterOrder implements Event & Node & Order {
   isPrivate: Boolean!
   maker: Address!
   makerName: String
+  makerProfilePictureUrl: String
   marketPlace: String!
   marketPlaceAddress: Address!
   maxExecutions: Int!
@@ -466,6 +631,7 @@ type BuyNowPayLaterOrder implements Event & Node & Order {
   stealth: Boolean!
   taker: Address!
   takerName: String
+  takerProfilePictureUrl: String
   timestamp: DateTime!
   updatedDate: DateTime!
 }
@@ -514,6 +680,11 @@ type Collection implements Node {
   description: String
   discordUrl: String
   editionIds: [Int!]!
+
+  """
+  Units of the collection's ERC1155 NFTs summed over the holder balances the indexer tracks. The tracked holder set can be partial, so this may undercount. Null for other token standards and when no holder balance is tracked.
+  """
+  erc1155Supply: BigInt
   externalUrl: String
 
   """
@@ -656,6 +827,7 @@ type CollectionOffer implements Event & Node & Offer {
   availablePrincipalAmount: BigInt!
   borrowerAddress: Address
   borrowerName: String
+  borrowerProfilePictureUrl: String
   capacity: BigInt!
   collateralAddress: Address
   collection: Collection!
@@ -673,6 +845,7 @@ type CollectionOffer implements Event & Node & Offer {
   lenderAllowance: BigInt
   lenderAvailableBalance: BigInt
   lenderName: String
+  lenderProfilePictureUrl: String
   lenderRefinanceDisabled: Boolean!
   maxPrincipal: BigInt!
   maxSeniorRepayment: BigInt!
@@ -743,6 +916,7 @@ type CollectionOrder implements Event & Node & Order {
   isPrivate: Boolean!
   maker: Address!
   makerName: String
+  makerProfilePictureUrl: String
   marketPlace: String!
   marketPlaceAddress: Address!
   maxExecutions: Int!
@@ -758,6 +932,7 @@ type CollectionOrder implements Event & Node & Order {
   stealth: Boolean!
   taker: Address!
   takerName: String
+  takerProfilePictureUrl: String
   timestamp: DateTime!
   updatedDate: DateTime!
 }
@@ -935,6 +1110,23 @@ type CollectionStatistics {
   totalVolume4m: Float @deprecated(reason: "Field deprecated")
 }
 
+"""
+A collection the recent buyers of another collection also bought.
+"""
+type CollectorsAlsoBought {
+  collection: Collection!
+
+  """
+  A few of those buyers' purchases in this collection, most recent first, one per buyer.
+  """
+  examplePurchases: [Sale!]!
+
+  """
+  Distinct recent buyers of the other collection who also bought this one in the same window.
+  """
+  sharedBuyers: Int!
+}
+
 type ContractData implements Node {
   blockchain: String!
   contractAddress: Address!
@@ -985,6 +1177,11 @@ type CurrencyEdge {
 }
 
 """
+Date (isoformat)
+"""
+scalar Date
+
+"""
 Date with time (isoformat)
 """
 scalar DateTime
@@ -1004,6 +1201,7 @@ type Deal implements Event & Node {
   makerName: String
   makerNfts: [NFT!]!
   makerNftsAmounts: [BigInt!]!
+  makerProfilePictureUrl: String
   marketPlaceAddress: Address!
   nonce: BigInt!
   signature: Signature
@@ -1014,6 +1212,7 @@ type Deal implements Event & Node {
   takerName: String
   takerNfts: [NFT!]!
   takerNftsAmounts: [BigInt!]!
+  takerProfilePictureUrl: String
   timestamp: DateTime!
   updatedDate: DateTime!
 }
@@ -1059,7 +1258,7 @@ input DealInput {
   makerErc20sAmounts: [BigInt!]!
   makerNfts: [Int!]!
   makerNftsAmounts: [BigInt!]!
-  signature: Signature
+  signature: Signature = null
   startTime: BigInt!
   taker: Address!
   takerErc20s: [Address!]!
@@ -1077,6 +1276,32 @@ type DealNotification implements Node & Notification {
   notificationType: String!
   readOn: DateTime
   user: User!
+}
+
+type DealReadinessBlocker {
+  code: DealReadinessBlockerCode!
+  currencyAddress: Address
+  currentAmount: BigInt
+  message: String!
+  nftId: Int
+  requiredAmount: BigInt
+  walletAddress: Address
+}
+
+enum DealReadinessBlockerCode {
+  FUNDING
+  LIFECYCLE
+  MAKER_PERMISSION
+  NFT_UNAVAILABLE
+  TAKER_PERMISSION
+  UNKNOWN
+}
+
+type DealReadinessResult {
+  blockNumber: BigInt
+  blockers: [DealReadinessBlocker!]!
+  canExecute: Boolean!
+  canStartAcceptance: Boolean!
 }
 
 union DealSignatureRequest = Deal | SignatureRequest
@@ -1128,6 +1353,11 @@ type Edition implements Node {
   collectionId: Int!
   id: String!
   image: Asset
+
+  """
+  Whether any wallet of the authenticated user's account follows this edition. False when anonymous.
+  """
+  isFollowed: Boolean!
 
   """
   Deprecated
@@ -1237,8 +1467,10 @@ enum EventType {
   LOAN_RENEGOTIATION_OFFER
   LOAN_REPAID
   LOAN_SENT_TO_AUCTION
+  LOAN_SET_OFFER
   LOAN_TOPED_UP
   LOAN_TOP_UP_OFFER
+  LOAN_TRAIT_OFFER
   LOAN_TRANCHE_REFINANCED
   LOAN_TRANCHE_REFINANCED_TRANSFER
   SALE
@@ -1253,6 +1485,11 @@ enum ExclusiveListingType {
   LOAN_DEAL
   LOW_PRICE
   STEALTH
+}
+
+type ExposedNft {
+  nft: NFT!
+  priceUsd: Float
 }
 
 type ExtraSeaportData {
@@ -1431,6 +1668,7 @@ type Holder {
   nftOwnerBehaviorTypes: [NftOwnerBehaviorType!]!
   ownedAmount: Int!
   previewItems: [NFT!]!
+  profilePictureUrl: String
 
   """
   ETH received selling items of this collection since the given timestamp, defaulting to the last 90 days.
@@ -1457,6 +1695,41 @@ scalar Int64
 input Interval {
   max: Float = null
   min: Float = null
+}
+
+type ItemLoanOfferBook {
+  complete: Boolean!
+  currency: Currency
+  durationCounts: [LoanBookDurationCount!]!
+  evaluatedAt: DateTime!
+  options: ItemLoanOptionConnection!
+  reason: String
+  sourceCount: Int!
+}
+
+type ItemLoanOption {
+  additionalCount: Int!
+  allocations: [LoanOptionAllocation!]!
+  duration: BigInt!
+  eaprDenominator: BigInt!
+  eaprNumerator: BigInt!
+  grossPrincipal: BigInt!
+  group: String!
+  id: String!
+  netPrincipal: BigInt!
+  roles: [String!]!
+  upfrontFee: BigInt!
+}
+
+type ItemLoanOptionConnection {
+  edges: [ItemLoanOptionEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type ItemLoanOptionEdge {
+  cursor: String!
+  node: ItemLoanOption!
 }
 
 enum ItemType {
@@ -1587,6 +1860,21 @@ type LendingMarketPeriodStatistics {
   Rolling 24 hours, 7 days, or 30 days; TODAY (deprecated) is the elapsed UTC day.
   """
   period: LendingMarketPeriod!
+
+  """
+  Sales recorded in the window, priced or not.
+  """
+  salesCount: Int!
+
+  """
+  Percent change in sales value from the matching prior window; null if either total is unavailable or the prior total is zero.
+  """
+  salesVolumeDeltaPct: Float
+
+  """
+  Value of the sales in the window at current USD rates, in micro-USD. A sale in a currency with no current rate is left out of the value but counted in salesCount; null if USD conversion is unavailable.
+  """
+  salesVolumeUsd: BigInt
 }
 
 type LendingMarketPulse {
@@ -1696,6 +1984,7 @@ interface Loan implements Node {
   address: Address!
   borrowerAddress: Address!
   borrowerName: String
+  borrowerProfilePictureUrl: String
   contractStartTime: DateTime!
   currency: Currency!
   duration: BigInt!
@@ -1708,10 +1997,12 @@ interface Loan implements Node {
   """
   offer: Offer! @deprecated(reason: "Use offerIds to return loan offer ids instead.")
   offerIds: [String!]!
+  previousLoan: Loan
   principalAddress: Address!
   protocolFee: BigInt!
   repaidActivity: LoanRepaid
   repaymentTime: DateTime
+  replacementLoan: Loan
   startTime: DateTime!
   status: String!
   timestamp: DateTime!
@@ -1795,6 +2086,11 @@ type LoanAuctionedNotification implements Node & Notification {
   notificationType: String!
   readOn: DateTime
   user: User!
+}
+
+type LoanBookDurationCount {
+  count: Int!
+  duration: BigInt!
 }
 
 """
@@ -2005,6 +2301,34 @@ type LoanListingEvent implements Event & Node {
   user: User!
 }
 
+type LoanOfferCompetitionPreview {
+  complete: Boolean!
+  qualifies: Boolean!
+  reason: String
+  references: [LoanOfferCompetitionReference!]!
+  replacementIds: [String!]!
+}
+
+type LoanOfferCompetitionReference {
+  maximumEaprDenominator: BigInt!
+  maximumEaprNumerator: BigInt!
+  optionId: String!
+  requiredNetPrincipal: BigInt!
+  sourceIds: [String!]!
+}
+
+input LoanOfferPublicationInput {
+  replacementIds: [String!]! = []
+}
+
+type LoanOptionAllocation {
+  amount: BigInt!
+  fee: BigInt!
+  interest: BigInt!
+  offer: SingleNFTOfferCollectionOffer
+  renegotiation: Renegotiation
+}
+
 type LoanPayment implements Node {
   accruedInterest: BigInt!
   activityId: String!
@@ -2162,6 +2486,7 @@ type LostSource implements Node {
   lenderAddress: String!
   lenderEaprBps: BigInt!
   lenderName: String
+  lenderProfilePictureUrl: String
   loan: MultiSourceLoan!
   netAccruedInterest: BigInt!
   netAprBps: BigInt!
@@ -2208,6 +2533,7 @@ type MarketOverviewBuyer {
   """
   buyingVolumeEth: Float!
   name: String
+  profilePictureUrl: String
 }
 
 type MarketOverviewCollection {
@@ -2254,6 +2580,7 @@ enum MarketOverviewTimeframe {
 type MarketOverviewWallet {
   address: Address!
   name: String
+  profilePictureUrl: String
 }
 
 enum MarketPlaceType {
@@ -2285,6 +2612,7 @@ type MultiSourceLoan implements Loan & Node {
   blendedAprBps: Float!
   borrowerAddress: Address!
   borrowerName: String
+  borrowerProfilePictureUrl: String
   contractStartTime: DateTime!
   currency: Currency!
   duration: BigInt!
@@ -2304,6 +2632,7 @@ type MultiSourceLoan implements Loan & Node {
   """
   offer: Offer! @deprecated(reason: "Use offerIds to return loan offer ids instead.")
   offerIds: [String!]!
+  previousLoan: Loan
   principalAddress: Address!
   principalAmount: BigInt!
   protocolFee: BigInt!
@@ -2312,6 +2641,7 @@ type MultiSourceLoan implements Loan & Node {
   repaidActivity: LoanRepaid
   repayment: BigInt!
   repaymentTime: DateTime
+  replacementLoan: Loan
   sources: [Source!]!
   startLockDueDate: DateTime
   startTime: DateTime!
@@ -2341,6 +2671,7 @@ type MultiSourceLoanHistory implements Node {
   activityId: String!
   borrowerAddress: String!
   borrowerName: String
+  borrowerProfilePictureUrl: String
   currency: Currency!
   duration: BigInt!
   durationFromRenegotiationOrStart: BigInt!
@@ -2376,6 +2707,7 @@ type MultipleTraitOrder implements Event & Node & Order {
   isPrivate: Boolean!
   maker: Address!
   makerName: String
+  makerProfilePictureUrl: String
   marketPlace: String!
   marketPlaceAddress: Address!
   maxExecutions: Int!
@@ -2391,6 +2723,7 @@ type MultipleTraitOrder implements Event & Node & Order {
   stealth: Boolean!
   taker: Address!
   takerName: String
+  takerProfilePictureUrl: String
   timestamp: DateTime!
   traits: [Trait!]!
   updatedDate: DateTime!
@@ -2442,7 +2775,17 @@ type Mutation {
   Cancels the caller's trade orders that have `cancelsOffChain` without a transaction, and returns the ids of the rest with the calldata of their Seaport on-chain cancel.
   """
   cancelTradeOrders(orderIds: [Int64!]!): CancelTradeOrdersResult!
+
+  """
+  Finishes proving the caller's X account with the `code` and `state` X sent back. Errors TWITTER_VERIFICATION_EXPIRED when the sign-in is unknown or older than ten minutes, TWITTER_VERIFICATION_FAILED when X refuses it.
+  """
+  completeTwitterVerification(code: String!, state: String!): User!
   deleteProfilePicture(userId: Int!): User!
+
+  """
+  Removes the caller's proven X account from their profile.
+  """
+  disconnectTwitter: User!
   editUser(user: EditUserInput!): User!
 
   """
@@ -2459,6 +2802,11 @@ type Mutation {
   Follow multiple collections for user feed.
   """
   followCollections(collectionIds: [Int!]!): Void
+
+  """
+  Follow an edition from the wallet you are signed in with. Every wallet linked to yours then reads it as followed. Following it again is a no-op, and an unknown edition id fails with NOT_FOUND.
+  """
+  followEdition(editionId: Int!): Void
 
   """
   Follow an NFT from the wallet you are signed in with. Every wallet linked to yours then reads it as followed. Following it again is a no-op, and an unknown NFT id fails with NOT_FOUND.
@@ -2517,9 +2865,9 @@ type Mutation {
   """
   Hides a loan renegotiation offer.
   """
-  hideRenegotiation(contractAddress: Address, renegotiationId: String!): Renegotiation!
+  hideRenegotiation(contractAddress: Address = null, renegotiationId: String!): Renegotiation!
   linkWalletAddress(walletAddress: Address!): LinkedWallets!
-  markNotificationIdsAsRead(ids: [Int!], walletAddresses: [Address!] = null): Void
+  markNotificationIdsAsRead(ids: [Int!] = null, walletAddresses: [Address!] = null): Void
   markNotificationsAsRead(walletAddresses: [Address!] = null): Void
 
   """
@@ -2598,24 +2946,48 @@ type Mutation {
   """
   saveRenegotiationSignedOffer(
     fallbackOfferInput: SingleNFTSignedOfferInput = null
+    publication: LoanOfferPublicationInput = null
     signedRenegotiationInput: SignedRenegotiationOfferInput!
   ): Renegotiation!
 
   """
   This is the second step of the collection loan offer flow after generate_collection_offer_to_be_signed. It saves the signed offer. `duration` is re-validated against the allowed values (multiples of 30 days, or 5, 15 or 45 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active collection offers for the same (collection, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveCollectionOffersLimitReachedError. Refer to gondi-js examples for more details.
   """
-  saveSignedCollectionOffer(signedOfferInput: CollectionSignedOfferInput!): CollectionOffer!
+  saveSignedCollectionOffer(
+    publication: LoanOfferPublicationInput = null
+    signedOfferInput: CollectionSignedOfferInput!
+  ): CollectionOffer!
 
   """
   This is the second step of the single NFT loan offer flow after generate_single_nft_offer_to_be_signed. It saves the signed offer. `duration` is re-validated against the allowed values (multiples of 30 days, or 5, 15 or 45 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active single-NFT offers and renegotiations for the same (NFT, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveOffersLimitReachedError. Refer to gondi-js examples for more details.
   """
-  saveSignedSingleNftOffer(signedOfferInput: SingleNFTSignedOfferInput!): SingleNFTOffer!
+  saveSignedSingleNftOffer(
+    publication: LoanOfferPublicationInput = null
+    signedOfferInput: SingleNFTSignedOfferInput!
+  ): SingleNFTOffer!
 
   """
   This is the second step of the trait loan offer flow after generate_trait_offer_to_be_signed. It saves the signed offer, as long as its validator is still the one the traits produce: if the NFTs carrying them changed since the first step, it fails with INVALID_OFFER_VALIDATORS_ERROR and the offer has to be generated again. `duration` is re-validated against the allowed values (multiples of 30 days, or 5, 15 or 45 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active offers for the same (traits, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveTraitOffersLimitReachedError. Refer to gondi-js examples for more details.
   """
   saveSignedTraitOffer(signedOfferInput: TraitSignedOfferInput!): TraitOffer!
+
+  """
+  Override the watch-notification switch for one NFT your account watches, or pass null to clear the override so the NFT follows the switch again. An NFT it does not watch fails with NOT_FOUND; unwatching drops the override.
+  """
+  setNftWatchNotifications(enabled: Boolean = null, nftId: Int!): Void
+
+  """
+  Turn notification events on or off per channel, from the wallet you are signed in with. Every wallet linked to yours then reads the same choices. Returns the preferences now in force.
+  """
+  setNotificationPreferences(
+    preferences: [NotificationPreferenceInput!]!
+  ): [NotificationPreference!]!
   setReferral(referrerId: Int!): Void
+
+  """
+  Turn notifications about every watched NFT on or off, for every wallet of your account. An NFT's own override still wins.
+  """
+  setWatchNotifications(enabled: Boolean!): Void
 
   """
   Unhides a loan offer.
@@ -2633,8 +3005,13 @@ type Mutation {
   """
   Unhides a loan renegotiation offer.
   """
-  showRenegotiation(contractAddress: Address, renegotiationId: String!): Renegotiation!
+  showRenegotiation(contractAddress: Address = null, renegotiationId: String!): Renegotiation!
   signInWithEthereum(siweInput: SiweInput!): String!
+
+  """
+  Starts proving the caller's X account: returns the x.com page to send them to. X sends them back to the configured redirect URI with `code` and `state` for completeTwitterVerification.
+  """
+  startTwitterVerification: String!
 
   """
   Unfollow an artist from every wallet of your account, including follows made before those wallets were linked.
@@ -2645,6 +3022,11 @@ type Mutation {
   Unfollow a collection for user feed.
   """
   unfollowCollection(collectionId: Int!): Void
+
+  """
+  Unfollow an edition from every wallet of your account, including follows made before those wallets were linked.
+  """
+  unfollowEdition(editionId: Int!): Void
 
   """
   Unfollow an NFT from every wallet of your account, including follows made before those wallets were linked.
@@ -2717,6 +3099,7 @@ type NFT implements Node {
   ): NFTPriceSample
   owner: Address
   ownerName: String
+  ownerProfilePictureUrl: String
 
   """
   Deprecated.
@@ -2733,6 +3116,16 @@ type NFT implements Node {
   tokenId: BigInt!
   traits: [Trait!]!
   url: String
+
+  """
+  Estimated value; null when nothing in the market prices the item (no family floor or bid, no item bid, no sale).
+  """
+  valuation: NftValuation
+
+  """
+  Whether changes to this NFT notify the authenticated user: the NFT's own override when set, else the account's watch-notification switch. Null when anonymous or when the account does not watch it.
+  """
+  watchNotificationsEnabled: Boolean
   wrappedCount: [Int!]!
 
   "\n        All NFT IDs for the same token_id in all related collections (including itself,\n        naked and wrappers). Useful for finding analog NFTs across naked/wrapper\n        collections. Unrelated to the `wrap_nfts` and `wrapped_count` fields.\n        "
@@ -2855,6 +3248,12 @@ input NftOwnersFilterInput {
   withInWallet: Boolean = null
 }
 
+enum NftSearchField {
+  COLLECTION_NAME
+  NAME
+  TOKEN_ID
+}
+
 enum NftSortField {
   COLLECTION
   LAST_SALE_DATE
@@ -2906,6 +3305,42 @@ input NftTermsFilter {
   price: BigIntInterval = null
 }
 
+"""
+Estimated value of an NFT; the model is documented in pixel_backend/statistics/lib/nft_valuation.py.
+"""
+type NftValuation {
+  """
+  Family anchor in ETH before the item premium; null on the no-anchor route.
+  """
+  anchor: Float
+  basis: ValuationBasis!
+
+  """
+  0 to 1; how much market evidence backs the value.
+  """
+  confidence: Float!
+
+  """
+  When the item's evidence row was last refreshed; null without one.
+  """
+  evidenceTimestamp: DateTime
+
+  """
+  Collection liquidity, 0 to 1, weighting floor against bid.
+  """
+  liquidity: Float!
+
+  """
+  Item premium over the anchor; 1 when none.
+  """
+  multiplier: Float!
+
+  """
+  Estimated value in ETH.
+  """
+  value: Float!
+}
+
 input NftWithAsksConfigInput {
   currencyAddresses: [Address!] = null
   forTaker: Address = null
@@ -2927,6 +3362,7 @@ enum NftsSortField {
   OUTSTANDING_LOAN_DUE_DATE
   OWNED_FIRST
   PRICE
+  RANDOM
   RARITY_RANK
   STATUS
   TOKEN_ID
@@ -2937,6 +3373,11 @@ input NftsSortInput {
   field: NftsSortField!
   forTaker: Address = null
   order: Ordering!
+
+  """
+  Salt for RANDOM: the same seed gives the same order, so pages never overlap. Required by RANDOM, ignored by every other field.
+  """
+  seed: Int = null
 }
 
 interface Node {
@@ -2956,6 +3397,14 @@ interface Notification implements Node {
   user: User!
 }
 
+"""
+Where a notification reaches its user.
+"""
+enum NotificationChannel {
+  EMAIL
+  IN_APP
+}
+
 type NotificationConnection {
   edges: [NotificationEdge!]!
   pageInfo: PageInfo!
@@ -2965,6 +3414,53 @@ type NotificationConnection {
 type NotificationEdge {
   cursor: String!
   node: Notification!
+}
+
+"""
+What a user switches notifications on and off by, one channel at a time. A notification that is always delivered belongs to none.
+"""
+enum NotificationEvent {
+  AUCTION_ENDED
+  AUCTION_SETTLED
+  AUCTION_STARTED
+  BID_NEAR_LISTING
+  BUY_OFFER
+  COLLECTION_OFFER_FILLED
+  LOAN_DEFAULTED
+  LOAN_EXTENDED
+  LOAN_OFFER
+  LOAN_REFINANCED
+  LOAN_REPAID
+  NEW_FOLLOWER
+  OFFER_ACCEPTED
+  OFFER_FUNDING
+  OUTBID
+  PRIVATE_LISTING
+  REFINANCED_AWAY
+  RENEGOTIATION_OFFER
+  RENEGOTIATION_REQUEST
+  REPAYMENT_REMINDER
+  SALE_COMPLETED
+  TRADE_EXPIRING
+  TRADE_UPDATE
+}
+
+"""
+Whether one event reaches the viewer's account on one channel. Enabled unless a wallet of the account turned it off.
+"""
+type NotificationPreference {
+  channel: NotificationChannel!
+  enabled: Boolean!
+  event: NotificationEvent!
+}
+
+"""
+The signed-in user's choice for one event on one channel.
+"""
+input NotificationPreferenceInput {
+  channel: NotificationChannel!
+  enabled: Boolean!
+  event: NotificationEvent!
 }
 
 enum NotificationType {
@@ -2987,6 +3483,7 @@ enum NotificationType {
   OFFER_ACCEPTED_NOTIFICATION
   OUTBID_NOTIFICATION
   SET_NFT_NOTIFICATION
+  WATCHED_NFT_NOTIFICATION
 }
 
 interface Offer implements Event & Node {
@@ -2994,6 +3491,7 @@ interface Offer implements Event & Node {
   availablePrincipalAmount: BigInt!
   borrowerAddress: Address
   borrowerName: String
+  borrowerProfilePictureUrl: String
   capacity: BigInt!
   collateralAddress: Address
   collectionId: Int
@@ -3010,6 +3508,7 @@ interface Offer implements Event & Node {
   lenderAllowance: BigInt
   lenderAvailableBalance: BigInt
   lenderName: String
+  lenderProfilePictureUrl: String
   lenderRefinanceDisabled: Boolean!
   maxPrincipal: BigInt!
   maxSeniorRepayment: BigInt!
@@ -3116,6 +3615,26 @@ input OffersSortInput {
   principalOfInterest: BigInt = null
 }
 
+"""
+What holds an approval, which decides how it can be used.
+"""
+enum OperatorKind {
+  """
+  A contract whose source code is not published.
+  """
+  UNVERIFIED_CONTRACT
+
+  """
+  A contract with public source code that moves the NFTs as that code allows.
+  """
+  VERIFIED_CONTRACT
+
+  """
+  An account with no code: whoever holds its key can move the NFTs at any time.
+  """
+  WALLET
+}
+
 interface Order implements Event & Node {
   """
   Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone.
@@ -3135,6 +3654,7 @@ interface Order implements Event & Node {
   isPrivate: Boolean!
   maker: Address!
   makerName: String
+  makerProfilePictureUrl: String
   marketPlace: String!
   marketPlaceAddress: Address!
   maxExecutions: Int!
@@ -3150,6 +3670,7 @@ interface Order implements Event & Node {
   stealth: Boolean!
   taker: Address!
   takerName: String
+  takerProfilePictureUrl: String
   timestamp: DateTime!
   updatedDate: DateTime!
 }
@@ -3268,7 +3789,7 @@ type OutbidNotification implements Node & Notification {
 }
 
 type OutstandingLoanStatistics {
-  loansData(currencyAddress: Address): LoansData!
+  loansData(currencyAddress: Address = null): LoansData!
   outstandingLoanCount: Int!
   outstandingNftsCount: BigInt!
   outstandingPrincipal(currencyAddress: Address!): BigInt!
@@ -3324,7 +3845,20 @@ type Query {
   collectionMarketDepth(collectionIds: [Int!]!): CollectionMarketDepth!
 
   """
-  Hand-picked listings, in their curated order, each with the open offer that lends the most on it among those of at least 30 days at an effective APR of at most 25%. A pick shows only while it has a public ask in ETH or WETH on a supported marketplace and such an offer. `first` is capped at 6.
+  Collections the collection's recent buyers also bought, most shared buyers first: the most recent receivers of its sales, contracts left out, and the other collections they bought in the same window, from each buyer's most recent purchases. Its own wrap family and hidden collections are left out, a collection needs a minimum of shared buyers, and the ranking is cached for a while.
+  """
+  collectorsAlsoBought(
+    collectionId: Int!
+
+    """
+    Maximum collections; larger values are clamped.
+    """
+    first: Int! = 8
+  ): [CollectorsAlsoBought!]!
+  dealReadiness(dealId: Int64!): DealReadinessResult!
+
+  """
+  Featured listings in curated order: pinned NFTs, or the cheapest qualifying listing per approved collection when automatic selection is enabled. Each carries the open offer that lends the most on it among those of at least 30 days at an effective APR of at most 25%. A pick shows only while it has a public ask in ETH or WETH on a supported marketplace and such an offer. `first` is capped at 6.
   """
   featuredListings(
     """
@@ -3385,7 +3919,7 @@ type Query {
   """
   Get some general loans stats from a collection.
   """
-  getCollectionLoansData(collectionId: Int!, currencyAddress: Address): CollectionLoansData!
+  getCollectionLoansData(collectionId: Int!, currencyAddress: Address = null): CollectionLoansData!
   getCollectionOfferSteps(collectionId: Int!): OfferSteps!
   getCollectionsByContractAddress(contractAddress: Address!): [Collection!]!
   getCurrency(address: Address!): Currency
@@ -3510,9 +4044,53 @@ type Query {
   getWalletFollowStats(walletAddress: Address!): WalletFollowStats!
   getWalletHoldingsSummary(address: Address!): WalletHoldingsSummary!
   getWalletLendingSummary(address: Address!, role: WalletLendingRole!): WalletLendingSummary!
+
+  """
+  Purchases, sales, borrows and lends since fromTimestamp (all time when unset), in USD at current rates, plus a year of their daily counts. Only what crosses the wallets' boundary counts: a sale between two of the wallets is neither side, and a borrow or lend is valued at the principal lent across it. A loan counts once per side, dated and valued when principal first crossed the boundary (normally its origination, otherwise the refinance that first moved principal across it); later refinances and renegotiations add nothing. At most 10 wallets.
+  """
+  getWalletTradingSummary(addresses: [Address!]!, fromTimestamp: Int = null): WalletTradingSummary!
   globalSearch(searchTerm: String!): [GlobalSearchResult!]!
   globalSearchV2(searchTerm: String!): GlobalSearchV2Results!
   isUsernameAvailable(username: String!): Boolean!
+
+  """
+  Full-loan choices selected across all matching quotes before pagination. Supply group for inline additional choices.
+  """
+  itemLoanOfferBook(
+    after: String = null
+    contractAddresses: [Address!] = null
+    currencyAddress: Address!
+    duration: BigInt = null
+    first: Int! = 50
+    group: String = null
+    lenderAddress: Address = null
+    loanId: String = null
+    nftId: Int!
+    sortBy: OffersSortInput = null
+    viewerAddress: Address = null
+  ): ItemLoanOfferBook!
+
+  """
+  Live ApprovalForAll grants of the wallets on Ethereum, read from Etherscan and confirmed on-chain, highest exposed floor value first, plus the wallets whose history could not be read in full. At most 10 wallets.
+  """
+  listApprovalExposures(walletAddresses: [Address!]!): ApprovalExposures!
+
+  """
+  Artist 1/1 works and non-1/1 collection or edition groups, sorted and paged together.
+  """
+  listArtistCatalog(
+    after: String
+    aroundNftId: Int = null
+    artistId: Int!
+    first: Int! = 20
+
+    """
+    Group an edition's copies into one entry for the edition rather than into their collection.
+    """
+    groupEditions: Boolean! = false
+    itemTypes: [ItemType!] = null
+    sortBy: ArtistCatalogSortInput = null
+  ): ArtistCatalogEntryConnection!
 
   """
   Artists any wallet of your account follows, most recently followed first. An artist followed from two of your wallets appears once.
@@ -3530,7 +4108,17 @@ type Query {
     after: String
     artistId: Int!
     first: Int! = 20
+
+    """
+    Include explicitly identified custodian/omnibus addresses. Independent of account type; exclusion does not identify beneficial owners. Defaults to true for existing clients.
+    """
+    includeCustodians: Boolean! = true
     ownedAmount: RangeInput = null
+
+    """
+    Restrict counts, previews, acquisition dates and activity to selected artworks.
+    """
+    scope: ArtistHolderScopeInput = null
     searchTerm: String = null
     sortBy: [ArtistHolderSortInput!] = null
     walletAddresses: [Address!] = null
@@ -3580,6 +4168,11 @@ type Query {
     onlyLatest: Boolean! = false
     sortBy: [BidSortInput!] = null
   ): BidConnection!
+
+  """
+  The borrowers' open loans on Blur's Blend, from the Blend backfill. At most 20 borrowers.
+  """
+  listBlendLiens(borrowers: [Address!]!): [BlendLien!]!
 
   """
   List collections for feed.
@@ -3712,6 +4305,11 @@ type Query {
     statuses: [OrderStatusType!] = null
     walletAddresses: [Address!]!
   ): DealConnection!
+
+  """
+  Editions any wallet of your account follows, most recently followed first. An edition followed from two of your wallets appears once.
+  """
+  listEditionFollows(after: String, first: Int! = 20): EditionConnection!
 
   """
   List editions, filtered by collection, IDs, artists, tiers, or search term.
@@ -4044,6 +4642,11 @@ type Query {
     Filter by the owners of the NFTs. You can provide owners and exclude_owners to control the owners of the NFTs. with_in_wallet will include NFTS of the owners. with_in_loan will include NFTS on loan to the owners (as borrowers). with_in_stash will include NFTS in stashes of the owners. with_in_vault will include NFTS in vaults of the owners.
     """
     ownersFilter: NftOwnersFilterInput = null
+
+    """
+    Fields each word of search_term is matched against; an NFT matches when every word hits one of them. Omitted or empty keeps the default NFT name and token ID search. TOKEN_ID only matches words made of digits.
+    """
+    searchFields: [NftSearchField!] = null
     searchTerm: String = null
     slugs: [String!] = null
     sortBy: [NftsSortInput!] = null
@@ -4347,6 +4950,24 @@ type Query {
     ranking: LoanDealRanking!
   ): [LoanDeal!]!
   me: User
+
+  """
+  Every notification event on every channel it reaches, as the viewer's account has it. The most recent choice any of its linked wallets made is the one in force.
+  """
+  notificationPreferences: [NotificationPreference!]!
+
+  """
+  Evaluate an item quote before signing; publication rechecks under a transaction lock.
+  """
+  previewItemLoanOfferCompetition(
+    loanId: String = null
+    offerInput: SingleNFTOfferInput!
+    replacementIds: [String!] = null
+  ): LoanOfferCompetitionPreview!
+  previewRenegotiationCompetition(
+    renegotiationInput: RenegotiationOfferInput!
+    replacementIds: [String!] = null
+  ): LoanOfferCompetitionPreview!
 }
 
 input RangeInput {
@@ -4369,6 +4990,11 @@ input RefinanceTermsFilter {
   duration: Interval = null
   ethProfitLeft: Interval = null
   fee: Interval = null
+
+  """
+  Loans only: the loan's original principal over its NFT's highest bid, in basis points. A loan whose NFT has no bid has no LTV and is excluded whenever a bound is set.
+  """
+  ltvBps: Interval = null
   maxPrincipal: Interval = null
   netPrincipal: Interval = null
   principal: Interval = null
@@ -4389,9 +5015,14 @@ type Renegotiation implements Event & Node {
   feeAmount: BigInt!
   hidden: Boolean
   id: String!
+
+  """
+  Whether the renegotiation was a top up.
+  """
   isAddNewTranche: Boolean!
   lenderAddress: Address
   lenderName: String
+  lenderProfilePictureUrl: String
   loan: Loan!
   loanAddress: Address!
   loanId: BigInt!
@@ -4483,8 +5114,10 @@ type Sale implements Activity & Event & Node {
   price: BigInt!
   receiver: Address!
   receiverName: String
+  receiverProfilePictureUrl: String
   sender: Address!
   senderName: String
+  senderProfilePictureUrl: String
 
   """
   Every NFT transfer of the sold item, or of its naked or wrapper counterpart, in the sale's transaction, in log order, including the sale's own movement. On a GONDI settlement these are the escrow movements behind the sale.
@@ -4568,6 +5201,7 @@ type SellAndRepayOrder implements Event & Node & Order {
   loanId: String!
   maker: Address!
   makerName: String
+  makerProfilePictureUrl: String
   marketPlace: String!
   marketPlaceAddress: Address!
   maxExecutions: Int!
@@ -4586,6 +5220,7 @@ type SellAndRepayOrder implements Event & Node & Order {
   stealth: Boolean!
   taker: Address!
   takerName: String
+  takerProfilePictureUrl: String
   timestamp: DateTime!
   updatedDate: DateTime!
 }
@@ -4617,6 +5252,7 @@ type SetBidOrder implements Event & Node & Order {
   label: String
   maker: Address!
   makerName: String
+  makerProfilePictureUrl: String
   marketPlace: String!
   marketPlaceAddress: Address!
   maxExecutions: Int!
@@ -4637,6 +5273,7 @@ type SetBidOrder implements Event & Node & Order {
   stealth: Boolean!
   taker: Address!
   takerName: String
+  takerProfilePictureUrl: String
   timestamp: DateTime!
   updatedDate: DateTime!
 }
@@ -4646,6 +5283,7 @@ type SetOffer implements Event & Node & Offer {
   availablePrincipalAmount: BigInt!
   borrowerAddress: Address
   borrowerName: String
+  borrowerProfilePictureUrl: String
   capacity: BigInt!
   collateralAddress: Address
   collection: Collection!
@@ -4663,6 +5301,7 @@ type SetOffer implements Event & Node & Offer {
   lenderAllowance: BigInt
   lenderAvailableBalance: BigInt
   lenderName: String
+  lenderProfilePictureUrl: String
   lenderRefinanceDisabled: Boolean!
   maxPrincipal: BigInt!
   maxSeniorRepayment: BigInt!
@@ -4717,6 +5356,7 @@ type SingleNFTOffer implements Event & Node & Offer {
   availablePrincipalAmount: BigInt!
   borrowerAddress: Address
   borrowerName: String
+  borrowerProfilePictureUrl: String
   capacity: BigInt!
   collateralAddress: Address
   collectionId: Int
@@ -4733,6 +5373,7 @@ type SingleNFTOffer implements Event & Node & Offer {
   lenderAllowance: BigInt
   lenderAvailableBalance: BigInt
   lenderName: String
+  lenderProfilePictureUrl: String
   lenderRefinanceDisabled: Boolean!
   maxPrincipal: BigInt!
   maxSeniorRepayment: BigInt!
@@ -4757,6 +5398,8 @@ type SingleNFTOffer implements Event & Node & Offer {
   timestamp: DateTime!
   validators: [OfferValidator!]!
 }
+
+union SingleNFTOfferCollectionOffer = CollectionOffer | SingleNFTOffer
 
 union SingleNFTOfferCollectionOfferSetOfferTraitOfferRenegotiation =
   | CollectionOffer
@@ -4816,6 +5459,7 @@ type SingleNFTOrder implements Event & Node & Order {
   loanDealOffer: Offer
   maker: Address!
   makerName: String
+  makerProfilePictureUrl: String
   marketPlace: String!
   marketPlaceAddress: Address!
   maxExecutions: Int!
@@ -4833,6 +5477,7 @@ type SingleNFTOrder implements Event & Node & Order {
   stealth: Boolean!
   taker: Address!
   takerName: String
+  takerProfilePictureUrl: String
   timestamp: DateTime!
   updatedDate: DateTime!
 }
@@ -4902,6 +5547,7 @@ type Source implements Node {
   lenderAddress: String!
   lenderEaprBps: BigInt!
   lenderName: String
+  lenderProfilePictureUrl: String
   loan: MultiSourceLoan!
   loanId: String!
   loanIndex: Int
@@ -4929,6 +5575,7 @@ type SourceHistory implements Node {
   id: String!
   lenderAddress: String!
   lenderName: String
+  lenderProfilePictureUrl: String
   loanId: String!
   loanIndex: Int
   originationFee: BigInt!
@@ -5034,6 +5681,7 @@ type StealthMaskedOrder implements Event & Node & Order {
   itemType: ItemType
   maker: Address!
   makerName: String
+  makerProfilePictureUrl: String
   marketPlace: String!
   marketPlaceAddress: Address!
   maxExecutions: Int!
@@ -5050,6 +5698,7 @@ type StealthMaskedOrder implements Event & Node & Order {
   stealth: Boolean!
   taker: Address!
   takerName: String
+  takerProfilePictureUrl: String
   timestamp: DateTime!
   updatedDate: DateTime!
 }
@@ -5062,14 +5711,17 @@ type StealthRevealedGroup {
 
 type Subscription {
   """
-  Stream new activity-feed events. Filters are optional and additive; unset or empty values mean the unfiltered stream. Most argument names match `listEvents` so clients can pass their existing query variables (`traits`, `currencyAddresses`, `blockchains` and `priceUsd` are not supported yet). `marketplaces` follows the marketplace shown in the activity feed: sales and orders use their stored marketplace, transfers match none, and GONDI lending and trade events match `NATIVE`. The `nfts` filter also matches collection-scoped events (collection loan offers and collection/trait bids) through the NFTs' collections; trait bids therefore match at collection granularity, not per trait. `topEvents` keeps what `listEvents(topEvents: true)` lists and drops the event types it does not cover. `following` matches what `listEvents(following: true)` lists, read from the account's follows when the stream starts: a follow made while it runs applies once the client subscribes again. With nothing followed, or no signed-in account, the stream stays open and emits nothing.
+  Stream new activity-feed events. Filters are optional and additive; unset or empty values mean the unfiltered stream. Most argument names match `listEvents` so clients can pass their existing query variables (`traits` and `currencyAddresses` are not supported yet). `artists`, `blockchains` and `priceUsd` keep what `listEvents` would list with them; the `priceUsd` bound is converted at the USDC rate of when the stream starts. `marketplaces` follows the marketplace shown in the activity feed: sales and orders use their stored marketplace, transfers match none, and GONDI lending and trade events match `NATIVE`. The `nfts` filter also matches collection-scoped events (collection loan offers and collection/trait bids) through the NFTs' collections; trait bids therefore match at collection granularity, not per trait. Set and trait loan offers match when their signed NFT set includes one of the NFTs. `topEvents` keeps what `listEvents(topEvents: true)` lists and drops the event types it does not cover. `following` matches what `listEvents(following: true)` lists, read from the account's follows when the stream starts: a follow made while it runs applies once the client subscribes again. With nothing followed, or no signed-in account, the stream stays open and emits nothing.
   """
   activityUpdates(
+    artists: [Int!] = null
+    blockchains: [BlockchainEnum!] = null
     collections: [Int!] = null
     eventTypes: [EventType!] = null
     following: Boolean = null
     marketplaces: [MarketPlaceType!] = null
     nfts: [Int!] = null
+    priceUsd: Interval = null
     topEvents: Boolean = null
     users: [Address!] = null
   ): ActivityUpdate!
@@ -5096,6 +5748,11 @@ input TermsFilter {
   duration: Interval = null
   ethProfitLeft: Interval = null
   fee: Interval = null
+
+  """
+  Loans only: the loan's original principal over its NFT's highest bid, in basis points. A loan whose NFT has no bid has no LTV and is excluded whenever a bound is set.
+  """
+  ltvBps: Interval = null
   maxPrincipal: Interval = null
   netPrincipal: Interval = null
   principal: Interval = null
@@ -5228,6 +5885,7 @@ type TraitOffer implements Event & Node & Offer {
   availablePrincipalAmount: BigInt!
   borrowerAddress: Address
   borrowerName: String
+  borrowerProfilePictureUrl: String
   capacity: BigInt!
   collateralAddress: Address
   collection: Collection!
@@ -5245,6 +5903,7 @@ type TraitOffer implements Event & Node & Offer {
   lenderAllowance: BigInt
   lenderAvailableBalance: BigInt
   lenderName: String
+  lenderProfilePictureUrl: String
   lenderRefinanceDisabled: Boolean!
   maxPrincipal: BigInt!
   maxSeniorRepayment: BigInt!
@@ -5315,6 +5974,7 @@ type TraitOrder implements Event & Node & Order {
   isPrivate: Boolean!
   maker: Address!
   makerName: String
+  makerProfilePictureUrl: String
   marketPlace: String!
   marketPlaceAddress: Address!
   maxExecutions: Int!
@@ -5330,6 +5990,7 @@ type TraitOrder implements Event & Node & Order {
   stealth: Boolean!
   taker: Address!
   takerName: String
+  takerProfilePictureUrl: String
   timestamp: DateTime!
   trait: Trait!
   traitId: Int!
@@ -5466,8 +6127,10 @@ type Transfer implements Activity & Event & Node {
   nft: NFT!
   receiver: Address!
   receiverName: String
+  receiverProfilePictureUrl: String
   sender: Address!
   senderName: String
+  senderProfilePictureUrl: String
   timestamp: DateTime!
   txHash: Hash!
 }
@@ -5523,6 +6186,7 @@ type User implements Node {
   username: String
   usernameSuggestions: [String!]!
   walletAddress: Address!
+  watchNotificationsEnabled: Boolean!
 }
 
 type UserConnection {
@@ -5653,6 +6317,20 @@ type UserStatistics {
   ): [StatByCollection!]! @deprecated(reason: "Use get_sources_statistics_by_collection instead.")
 }
 
+"""
+The term that decided an NFT's estimated value.
+"""
+enum ValuationBasis {
+  ARTIST_SALES
+  EDITION_SALES
+  FLOOR_BID_BLEND
+  ITEM_BID
+  LAST_SALE
+  LISTING
+  SALE_HISTORY
+  TRAIT_FLOOR
+}
+
 enum VaultsFilter {
   EXCLUDE
   INCLUDE
@@ -5663,6 +6341,14 @@ enum VaultsFilter {
 Represents NULL values
 """
 scalar Void
+
+type WalletActivityDay {
+  borrows: Int!
+  day: Date!
+  lends: Int!
+  purchases: Int!
+  sales: Int!
+}
 
 """
 One wallet in a follow list, with the listed wallets on the other end of the follow.
@@ -5708,6 +6394,59 @@ type WalletLendingSummary {
   loanCount: Int!
   principalUsd: Float
   topCollections: [WalletLendingCollection!]!
+}
+
+type WalletTradingSummary {
+  borrowCount: Int!
+  borrowVolumeUsd: Float
+  buyCount: Int!
+  buyVolumeUsd: Float
+  dailyActivity: [WalletActivityDay!]!
+  lendCount: Int!
+  lendVolumeUsd: Float
+  sellCount: Int!
+  sellVolumeUsd: Float
+}
+
+enum WatchedNftEventKind {
+  ASK_CHANGED
+  DELISTED
+  LISTED
+  PRICE_DROPPED
+  SOLD
+  TRANSFERRED
+}
+
+"""
+A change on an NFT your account watches with notifications on. `amount` and `currency` are the listing or sale price, null for a transfer. ASK_CHANGED and DELISTED are recorded but never notified.
+"""
+type WatchedNftNotification implements Node & Notification {
+  amount: BigInt
+  createdOn: DateTime!
+  currency: Currency
+  id: String!
+  kind: WatchedNftEventKind!
+  nft: NFT!
+  notificationType: String!
+
+  """
+  The ask a price drop replaced, in `currency`.
+  """
+  previousAmount: BigInt
+  readOn: DateTime
+
+  """
+  The wallet a sale or transfer moved the item to.
+  """
+  receiver: Address
+  receiverName: String
+
+  """
+  The wallet the change came from: an ask's maker, a sale's seller or a transfer's sender.
+  """
+  sender: Address
+  senderName: String
+  user: User!
 }
 
 input WithAsksInput {

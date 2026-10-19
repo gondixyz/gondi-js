@@ -1,0 +1,21 @@
+query previewItemLoanOfferCompetition(
+  $offerInput: SingleNFTOfferInput!
+  $replacementIds: [String!]
+) {
+  preview: previewItemLoanOfferCompetition(
+    offerInput: $offerInput
+    replacementIds: $replacementIds
+  ) {
+    complete
+    qualifies
+    reason
+    replacementIds
+    references {
+      optionId
+      sourceIds
+      requiredNetPrincipal
+      maximumEaprNumerator
+      maximumEaprDenominator
+    }
+  }
+}

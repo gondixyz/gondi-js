@@ -19,3 +19,4 @@ export type * as Types from '@/model';
 export { FULFILLED, REJECTED } from '@/utils/promises';
 
 export type { BuyWithLoanInput, BuyWithLoanQuote } from '@/utils/buyWithLoan';
+export type { LoanOfferPublicationInput } from '@/generated/graphql';

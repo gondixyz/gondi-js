@@ -1,5 +1,8 @@
-mutation saveSingleNftOffer($offer: SingleNFTSignedOfferInput!) {
-  offer: saveSignedSingleNftOffer(signedOfferInput: $offer) {
+mutation saveSingleNftOffer(
+  $offer: SingleNFTSignedOfferInput!
+  $publication: LoanOfferPublicationInput
+) {
+  offer: saveSignedSingleNftOffer(signedOfferInput: $offer, publication: $publication) {
     id
     status
     nft {

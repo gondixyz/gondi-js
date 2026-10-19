@@ -44,8 +44,10 @@ import {
   BnplOrderInput,
   BulkNftOrdersInput,
   CollectionOrderInput,
+  CollectionSignedOfferInput,
   DealInput,
   GenerateCollectionOfferHashMutation,
+  LoanOfferPublicationInput,
   MarketplaceEnum,
   NftOrderInput,
   OffersSortField,
@@ -155,6 +157,33 @@ type Step =
 export type OnStepChange = (step: Step) => Promise<void>;
 
 export class Gondi {
+  private pendingSingleNftPublications = new Map<string, SingleNftSignedOfferInput>();
+  private pendingCollectionPublications = new Map<string, CollectionSignedOfferInput>();
+
+  private pendingRenegotiationPublications = new Map<
+    string,
+    { offer: Parameters<Api['saveRefinanceOffer']>[0]; fallback?: SingleNftSignedOfferInput }
+  >();
+
+  /** Retains bounded signed payloads while their API save is pending. */
+  private rememberPublication<Value>(publications: Map<string, Value>, key: string, value: Value) {
+    publications.set(key, value);
+    if (publications.size > 256) publications.delete(publications.keys().next().value as string);
+  }
+
+  /** Binds signed terms and contract; excludes unsigned predecessors. */
+  private publicationKey(
+    offer: object,
+    contract: Address,
+    publication?: LoanOfferPublicationInput,
+  ) {
+    return publication
+      ? JSON.stringify({ offer, contract }, (_, value) =>
+          typeof value === 'bigint' ? value.toString() : value,
+        )
+      : undefined;
+  }
+
   contracts: Contracts;
   wallet: Wallet;
   account: Account;
@@ -200,8 +229,17 @@ export class Gondi {
   static calculateProratedOriginationFee = calculateProratedOriginationFee;
   static buildSiweMessage = buildSiweMessage;
 
-  async makeSingleNftOffer(offer: model.SingleNftOfferInput) {
-    return await this._makeSingleNftOffer(offer);
+  /**
+   * Signs and saves an item offer.
+   * @param publication Optional unsigned admission metadata. Previews before signing
+   * and throws the backend rejection reason. Identical retries after failed saves
+   * reuse the signature; a successful save clears that pending signature.
+   */
+  async makeSingleNftOffer(
+    offer: model.SingleNftOfferInput,
+    publication?: LoanOfferPublicationInput,
+  ) {
+    return await this._makeSingleNftOffer(offer, undefined, false, publication);
   }
 
   /** @internal */
@@ -209,6 +247,7 @@ export class Gondi {
     offer: model.SingleNftOfferInput,
     mslContractAddress: Address,
     skipSave: true,
+    publication?: LoanOfferPublicationInput,
   ): Promise<SingleNftSignedOfferInput>;
 
   /** @internal */
@@ -216,6 +255,7 @@ export class Gondi {
     offer: model.SingleNftOfferInput,
     mslContractAddress?: Address,
     skipSave?: false,
+    publication?: LoanOfferPublicationInput,
   ): ReturnType<Api['saveSingleNftOffer']>;
 
   /** @internal */
@@ -223,9 +263,20 @@ export class Gondi {
     offer: model.SingleNftOfferInput,
     mslContractAddress?: Address,
     skipSave?: boolean,
+    publication?: LoanOfferPublicationInput,
   ) {
     const contract = this.contracts.Msl(mslContractAddress ?? this.getDefaults().Msl);
     const contractAddress = contract.address;
+
+    const publicationKey = this.publicationKey(offer, contractAddress, publication);
+    const pending = publicationKey
+      ? this.pendingSingleNftPublications.get(publicationKey)
+      : undefined;
+    if (pending && !skipSave && publicationKey) {
+      const saved = await this.apiClient.saveSingleNftOffer(pending, publication);
+      this.pendingSingleNftPublications.delete(publicationKey);
+      return saved;
+    }
 
     const offerInput = {
       ...offer,
@@ -238,6 +289,9 @@ export class Gondi {
       offerValidators: [], // This is ignored by the API but it was required in the mutation
     };
 
+    if (publication && !skipSave) {
+      await this.apiClient.previewSingleNftPublication(offerInput, publication);
+    }
     const response = await this.apiClient.generateSingleNftOfferHash({ offerInput });
 
     const { offerHash, offerId, validators, lenderAddress, signerAddress, borrowerAddress, fee } =
@@ -273,20 +327,57 @@ export class Gondi {
     };
 
     if (skipSave) return signedOffer;
-    return await this.apiClient.saveSingleNftOffer(signedOffer);
+    if (publicationKey)
+      this.rememberPublication(this.pendingSingleNftPublications, publicationKey, signedOffer);
+    const saved = await this.apiClient.saveSingleNftOffer(signedOffer, publication);
+    if (publicationKey) this.pendingSingleNftPublications.delete(publicationKey);
+    return saved;
   }
 
-  async makeCollectionOffer(offer: model.CollectionOfferInput) {
-    return await this._makeCollectionOffer(offer);
+  /**
+   * Signs and saves a collection offer without an item preview.
+   * @param publication Optional unsigned admission metadata. Identical retries after
+   * failed saves reuse the signature; a successful save clears that pending signature.
+   * The backend evaluates collection offers independently for each item.
+   */
+  async makeCollectionOffer(
+    offer: model.CollectionOfferInput,
+    publication?: LoanOfferPublicationInput,
+  ) {
+    return await this._makeCollectionOffer(offer, undefined, publication);
   }
 
   /** @internal */
-  async _makeCollectionOffer(offer: model.CollectionOfferInput, mslContractAddress?: Address) {
+  async _makeCollectionOffer(
+    offer: model.CollectionOfferInput,
+    mslContractAddress?: Address,
+    publication?: LoanOfferPublicationInput,
+  ) {
+    const contractAddress = this.contracts.Msl(
+      mslContractAddress ?? this.getDefaults().Msl,
+    ).address;
+
+    const publicationKey = this.publicationKey(offer, contractAddress, publication);
+    const pending = publicationKey
+      ? this.pendingCollectionPublications.get(publicationKey)
+      : undefined;
+    if (pending && publicationKey) {
+      const saved = await this.apiClient.saveCollectionOffer(pending, publication);
+      this.pendingCollectionPublications.delete(publicationKey);
+      return saved;
+    }
+
     return await this._makeOffer({
       offer,
       mslContractAddress,
       generateOfferHash: (offerInput) => this.apiClient.generateCollectionOfferHash({ offerInput }),
-      saveOffer: (signedOffer) => this.apiClient.saveCollectionOffer(signedOffer),
+      saveOffer: async (signedOffer) => {
+        if (publicationKey)
+          this.rememberPublication(this.pendingCollectionPublications, publicationKey, signedOffer);
+        const saved = await this.apiClient.saveCollectionOffer(signedOffer, publication);
+        if (publicationKey) this.pendingCollectionPublications.delete(publicationKey);
+        return saved;
+      },
     });
   }
 
@@ -793,7 +884,18 @@ export class Gondi {
     });
   }
 
-  async makeRefinanceOffer({ renegotiation, contractAddress, ...props }: MakeRefinanceOfferProps) {
+  /**
+   * Signs and saves a refinance offer, optionally with a matching fallback.
+   * @param props.publication Optional unsigned admission metadata. Previews before
+   * signing and throws the backend rejection reason. Identical retries after failed
+   * saves reuse both signatures; a successful save clears the pending payloads.
+   */
+  async makeRefinanceOffer({
+    renegotiation,
+    contractAddress,
+    publication,
+    ...props
+  }: MakeRefinanceOfferProps) {
     const { isV1, isV2 } = isLoanVersion(contractAddress, this.wallet.chain.id);
     if (props.skipSignature && props.withFallbackOffer) {
       throw new Error('skipSignature and withFallbackOffer cannot be true at the same time');
@@ -809,6 +911,26 @@ export class Gondi {
       targetPrincipal: renegotiation.targetPrincipal ?? [],
       trancheIndex: renegotiation.trancheIndex ?? [],
     };
+    const publicationKey = this.publicationKey(
+      { renegotiationInput, props },
+      contractAddress,
+      publication,
+    );
+    const pending = publicationKey
+      ? this.pendingRenegotiationPublications.get(publicationKey)
+      : undefined;
+    if (pending && publicationKey) {
+      const saved = await this.apiClient.saveRefinanceOffer(
+        pending.offer,
+        pending.fallback,
+        publication,
+      );
+      this.pendingRenegotiationPublications.delete(publicationKey);
+      return saved;
+    }
+    if (publication) {
+      await this.apiClient.previewRenegotiationPublication(renegotiationInput, publication);
+    }
     const response = await this.apiClient.generateRenegotiationOfferHash({
       renegotiationInput,
     });
@@ -864,10 +986,31 @@ export class Gondi {
         capacity: 0n,
       };
       const fallbackOffer = await this._makeSingleNftOffer(offerInput, contractAddress, true);
-      return await this.apiClient.saveRefinanceOffer(renegotiationOffer, fallbackOffer);
+      if (publicationKey)
+        this.rememberPublication(this.pendingRenegotiationPublications, publicationKey, {
+          offer: renegotiationOffer,
+          fallback: fallbackOffer,
+        });
+      const saved = await this.apiClient.saveRefinanceOffer(
+        renegotiationOffer,
+        fallbackOffer,
+        publication,
+      );
+      if (publicationKey) this.pendingRenegotiationPublications.delete(publicationKey);
+      return saved;
     }
 
-    return await this.apiClient.saveRefinanceOffer(renegotiationOffer);
+    if (publicationKey)
+      this.rememberPublication(this.pendingRenegotiationPublications, publicationKey, {
+        offer: renegotiationOffer,
+      });
+    const saved = await this.apiClient.saveRefinanceOffer(
+      renegotiationOffer,
+      undefined,
+      publication,
+    );
+    if (publicationKey) this.pendingRenegotiationPublications.delete(publicationKey);
+    return saved;
   }
 
   async cancelRefinanceOffer({ id, contractAddress }: { id: bigint; contractAddress: Address }) {
@@ -1783,6 +1926,7 @@ type OfferFromExecutionOffer = OptionalNullable<
 >;
 
 type MakeRefinanceOfferProps = {
+  publication?: LoanOfferPublicationInput;
   renegotiation: model.RenegotiationInput;
   contractAddress: Address;
 } & (
