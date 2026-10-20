@@ -134,18 +134,40 @@ interface GondiProps {
   skipFlaggedNftCheck?: boolean;
 }
 
+/** Fields every transaction step carries, whatever its status. */
+type TransactionStepBase = {
+  type: 'transaction';
+  to: Address;
+  functionNameOrSelector: string; // can be a function name or a function selector
+  /** Chain the wallet used to submit this transaction. */
+  chainId?: number;
+};
+
+/** A transaction step; narrowing on `status` tells which hashes it carries. */
+type TransactionStep = TransactionStepBase &
+  (
+    | { status: 'waiting' }
+    | {
+        status: 'broadcasted';
+        /** Hash the wallet broadcast. */
+        transactionHash: Hash;
+      }
+    | {
+        status: 'success';
+        /** Hash of the mined receipt: a replacement's when the provider reports one. */
+        transactionHash: Hash;
+        /** Hash the wallet broadcast; equals `transactionHash` unless it was replaced. */
+        originalTransactionHash: Hash;
+      }
+  );
+
 type Step =
   | {
       type: 'signature';
       primaryType: string;
       status: 'waiting' | 'success';
     }
-  | {
-      type: 'transaction';
-      status: 'waiting' | 'broadcasted' | 'success';
-      to: Address;
-      functionNameOrSelector: string; // can be a function name or a function selector
-    }
+  | TransactionStep
   | {
       type: 'api';
       status: 'waiting' | 'success';

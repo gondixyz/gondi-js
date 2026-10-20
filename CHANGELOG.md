@@ -1,14 +1,13 @@
 # New Features 0.46.0
 
-### Important
+## Important
 
----
-
-This document outlines the changes introduced in our codebase for version 0.46.0.
+This release adds `emitLoans` and transaction identity fields to step callbacks; existing methods and callbacks that read steps remain compatible. Code that builds a `broadcasted` or `success` transaction step by hand, such as a test fixture, now has to supply its hashes.
 
 ## Table of Contents
 
 - [emitLoans emits several loans in one transaction](#emitloans-emits-several-loans-in-one-transaction-0460)
+- [Transaction step identity](#transaction-step-identity)
 
 ---
 
@@ -35,6 +34,10 @@ const { loans } = await waitTxInBlock();
 ```
 
 ---
+
+## Transaction step identity
+
+**ENHANCEMENT:** Transaction `broadcasted` and `success` callbacks include `transactionHash`, `originalTransactionHash` (on receipt), and `chainId`. The transaction step type is split by `status`, so narrowing on it makes those hashes required rather than optional. The success callback uses the mined receipt hash, including a replacement when reported by the provider. The waiting callback has no transaction hash. Consumers can register a broadcast before receipt waiting completes without changing transaction submission or return values.
 
 # New Features 0.45.0
 
