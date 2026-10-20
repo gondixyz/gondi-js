@@ -1,14 +1,24 @@
 import { describe, expect, mock, test } from 'bun:test';
-import { zeroAddress } from 'viem';
+import {
+  ReplacementReason,
+  ReplacementReturnType,
+  WaitForTransactionReceiptParameters,
+  zeroAddress,
+} from 'viem';
 
 import { addStepCallback } from '@/addStepCallback';
 
 const TX_HASH = `0x${'ab'.repeat(32)}` as const;
+const REPLACEMENT_HASH = `0x${'cd'.repeat(32)}` as const;
 const CONTRACT = '0x0000000000000000000000000000000000000005';
 const CALLDATA = '0xa9059cbb';
 
 /** A wallet over stub clients whose mined receipt has the given status. */
-const setup = (status: 'success' | 'reverted') => {
+const setup = (
+  status: 'success' | 'reverted',
+  receiptHash: `0x${string}` = TX_HASH,
+  replacementReason?: ReplacementReason,
+) => {
   const onStepChange = mock(async () => undefined);
   const wallet = addStepCallback({
     wallet: {
@@ -21,12 +31,21 @@ const setup = (status: 'success' | 'reverted') => {
     } as unknown as Parameters<typeof addStepCallback>[0]['wallet'],
     onStepChange,
     publicClient: {
-      waitForTransactionReceipt: async () => ({ status, transactionHash: TX_HASH }),
+      waitForTransactionReceipt: async ({ onReplaced }: WaitForTransactionReceiptParameters) => {
+        const transactionReceipt = { status, transactionHash: receiptHash };
+        if (replacementReason) {
+          onReplaced?.({
+            reason: replacementReason,
+            transactionReceipt,
+          } as unknown as ReplacementReturnType);
+        }
+        return transactionReceipt;
+      },
     } as unknown as Parameters<typeof addStepCallback>[0]['publicClient'],
   });
   const reportedStatuses = () =>
     onStepChange.mock.calls.map((call) => (call as unknown as [{ status: string }])[0].status);
-  return { wallet, reportedStatuses };
+  return { wallet, reportedStatuses, onStepChange };
 };
 
 const writeContract = (wallet: ReturnType<typeof setup>['wallet']) =>
@@ -71,6 +90,59 @@ describe('addStepCallback', () => {
 
     await send(wallet);
 
+    expect(reportedStatuses()).toEqual(['waiting', 'broadcasted', 'success']);
+  });
+});
+
+test.each([
+  ['writeContract', writeContract],
+  ['sendTransaction', sendTransaction],
+])('%s exposes transaction identity at broadcast and confirmation', async (_name, send) => {
+  const { wallet, onStepChange } = setup('success');
+  await send(wallet);
+  expect(onStepChange.mock.calls).toEqual([
+    [expect.objectContaining({ status: 'waiting' })],
+    [expect.objectContaining({ status: 'broadcasted', transactionHash: TX_HASH, chainId: 1 })],
+    [expect.objectContaining({ status: 'success', transactionHash: TX_HASH, chainId: 1 })],
+  ]);
+});
+
+test.each([
+  ['writeContract', writeContract],
+  ['sendTransaction', sendTransaction],
+])('%s distinguishes a replacement receipt from the broadcast', async (_name, send) => {
+  const replacementHash = `0x${'cd'.repeat(32)}` as const;
+  const { wallet, onStepChange } = setup('success', replacementHash);
+  expect(await send(wallet)).toBe(TX_HASH);
+  expect(onStepChange.mock.calls.at(-1)).toEqual([
+    expect.objectContaining({
+      status: 'success',
+      transactionHash: replacementHash,
+      originalTransactionHash: TX_HASH,
+    }),
+  ]);
+});
+
+describe.each([
+  ['writeContract', writeContract],
+  ['sendTransaction', sendTransaction],
+])('%s', (_name, send) => {
+  test.each(['cancelled', 'replaced'] as const)(
+    'rejects with the reason and both hashes when the transaction is %s',
+    async (reason) => {
+      const { wallet, reportedStatuses } = setup('success', REPLACEMENT_HASH, reason);
+
+      const error = await send(wallet).catch((rejection: Error) => rejection);
+
+      expect(String(error)).toContain(`Transaction ${reason}: ${TX_HASH} by ${REPLACEMENT_HASH}`);
+      expect(reportedStatuses()).toEqual(['waiting', 'broadcasted']);
+    },
+  );
+
+  test('reports success for a repriced transaction', async () => {
+    const { wallet, reportedStatuses } = setup('success', REPLACEMENT_HASH, 'repriced');
+
+    expect(await send(wallet)).toBe(TX_HASH);
     expect(reportedStatuses()).toEqual(['waiting', 'broadcasted', 'success']);
   });
 });

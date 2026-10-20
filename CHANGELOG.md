@@ -1,14 +1,48 @@
-# New Features 0.46.0
+# New Features 0.47.0
 
-### Important
+## Important
+
+This release lets a lender make a refinance offer private. Existing calls are unchanged and their offers stay public.
+
+## Table of Contents
+
+- [NEW: Private refinance offers](#new-private-refinance-offers)
+
+## NEW: Private refinance offers
+
+**Description:**
+
+- NEW: `gondi.makeRefinanceOffer({ ..., private: true })` saves the offer so that only the loan's borrower and the lender see it. Other lenders cannot read its terms from the API.
+  - The API accepts it only for a principal worth at least $50k, and rejects the save otherwise.
+  - `private` and `withFallbackOffer` cannot be combined: the fallback would be a public offer with the same terms. The SDK throws before asking for a signature.
+  - The flag is not part of the signed struct, so the signature is unchanged.
+- The generated GraphQL types are regenerated from the production schema, which adds `Renegotiation.private`.
+
+**Reason:**
+
+Lenders were front-run on large refinance offers: others read the pending terms and posted a slightly better offer before the borrower accepted.
+
+**Migration Steps:**
+
+- None.
+
+```typescript
+await gondi.makeRefinanceOffer({ renegotiation, contractAddress, private: true });
+```
 
 ---
 
-This document outlines the changes introduced in our codebase for version 0.46.0.
+# New Features 0.46.0
+
+## Important
+
+This release adds `emitLoans` and transaction identity fields to step callbacks; existing methods and callbacks that read steps remain compatible. Code that builds a `broadcasted` or `success` transaction step by hand, such as a test fixture, now has to supply its hashes.
 
 ## Table of Contents
 
 - [emitLoans emits several loans in one transaction](#emitloans-emits-several-loans-in-one-transaction-0460)
+- [Transaction step identity](#transaction-step-identity)
+- [A cancelled or replaced transaction is a failure](#a-cancelled-or-replaced-transaction-is-a-failure)
 
 ---
 
@@ -35,6 +69,16 @@ const { loans } = await waitTxInBlock();
 ```
 
 ---
+
+## Transaction step identity
+
+**ENHANCEMENT:** Transaction `broadcasted` and `success` callbacks include `transactionHash`, `originalTransactionHash` (on receipt), and `chainId`. The transaction step type is split by `status`, so narrowing on it makes those hashes required rather than optional. The success callback uses the mined receipt hash, including a replacement when reported by the provider. The waiting callback has no transaction hash. Consumers can register a broadcast before receipt waiting completes without changing transaction submission or return values.
+
+---
+
+## A cancelled or replaced transaction is a failure
+
+**FIX:** When the wallet cancels or replaces a broadcast transaction with a different call, `writeContract` and `sendTransaction` on the step-callback wallet now reject with `Transaction cancelled: <hash> by <replacement hash>` (or `replaced`) and no `success` step is emitted, the same way a revert is handled. A cancellation mines a 0-value transfer to the sender, so its receipt succeeds and was previously reported as the call itself succeeding. A `repriced` replacement (the same call at a higher fee) still succeeds, with `transactionHash` set to the replacement's hash.
 
 # New Features 0.45.0
 

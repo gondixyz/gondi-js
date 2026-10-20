@@ -18,20 +18,14 @@ export type Scalars = {
   Float: number;
   Address: Address;
   BigInt: bigint;
-  /** Date (isoformat) */
   Date: any;
-  /** Date with time (isoformat) */
   DateTime: Date;
   Hash: Hash;
   Hex: Hex;
-  /** 64-bit integer as a JSON number. */
   Int64: any;
-  /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf). */
   JSON: object;
   Signature: Hex;
-  /** Represents a file upload. */
   Upload: any;
-  /** Represents NULL values */
   Void: any;
 };
 
@@ -213,7 +207,7 @@ export type ArtistEdge = {
   node: Artist;
 };
 
-/** A wallet that holds NFTs by an artist, reached through the NFT's own artist link or its collection's. Like collection holders, it is anchored on the wallet address so every on-chain holder is represented, and an NFT escrowed in a loan counts for its borrower. */
+/** A wallet holding NFTs linked to the artist through the NFT or collection. Loan-escrowed NFTs belong to their borrower. Counts distinct tokens, including one per ERC1155 token regardless of copies. */
 export type ArtistHolder = {
   __typename?: 'ArtistHolder';
   /** The holder's last 10 sales of NFTs by the artist, newest first; the holder bought when it is the receiver and sold when it is the sender. */
@@ -255,6 +249,44 @@ export type ArtistHolderEdge = {
   node: ArtistHolder;
 };
 
+/** Quantity metrics over eligible holders before wallet search. */
+export type ArtistHolderInsights = {
+  __typename?: 'ArtistHolderInsights';
+  buckets: Array<ArtistHolderSizeBucket>;
+  editions: Scalars['BigInt'];
+  /** Holders of every classified type present in the population; null when fewer than two classified types are present. */
+  everyTypeHolders?: Maybe<Scalars['Int']>;
+  holders: Scalars['Int'];
+  items: Scalars['BigInt'];
+  largestHolderAddress?: Maybe<Scalars['Address']>;
+  largestHolderItems: Scalars['BigInt'];
+  /** Fewest wallets holding strictly more than half the items, ordered by quantity. This is not a value-based concentration measure. */
+  majorityHolders: Scalars['Int'];
+  multiCollectionHolders: Scalars['Int'];
+  oneOfOnes: Scalars['BigInt'];
+  pfps: Scalars['BigInt'];
+  series: Scalars['BigInt'];
+  singletonHolders: Scalars['Int'];
+  topTenItems: Scalars['BigInt'];
+  unclassified: Scalars['BigInt'];
+};
+
+export type ArtistHolderPopulationConnection = {
+  __typename?: 'ArtistHolderPopulationConnection';
+  edges: Array<ArtistRankedHolderEdge>;
+  insights: ArtistHolderInsights;
+  pageInfo: PageInfo;
+  /** Eligible holder count before wallet text search. */
+  populationCount: Scalars['Int'];
+  totalCount: Scalars['Int'];
+  /** A wallet's eligible holdings and rank, even outside the loaded page or wallet search. Null if excluded or not a holder. */
+  wallet?: Maybe<ArtistRankedHolder>;
+};
+
+export type ArtistHolderPopulationConnectionWalletArgs = {
+  address: Scalars['Address'];
+};
+
 /** Union of collection, edition, NFT and item-type selections, intersected with the artist. Empty selections mean all artist artworks. */
 export type ArtistHolderScopeInput = {
   collectionIds?: InputMaybe<Array<Scalars['Int']>>;
@@ -262,6 +294,14 @@ export type ArtistHolderScopeInput = {
   itemTypes?: InputMaybe<Array<ItemType>>;
   matchAll?: Scalars['Boolean'];
   nftIds?: InputMaybe<Array<Scalars['Int']>>;
+};
+
+export type ArtistHolderSizeBucket = {
+  __typename?: 'ArtistHolderSizeBucket';
+  holders: Scalars['Int'];
+  items: Scalars['BigInt'];
+  maximum?: Maybe<Scalars['Int']>;
+  minimum: Scalars['Int'];
 };
 
 export enum ArtistHolderSortField {
@@ -279,6 +319,71 @@ export type ArtistHolderSortInput = {
   order: Ordering;
 };
 
+/** A wallet holding NFTs linked to the artist through the NFT or collection. Loan-escrowed NFTs belong to their borrower. Counts ERC1155 copies, including units attributed through held or borrowed vaults. */
+export type ArtistHolderV2 = {
+  __typename?: 'ArtistHolderV2';
+  /** The holder's last 10 sales of NFTs by the artist, newest first; the holder bought when it is the receiver and sold when it is the sender. */
+  activity: Array<Sale>;
+  address: Scalars['Address'];
+  /** Highest-ranked account type classified for this address on any chain: contract wallet, other contract, EIP-7702 delegated EOA, then EOA. Null when unclassified. */
+  addressType?: Maybe<AddressType>;
+  /** Held Edition items by the artist, counting ERC1155 copies. */
+  editionsOwned: Scalars['BigInt'];
+  /** When the wallet acquired the earliest NFT by the artist it still holds: the latest transfer or mint of that NFT to the wallet, which for an NFT escrowed in a loan or stash is the one before the escrow. The return from escrow when a loan is repaid or a stash unwrapped does not count. Null when no such transfer is recorded. */
+  firstAcquired?: Maybe<Scalars['DateTime']>;
+  id: Scalars['String'];
+  /** When the wallet acquired the latest NFT by the artist it still holds, by the same rule as firstAcquired. */
+  lastAcquired?: Maybe<Scalars['DateTime']>;
+  name?: Maybe<Scalars['String']>;
+  /** Held 1/1 items by the artist, counting ERC1155 copies. */
+  oneOfOnesOwned: Scalars['BigInt'];
+  /** Held items by the artist, counting ERC1155 copies, including unclassified items. */
+  ownedAmount: Scalars['BigInt'];
+  /** Held PFP items by the artist, counting ERC1155 copies. */
+  pfpsOwned: Scalars['BigInt'];
+  /** Up to 24 distinct held artworks, with copies grouped by NFT. */
+  previewItems: Array<ArtistHolding>;
+  profilePictureUrl?: Maybe<Scalars['String']>;
+  /** Held Series items by the artist, counting ERC1155 copies. */
+  seriesOwned: Scalars['BigInt'];
+  /** Held units with no classification; included in ownedAmount. */
+  unclassifiedOwned: Scalars['BigInt'];
+};
+
+export type ArtistHolderV2Connection = {
+  __typename?: 'ArtistHolderV2Connection';
+  edges: Array<ArtistHolderV2Edge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int'];
+};
+
+export type ArtistHolderV2Edge = {
+  __typename?: 'ArtistHolderV2Edge';
+  cursor: Scalars['String'];
+  node: ArtistHolderV2;
+};
+
+/** One held artwork with its copy quantity and canonical classification. */
+export type ArtistHolding = {
+  __typename?: 'ArtistHolding';
+  itemType?: Maybe<ItemType>;
+  nft: Nft;
+  quantity: Scalars['BigInt'];
+};
+
+export type ArtistHoldingConnection = {
+  __typename?: 'ArtistHoldingConnection';
+  edges: Array<ArtistHoldingEdge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int'];
+};
+
+export type ArtistHoldingEdge = {
+  __typename?: 'ArtistHoldingEdge';
+  cursor: Scalars['String'];
+  node: ArtistHolding;
+};
+
 /** An artist's sales over trailing windows and the debt of the active loans on their NFTs: principal plus the interest accrued up to now. Sales volume converts each sale to USD at the time of the sale; outstanding debt converts at current rates. */
 export type ArtistMarketStats = {
   __typename?: 'ArtistMarketStats';
@@ -290,6 +395,46 @@ export type ArtistMarketStats = {
   salesVolumeUsd7d: Scalars['Float'];
   salesVolumeUsd30d: Scalars['Float'];
   salesVolumeUsd365d: Scalars['Float'];
+};
+
+export type ArtistRankedHolder = {
+  __typename?: 'ArtistRankedHolder';
+  /** The holder's last 10 sales of NFTs by the artist, newest first; the holder bought when it is the receiver and sold when it is the sender. */
+  activity: Array<Sale>;
+  address: Scalars['Address'];
+  /** Highest-ranked account type classified for this address on any chain: contract wallet, other contract, EIP-7702 delegated EOA, then EOA. Null when unclassified. */
+  addressType?: Maybe<AddressType>;
+  /** Held Edition items by the artist, counting ERC1155 copies. */
+  editionsOwned: Scalars['BigInt'];
+  /** When the wallet acquired the earliest NFT by the artist it still holds: the latest transfer or mint of that NFT to the wallet, which for an NFT escrowed in a loan or stash is the one before the escrow. The return from escrow when a loan is repaid or a stash unwrapped does not count. Null when no such transfer is recorded. */
+  firstAcquired?: Maybe<Scalars['DateTime']>;
+  id: Scalars['String'];
+  /** When the wallet acquired the latest NFT by the artist it still holds, by the same rule as firstAcquired. */
+  lastAcquired?: Maybe<Scalars['DateTime']>;
+  name?: Maybe<Scalars['String']>;
+  /** Held 1/1 items by the artist, counting ERC1155 copies. */
+  oneOfOnesOwned: Scalars['BigInt'];
+  /** Held items by the artist, counting ERC1155 copies, including unclassified items. */
+  ownedAmount: Scalars['BigInt'];
+  /** Cursor preceding the 50-row population page containing this holder. Clear wallet text search before using it. */
+  pageAfter?: Maybe<Scalars['String']>;
+  /** Held PFP items by the artist, counting ERC1155 copies. */
+  pfpsOwned: Scalars['BigInt'];
+  /** One-based position in the eligible population under the selected sort, before wallet text search. Wallet address breaks remaining ties. */
+  populationRank: Scalars['Int'];
+  /** Up to 24 distinct held artworks, with copies grouped by NFT. */
+  previewItems: Array<ArtistHolding>;
+  profilePictureUrl?: Maybe<Scalars['String']>;
+  /** Held Series items by the artist, counting ERC1155 copies. */
+  seriesOwned: Scalars['BigInt'];
+  /** Held units with no classification; included in ownedAmount. */
+  unclassifiedOwned: Scalars['BigInt'];
+};
+
+export type ArtistRankedHolderEdge = {
+  __typename?: 'ArtistRankedHolderEdge';
+  cursor: Scalars['String'];
+  node: ArtistRankedHolder;
 };
 
 export enum ArtistSortField {
@@ -677,9 +822,11 @@ export type Collection = Node & {
   /** Whether the authenticated user follows this collection. */
   isFollowed: Scalars['Boolean'];
   itemType?: Maybe<ItemType>;
+  loansEnabled: Scalars['Boolean'];
   maxNetPrincipalOffer?: Maybe<CollectionOffer>;
   name?: Maybe<Scalars['String']>;
   nftsCount?: Maybe<Scalars['Int']>;
+  platformFees: Array<PlatformFee>;
   /** Up to 10 preview NFTs for the collection, optionally filtered by artist. When an artist_id is provided, only NFTs associated with that artist are returned; otherwise any NFTs from the collection, ordered by token_id. */
   previewNfts: Array<Nft>;
   rarityEnabled: Scalars['Boolean'];
@@ -725,6 +872,12 @@ export type CollectionArtistUniqueCollectorsCountArgs = {
 /** An NFT collection. */
 export type CollectionMaxNetPrincipalOfferArgs = {
   currencyAddress: Scalars['Address'];
+};
+
+/** An NFT collection. */
+export type CollectionPlatformFeesArgs = {
+  marketplace?: InputMaybe<MarketPlaceType>;
+  operation: PlatformFeeOperationType;
 };
 
 /** An NFT collection. */
@@ -1448,8 +1601,6 @@ export type DelegationEdge = {
 export type EditUserInput = {
   about?: InputMaybe<Scalars['String']>;
   mail?: InputMaybe<Scalars['String']>;
-  /** @deprecated Ignored: an X handle is set by signing in to X. */
-  twitterHandle?: InputMaybe<Scalars['String']>;
   url?: InputMaybe<Scalars['String']>;
   userId: Scalars['Int'];
   username?: InputMaybe<Scalars['String']>;
@@ -2846,14 +2997,14 @@ export type Mutation = {
   followNft?: Maybe<Scalars['Void']>;
   /** Follow a wallet from the wallet you are signed in with. Every wallet linked to yours then reads it as followed. A wallet of your own account cannot be followed. */
   followWallet?: Maybe<Scalars['Void']>;
-  /** This is the first step of the collection loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_signed_collection_offer. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 5, 15 or 45 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details. */
+  /** This is the first step of the collection loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_signed_collection_offer. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 3, 5, 7, 10, 15, 20 or 45 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details. */
   generateCollectionOfferToBeSigned: CollectionOffer;
-  /** This is the first step of the renegotiation loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_renegotiation_signed_offer. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 5, 15 or 45 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details. */
+  /** This is the first step of the renegotiation loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_renegotiation_signed_offer. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 3, 5, 7, 10, 15, 20 or 45 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details. */
   generateRenegotiationOfferToBeSigned: Renegotiation;
   generateSignInNonce: Scalars['String'];
-  /** This is the first step of the single NFT loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_signed_single_nft_offer. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 5, 15 or 45 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details. */
+  /** This is the first step of the single NFT loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_signed_single_nft_offer. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 3, 5, 7, 10, 15, 20 or 45 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details. */
   generateSingleNftOfferToBeSigned: SingleNftOffer;
-  /** This is the first step of the trait loan offer flow: an offer any NFT carrying every one of the traits can borrow against. This step populates some fields of the offer, among them the validator holding the token ids that carry them now. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 5, 15 or 45 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details. */
+  /** This is the first step of the trait loan offer flow: an offer any NFT carrying every one of the traits can borrow against. This step populates some fields of the offer, among them the validator holding the token ids that carry them now. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 3, 5, 7, 10, 15, 20 or 45 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details. */
   generateTraitOfferToBeSigned: TraitOffer;
   /** Hides all loan offers from a user for a given contract address.  */
   hideAllOffers: Array<Offer>;
@@ -2895,14 +3046,16 @@ export type Mutation = {
   /** Removes a loan top-up request. */
   removeTopUpRequest: TopUpRequest;
   resendVerificationEmail?: Maybe<Scalars['Void']>;
-  /** This is the second step of the renegotiation loan offer flow after generate_renegotiation_offer_to_be_signed. It saves the signed offer. `duration` is re-validated against the allowed values (multiples of 30 days, or 5, 15 or 45 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active single-NFT offers and renegotiations for the same (NFT, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveOffersLimitReachedError. The optional `fallback_offer_input` is subject to the same checks. Refer to gondi-js examples for more details. */
+  /** This is the second step of the renegotiation loan offer flow after generate_renegotiation_offer_to_be_signed. It saves the signed offer. `duration` is re-validated against the allowed values (multiples of 30 days, or 3, 5, 7, 10, 15, 20 or 45 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active single-NFT offers and renegotiations for the same (NFT, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveOffersLimitReachedError. The optional `fallback_offer_input` is subject to the same checks. Refer to gondi-js examples for more details. */
   saveRenegotiationSignedOffer: Renegotiation;
-  /** This is the second step of the collection loan offer flow after generate_collection_offer_to_be_signed. It saves the signed offer. `duration` is re-validated against the allowed values (multiples of 30 days, or 5, 15 or 45 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active collection offers for the same (collection, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveCollectionOffersLimitReachedError. Refer to gondi-js examples for more details. */
+  /** This is the second step of the collection loan offer flow after generate_collection_offer_to_be_signed. It saves the signed offer. `duration` is re-validated against the allowed values (multiples of 30 days, or 3, 5, 7, 10, 15, 20 or 45 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active collection offers for the same (collection, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveCollectionOffersLimitReachedError. Refer to gondi-js examples for more details. */
   saveSignedCollectionOffer: CollectionOffer;
-  /** This is the second step of the single NFT loan offer flow after generate_single_nft_offer_to_be_signed. It saves the signed offer. `duration` is re-validated against the allowed values (multiples of 30 days, or 5, 15 or 45 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active single-NFT offers and renegotiations for the same (NFT, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveOffersLimitReachedError. Refer to gondi-js examples for more details. */
+  /** This is the second step of the single NFT loan offer flow after generate_single_nft_offer_to_be_signed. It saves the signed offer. `duration` is re-validated against the allowed values (multiples of 30 days, or 3, 5, 7, 10, 15, 20 or 45 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active single-NFT offers and renegotiations for the same (NFT, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveOffersLimitReachedError. Refer to gondi-js examples for more details. */
   saveSignedSingleNftOffer: SingleNftOffer;
-  /** This is the second step of the trait loan offer flow after generate_trait_offer_to_be_signed. It saves the signed offer, as long as its validator is still the one the traits produce: if the NFTs carrying them changed since the first step, it fails with INVALID_OFFER_VALIDATORS_ERROR and the offer has to be generated again. `duration` is re-validated against the allowed values (multiples of 30 days, or 5, 15 or 45 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active offers for the same (traits, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveTraitOffersLimitReachedError. Refer to gondi-js examples for more details. */
+  /** This is the second step of the trait loan offer flow after generate_trait_offer_to_be_signed. It saves the signed offer, as long as its validator is still the one the traits produce: if the NFTs carrying them changed since the first step, it fails with INVALID_OFFER_VALIDATORS_ERROR and the offer has to be generated again. `duration` is re-validated against the allowed values (multiples of 30 days, or 3, 5, 7, 10, 15, 20 or 45 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active offers for the same (traits, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveTraitOffersLimitReachedError. Refer to gondi-js examples for more details. */
   saveSignedTraitOffer: TraitOffer;
+  /** Set the minimum offer amount, in US dollars, from the wallet you are signed in with; null or zero clears it. Every wallet linked to yours then reads the same amount. Returns the amount now in force. */
+  setMinimumOfferAmount?: Maybe<Scalars['Float']>;
   /** Override the watch-notification switch for one NFT your account watches, or pass null to clear the override so the NFT follows the switch again. An NFT it does not watch fails with NOT_FOUND; unwatching drops the override. */
   setNftWatchNotifications?: Maybe<Scalars['Void']>;
   /** Turn notification events on or off per channel, from the wallet you are signed in with. Every wallet linked to yours then reads the same choices. Returns the preferences now in force. */
@@ -3041,7 +3194,6 @@ export type MutationHideOffersArgs = {
 };
 
 export type MutationHideOrderArgs = {
-  orderId?: InputMaybe<Scalars['Int']>;
   orderIdInt64?: InputMaybe<Scalars['Int64']>;
 };
 
@@ -3147,6 +3299,10 @@ export type MutationSaveSignedTraitOfferArgs = {
   signedOfferInput: TraitSignedOfferInput;
 };
 
+export type MutationSetMinimumOfferAmountArgs = {
+  amount?: InputMaybe<Scalars['Float']>;
+};
+
 export type MutationSetNftWatchNotificationsArgs = {
   enabled?: InputMaybe<Scalars['Boolean']>;
   nftId: Scalars['Int'];
@@ -3170,7 +3326,6 @@ export type MutationShowOfferArgs = {
 };
 
 export type MutationShowOrderArgs = {
-  orderId?: InputMaybe<Scalars['Int']>;
   orderIdInt64?: InputMaybe<Scalars['Int64']>;
 };
 
@@ -4121,8 +4276,14 @@ export type Query = {
   listArtistCatalog: ArtistCatalogEntryConnection;
   /** Artists any wallet of your account follows, most recently followed first. An artist followed from two of your wallets appears once. */
   listArtistFollows: ArtistConnection;
+  /** The holder's artworks in preview order, scoped exactly as listArtistHoldersV2. totalCount counts grouped artworks; each entry carries its copy quantity. */
+  listArtistHolderItems: ArtistHoldingConnection;
+  /** Artist holder population with stable ranks, personal position and lazy quantity insights. Wallet search only narrows rows. */
+  listArtistHolderPopulation: ArtistHolderPopulationConnection;
   /** Wallets holding NFTs by the artist, one row per wallet with its owned amount, 1/1s owned, and first and last acquisition. By default, sorted by 1/1s owned, then counts in collections ordered by the stronger of recent sales and current public top bids, then wallet address. */
   listArtistHolders: ArtistHolderConnection;
+  /** Quantity-based artist holders. ERC1155 copies count individually; previews group each held artwork. Default ranking preserves 1/1 priority. */
+  listArtistHoldersV2: ArtistHolderV2Connection;
   /** List artists/creators, optionally filtered by type. */
   listArtists: ArtistConnection;
   listAuctions: AuctionConnection;
@@ -4202,6 +4363,8 @@ export type Query = {
   /** Listings a GONDI loan can buy, each with the open offer that lends the most on it, ranked by the largest loan or the highest loan-to-value. Highest LTV includes at most three per collection or wrap family, depending on grouping; Largest Loan has no collection cap. `first` is capped at 50. */
   loanDeals: Array<LoanDeal>;
   me?: Maybe<User>;
+  /** The viewer's account's minimum offer amount, in US dollars: loan and buy offers on its items worth less notify it on no channel. Null when there is none. */
+  minimumOfferAmount?: Maybe<Scalars['Float']>;
   /** Every notification event on every channel it reaches, as the viewer's account has it. The most recent choice any of its linked wallets made is the one in force. */
   notificationPreferences: Array<NotificationPreference>;
   /** Evaluate an item quote before signing; publication rechecks under a transaction lock. */
@@ -4358,7 +4521,6 @@ export type QueryGetNftBySlugAndTokenIdArgs = {
 /** Query for the lending module */
 export type QueryGetOrderCancelCalldataArgs = {
   model?: InputMaybe<OrderModel>;
-  orderId?: InputMaybe<Scalars['Int']>;
   orderIdInt64?: InputMaybe<Scalars['Int64']>;
 };
 
@@ -4366,7 +4528,6 @@ export type QueryGetOrderCancelCalldataArgs = {
 export type QueryGetOrderSaleCalldataArgs = {
   model?: InputMaybe<OrderModel>;
   nftId?: InputMaybe<Scalars['Int']>;
-  orderId?: InputMaybe<Scalars['Int']>;
   orderIdInt64?: InputMaybe<Scalars['Int64']>;
   taker?: InputMaybe<Scalars['Address']>;
 };
@@ -4374,7 +4535,6 @@ export type QueryGetOrderSaleCalldataArgs = {
 /** Query for the lending module */
 export type QueryGetOutstandingDebtArgs = {
   borrowers: Array<Scalars['Address']>;
-  currencyAddress?: InputMaybe<Scalars['Address']>;
   currencyAddresses?: InputMaybe<Array<Scalars['Address']>>;
 };
 
@@ -4524,11 +4684,51 @@ export type QueryListArtistFollowsArgs = {
 };
 
 /** Query for the lending module */
+export type QueryListArtistHolderItemsArgs = {
+  after?: InputMaybe<Scalars['String']>;
+  artistId: Scalars['Int'];
+  first?: Scalars['Int'];
+  scope?: InputMaybe<ArtistHolderScopeInput>;
+  wallet: Scalars['Address'];
+};
+
+/** Query for the lending module */
+export type QueryListArtistHolderPopulationArgs = {
+  addressTypes?: InputMaybe<Array<AddressType>>;
+  after?: InputMaybe<Scalars['String']>;
+  artistId: Scalars['Int'];
+  first?: Scalars['Int'];
+  hasItemType?: InputMaybe<ItemType>;
+  hideArtistAndBurnWallets?: Scalars['Boolean'];
+  includeCustodians?: Scalars['Boolean'];
+  ownedAmount?: InputMaybe<RangeInput>;
+  scope?: InputMaybe<ArtistHolderScopeInput>;
+  searchTerm?: InputMaybe<Scalars['String']>;
+  sortBy?: InputMaybe<Array<ArtistHolderSortInput>>;
+};
+
+/** Query for the lending module */
 export type QueryListArtistHoldersArgs = {
   addressTypes?: InputMaybe<Array<AddressType>>;
   after?: InputMaybe<Scalars['String']>;
   artistId: Scalars['Int'];
   first?: Scalars['Int'];
+  includeCustodians?: Scalars['Boolean'];
+  ownedAmount?: InputMaybe<RangeInput>;
+  scope?: InputMaybe<ArtistHolderScopeInput>;
+  searchTerm?: InputMaybe<Scalars['String']>;
+  sortBy?: InputMaybe<Array<ArtistHolderSortInput>>;
+  walletAddresses?: InputMaybe<Array<Scalars['Address']>>;
+};
+
+/** Query for the lending module */
+export type QueryListArtistHoldersV2Args = {
+  addressTypes?: InputMaybe<Array<AddressType>>;
+  after?: InputMaybe<Scalars['String']>;
+  artistId: Scalars['Int'];
+  first?: Scalars['Int'];
+  hasItemType?: InputMaybe<ItemType>;
+  hideArtistAndBurnWallets?: Scalars['Boolean'];
   includeCustodians?: Scalars['Boolean'];
   ownedAmount?: InputMaybe<RangeInput>;
   scope?: InputMaybe<ArtistHolderScopeInput>;
@@ -4563,9 +4763,7 @@ export type QueryListBidsArgs = {
   after?: InputMaybe<Scalars['String']>;
   auctionId?: InputMaybe<Scalars['String']>;
   auctionStatuses?: InputMaybe<Array<AuctionStatus>>;
-  bidder?: InputMaybe<Scalars['String']>;
   bidders?: InputMaybe<Array<Scalars['String']>>;
-  currencyAddress?: InputMaybe<Scalars['Address']>;
   currencyAddresses?: InputMaybe<Array<Scalars['Address']>>;
   first?: InputMaybe<Scalars['Int']>;
   onlyLatest?: Scalars['Boolean'];
@@ -4614,7 +4812,6 @@ export type QueryListCollectionTraitKeyOptionsArgs = {
 /** Query for the lending module */
 export type QueryListCollectionTraitTypesArgs = {
   after?: InputMaybe<Scalars['String']>;
-  collectionId?: InputMaybe<Scalars['Int']>;
   collectionIds?: InputMaybe<Array<Scalars['Int']>>;
   first?: Scalars['Int'];
   valueType?: InputMaybe<TraitValueType>;
@@ -4623,7 +4820,6 @@ export type QueryListCollectionTraitTypesArgs = {
 /** Query for the lending module */
 export type QueryListCollectionTraitValuesArgs = {
   after?: InputMaybe<Scalars['String']>;
-  collectionId?: InputMaybe<Scalars['Int']>;
   collectionIds?: InputMaybe<Array<Scalars['Int']>>;
   first?: Scalars['Int'];
   higherTraitOffersOnly?: Scalars['Boolean'];
@@ -4744,7 +4940,6 @@ export type QueryListListingsArgs = {
   after?: InputMaybe<Scalars['String']>;
   blockchains?: InputMaybe<Array<BlockchainEnum>>;
   collectionIds?: InputMaybe<Array<Scalars['Int']>>;
-  currencyAddress?: InputMaybe<Scalars['Address']>;
   currencyAddresses?: InputMaybe<Array<Scalars['Address']>>;
   editionIds?: InputMaybe<Array<Scalars['Int']>>;
   excludeSlugs?: InputMaybe<Array<Scalars['String']>>;
@@ -4764,7 +4959,6 @@ export type QueryListListingsForSaleArgs = {
   currencyAddress?: InputMaybe<Scalars['Address']>;
   first?: InputMaybe<Scalars['Int']>;
   forTaker?: InputMaybe<Scalars['Address']>;
-  hidden?: InputMaybe<Scalars['Boolean']>;
   maker?: InputMaybe<Scalars['Address']>;
   nftId?: InputMaybe<Scalars['Int']>;
   sortBy?: InputMaybe<Array<OrderSortInput>>;
@@ -4803,14 +4997,11 @@ export type QueryListLoanEventsArgs = {
 export type QueryListLoansArgs = {
   after?: InputMaybe<Scalars['String']>;
   blockchains?: InputMaybe<Array<BlockchainEnum>>;
-  borrowerAddress?: InputMaybe<Scalars['String']>;
   borrowers?: InputMaybe<Array<Scalars['String']>>;
   collections?: InputMaybe<Array<Scalars['Int']>>;
   contractAddresses?: InputMaybe<Array<Scalars['Address']>>;
-  currencyAddress?: InputMaybe<Scalars['Address']>;
   currencyAddresses?: InputMaybe<Array<Scalars['Address']>>;
   excludeAddresses?: InputMaybe<Array<Scalars['Address']>>;
-  excludeOwn?: InputMaybe<Scalars['Boolean']>;
   excludeSlugs?: InputMaybe<Array<Scalars['String']>>;
   first?: Scalars['Int'];
   hideEndLocked?: InputMaybe<Scalars['Boolean']>;
@@ -4826,8 +5017,6 @@ export type QueryListLoansArgs = {
   statuses?: InputMaybe<Array<LoanStatusType>>;
   terms?: InputMaybe<TermsFilter>;
   traits?: InputMaybe<Array<Scalars['Int']>>;
-  withRenegRequestOnly?: Scalars['Boolean'];
-  withTopUpRequestOnly?: Scalars['Boolean'];
 };
 
 /** Query for the lending module */
@@ -4854,14 +5043,11 @@ export type QueryListNftOffersAndRenegotiationsArgs = {
   after?: InputMaybe<Scalars['String']>;
   blockchains?: InputMaybe<Array<BlockchainEnum>>;
   collections?: InputMaybe<Array<Scalars['Int']>>;
-  contractAddress?: InputMaybe<Scalars['Address']>;
   contractAddresses?: InputMaybe<Array<Scalars['Address']>>;
-  currencyAddress?: InputMaybe<Scalars['Address']>;
   currencyAddresses?: InputMaybe<Array<Scalars['Address']>>;
   first?: InputMaybe<Scalars['Int']>;
   hidden?: InputMaybe<Scalars['Boolean']>;
   isAddNewTranche?: InputMaybe<Scalars['Boolean']>;
-  lenderAddress?: InputMaybe<Scalars['String']>;
   lenders?: InputMaybe<Array<Scalars['String']>>;
   loanId?: InputMaybe<Scalars['String']>;
   nfts?: InputMaybe<Array<Scalars['Int']>>;
@@ -4957,14 +5143,12 @@ export type QueryListOffersArgs = {
   blockchains?: InputMaybe<Array<BlockchainEnum>>;
   borrowerAddress?: InputMaybe<Scalars['String']>;
   collections?: InputMaybe<Array<Scalars['Int']>>;
-  contractAddress?: InputMaybe<Scalars['Address']>;
   contractAddresses?: InputMaybe<Array<Scalars['Address']>>;
   currencyAddress?: InputMaybe<Scalars['Address']>;
   editionIds?: InputMaybe<Array<Scalars['Int']>>;
   excludeLenders?: InputMaybe<Array<Scalars['Address']>>;
   first?: InputMaybe<Scalars['Int']>;
   hidden?: InputMaybe<Scalars['Boolean']>;
-  lenderAddress?: InputMaybe<Scalars['String']>;
   lenders?: InputMaybe<Array<Scalars['String']>>;
   nfts?: InputMaybe<Array<Scalars['Int']>>;
   onlyCollectionOffers?: InputMaybe<Scalars['Boolean']>;
@@ -4989,7 +5173,6 @@ export type QueryListOrdersArgs = {
   marketplaceIds?: InputMaybe<Array<Scalars['String']>>;
   marketplaces?: InputMaybe<Array<MarketPlaceType>>;
   nftId?: InputMaybe<Scalars['Int']>;
-  nftIds?: InputMaybe<Array<Scalars['Int']>>;
   onlyInvalid?: InputMaybe<Scalars['Boolean']>;
   orderType?: InputMaybe<OrderType>;
   sortBy?: InputMaybe<Array<OrderSortInput>>;
@@ -5017,7 +5200,6 @@ export type QueryListOrdersV2Args = {
   marketplaceIds?: InputMaybe<Array<Scalars['String']>>;
   marketplaces?: InputMaybe<Array<MarketPlaceType>>;
   matchMode?: OrderMatchMode;
-  nft?: InputMaybe<OrderForNft>;
   nfts?: InputMaybe<Array<OrderForNft>>;
   onlyInvalid?: InputMaybe<Scalars['Boolean']>;
   orderTypes?: InputMaybe<Array<CollectionOrderType>>;
@@ -5085,23 +5267,19 @@ export type QueryListSourcesArgs = {
   blockchains?: InputMaybe<Array<BlockchainEnum>>;
   collections?: InputMaybe<Array<Scalars['Int']>>;
   contractAddresses?: InputMaybe<Array<Scalars['Address']>>;
-  currencyAddress?: InputMaybe<Scalars['Address']>;
   currencyAddresses?: InputMaybe<Array<Scalars['Address']>>;
   excludeAddresses?: InputMaybe<Array<Scalars['Address']>>;
-  excludeOwn?: InputMaybe<Scalars['Boolean']>;
   excludeSlugs?: InputMaybe<Array<Scalars['String']>>;
   first?: Scalars['Int'];
   hideEndLocked?: InputMaybe<Scalars['Boolean']>;
   hideLocked?: InputMaybe<Scalars['Boolean']>;
   includeLost?: InputMaybe<Scalars['Boolean']>;
-  lenderAddress?: InputMaybe<Scalars['String']>;
   lenders?: InputMaybe<Array<Scalars['String']>>;
   loanPrincipal?: InputMaybe<Interval>;
   slugs?: InputMaybe<Array<Scalars['String']>>;
   sortBy?: InputMaybe<Array<SourceSortInput>>;
   statuses?: InputMaybe<Array<LoanStatusType>>;
   terms?: InputMaybe<TermsFilter>;
-  withdrawalQueues?: InputMaybe<Array<Scalars['Int']>>;
 };
 
 /** Query for the lending module */
@@ -5202,6 +5380,8 @@ export type Renegotiation = Event &
     nft: Nft;
     offerHash?: Maybe<Scalars['Hash']>;
     principalAmount: Scalars['BigInt'];
+    /** Whether only the loan's borrower and the lender see it. */
+    private: Scalars['Boolean'];
     renegotiationId: Scalars['BigInt'];
     repayment: Scalars['BigInt'];
     requiresLiquidation: Scalars['Boolean'];
@@ -5533,6 +5713,8 @@ export type SignedRenegotiationOfferInput = {
   loanId: Scalars['String'];
   offerHash: Scalars['Hash'];
   principalAmount: Scalars['BigInt'];
+  /** Only the loan's borrower and the lender see the offer. Allowed only for a principal worth at least the private minimum in USD. */
+  private?: Scalars['Boolean'];
   renegotiationId: Scalars['BigInt'];
   requiresLiquidation?: InputMaybe<Scalars['Boolean']>;
   signature: Scalars['Signature'];
@@ -8327,6 +8509,149 @@ export type ArtistHolderEdgeFieldPolicy = {
   cursor?: FieldPolicy<any> | FieldReadFunction<any>;
   node?: FieldPolicy<any> | FieldReadFunction<any>;
 };
+export type ArtistHolderInsightsKeySpecifier = (
+  | 'buckets'
+  | 'editions'
+  | 'everyTypeHolders'
+  | 'holders'
+  | 'items'
+  | 'largestHolderAddress'
+  | 'largestHolderItems'
+  | 'majorityHolders'
+  | 'multiCollectionHolders'
+  | 'oneOfOnes'
+  | 'pfps'
+  | 'series'
+  | 'singletonHolders'
+  | 'topTenItems'
+  | 'unclassified'
+  | ArtistHolderInsightsKeySpecifier
+)[];
+export type ArtistHolderInsightsFieldPolicy = {
+  buckets?: FieldPolicy<any> | FieldReadFunction<any>;
+  editions?: FieldPolicy<any> | FieldReadFunction<any>;
+  everyTypeHolders?: FieldPolicy<any> | FieldReadFunction<any>;
+  holders?: FieldPolicy<any> | FieldReadFunction<any>;
+  items?: FieldPolicy<any> | FieldReadFunction<any>;
+  largestHolderAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  largestHolderItems?: FieldPolicy<any> | FieldReadFunction<any>;
+  majorityHolders?: FieldPolicy<any> | FieldReadFunction<any>;
+  multiCollectionHolders?: FieldPolicy<any> | FieldReadFunction<any>;
+  oneOfOnes?: FieldPolicy<any> | FieldReadFunction<any>;
+  pfps?: FieldPolicy<any> | FieldReadFunction<any>;
+  series?: FieldPolicy<any> | FieldReadFunction<any>;
+  singletonHolders?: FieldPolicy<any> | FieldReadFunction<any>;
+  topTenItems?: FieldPolicy<any> | FieldReadFunction<any>;
+  unclassified?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type ArtistHolderPopulationConnectionKeySpecifier = (
+  | 'edges'
+  | 'insights'
+  | 'pageInfo'
+  | 'populationCount'
+  | 'totalCount'
+  | 'wallet'
+  | ArtistHolderPopulationConnectionKeySpecifier
+)[];
+export type ArtistHolderPopulationConnectionFieldPolicy = {
+  edges?: FieldPolicy<any> | FieldReadFunction<any>;
+  insights?: FieldPolicy<any> | FieldReadFunction<any>;
+  pageInfo?: FieldPolicy<any> | FieldReadFunction<any>;
+  populationCount?: FieldPolicy<any> | FieldReadFunction<any>;
+  totalCount?: FieldPolicy<any> | FieldReadFunction<any>;
+  wallet?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type ArtistHolderSizeBucketKeySpecifier = (
+  | 'holders'
+  | 'items'
+  | 'maximum'
+  | 'minimum'
+  | ArtistHolderSizeBucketKeySpecifier
+)[];
+export type ArtistHolderSizeBucketFieldPolicy = {
+  holders?: FieldPolicy<any> | FieldReadFunction<any>;
+  items?: FieldPolicy<any> | FieldReadFunction<any>;
+  maximum?: FieldPolicy<any> | FieldReadFunction<any>;
+  minimum?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type ArtistHolderV2KeySpecifier = (
+  | 'activity'
+  | 'address'
+  | 'addressType'
+  | 'editionsOwned'
+  | 'firstAcquired'
+  | 'id'
+  | 'lastAcquired'
+  | 'name'
+  | 'oneOfOnesOwned'
+  | 'ownedAmount'
+  | 'pfpsOwned'
+  | 'previewItems'
+  | 'profilePictureUrl'
+  | 'seriesOwned'
+  | 'unclassifiedOwned'
+  | ArtistHolderV2KeySpecifier
+)[];
+export type ArtistHolderV2FieldPolicy = {
+  activity?: FieldPolicy<any> | FieldReadFunction<any>;
+  address?: FieldPolicy<any> | FieldReadFunction<any>;
+  addressType?: FieldPolicy<any> | FieldReadFunction<any>;
+  editionsOwned?: FieldPolicy<any> | FieldReadFunction<any>;
+  firstAcquired?: FieldPolicy<any> | FieldReadFunction<any>;
+  id?: FieldPolicy<any> | FieldReadFunction<any>;
+  lastAcquired?: FieldPolicy<any> | FieldReadFunction<any>;
+  name?: FieldPolicy<any> | FieldReadFunction<any>;
+  oneOfOnesOwned?: FieldPolicy<any> | FieldReadFunction<any>;
+  ownedAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  pfpsOwned?: FieldPolicy<any> | FieldReadFunction<any>;
+  previewItems?: FieldPolicy<any> | FieldReadFunction<any>;
+  profilePictureUrl?: FieldPolicy<any> | FieldReadFunction<any>;
+  seriesOwned?: FieldPolicy<any> | FieldReadFunction<any>;
+  unclassifiedOwned?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type ArtistHolderV2ConnectionKeySpecifier = (
+  | 'edges'
+  | 'pageInfo'
+  | 'totalCount'
+  | ArtistHolderV2ConnectionKeySpecifier
+)[];
+export type ArtistHolderV2ConnectionFieldPolicy = {
+  edges?: FieldPolicy<any> | FieldReadFunction<any>;
+  pageInfo?: FieldPolicy<any> | FieldReadFunction<any>;
+  totalCount?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type ArtistHolderV2EdgeKeySpecifier = ('cursor' | 'node' | ArtistHolderV2EdgeKeySpecifier)[];
+export type ArtistHolderV2EdgeFieldPolicy = {
+  cursor?: FieldPolicy<any> | FieldReadFunction<any>;
+  node?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type ArtistHoldingKeySpecifier = (
+  | 'itemType'
+  | 'nft'
+  | 'quantity'
+  | ArtistHoldingKeySpecifier
+)[];
+export type ArtistHoldingFieldPolicy = {
+  itemType?: FieldPolicy<any> | FieldReadFunction<any>;
+  nft?: FieldPolicy<any> | FieldReadFunction<any>;
+  quantity?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type ArtistHoldingConnectionKeySpecifier = (
+  | 'edges'
+  | 'pageInfo'
+  | 'totalCount'
+  | ArtistHoldingConnectionKeySpecifier
+)[];
+export type ArtistHoldingConnectionFieldPolicy = {
+  edges?: FieldPolicy<any> | FieldReadFunction<any>;
+  pageInfo?: FieldPolicy<any> | FieldReadFunction<any>;
+  totalCount?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type ArtistHoldingEdgeKeySpecifier = ('cursor' | 'node' | ArtistHoldingEdgeKeySpecifier)[];
+export type ArtistHoldingEdgeFieldPolicy = {
+  cursor?: FieldPolicy<any> | FieldReadFunction<any>;
+  node?: FieldPolicy<any> | FieldReadFunction<any>;
+};
 export type ArtistMarketStatsKeySpecifier = (
   | 'activeLoansCount'
   | 'outstandingDebtUsd'
@@ -8347,6 +8672,54 @@ export type ArtistMarketStatsFieldPolicy = {
   salesVolumeUsd7d?: FieldPolicy<any> | FieldReadFunction<any>;
   salesVolumeUsd30d?: FieldPolicy<any> | FieldReadFunction<any>;
   salesVolumeUsd365d?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type ArtistRankedHolderKeySpecifier = (
+  | 'activity'
+  | 'address'
+  | 'addressType'
+  | 'editionsOwned'
+  | 'firstAcquired'
+  | 'id'
+  | 'lastAcquired'
+  | 'name'
+  | 'oneOfOnesOwned'
+  | 'ownedAmount'
+  | 'pageAfter'
+  | 'pfpsOwned'
+  | 'populationRank'
+  | 'previewItems'
+  | 'profilePictureUrl'
+  | 'seriesOwned'
+  | 'unclassifiedOwned'
+  | ArtistRankedHolderKeySpecifier
+)[];
+export type ArtistRankedHolderFieldPolicy = {
+  activity?: FieldPolicy<any> | FieldReadFunction<any>;
+  address?: FieldPolicy<any> | FieldReadFunction<any>;
+  addressType?: FieldPolicy<any> | FieldReadFunction<any>;
+  editionsOwned?: FieldPolicy<any> | FieldReadFunction<any>;
+  firstAcquired?: FieldPolicy<any> | FieldReadFunction<any>;
+  id?: FieldPolicy<any> | FieldReadFunction<any>;
+  lastAcquired?: FieldPolicy<any> | FieldReadFunction<any>;
+  name?: FieldPolicy<any> | FieldReadFunction<any>;
+  oneOfOnesOwned?: FieldPolicy<any> | FieldReadFunction<any>;
+  ownedAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  pageAfter?: FieldPolicy<any> | FieldReadFunction<any>;
+  pfpsOwned?: FieldPolicy<any> | FieldReadFunction<any>;
+  populationRank?: FieldPolicy<any> | FieldReadFunction<any>;
+  previewItems?: FieldPolicy<any> | FieldReadFunction<any>;
+  profilePictureUrl?: FieldPolicy<any> | FieldReadFunction<any>;
+  seriesOwned?: FieldPolicy<any> | FieldReadFunction<any>;
+  unclassifiedOwned?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type ArtistRankedHolderEdgeKeySpecifier = (
+  | 'cursor'
+  | 'node'
+  | ArtistRankedHolderEdgeKeySpecifier
+)[];
+export type ArtistRankedHolderEdgeFieldPolicy = {
+  cursor?: FieldPolicy<any> | FieldReadFunction<any>;
+  node?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type AskCancelledNotificationKeySpecifier = (
   | 'createdOn'
@@ -8779,9 +9152,11 @@ export type CollectionKeySpecifier = (
   | 'imageId'
   | 'isFollowed'
   | 'itemType'
+  | 'loansEnabled'
   | 'maxNetPrincipalOffer'
   | 'name'
   | 'nftsCount'
+  | 'platformFees'
   | 'previewNfts'
   | 'rarityEnabled'
   | 'royalties'
@@ -8822,9 +9197,11 @@ export type CollectionFieldPolicy = {
   imageId?: FieldPolicy<any> | FieldReadFunction<any>;
   isFollowed?: FieldPolicy<any> | FieldReadFunction<any>;
   itemType?: FieldPolicy<any> | FieldReadFunction<any>;
+  loansEnabled?: FieldPolicy<any> | FieldReadFunction<any>;
   maxNetPrincipalOffer?: FieldPolicy<any> | FieldReadFunction<any>;
   name?: FieldPolicy<any> | FieldReadFunction<any>;
   nftsCount?: FieldPolicy<any> | FieldReadFunction<any>;
+  platformFees?: FieldPolicy<any> | FieldReadFunction<any>;
   previewNfts?: FieldPolicy<any> | FieldReadFunction<any>;
   rarityEnabled?: FieldPolicy<any> | FieldReadFunction<any>;
   royalties?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -11203,6 +11580,7 @@ export type MutationKeySpecifier = (
   | 'saveSignedCollectionOffer'
   | 'saveSignedSingleNftOffer'
   | 'saveSignedTraitOffer'
+  | 'setMinimumOfferAmount'
   | 'setNftWatchNotifications'
   | 'setNotificationPreferences'
   | 'setReferral'
@@ -11270,6 +11648,7 @@ export type MutationFieldPolicy = {
   saveSignedCollectionOffer?: FieldPolicy<any> | FieldReadFunction<any>;
   saveSignedSingleNftOffer?: FieldPolicy<any> | FieldReadFunction<any>;
   saveSignedTraitOffer?: FieldPolicy<any> | FieldReadFunction<any>;
+  setMinimumOfferAmount?: FieldPolicy<any> | FieldReadFunction<any>;
   setNftWatchNotifications?: FieldPolicy<any> | FieldReadFunction<any>;
   setNotificationPreferences?: FieldPolicy<any> | FieldReadFunction<any>;
   setReferral?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -12020,7 +12399,10 @@ export type QueryKeySpecifier = (
   | 'listApprovalExposures'
   | 'listArtistCatalog'
   | 'listArtistFollows'
+  | 'listArtistHolderItems'
+  | 'listArtistHolderPopulation'
   | 'listArtistHolders'
+  | 'listArtistHoldersV2'
   | 'listArtists'
   | 'listAuctions'
   | 'listBids'
@@ -12069,6 +12451,7 @@ export type QueryKeySpecifier = (
   | 'loanDealCollections'
   | 'loanDeals'
   | 'me'
+  | 'minimumOfferAmount'
   | 'notificationPreferences'
   | 'previewItemLoanOfferCompetition'
   | 'previewRenegotiationCompetition'
@@ -12131,7 +12514,10 @@ export type QueryFieldPolicy = {
   listApprovalExposures?: FieldPolicy<any> | FieldReadFunction<any>;
   listArtistCatalog?: FieldPolicy<any> | FieldReadFunction<any>;
   listArtistFollows?: FieldPolicy<any> | FieldReadFunction<any>;
+  listArtistHolderItems?: FieldPolicy<any> | FieldReadFunction<any>;
+  listArtistHolderPopulation?: FieldPolicy<any> | FieldReadFunction<any>;
   listArtistHolders?: FieldPolicy<any> | FieldReadFunction<any>;
+  listArtistHoldersV2?: FieldPolicy<any> | FieldReadFunction<any>;
   listArtists?: FieldPolicy<any> | FieldReadFunction<any>;
   listAuctions?: FieldPolicy<any> | FieldReadFunction<any>;
   listBids?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -12180,6 +12566,7 @@ export type QueryFieldPolicy = {
   loanDealCollections?: FieldPolicy<any> | FieldReadFunction<any>;
   loanDeals?: FieldPolicy<any> | FieldReadFunction<any>;
   me?: FieldPolicy<any> | FieldReadFunction<any>;
+  minimumOfferAmount?: FieldPolicy<any> | FieldReadFunction<any>;
   notificationPreferences?: FieldPolicy<any> | FieldReadFunction<any>;
   previewItemLoanOfferCompetition?: FieldPolicy<any> | FieldReadFunction<any>;
   previewRenegotiationCompetition?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -12218,6 +12605,7 @@ export type RenegotiationKeySpecifier = (
   | 'nft'
   | 'offerHash'
   | 'principalAmount'
+  | 'private'
   | 'renegotiationId'
   | 'repayment'
   | 'requiresLiquidation'
@@ -12249,6 +12637,7 @@ export type RenegotiationFieldPolicy = {
   nft?: FieldPolicy<any> | FieldReadFunction<any>;
   offerHash?: FieldPolicy<any> | FieldReadFunction<any>;
   principalAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  private?: FieldPolicy<any> | FieldReadFunction<any>;
   renegotiationId?: FieldPolicy<any> | FieldReadFunction<any>;
   repayment?: FieldPolicy<any> | FieldReadFunction<any>;
   requiresLiquidation?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -13988,12 +14377,83 @@ export type StrictTypedTypePolicies = {
       | (() => undefined | ArtistHolderEdgeKeySpecifier);
     fields?: ArtistHolderEdgeFieldPolicy;
   };
+  ArtistHolderInsights?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | ArtistHolderInsightsKeySpecifier
+      | (() => undefined | ArtistHolderInsightsKeySpecifier);
+    fields?: ArtistHolderInsightsFieldPolicy;
+  };
+  ArtistHolderPopulationConnection?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | ArtistHolderPopulationConnectionKeySpecifier
+      | (() => undefined | ArtistHolderPopulationConnectionKeySpecifier);
+    fields?: ArtistHolderPopulationConnectionFieldPolicy;
+  };
+  ArtistHolderSizeBucket?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | ArtistHolderSizeBucketKeySpecifier
+      | (() => undefined | ArtistHolderSizeBucketKeySpecifier);
+    fields?: ArtistHolderSizeBucketFieldPolicy;
+  };
+  ArtistHolderV2?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?: false | ArtistHolderV2KeySpecifier | (() => undefined | ArtistHolderV2KeySpecifier);
+    fields?: ArtistHolderV2FieldPolicy;
+  };
+  ArtistHolderV2Connection?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | ArtistHolderV2ConnectionKeySpecifier
+      | (() => undefined | ArtistHolderV2ConnectionKeySpecifier);
+    fields?: ArtistHolderV2ConnectionFieldPolicy;
+  };
+  ArtistHolderV2Edge?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | ArtistHolderV2EdgeKeySpecifier
+      | (() => undefined | ArtistHolderV2EdgeKeySpecifier);
+    fields?: ArtistHolderV2EdgeFieldPolicy;
+  };
+  ArtistHolding?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?: false | ArtistHoldingKeySpecifier | (() => undefined | ArtistHoldingKeySpecifier);
+    fields?: ArtistHoldingFieldPolicy;
+  };
+  ArtistHoldingConnection?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | ArtistHoldingConnectionKeySpecifier
+      | (() => undefined | ArtistHoldingConnectionKeySpecifier);
+    fields?: ArtistHoldingConnectionFieldPolicy;
+  };
+  ArtistHoldingEdge?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | ArtistHoldingEdgeKeySpecifier
+      | (() => undefined | ArtistHoldingEdgeKeySpecifier);
+    fields?: ArtistHoldingEdgeFieldPolicy;
+  };
   ArtistMarketStats?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?:
       | false
       | ArtistMarketStatsKeySpecifier
       | (() => undefined | ArtistMarketStatsKeySpecifier);
     fields?: ArtistMarketStatsFieldPolicy;
+  };
+  ArtistRankedHolder?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | ArtistRankedHolderKeySpecifier
+      | (() => undefined | ArtistRankedHolderKeySpecifier);
+    fields?: ArtistRankedHolderFieldPolicy;
+  };
+  ArtistRankedHolderEdge?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | ArtistRankedHolderEdgeKeySpecifier
+      | (() => undefined | ArtistRankedHolderEdgeKeySpecifier);
+    fields?: ArtistRankedHolderEdgeFieldPolicy;
   };
   AskCancelledNotification?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?:

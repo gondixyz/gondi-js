@@ -134,18 +134,40 @@ interface GondiProps {
   skipFlaggedNftCheck?: boolean;
 }
 
+/** Fields every transaction step carries, whatever its status. */
+type TransactionStepBase = {
+  type: 'transaction';
+  to: Address;
+  functionNameOrSelector: string; // can be a function name or a function selector
+  /** Chain the wallet used to submit this transaction. */
+  chainId?: number;
+};
+
+/** A transaction step; narrowing on `status` tells which hashes it carries. */
+type TransactionStep = TransactionStepBase &
+  (
+    | { status: 'waiting' }
+    | {
+        status: 'broadcasted';
+        /** Hash the wallet broadcast. */
+        transactionHash: Hash;
+      }
+    | {
+        status: 'success';
+        /** Hash of the mined receipt: a replacement's when the provider reports one. */
+        transactionHash: Hash;
+        /** Hash the wallet broadcast; equals `transactionHash` unless it was replaced. */
+        originalTransactionHash: Hash;
+      }
+  );
+
 type Step =
   | {
       type: 'signature';
       primaryType: string;
       status: 'waiting' | 'success';
     }
-  | {
-      type: 'transaction';
-      status: 'waiting' | 'broadcasted' | 'success';
-      to: Address;
-      functionNameOrSelector: string; // can be a function name or a function selector
-    }
+  | TransactionStep
   | {
       type: 'api';
       status: 'waiting' | 'success';
@@ -889,6 +911,10 @@ export class Gondi {
    * @param props.publication Optional unsigned admission metadata. Previews before
    * signing and throws the backend rejection reason. Identical retries after failed
    * saves reuse both signatures; a successful save clears the pending payloads.
+   * @param props.private Shows the offer only to the loan's borrower and to the lender.
+   * The API accepts it only for a principal worth at least the private minimum in USD
+   * ($50k), and never together with `withFallbackOffer`, whose fallback would publish
+   * the same terms. It is not part of the signed struct.
    */
   async makeRefinanceOffer({
     renegotiation,
@@ -902,6 +928,9 @@ export class Gondi {
     }
     if (props.withFallbackOffer && (isV1 || isV2)) {
       throw new Error('Unsupported contract address for withFallbackOffer argument');
+    }
+    if (props.private && props.withFallbackOffer) {
+      throw new Error('private and withFallbackOffer cannot be true at the same time');
     }
 
     const renegotiationInput = {
@@ -964,6 +993,7 @@ export class Gondi {
       signature,
       offerHash: offerHash ?? zeroHash,
       renegotiationId,
+      private: props.private ?? false,
     };
 
     if (props.withFallbackOffer) {
@@ -1967,6 +1997,7 @@ type MakeRefinanceOfferProps = {
       principalAddress?: never;
       nftId?: never;
       maxSeniorRepayment?: never;
+      private?: boolean;
     }
   | {
       skipSignature: true;
@@ -1974,6 +2005,7 @@ type MakeRefinanceOfferProps = {
       principalAddress?: never;
       nftId?: never;
       maxSeniorRepayment?: never;
+      private?: boolean;
     }
   | {
       skipSignature?: never;
@@ -1981,6 +2013,7 @@ type MakeRefinanceOfferProps = {
       principalAddress: Address;
       nftId: number;
       maxSeniorRepayment?: bigint;
+      private?: never;
     }
 );
 

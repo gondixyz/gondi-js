@@ -1,4 +1,11 @@
-import { Address, createPublicClient, createTransport, PublicClient } from 'viem';
+import {
+  Address,
+  createPublicClient,
+  createTransport,
+  Hash,
+  PublicClient,
+  ReplacementReason,
+} from 'viem';
 
 import { Wallet } from '@/clients/contracts';
 import { type OnStepChange } from '@/gondi';
@@ -47,22 +54,64 @@ export const addStepCallback = (props: {
     });
   };
 
-  const sendPendingTransactionStep = (to: Address, functionNameOrSelector: string) => {
+  const sendPendingTransactionStep = (
+    to: Address,
+    functionNameOrSelector: string,
+    transactionHash: Hash,
+  ) => {
     return onStepChange({
       type: 'transaction',
       status: 'broadcasted',
+      transactionHash,
+      chainId: wallet.chain?.id,
       to,
       functionNameOrSelector,
     });
   };
 
-  const sendSuccessTransactionStep = (to: Address, functionNameOrSelector: string) => {
+  const sendSuccessTransactionStep = (
+    to: Address,
+    functionNameOrSelector: string,
+    transactionHash: Hash,
+    originalTransactionHash: Hash,
+  ) => {
     return onStepChange({
       type: 'transaction',
       status: 'success',
+      transactionHash,
+      originalTransactionHash,
+      chainId: wallet.chain?.id,
       to,
       functionNameOrSelector,
     });
+  };
+
+  /**
+   * Waits for the receipt of a broadcast transaction and throws unless it mined
+   * the call that was sent: a revert, or a replacement by a different call.
+   *
+   * IMPLEMENTATION NOTE: when the wallet replaces a pending transaction, viem's
+   * `waitForTransactionReceipt` resolves with the replacement's receipt and
+   * reports why only through `onReplaced`, whose `reason` is `repriced` (same
+   * call at a higher fee), `cancelled` (a 0-value transfer to the sender with
+   * the same nonce) or `replaced` (any other transaction)
+   * (https://viem.sh/docs/actions/public/waitForTransactionReceipt#onreplaced-optional).
+   * A cancellation mines a successful receipt, so its status alone reads as success.
+   */
+  const waitForSentCallReceipt = async (transactionHash: Hash) => {
+    let replacementReason: ReplacementReason | undefined;
+    const receipt = await bcClient.waitForTransactionReceipt({
+      hash: transactionHash,
+      onReplaced: ({ reason }) => {
+        replacementReason = reason;
+      },
+    });
+    if (replacementReason === 'cancelled' || replacementReason === 'replaced') {
+      throw new Error(
+        `Transaction ${replacementReason}: ${transactionHash} by ${receipt.transactionHash}`,
+      );
+    }
+    return assertTransactionSucceeded(receipt);
   };
 
   const signTypedData: Wallet['signTypedData'] = async (typedData) => {
@@ -77,9 +126,9 @@ export const addStepCallback = (props: {
     const { address: to, functionName } = params;
     await sendWaitingTransactionStep(to, functionName);
     const txHash = await originalWriteContract(params);
-    await sendPendingTransactionStep(to, functionName);
-    assertTransactionSucceeded(await bcClient.waitForTransactionReceipt({ hash: txHash }));
-    await sendSuccessTransactionStep(to, functionName);
+    await sendPendingTransactionStep(to, functionName, txHash);
+    const receipt = await waitForSentCallReceipt(txHash);
+    await sendSuccessTransactionStep(to, functionName, receipt.transactionHash, txHash);
     return txHash;
   };
 
@@ -89,9 +138,9 @@ export const addStepCallback = (props: {
     const selector = data.slice(0, 10);
     await sendWaitingTransactionStep(to, selector);
     const txHash = await originalSendTransaction(params);
-    await sendPendingTransactionStep(to, selector);
-    assertTransactionSucceeded(await bcClient.waitForTransactionReceipt({ hash: txHash }));
-    await sendSuccessTransactionStep(to, selector);
+    await sendPendingTransactionStep(to, selector, txHash);
+    const receipt = await waitForSentCallReceipt(txHash);
+    await sendSuccessTransactionStep(to, selector, receipt.transactionHash, txHash);
     return txHash;
   };
 
