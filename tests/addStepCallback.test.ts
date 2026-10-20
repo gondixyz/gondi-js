@@ -8,7 +8,7 @@ const CONTRACT = '0x0000000000000000000000000000000000000005';
 const CALLDATA = '0xa9059cbb';
 
 /** A wallet over stub clients whose mined receipt has the given status. */
-const setup = (status: 'success' | 'reverted') => {
+const setup = (status: 'success' | 'reverted', receiptHash: `0x${string}` = TX_HASH) => {
   const onStepChange = mock(async () => undefined);
   const wallet = addStepCallback({
     wallet: {
@@ -21,12 +21,12 @@ const setup = (status: 'success' | 'reverted') => {
     } as unknown as Parameters<typeof addStepCallback>[0]['wallet'],
     onStepChange,
     publicClient: {
-      waitForTransactionReceipt: async () => ({ status, transactionHash: TX_HASH }),
+      waitForTransactionReceipt: async () => ({ status, transactionHash: receiptHash }),
     } as unknown as Parameters<typeof addStepCallback>[0]['publicClient'],
   });
   const reportedStatuses = () =>
     onStepChange.mock.calls.map((call) => (call as unknown as [{ status: string }])[0].status);
-  return { wallet, reportedStatuses };
+  return { wallet, reportedStatuses, onStepChange };
 };
 
 const writeContract = (wallet: ReturnType<typeof setup>['wallet']) =>
@@ -73,4 +73,33 @@ describe('addStepCallback', () => {
 
     expect(reportedStatuses()).toEqual(['waiting', 'broadcasted', 'success']);
   });
+});
+
+test.each([
+  ['writeContract', writeContract],
+  ['sendTransaction', sendTransaction],
+])('%s exposes transaction identity at broadcast and confirmation', async (_name, send) => {
+  const { wallet, onStepChange } = setup('success');
+  await send(wallet);
+  expect(onStepChange.mock.calls).toEqual([
+    [expect.objectContaining({ status: 'waiting' })],
+    [expect.objectContaining({ status: 'broadcasted', transactionHash: TX_HASH, chainId: 1 })],
+    [expect.objectContaining({ status: 'success', transactionHash: TX_HASH, chainId: 1 })],
+  ]);
+});
+
+test.each([
+  ['writeContract', writeContract],
+  ['sendTransaction', sendTransaction],
+])('%s distinguishes a replacement receipt from the broadcast', async (_name, send) => {
+  const replacementHash = `0x${'cd'.repeat(32)}` as const;
+  const { wallet, onStepChange } = setup('success', replacementHash);
+  expect(await send(wallet)).toBe(TX_HASH);
+  expect(onStepChange.mock.calls.at(-1)).toEqual([
+    expect.objectContaining({
+      status: 'success',
+      transactionHash: replacementHash,
+      originalTransactionHash: TX_HASH,
+    }),
+  ]);
 });

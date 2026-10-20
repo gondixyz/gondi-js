@@ -1,4 +1,4 @@
-import { Address, createPublicClient, createTransport, PublicClient } from 'viem';
+import { Address, createPublicClient, createTransport, Hash, PublicClient } from 'viem';
 
 import { Wallet } from '@/clients/contracts';
 import { type OnStepChange } from '@/gondi';
@@ -47,19 +47,33 @@ export const addStepCallback = (props: {
     });
   };
 
-  const sendPendingTransactionStep = (to: Address, functionNameOrSelector: string) => {
+  const sendPendingTransactionStep = (
+    to: Address,
+    functionNameOrSelector: string,
+    transactionHash: Hash,
+  ) => {
     return onStepChange({
       type: 'transaction',
       status: 'broadcasted',
+      transactionHash,
+      chainId: wallet.chain?.id,
       to,
       functionNameOrSelector,
     });
   };
 
-  const sendSuccessTransactionStep = (to: Address, functionNameOrSelector: string) => {
+  const sendSuccessTransactionStep = (
+    to: Address,
+    functionNameOrSelector: string,
+    transactionHash: Hash,
+    originalTransactionHash: Hash,
+  ) => {
     return onStepChange({
       type: 'transaction',
       status: 'success',
+      transactionHash,
+      originalTransactionHash,
+      chainId: wallet.chain?.id,
       to,
       functionNameOrSelector,
     });
@@ -77,9 +91,10 @@ export const addStepCallback = (props: {
     const { address: to, functionName } = params;
     await sendWaitingTransactionStep(to, functionName);
     const txHash = await originalWriteContract(params);
-    await sendPendingTransactionStep(to, functionName);
-    assertTransactionSucceeded(await bcClient.waitForTransactionReceipt({ hash: txHash }));
-    await sendSuccessTransactionStep(to, functionName);
+    await sendPendingTransactionStep(to, functionName, txHash);
+    const receipt = await bcClient.waitForTransactionReceipt({ hash: txHash });
+    assertTransactionSucceeded(receipt);
+    await sendSuccessTransactionStep(to, functionName, receipt.transactionHash, txHash);
     return txHash;
   };
 
@@ -89,9 +104,10 @@ export const addStepCallback = (props: {
     const selector = data.slice(0, 10);
     await sendWaitingTransactionStep(to, selector);
     const txHash = await originalSendTransaction(params);
-    await sendPendingTransactionStep(to, selector);
-    assertTransactionSucceeded(await bcClient.waitForTransactionReceipt({ hash: txHash }));
-    await sendSuccessTransactionStep(to, selector);
+    await sendPendingTransactionStep(to, selector, txHash);
+    const receipt = await bcClient.waitForTransactionReceipt({ hash: txHash });
+    assertTransactionSucceeded(receipt);
+    await sendSuccessTransactionStep(to, selector, receipt.transactionHash, txHash);
     return txHash;
   };
 
