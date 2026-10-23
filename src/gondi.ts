@@ -913,8 +913,8 @@ export class Gondi {
    * saves reuse both signatures; a successful save clears the pending payloads.
    * @param props.private Shows the offer only to the loan's borrower and to the lender.
    * The API accepts it only for a principal worth at least the private minimum in USD
-   * ($50k), and never together with `withFallbackOffer`, whose fallback would publish
-   * the same terms. It is not part of the signed struct.
+   * ($50k). It is not part of the signed struct. With `withFallbackOffer`, the fallback
+   * is signed for `props.borrowerAddress`, the loan's borrower, so it stays private too.
    */
   async makeRefinanceOffer({
     renegotiation,
@@ -929,8 +929,8 @@ export class Gondi {
     if (props.withFallbackOffer && (isV1 || isV2)) {
       throw new Error('Unsupported contract address for withFallbackOffer argument');
     }
-    if (props.private && props.withFallbackOffer) {
-      throw new Error('private and withFallbackOffer cannot be true at the same time');
+    if (props.private && props.withFallbackOffer && !props.borrowerAddress) {
+      throw new Error('A private offer with withFallbackOffer needs the borrowerAddress');
     }
 
     const renegotiationInput = {
@@ -1014,6 +1014,7 @@ export class Gondi {
         fee,
         maxSeniorRepayment: props.maxSeniorRepayment ?? 0n,
         capacity: 0n,
+        borrowerAddress: props.private ? props.borrowerAddress : undefined,
       };
       const fallbackOffer = await this._makeSingleNftOffer(offerInput, contractAddress, true);
       if (publicationKey)
@@ -2013,7 +2014,18 @@ type MakeRefinanceOfferProps = {
       principalAddress: Address;
       nftId: number;
       maxSeniorRepayment?: bigint;
-      private?: never;
+      private?: false;
+      borrowerAddress?: never;
+    }
+  | {
+      skipSignature?: never;
+      withFallbackOffer: true;
+      principalAddress: Address;
+      nftId: number;
+      maxSeniorRepayment?: bigint;
+      private: true;
+      /** The loan's borrower: the private fallback is signed for this address only. */
+      borrowerAddress: Address;
     }
 );
 

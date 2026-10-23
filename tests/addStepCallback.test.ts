@@ -61,20 +61,17 @@ const sendTransaction = (wallet: ReturnType<typeof setup>['wallet']) =>
     data: CALLDATA,
   } as unknown as Parameters<typeof wallet.sendTransaction>[0]);
 
-describe('addStepCallback', () => {
-  test.each([
-    ['writeContract', writeContract],
-    ['sendTransaction', sendTransaction],
-  ])('%s rejects with the hash when the transaction reverts', async (_name, send) => {
+describe.each([
+  ['writeContract', writeContract],
+  ['sendTransaction', sendTransaction],
+])('addStepCallback %s', (_name, send) => {
+  test('rejects with the hash when the transaction reverts', async () => {
     const { wallet } = setup('reverted');
 
     await expect(send(wallet)).rejects.toThrow(TX_HASH);
   });
 
-  test.each([
-    ['writeContract', writeContract],
-    ['sendTransaction', sendTransaction],
-  ])('%s never reports success for a reverted transaction', async (_name, send) => {
+  test('never reports success for a reverted transaction', async () => {
     const { wallet, reportedStatuses } = setup('reverted');
 
     await send(wallet).catch(() => undefined);
@@ -82,51 +79,18 @@ describe('addStepCallback', () => {
     expect(reportedStatuses()).toEqual(['waiting', 'broadcasted']);
   });
 
-  test.each([
-    ['writeContract', writeContract],
-    ['sendTransaction', sendTransaction],
-  ])('%s reports success once the transaction succeeds', async (_name, send) => {
-    const { wallet, reportedStatuses } = setup('success');
+  test('exposes transaction identity at broadcast and confirmation', async () => {
+    const { wallet, onStepChange } = setup('success');
 
     await send(wallet);
 
-    expect(reportedStatuses()).toEqual(['waiting', 'broadcasted', 'success']);
+    expect(onStepChange.mock.calls).toEqual([
+      [expect.objectContaining({ status: 'waiting' })],
+      [expect.objectContaining({ status: 'broadcasted', transactionHash: TX_HASH, chainId: 1 })],
+      [expect.objectContaining({ status: 'success', transactionHash: TX_HASH, chainId: 1 })],
+    ]);
   });
-});
 
-test.each([
-  ['writeContract', writeContract],
-  ['sendTransaction', sendTransaction],
-])('%s exposes transaction identity at broadcast and confirmation', async (_name, send) => {
-  const { wallet, onStepChange } = setup('success');
-  await send(wallet);
-  expect(onStepChange.mock.calls).toEqual([
-    [expect.objectContaining({ status: 'waiting' })],
-    [expect.objectContaining({ status: 'broadcasted', transactionHash: TX_HASH, chainId: 1 })],
-    [expect.objectContaining({ status: 'success', transactionHash: TX_HASH, chainId: 1 })],
-  ]);
-});
-
-test.each([
-  ['writeContract', writeContract],
-  ['sendTransaction', sendTransaction],
-])('%s distinguishes a replacement receipt from the broadcast', async (_name, send) => {
-  const replacementHash = `0x${'cd'.repeat(32)}` as const;
-  const { wallet, onStepChange } = setup('success', replacementHash);
-  expect(await send(wallet)).toBe(TX_HASH);
-  expect(onStepChange.mock.calls.at(-1)).toEqual([
-    expect.objectContaining({
-      status: 'success',
-      transactionHash: replacementHash,
-      originalTransactionHash: TX_HASH,
-    }),
-  ]);
-});
-
-describe.each([
-  ['writeContract', writeContract],
-  ['sendTransaction', sendTransaction],
-])('%s', (_name, send) => {
   test.each(['cancelled', 'replaced'] as const)(
     'rejects with the reason and both hashes when the transaction is %s',
     async (reason) => {
@@ -139,10 +103,21 @@ describe.each([
     },
   );
 
-  test('reports success for a repriced transaction', async () => {
-    const { wallet, reportedStatuses } = setup('success', REPLACEMENT_HASH, 'repriced');
+  test('reports success with both hashes for a repriced transaction', async () => {
+    const { wallet, reportedStatuses, onStepChange } = setup(
+      'success',
+      REPLACEMENT_HASH,
+      'repriced',
+    );
 
     expect(await send(wallet)).toBe(TX_HASH);
     expect(reportedStatuses()).toEqual(['waiting', 'broadcasted', 'success']);
+    expect(onStepChange.mock.calls.at(-1)).toEqual([
+      expect.objectContaining({
+        status: 'success',
+        transactionHash: REPLACEMENT_HASH,
+        originalTransactionHash: TX_HASH,
+      }),
+    ]);
   });
 });
