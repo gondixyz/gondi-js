@@ -6,3 +6,7 @@
 # Example:
 #   # webpack — pinned by transitive dep, no fix available
 #   GHSA-8fgc-7cc6-rx7x
+
+# braces — 3.0.3 is latest and no version is patched; GitHub withdrew the advisory
+# on 2026-10-23 but `bun audit` still reports it. Reached only via chokidar/micromatch globbing.
+GHSA-vfj7-8cjw-p6xm

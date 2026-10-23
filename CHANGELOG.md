@@ -1,3 +1,43 @@
+# New Features 0.48.0
+
+## Important
+
+A private refinance offer can now carry a fallback offer. Existing calls are unchanged.
+
+## Table of Contents
+
+- [NEW: Private refinance offers with a fallback](#new-private-refinance-offers-with-a-fallback)
+
+## NEW: Private refinance offers with a fallback
+
+**Description:**
+
+- NEW: `gondi.makeRefinanceOffer({ ..., private: true, withFallbackOffer: true, borrowerAddress })` signs the fallback offer for `borrowerAddress`, the loan's borrower, so the fallback is private too and the API accepts the pair.
+  - `borrowerAddress` is required when `private` and `withFallbackOffer` are both set, and only allowed then. A call without it throws before asking for a signature.
+  - A public refinance offer's fallback stays open to anyone, as before.
+
+**Reason:**
+
+A private refinance offer could not keep its fallback: the fallback is a single-NFT offer with the same terms, so a public one would publish what the private offer hides.
+
+**Migration Steps:**
+
+- None. Calls that combined `private` with `withFallbackOffer` did not compile before.
+
+```typescript
+await gondi.makeRefinanceOffer({
+  renegotiation,
+  contractAddress,
+  private: true,
+  withFallbackOffer: true,
+  principalAddress,
+  nftId,
+  borrowerAddress: loan.borrowerAddress,
+});
+```
+
+---
+
 # New Features 0.47.0
 
 ## Important

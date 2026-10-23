@@ -16,9 +16,9 @@ export const addStepCallback = (props: {
   onStepChange: OnStepChange;
   publicClient?: PublicClient;
 }): Wallet => {
-  const { wallet, onStepChange, publicClient } = props;
-  const bcClient = withRetriedReceiptWait(
-    publicClient ??
+  const { wallet, onStepChange } = props;
+  const publicClient = withRetriedReceiptWait(
+    props.publicClient ??
       createPublicClient({
         chain: wallet.chain,
         transport: () => createTransport(wallet.transport),
@@ -45,47 +45,6 @@ export const addStepCallback = (props: {
     });
   };
 
-  const sendWaitingTransactionStep = (to: Address, functionNameOrSelector: string) => {
-    return onStepChange({
-      type: 'transaction',
-      status: 'waiting',
-      to,
-      functionNameOrSelector,
-    });
-  };
-
-  const sendPendingTransactionStep = (
-    to: Address,
-    functionNameOrSelector: string,
-    transactionHash: Hash,
-  ) => {
-    return onStepChange({
-      type: 'transaction',
-      status: 'broadcasted',
-      transactionHash,
-      chainId: wallet.chain?.id,
-      to,
-      functionNameOrSelector,
-    });
-  };
-
-  const sendSuccessTransactionStep = (
-    to: Address,
-    functionNameOrSelector: string,
-    transactionHash: Hash,
-    originalTransactionHash: Hash,
-  ) => {
-    return onStepChange({
-      type: 'transaction',
-      status: 'success',
-      transactionHash,
-      originalTransactionHash,
-      chainId: wallet.chain?.id,
-      to,
-      functionNameOrSelector,
-    });
-  };
-
   /**
    * Waits for the receipt of a broadcast transaction and throws unless it mined
    * the call that was sent: a revert, or a replacement by a different call.
@@ -100,7 +59,7 @@ export const addStepCallback = (props: {
    */
   const waitForSentCallReceipt = async (transactionHash: Hash) => {
     let replacementReason: ReplacementReason | undefined;
-    const receipt = await bcClient.waitForTransactionReceipt({
+    const receipt = await publicClient.waitForTransactionReceipt({
       hash: transactionHash,
       onReplaced: ({ reason }) => {
         replacementReason = reason;
@@ -122,26 +81,39 @@ export const addStepCallback = (props: {
     return signature;
   };
 
-  const writeContract: Wallet['writeContract'] = async (params) => {
-    const { address: to, functionName } = params;
-    await sendWaitingTransactionStep(to, functionName);
-    const txHash = await originalWriteContract(params);
-    await sendPendingTransactionStep(to, functionName, txHash);
-    const receipt = await waitForSentCallReceipt(txHash);
-    await sendSuccessTransactionStep(to, functionName, receipt.transactionHash, txHash);
-    return txHash;
+  /**
+   * Broadcasts a contract call through `broadcast` and reports it to `onStepChange`
+   * as waiting, broadcasted and, once its receipt mined the call, success.
+   * Returns the hash of the broadcast transaction.
+   */
+  const trackTransaction = async (
+    to: Address,
+    functionNameOrSelector: string,
+    broadcast: () => Promise<Hash>,
+  ) => {
+    const call = { type: 'transaction', to, functionNameOrSelector } as const;
+    const chainId = wallet.chain?.id;
+    await onStepChange({ ...call, status: 'waiting' });
+    const transactionHash = await broadcast();
+    await onStepChange({ ...call, status: 'broadcasted', transactionHash, chainId });
+    const receipt = await waitForSentCallReceipt(transactionHash);
+    await onStepChange({
+      ...call,
+      status: 'success',
+      transactionHash: receipt.transactionHash,
+      originalTransactionHash: transactionHash,
+      chainId,
+    });
+    return transactionHash;
   };
+
+  const writeContract: Wallet['writeContract'] = async (params) =>
+    trackTransaction(params.address, params.functionName, () => originalWriteContract(params));
 
   const sendTransaction: Wallet['sendTransaction'] = async (params) => {
     const { to, data } = params;
     if (!to || !data) throw new Error('to and data are required');
-    const selector = data.slice(0, 10);
-    await sendWaitingTransactionStep(to, selector);
-    const txHash = await originalSendTransaction(params);
-    await sendPendingTransactionStep(to, selector, txHash);
-    const receipt = await waitForSentCallReceipt(txHash);
-    await sendSuccessTransactionStep(to, selector, receipt.transactionHash, txHash);
-    return txHash;
+    return trackTransaction(to, data.slice(0, 10), () => originalSendTransaction(params));
   };
 
   return { ...wallet, signTypedData, writeContract, sendTransaction };

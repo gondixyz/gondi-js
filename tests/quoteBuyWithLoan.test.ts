@@ -2,6 +2,7 @@ import { expect, mock, test } from 'bun:test';
 mock.module('@/clients/api/client', () => ({ apolloClient: () => ({}) }));
 import {
   decodeAbiParameters,
+  decodeFunctionData,
   encodeAbiParameters,
   encodeFunctionData,
   parseAbi,
@@ -362,3 +363,231 @@ test('reports the nested buyer swap budget instead of zero', async () => {
     delete (buyerMsl as unknown as { contract?: unknown }).contract;
   }
 });
+
+type Quote = Awaited<ReturnType<Gondi['quoteBuyWithLoan']>>;
+type Callback = ReturnType<
+  typeof decodeAbiParameters<[typeof PurchaseBundlerV2.EXECUTION_INFO]>
+>[0];
+type Prepared = Awaited<ReturnType<typeof prepare>>;
+
+/** Prepares the canonical buyer execution with `change` applied to its marketplace callback. */
+const prepareWithCallback =
+  (change: (callback: Callback) => Partial<Callback>) =>
+  async (input: Parameters<typeof prepare>[0]) => {
+    const response = await prepare(input);
+    const callback = decodeAbiParameters(
+      [PurchaseBundlerV2.EXECUTION_INFO],
+      response.typedData.message.callbackData,
+    )[0];
+    response.typedData.message.callbackData = encodeAbiParameters(
+      [PurchaseBundlerV2.EXECUTION_INFO],
+      [{ ...callback, ...change(callback) }],
+    );
+    return response;
+  };
+
+/** Serves every contract read from the shared mock except `paused`, which reads `isPaused`. */
+const readPausedFrom = (isPaused: () => boolean) => {
+  const originalRead = gondi.bcClient.readContract;
+  Object.assign(gondi.bcClient, {
+    readContract: async (input: { functionName: string }) =>
+      input.functionName === 'paused' ? isPaused() : originalRead(input as never),
+  });
+  return () => Object.assign(gondi.bcClient, { readContract: originalRead });
+};
+
+for (const [guard, message, change] of [
+  [
+    'a listing for another token',
+    'Purchase collateral changed',
+    () => Object.assign(listing.nft, { tokenId: 2n }),
+  ],
+  [
+    'a listing that is no longer active',
+    'The selected listing is no longer available',
+    () => Object.assign(listing, { status: 'OrderStatus.Cancelled' }),
+  ],
+] as const) {
+  test(`refuses ${guard} before asking the borrower to sign`, async () => {
+    const originalListing = { ...listing, nft: { ...listing.nft } };
+    change();
+    try {
+      await expect(gondi.quoteBuyWithLoan(args as never)).rejects.toThrow(message);
+      expect(sign).not.toHaveBeenCalled();
+    } finally {
+      Object.assign(listing, originalListing);
+    }
+  });
+}
+
+for (const [guard, message, change] of [
+  [
+    'a marketplace callback that spends more than the quoted contribution',
+    'Marketplace execution differs from the quoted spending limits',
+    (callback: Callback) => ({ amount: callback.amount + 1n }),
+  ],
+  [
+    'a marketplace callback that drops the bundler custody requirement',
+    'Marketplace custody authorization changed',
+    () => ({ contractMustBeOwner: false }),
+  ],
+] as const) {
+  test(`refuses ${guard} before asking the borrower to sign`, async () => {
+    publish.mockImplementationOnce(prepareWithCallback(change));
+    await expect(gondi.quoteBuyWithLoan(args as never)).rejects.toThrow(message);
+    expect(sign).not.toHaveBeenCalled();
+  });
+}
+
+test('refuses a paused buyer bundler before asking the borrower to sign', async () => {
+  const restoreRead = readPausedFrom(() => true);
+  try {
+    await expect(gondi.quoteBuyWithLoan(args as never)).rejects.toThrow(
+      'Purchase route changed or expired',
+    );
+    expect(sign).not.toHaveBeenCalled();
+  } finally {
+    restoreRead();
+  }
+});
+
+const signExecution = mock(async () => '0x12');
+const broadcast = mock(async () => {
+  throw new Error('Must not broadcast');
+});
+
+/**
+ * Confirms `quote` through `buyNowPayLater`, serving the pre-signature preparation from `prepared`
+ * and the post-signature publication from `published`, with signing and broadcasting stubbed.
+ */
+const confirmPurchase = async (
+  quote: Quote,
+  {
+    prepared = prepare,
+    published = () => buyerExecutionResponse(quote),
+  }: {
+    prepared?: (input: Parameters<typeof prepare>[0]) => Promise<Prepared>;
+    published?: () => object;
+  } = {},
+) => {
+  signExecution.mockClear();
+  broadcast.mockClear();
+  let publications = 0;
+  publish.mockImplementation(async (input) =>
+    ++publications === 1 ? prepared(input) : (published() as never),
+  );
+  Object.assign(buyerMsl, { signExecutionData: signExecution });
+  Object.assign(gondi.contracts, { PurchaseBundler: () => ({ buy: broadcast }) });
+  try {
+    return await gondi.buyNowPayLater({ ...args, buyWithLoanQuote: quote } as never);
+  } finally {
+    publish.mockImplementation(prepare);
+    delete (buyerMsl as unknown as { signExecutionData?: unknown }).signExecutionData;
+  }
+};
+
+test('refuses a confirmed quote whose execution was altered before signing', async () => {
+  const quote = await gondi.quoteBuyWithLoan(args as never);
+  await expect(
+    confirmPurchase(
+      { ...quote, execution: { ...quote.execution, duration: 99n } },
+      {
+        published: () => buyerExecutionResponse(quote),
+      },
+    ),
+  ).rejects.toThrow('API execution differs from the confirmed purchase quote');
+  expect(signExecution).not.toHaveBeenCalled();
+  expect(broadcast).not.toHaveBeenCalled();
+});
+
+test('refuses a substituted authorization prepared at confirmation before signing', async () => {
+  const quote = await gondi.quoteBuyWithLoan(args as never);
+  await expect(
+    confirmPurchase(quote, {
+      prepared: async (input) => {
+        const response = await prepare(input);
+        response.typedData.message = { ...response.typedData.message, duration: 99n };
+        return response;
+      },
+    }),
+  ).rejects.toThrow('API execution differs from the confirmed purchase quote');
+  expect(signExecution).not.toHaveBeenCalled();
+  expect(broadcast).not.toHaveBeenCalled();
+});
+
+test('rechecks the route after confirmation preparation and before signing', async () => {
+  const quote = await gondi.quoteBuyWithLoan(args as never);
+  let paused = false;
+  const restoreRead = readPausedFrom(() => paused);
+  try {
+    await expect(
+      confirmPurchase(quote, {
+        prepared: async (input) => {
+          paused = true;
+          return prepare(input);
+        },
+      }),
+    ).rejects.toThrow('Purchase route changed or expired');
+    expect(signExecution).not.toHaveBeenCalled();
+    expect(broadcast).not.toHaveBeenCalled();
+  } finally {
+    restoreRead();
+  }
+});
+
+test('rechecks the route after publication and before broadcasting', async () => {
+  const quote = await gondi.quoteBuyWithLoan(args as never);
+  let paused = false;
+  const restoreRead = readPausedFrom(() => paused);
+  try {
+    await expect(
+      confirmPurchase(quote, {
+        published: () => {
+          paused = true;
+          return buyerExecutionResponse(quote);
+        },
+      }),
+    ).rejects.toThrow('Purchase route changed or expired');
+    expect(signExecution).toHaveBeenCalled();
+    expect(broadcast).not.toHaveBeenCalled();
+  } finally {
+    restoreRead();
+  }
+});
+
+for (const [guard, message, change] of [
+  [
+    'a published price other than the quoted total',
+    'Published purchase terms changed',
+    (response: ReturnType<typeof buyerExecutionResponse>) => ({
+      ...response,
+      price: response.price + 1n,
+    }),
+  ],
+  [
+    'a published loan for another borrower',
+    'Unexpected buyer execution',
+    (response: ReturnType<typeof buyerExecutionResponse>) => {
+      const { args: emitted } = decodeFunctionData({
+        abi: multiSourceLoanAbi,
+        data: response.emitCalldata,
+      }) as { args: readonly [{ borrower: `0x${string}` }] };
+      return {
+        ...response,
+        emitCalldata: encodeFunctionData({
+          abi: multiSourceLoanAbi,
+          functionName: 'emitLoan',
+          args: [{ ...emitted[0], borrower: nft } as never],
+        }),
+      };
+    },
+  ],
+] as const) {
+  test(`refuses ${guard} without broadcasting`, async () => {
+    const quote = await gondi.quoteBuyWithLoan(args as never);
+    await expect(
+      confirmPurchase(quote, { published: () => change(buyerExecutionResponse(quote)) }),
+    ).rejects.toThrow(message);
+    expect(broadcast).not.toHaveBeenCalled();
+  });
+}
