@@ -12,6 +12,7 @@ import { Wallet } from '@/clients/contracts';
 import { multiSourceLoanABI as multiSourceLoanABIV5 } from '@/generated/blockchain/v5';
 import { EmitLoanArgs } from '@/gondi';
 import { millisToSeconds, SECONDS_IN_DAY } from '@/utils/dates';
+import { LoanDelegation } from '@/utils/delegation';
 import { getMslLoanId, getRemainingSeconds } from '@/utils/loan';
 import { bpsToPercentage, sumBy } from '@/utils/number';
 import { CONTRACT_DOMAIN_NAME } from '@/utils/string';
@@ -239,22 +240,28 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
     };
   }
 
+  /** This version's `revokeDelegate` takes no rights, so each delegate is revoked once. */
   async revokeDelegationsAndEmitLoan({
     delegations,
     emit,
   }: {
-    delegations: Address[];
+    delegations: readonly LoanDelegation[];
     emit: EmitLoanArgs;
   }) {
     if (delegations.length === 0) throw new Error('At least one delegation must be revoked');
 
     const mslEmitArgs = this.mapEmitLoanToMslEmitLoanArgs(emit);
     const { tokenId, offer } = mslEmitArgs.executionData;
-    const encodedRevokeDelegations = delegations.map((delegation) =>
+    const delegates = new Set(
+      delegations.map((delegation) =>
+        typeof delegation === 'string' ? delegation : delegation.to,
+      ),
+    );
+    const encodedRevokeDelegations = [...delegates].map((delegate) =>
       encodeFunctionData({
         abi: multiSourceLoanABIV5,
         functionName: 'revokeDelegate',
-        args: [delegation, offer.nftCollateralAddress, tokenId],
+        args: [delegate, offer.nftCollateralAddress, tokenId],
       }),
     );
 
@@ -276,7 +283,7 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
         });
 
         const revokeEvents = this.parseEventLogs('RevokeDelegate', receipt.logs);
-        if (revokeEvents.length !== delegations.length)
+        if (revokeEvents.length !== encodedRevokeDelegations.length)
           throw new Error('Revoke delegations failed');
 
         const emitEvents = this.parseEventLogs('LoanEmitted', receipt.logs);

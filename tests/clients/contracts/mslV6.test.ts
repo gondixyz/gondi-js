@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from 'bun:test';
-import { decodeFunctionData, Hex } from 'viem';
+import { decodeFunctionData, Hex, zeroHash } from 'viem';
 
 import { MslV6 } from '@/clients/contracts/MslV6';
 import { multiSourceLoanAbi } from '@/generated/blockchain/v7';
@@ -93,7 +93,10 @@ const loanEmittedEvent = (loanId: bigint, tokenId: bigint) => ({
   },
 });
 
-const mslEmitting = (events: ReturnType<typeof loanEmittedEvent>[]) => {
+const mslEmitting = (
+  events: ReturnType<typeof loanEmittedEvent>[],
+  revokeEvents: { args: object }[] = [],
+) => {
   const multicall = mock(async () => TX_HASH);
   const emitLoan = mock(async () => TX_HASH);
   const msl = Object.assign(Object.create(MslV6.prototype), {
@@ -103,7 +106,8 @@ const mslEmitting = (events: ReturnType<typeof loanEmittedEvent>[]) => {
     contract: { address: MSL_ADDRESS },
     safeContractWrite: { multicall, emitLoan },
     bcClient: { waitForTransactionReceipt: async () => ({ transactionHash: TX_HASH, logs: [] }) },
-    parseEventLogs: (eventName: string) => (eventName === 'LoanEmitted' ? events : []),
+    parseEventLogs: (eventName: string) =>
+      ({ LoanEmitted: events, RevokeDelegate: revokeEvents })[eventName] ?? [],
   }) as MslV6;
   return { msl, multicall, emitLoan };
 };
@@ -183,5 +187,66 @@ describe('emitLoans', () => {
     const { waitTxInBlock } = await msl.emitLoans([emitArgsFor(1n, 5n), emitArgsFor(2n, 6n)]);
 
     await expect(waitTxInBlock()).rejects.toThrow(`No LoanEmitted event for ${COLLECTION} #2`);
+  });
+});
+
+describe('revokeDelegationsAndEmitLoan', () => {
+  const SHADOW_RIGHTS = '0x000000000000000000000000000000000000000000000000000000ffffffffff';
+  const EXPIRING_SHADOW_RIGHTS =
+    '0x000000000000000000000000000000000000000000000000000000006ad8ff0d';
+  const PREVIOUS_BORROWER = '0x0000000000000000000000000000000000000005';
+  const PREVIOUS_DELEGATE = '0x0000000000000000000000000000000000000006';
+
+  const decodedCalls = (multicall: ReturnType<typeof mslEmitting>['multicall']) => {
+    const [[calls]] = multicall.mock.calls[0] as unknown as [[Hex[]]];
+    return calls
+      .map((call) => decodeFunctionData({ abi: multiSourceLoanAbi, data: call }))
+      .map(({ functionName, args }) =>
+        functionName === 'revokeDelegate' ? [functionName, ...args] : [functionName],
+      );
+  };
+
+  test('revokes each delegation with every rights value it lists', async () => {
+    const { msl, multicall } = mslEmitting([]);
+
+    await msl.revokeDelegationsAndEmitLoan({
+      delegations: [
+        { to: PREVIOUS_BORROWER, rights: [zeroHash, SHADOW_RIGHTS] },
+        { to: PREVIOUS_DELEGATE, rights: [EXPIRING_SHADOW_RIGHTS] },
+      ],
+      emit: emitArgsFor(1n, 5n),
+    });
+
+    expect(decodedCalls(multicall)).toEqual([
+      ['revokeDelegate', PREVIOUS_BORROWER, COLLECTION, 1n, zeroHash],
+      ['revokeDelegate', PREVIOUS_BORROWER, COLLECTION, 1n, SHADOW_RIGHTS],
+      ['revokeDelegate', PREVIOUS_DELEGATE, COLLECTION, 1n, EXPIRING_SHADOW_RIGHTS],
+      ['emitLoan'],
+    ]);
+  });
+
+  test('revokes a bare address with the full rights', async () => {
+    const { msl, multicall } = mslEmitting([]);
+
+    await msl.revokeDelegationsAndEmitLoan({
+      delegations: [PREVIOUS_BORROWER],
+      emit: emitArgsFor(1n, 5n),
+    });
+
+    expect(decodedCalls(multicall)).toEqual([
+      ['revokeDelegate', PREVIOUS_BORROWER, COLLECTION, 1n, zeroHash],
+      ['emitLoan'],
+    ]);
+  });
+
+  test('throws when fewer revocations than were sent are confirmed', async () => {
+    const { msl } = mslEmitting([loanEmittedEvent(11n, 1n)], [{ args: {} }]);
+
+    const { waitTxInBlock } = await msl.revokeDelegationsAndEmitLoan({
+      delegations: [{ to: PREVIOUS_BORROWER, rights: [zeroHash, SHADOW_RIGHTS] }],
+      emit: emitArgsFor(1n, 5n),
+    });
+
+    await expect(waitTxInBlock()).rejects.toThrow('Revoke delegations failed');
   });
 });
