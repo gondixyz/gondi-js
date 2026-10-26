@@ -16,6 +16,7 @@ export type {
 } from '@/clients/contracts/CrossCurrencyRenegotiation';
 
 export type * as Types from '@/model';
+export type { LoanDelegation } from '@/utils/delegation';
 export { FULFILLED, REJECTED } from '@/utils/promises';
 
 export type { BuyWithLoanInput, BuyWithLoanQuote } from '@/utils/buyWithLoan';

@@ -28,6 +28,7 @@ import { multiSourceLoanAbi as multiSourceLoanAbiV7 } from '@/generated/blockcha
 import { multiSourceLoanAbi as multiSourceLoanAbiV8 } from '@/generated/blockchain/v8';
 import { EmitLoanArgs } from '@/gondi';
 import { millisToSeconds, SECONDS_IN_DAY, secondsToMillis } from '@/utils/dates';
+import { delegationRevocations, LoanDelegation } from '@/utils/delegation';
 import { getMslLoanId, getRemainingSeconds, LoanToMslLoanType } from '@/utils/loan';
 import { bpsToPercentage, sumBy } from '@/utils/number';
 import { areSameAddress, CONTRACT_DOMAIN_NAME } from '@/utils/string';
@@ -425,20 +426,21 @@ export class MslV6 extends BaseContract<
     delegations,
     emit,
   }: {
-    delegations: Address[];
+    delegations: readonly LoanDelegation[];
     emit: EmitLoanArgs;
   }) {
     if (delegations.length === 0) throw new Error('At least one delegation must be revoked');
 
     const mslEmitArgs = this.mapEmitLoanToMslEmitLoanArgs(emit);
     const { tokenId, offerExecution } = mslEmitArgs.executionData;
-    const encodedRevokeDelegations = delegations.map((delegation) => {
-      return encodeFunctionData({
+    const collateralAddress = offerExecution[0].offer.nftCollateralAddress;
+    const encodedRevokeDelegations = delegationRevocations(delegations).map(({ to, rights }) =>
+      encodeFunctionData({
         abi: this.abi,
         functionName: 'revokeDelegate',
-        args: [delegation, offerExecution[0].offer.nftCollateralAddress, tokenId, zeroHash],
-      });
-    });
+        args: [to, collateralAddress, tokenId, rights],
+      }),
+    );
 
     const encodedEmitLoan = encodeFunctionData({
       abi: this.abi,
@@ -458,7 +460,7 @@ export class MslV6 extends BaseContract<
         });
 
         const revokeEvents = this.parseEventLogs('RevokeDelegate', receipt.logs);
-        if (revokeEvents.length !== delegations.length)
+        if (revokeEvents.length !== encodedRevokeDelegations.length)
           throw new Error('Revoke delegations failed');
 
         const emitEvents = this.parseEventLogs('LoanEmitted', receipt.logs);

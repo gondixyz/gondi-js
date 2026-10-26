@@ -75,6 +75,7 @@ import {
   quoteCreditPurchase,
 } from '@/utils/creditPurchase';
 import { millisToSeconds } from '@/utils/dates';
+import { LoanDelegation } from '@/utils/delegation';
 import {
   BPS,
   isLoanVersion,
@@ -1559,13 +1560,18 @@ export class Gondi {
 
   /**
    * RevokeDelegationsAndEmitLoan should be used when token has been delegated without being revoked,
-   * and a new loan wants to be emitted, erasing the delegations provided as argument.
+   * and a new loan wants to be emitted, erasing the delegations provided as argument in the same
+   * transaction as the emit.
+   *
+   * @param delegations The token's delegations, as the API's `Delegation.delegateTo` and
+   * `Delegation.rights` report them: each `{ to, rights }` is revoked with every rights value it
+   * lists, and a bare address with the full-rights `zeroHash`.
    */
   async revokeDelegationsAndEmitLoan({
     delegations,
     emit,
   }: {
-    delegations: Address[];
+    delegations: readonly LoanDelegation[];
     emit: Parameters<Gondi['emitLoan']>[0];
   }) {
     await this.assertNftNotFlagged(emit);

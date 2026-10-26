@@ -23,10 +23,12 @@ AUDIT_OUTPUT=$(bun audit "${IGNORE_FLAGS[@]}" 2>&1)
 AUDIT_EXIT=$?
 
 echo "exit_code=$AUDIT_EXIT" >> "$GITHUB_OUTPUT"
+# A random delimiter, so the output cannot end early and inject others: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#multiline-strings
+DELIMITER="AUDIT_EOF_$(openssl rand -hex 16)"
 {
-  echo "output<<AUDIT_EOF"
+  echo "output<<${DELIMITER}"
   echo "$AUDIT_OUTPUT"
-  echo "AUDIT_EOF"
+  echo "${DELIMITER}"
 } >> "$GITHUB_OUTPUT"
 
 if [ $AUDIT_EXIT -ne 0 ]; then

@@ -1,3 +1,37 @@
+# New Features 0.49.0
+
+## Important
+
+A new loan can now revoke each delegation with the rights it was made with. Existing calls keep working.
+
+## Table of Contents
+
+- [Delegation rights on revoke](#delegation-rights-on-revoke)
+
+## Delegation rights on revoke
+
+**Description:**
+
+- NEW: the `delegations` of `gondi.revokeDelegationsAndEmitLoan` also take `{ to, rights }` entries (the exported `LoanDelegation` type), as the API's `Delegation.delegateTo` and `Delegation.rights` report them. Each one is revoked with every rights value it lists. A bare address is still revoked with `zeroHash` only.
+- On loan contracts whose `revokeDelegate` takes no rights, each delegate is revoked once, as before.
+
+**Reason:**
+
+The delegate.xyz registry keys each delegation by its rights, and a revocation has to name the exact value. A delegation made with other rights, such as the global Shadow rights (`0x…00ffffffffff`) that Yuga's `ExclusiveDelegateResolver` reads for ApeChain and the Mudwater BAYC/MAYC claim, survived into the new loan.
+
+**Migration Steps:**
+
+- None. To revoke every rights value, pass `{ to, rights }` from the API's delegations.
+
+```typescript
+await gondi.revokeDelegationsAndEmitLoan({
+  delegations: delegations.map(({ delegateTo, rights }) => ({ to: delegateTo, rights })),
+  emit,
+});
+```
+
+---
+
 # New Features 0.48.0
 
 ## Important

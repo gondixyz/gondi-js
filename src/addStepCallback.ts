@@ -29,22 +29,6 @@ export const addStepCallback = (props: {
   const originalWriteContract = wallet.writeContract.bind(wallet);
   const originalSendTransaction = wallet.sendTransaction.bind(wallet);
 
-  const sendWaitingSignatureStep = (primaryType: string) => {
-    return onStepChange({
-      type: 'signature',
-      status: 'waiting',
-      primaryType,
-    });
-  };
-
-  const sendSuccessSignatureStep = (primaryType: string) => {
-    return onStepChange({
-      type: 'signature',
-      status: 'success',
-      primaryType,
-    });
-  };
-
   /**
    * Waits for the receipt of a broadcast transaction and throws unless it mined
    * the call that was sent: a revert, or a replacement by a different call.
@@ -74,10 +58,10 @@ export const addStepCallback = (props: {
   };
 
   const signTypedData: Wallet['signTypedData'] = async (typedData) => {
-    const primaryType = String(typedData.primaryType);
-    await sendWaitingSignatureStep(primaryType);
+    const step = { type: 'signature', primaryType: String(typedData.primaryType) } as const;
+    await onStepChange({ ...step, status: 'waiting' });
     const signature = await originalSignTypedData(typedData);
-    await sendSuccessSignatureStep(primaryType);
+    await onStepChange({ ...step, status: 'success' });
     return signature;
   };
 

@@ -1,49 +1,31 @@
 import { describe, expect, it, mock } from 'bun:test';
-import { zeroAddress, zeroHash } from 'viem';
+import { zeroAddress } from 'viem';
 import { getContracts } from '../src/deploys';
-
-mock.module('@/clients/api/client', () => ({ apolloClient: () => ({}) }));
-const { Gondi } = await import('../src/gondi');
+import {
+  gondiWith,
+  RENEGOTIATION,
+  RENEGOTIATION_OFFER_HASH,
+  SINGLE_NFT_OFFER_HASH,
+} from './utils/gondiStub';
 
 const contractAddress = getContracts({ id: 1 }).MultiSourceLoan['3'];
 const borrower = '0x00000000000000000000000000000000000000b0';
 
-const renegotiation = {
-  loanId: 'loan',
-  principalAmount: 100n,
-  feeAmount: 0n,
-  aprBps: 2400n,
-  duration: 2592000n,
-  expirationTime: 9000000000n,
-};
-
 /** A Gondi whose contract and API calls are mocks, for the refinance offer flow. */
 const gondiWithMocks = () => {
   const signRenegotiationOffer = mock(async (..._arguments: unknown[]) => '0x5678');
-  const generateRenegotiationOfferHash = mock(async (..._arguments: unknown[]) => ({
-    offer: { renegotiationId: 2n, offerHash: zeroHash, loanId: 1n },
-  }));
+  const generateRenegotiationOfferHash = mock(
+    async (..._arguments: unknown[]) => RENEGOTIATION_OFFER_HASH,
+  );
   const saveRefinanceOffer = mock(async (..._arguments: unknown[]) => ({ id: 'saved' }));
   const signOffer = mock(async (..._arguments: unknown[]) => '0x1234');
-  const generateSingleNftOfferHash = async () => ({
-    offer: {
-      offerHash: zeroHash,
-      offerId: 3n,
-      validators: [],
-      fee: 0n,
-      collateralAddress: zeroAddress,
-      nft: { tokenId: 1n },
-    },
-  });
-  const gondi = Object.create(Gondi.prototype);
-  Object.assign(gondi, {
-    pendingSingleNftPublications: new Map(),
-    pendingCollectionPublications: new Map(),
-    pendingRenegotiationPublications: new Map(),
-    wallet: { chain: { id: 1 } },
-    account: { address: zeroAddress },
+  const gondi = gondiWith({
     contracts: { Msl: () => ({ address: contractAddress, signRenegotiationOffer, signOffer }) },
-    apiClient: { generateRenegotiationOfferHash, generateSingleNftOfferHash, saveRefinanceOffer },
+    apiClient: {
+      generateRenegotiationOfferHash,
+      generateSingleNftOfferHash: async () => SINGLE_NFT_OFFER_HASH,
+      saveRefinanceOffer,
+    },
   });
   return {
     gondi,
@@ -57,19 +39,27 @@ const gondiWithMocks = () => {
 describe('makeRefinanceOffer private', () => {
   it('saves the offer as private', async () => {
     const { gondi, saveRefinanceOffer } = gondiWithMocks();
-    await gondi.makeRefinanceOffer({ renegotiation, contractAddress, private: true });
+    await gondi.makeRefinanceOffer({
+      renegotiation: RENEGOTIATION,
+      contractAddress,
+      private: true,
+    });
     expect(saveRefinanceOffer.mock.calls[0]?.[0]).toMatchObject({ private: true });
   });
 
   it('saves the offer as public by default', async () => {
     const { gondi, saveRefinanceOffer } = gondiWithMocks();
-    await gondi.makeRefinanceOffer({ renegotiation, contractAddress });
+    await gondi.makeRefinanceOffer({ renegotiation: RENEGOTIATION, contractAddress });
     expect(saveRefinanceOffer.mock.calls[0]?.[0]).toMatchObject({ private: false });
   });
 
   it('leaves private out of the hash request', async () => {
     const { gondi, generateRenegotiationOfferHash } = gondiWithMocks();
-    await gondi.makeRefinanceOffer({ renegotiation, contractAddress, private: true });
+    await gondi.makeRefinanceOffer({
+      renegotiation: RENEGOTIATION,
+      contractAddress,
+      private: true,
+    });
     expect(
       (generateRenegotiationOfferHash.mock.calls[0]?.[0] as { renegotiationInput: object })
         .renegotiationInput,
@@ -78,7 +68,11 @@ describe('makeRefinanceOffer private', () => {
 
   it('leaves private out of the signed struct', async () => {
     const { gondi, signRenegotiationOffer } = gondiWithMocks();
-    await gondi.makeRefinanceOffer({ renegotiation, contractAddress, private: true });
+    await gondi.makeRefinanceOffer({
+      renegotiation: RENEGOTIATION,
+      contractAddress,
+      private: true,
+    });
     expect(
       (signRenegotiationOffer.mock.calls[0]?.[0] as { structToSign: object }).structToSign,
     ).not.toHaveProperty('private');
@@ -87,7 +81,7 @@ describe('makeRefinanceOffer private', () => {
   it("signs a private offer's fallback for the borrower", async () => {
     const { gondi, signOffer } = gondiWithMocks();
     await gondi.makeRefinanceOffer({
-      renegotiation,
+      renegotiation: RENEGOTIATION,
       contractAddress,
       private: true,
       withFallbackOffer: true,
@@ -104,7 +98,7 @@ describe('makeRefinanceOffer private', () => {
   it("signs a public offer's fallback for anyone", async () => {
     const { gondi, saveRefinanceOffer } = gondiWithMocks();
     await gondi.makeRefinanceOffer({
-      renegotiation,
+      renegotiation: RENEGOTIATION,
       contractAddress,
       withFallbackOffer: true,
       principalAddress: zeroAddress,
@@ -117,7 +111,7 @@ describe('makeRefinanceOffer private', () => {
     const { gondi, signRenegotiationOffer } = gondiWithMocks();
     await expect(
       gondi.makeRefinanceOffer({
-        renegotiation,
+        renegotiation: RENEGOTIATION,
         contractAddress,
         private: true,
         withFallbackOffer: true,

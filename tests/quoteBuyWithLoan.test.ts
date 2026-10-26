@@ -156,6 +156,92 @@ const gondi = Object.assign(Object.create(Gondi.prototype) as Gondi, {
   },
 });
 
+type Quote = Awaited<ReturnType<Gondi['quoteBuyWithLoan']>>;
+type Callback = ReturnType<
+  typeof decodeAbiParameters<[typeof PurchaseBundlerV2.EXECUTION_INFO]>
+>[0];
+type Prepared = Awaited<ReturnType<typeof prepare>>;
+
+const buyerExecutionResponse = (quote: Quote, tokenId = quote.execution.tokenId) => ({
+  __typename: 'BuyNowPayLaterOrder',
+  price: quote.totalPrice,
+  currencyAddress: quote.purchaseCurrency,
+  emitCalldata: encodeFunctionData({
+    abi: multiSourceLoanAbi,
+    functionName: 'emitLoan',
+    args: [
+      {
+        executionData: { ...quote.execution, tokenId },
+        borrower: buyer,
+        borrowerOfferSignature: '0x12',
+      },
+    ],
+  }),
+});
+
+/** Prepares the canonical buyer execution with `change` applied to its marketplace callback. */
+const prepareWithCallback =
+  (change: (callback: Callback) => Partial<Callback>) =>
+  async (input: Parameters<typeof prepare>[0]) => {
+    const response = await prepare(input);
+    const callback = decodeAbiParameters(
+      [PurchaseBundlerV2.EXECUTION_INFO],
+      response.typedData.message.callbackData,
+    )[0];
+    response.typedData.message.callbackData = encodeAbiParameters(
+      [PurchaseBundlerV2.EXECUTION_INFO],
+      [{ ...callback, ...change(callback) }],
+    );
+    return response;
+  };
+
+/** Serves every contract read from the shared mock except those named in `overrides`. */
+const overrideReads = (overrides: Record<string, () => unknown>) => {
+  const originalRead = gondi.bcClient.readContract;
+  Object.assign(gondi.bcClient, {
+    readContract: async (input: { functionName: string }) =>
+      input.functionName in overrides
+        ? overrides[input.functionName]()
+        : originalRead(input as never),
+  });
+  return () => Object.assign(gondi.bcClient, { readContract: originalRead });
+};
+
+const signExecution = mock(async () => '0x12');
+const broadcast = mock(async () => {
+  throw new Error('Must not broadcast');
+});
+
+/**
+ * Confirms `quote` through `buyNowPayLater`, serving the pre-signature preparation from `prepared`
+ * and the post-signature publication from `published`, with signing and broadcasting stubbed.
+ */
+const confirmPurchase = async (
+  quote: Quote,
+  {
+    prepared = prepare,
+    published = () => buyerExecutionResponse(quote),
+  }: {
+    prepared?: (input: Parameters<typeof prepare>[0]) => Promise<Prepared>;
+    published?: () => object;
+  } = {},
+) => {
+  signExecution.mockClear();
+  broadcast.mockClear();
+  let publications = 0;
+  publish.mockImplementation(async (input) =>
+    ++publications === 1 ? prepared(input) : (published() as never),
+  );
+  Object.assign(buyerMsl, { signExecutionData: signExecution });
+  Object.assign(gondi.contracts, { PurchaseBundler: () => ({ buy: broadcast }) });
+  try {
+    return await gondi.buyNowPayLater({ ...args, buyWithLoanQuote: quote } as never);
+  } finally {
+    publish.mockImplementation(prepare);
+    delete (buyerMsl as unknown as { signExecutionData?: unknown }).signExecutionData;
+  }
+};
+
 test('prepares unsigned opposite-currency ordinary execution with a listing-unit contribution', async () => {
   const quote = await gondi.quoteBuyWithLoan(args as never);
   expect([quote.route, quote.initialPayment, quote.loanCurrency]).toEqual([
@@ -195,30 +281,18 @@ for (const field of ['duration', 'principalReceiver', 'nftCollateralAddress', 'd
 }
 
 test('rejects marketplace calldata for a different NFT before any signature', async () => {
-  publish.mockImplementationOnce(async (input) => {
-    const response = await prepare(input);
-    const callback = decodeAbiParameters(
-      [PurchaseBundlerV2.EXECUTION_INFO],
-      response.typedData.message.callbackData,
-    )[0];
-    response.typedData.message.callbackData = encodeAbiParameters(
-      [PurchaseBundlerV2.EXECUTION_INFO],
-      [
-        {
-          ...callback,
-          reservoirExecutionInfo: {
-            ...callback.reservoirExecutionInfo,
-            data: encodeFunctionData({
-              abi: parseAbi(['function sellTargetNFT(uint256)']),
-              functionName: 'sellTargetNFT',
-              args: [2n],
-            }),
-          },
-        },
-      ],
-    );
-    return response;
-  });
+  publish.mockImplementationOnce(
+    prepareWithCallback((callback) => ({
+      reservoirExecutionInfo: {
+        ...callback.reservoirExecutionInfo,
+        data: encodeFunctionData({
+          abi: parseAbi(['function sellTargetNFT(uint256)']),
+          functionName: 'sellTargetNFT',
+          args: [2n],
+        }),
+      },
+    })),
+  );
   await expect(gondi.quoteBuyWithLoan(args as never)).rejects.toThrow('collateral');
   expect(sign).not.toHaveBeenCalled();
 });
@@ -232,82 +306,32 @@ test('refuses protected v3.2 buyer offers', async () => {
   ).rejects.toThrow('v3.1');
 });
 
-const buyerExecutionResponse = (
-  quote: Awaited<ReturnType<Gondi['quoteBuyWithLoan']>>,
-  tokenId = quote.execution.tokenId,
-) => ({
-  __typename: 'BuyNowPayLaterOrder',
-  price: quote.totalPrice,
-  currencyAddress: quote.purchaseCurrency,
-  emitCalldata: encodeFunctionData({
-    abi: multiSourceLoanAbi,
-    functionName: 'emitLoan',
-    args: [
-      {
-        executionData: { ...quote.execution, tokenId },
-        borrower: buyer,
-        borrowerOfferSignature: '0x12',
-      },
-    ],
-  }),
-});
-
 test('refuses substituted emitted collateral after publication without broadcasting', async () => {
   const quote = await gondi.quoteBuyWithLoan(args as never);
-  const broadcast = mock(async () => {
-    throw new Error('Must not broadcast');
-  });
-  Object.assign(buyerMsl, { signExecutionData: async () => '0x12' });
-  Object.assign(gondi.contracts, { PurchaseBundler: () => ({ buy: broadcast }) });
-  publish
-    .mockImplementationOnce(prepare)
-    .mockImplementationOnce(async () => buyerExecutionResponse(quote, 2n) as never);
-  try {
-    await expect(
-      gondi.buyNowPayLater({ ...args, buyWithLoanQuote: quote } as never),
-    ).rejects.toThrow('execution');
-    expect(broadcast).not.toHaveBeenCalled();
-  } finally {
-    delete (buyerMsl as unknown as { signExecutionData?: unknown }).signExecutionData;
-  }
+  await expect(
+    confirmPurchase(quote, { published: () => buyerExecutionResponse(quote, 2n) }),
+  ).rejects.toThrow('execution');
+  expect(broadcast).not.toHaveBeenCalled();
 });
 
 test('checks exact allowances again after the wallet signature', async () => {
   const originalCurrency = listing.currencyAddress;
   const originalPrice = listing.price;
-  const originalRead = gondi.bcClient.readContract;
-  const broadcast = mock(async () => {
-    throw new Error('Must not broadcast');
-  });
-  let signed = false;
   listing.currencyAddress = USDC_ADDRESS;
   listing.price = 1_000_000_000n;
-  Object.assign(gondi.bcClient, {
-    readContract: async (input: { functionName: string }) =>
-      input.functionName === 'allowance' ? (signed ? 1n : 0n) : originalRead(input as never),
+  signExecution.mockClear();
+  const restoreReads = overrideReads({
+    allowance: () => (signExecution.mock.calls.length > 0 ? 1n : 0n),
   });
-  Object.assign(buyerMsl, {
-    signExecutionData: async () => {
-      signed = true;
-      return '0x12';
-    },
-  });
-  Object.assign(gondi.contracts, { PurchaseBundler: () => ({ buy: broadcast }) });
   try {
     const quote = await gondi.quoteBuyWithLoan(args as never);
-    publish
-      .mockImplementationOnce(prepare)
-      .mockImplementationOnce(async () => buyerExecutionResponse(quote) as never);
-    await expect(
-      gondi.buyNowPayLater({ ...args, buyWithLoanQuote: quote } as never),
-    ).rejects.toThrow('exactly');
-    expect(signed).toBe(true);
+    await expect(confirmPurchase(quote)).rejects.toThrow('exactly');
+    expect(signExecution).toHaveBeenCalled();
     expect(broadcast).not.toHaveBeenCalled();
   } finally {
     listing.currencyAddress = originalCurrency;
     listing.price = originalPrice;
-    Object.assign(gondi.bcClient, { readContract: originalRead });
-    delete (buyerMsl as unknown as { signExecutionData?: unknown }).signExecutionData;
+    restoreReads();
   }
 });
 
@@ -364,38 +388,6 @@ test('reports the nested buyer swap budget instead of zero', async () => {
   }
 });
 
-type Quote = Awaited<ReturnType<Gondi['quoteBuyWithLoan']>>;
-type Callback = ReturnType<
-  typeof decodeAbiParameters<[typeof PurchaseBundlerV2.EXECUTION_INFO]>
->[0];
-type Prepared = Awaited<ReturnType<typeof prepare>>;
-
-/** Prepares the canonical buyer execution with `change` applied to its marketplace callback. */
-const prepareWithCallback =
-  (change: (callback: Callback) => Partial<Callback>) =>
-  async (input: Parameters<typeof prepare>[0]) => {
-    const response = await prepare(input);
-    const callback = decodeAbiParameters(
-      [PurchaseBundlerV2.EXECUTION_INFO],
-      response.typedData.message.callbackData,
-    )[0];
-    response.typedData.message.callbackData = encodeAbiParameters(
-      [PurchaseBundlerV2.EXECUTION_INFO],
-      [{ ...callback, ...change(callback) }],
-    );
-    return response;
-  };
-
-/** Serves every contract read from the shared mock except `paused`, which reads `isPaused`. */
-const readPausedFrom = (isPaused: () => boolean) => {
-  const originalRead = gondi.bcClient.readContract;
-  Object.assign(gondi.bcClient, {
-    readContract: async (input: { functionName: string }) =>
-      input.functionName === 'paused' ? isPaused() : originalRead(input as never),
-  });
-  return () => Object.assign(gondi.bcClient, { readContract: originalRead });
-};
-
 for (const [guard, message, change] of [
   [
     'a listing for another token',
@@ -440,7 +432,7 @@ for (const [guard, message, change] of [
 }
 
 test('refuses a paused buyer bundler before asking the borrower to sign', async () => {
-  const restoreRead = readPausedFrom(() => true);
+  const restoreRead = overrideReads({ paused: () => true });
   try {
     await expect(gondi.quoteBuyWithLoan(args as never)).rejects.toThrow(
       'Purchase route changed or expired',
@@ -451,50 +443,10 @@ test('refuses a paused buyer bundler before asking the borrower to sign', async 
   }
 });
 
-const signExecution = mock(async () => '0x12');
-const broadcast = mock(async () => {
-  throw new Error('Must not broadcast');
-});
-
-/**
- * Confirms `quote` through `buyNowPayLater`, serving the pre-signature preparation from `prepared`
- * and the post-signature publication from `published`, with signing and broadcasting stubbed.
- */
-const confirmPurchase = async (
-  quote: Quote,
-  {
-    prepared = prepare,
-    published = () => buyerExecutionResponse(quote),
-  }: {
-    prepared?: (input: Parameters<typeof prepare>[0]) => Promise<Prepared>;
-    published?: () => object;
-  } = {},
-) => {
-  signExecution.mockClear();
-  broadcast.mockClear();
-  let publications = 0;
-  publish.mockImplementation(async (input) =>
-    ++publications === 1 ? prepared(input) : (published() as never),
-  );
-  Object.assign(buyerMsl, { signExecutionData: signExecution });
-  Object.assign(gondi.contracts, { PurchaseBundler: () => ({ buy: broadcast }) });
-  try {
-    return await gondi.buyNowPayLater({ ...args, buyWithLoanQuote: quote } as never);
-  } finally {
-    publish.mockImplementation(prepare);
-    delete (buyerMsl as unknown as { signExecutionData?: unknown }).signExecutionData;
-  }
-};
-
 test('refuses a confirmed quote whose execution was altered before signing', async () => {
   const quote = await gondi.quoteBuyWithLoan(args as never);
   await expect(
-    confirmPurchase(
-      { ...quote, execution: { ...quote.execution, duration: 99n } },
-      {
-        published: () => buyerExecutionResponse(quote),
-      },
-    ),
+    confirmPurchase({ ...quote, execution: { ...quote.execution, duration: 99n } }),
   ).rejects.toThrow('API execution differs from the confirmed purchase quote');
   expect(signExecution).not.toHaveBeenCalled();
   expect(broadcast).not.toHaveBeenCalled();
@@ -518,7 +470,7 @@ test('refuses a substituted authorization prepared at confirmation before signin
 test('rechecks the route after confirmation preparation and before signing', async () => {
   const quote = await gondi.quoteBuyWithLoan(args as never);
   let paused = false;
-  const restoreRead = readPausedFrom(() => paused);
+  const restoreRead = overrideReads({ paused: () => paused });
   try {
     await expect(
       confirmPurchase(quote, {
@@ -538,7 +490,7 @@ test('rechecks the route after confirmation preparation and before signing', asy
 test('rechecks the route after publication and before broadcasting', async () => {
   const quote = await gondi.quoteBuyWithLoan(args as never);
   let paused = false;
-  const restoreRead = readPausedFrom(() => paused);
+  const restoreRead = overrideReads({ paused: () => paused });
   try {
     await expect(
       confirmPurchase(quote, {
