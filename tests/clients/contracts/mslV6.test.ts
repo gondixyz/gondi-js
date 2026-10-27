@@ -239,6 +239,20 @@ describe('revokeDelegationsAndEmitLoan', () => {
     ]);
   });
 
+  test('returns the emitted loan under its SDK id', async () => {
+    const { msl } = mslEmitting([loanEmittedEvent(11n, 1n)], [{ args: {} }]);
+
+    const { waitTxInBlock } = await msl.revokeDelegationsAndEmitLoan({
+      delegations: [PREVIOUS_BORROWER],
+      emit: emitArgsFor(1n, 5n),
+    });
+    const { loan, loanId } = await waitTxInBlock();
+
+    expect(loanId).toBe(11n);
+    expect(loan.id).toBe(`${MSL_ADDRESS.toLowerCase()}.11`);
+    expect(loan.contractAddress).toBe(MSL_ADDRESS);
+  });
+
   test('throws when fewer revocations than were sent are confirmed', async () => {
     const { msl } = mslEmitting([loanEmittedEvent(11n, 1n)], [{ args: {} }]);
 
