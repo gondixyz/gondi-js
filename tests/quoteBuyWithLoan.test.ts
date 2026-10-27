@@ -1,5 +1,6 @@
 import { expect, mock, test } from 'bun:test';
-mock.module('@/clients/api/client', () => ({ apolloClient: () => ({}) }));
+
+import { stubGondi } from './utils/gondiStub';
 import {
   decodeAbiParameters,
   decodeFunctionData,
@@ -14,7 +15,7 @@ import { MslV6 } from '@/clients/contracts/MslV6';
 import { PurchaseBundlerV2 } from '@/clients/contracts/PurchaseBundlerV2';
 import { getContracts, getCurrencies } from '@/deploys';
 import { multiSourceLoanAbi } from '@/generated/blockchain/v7';
-const { Gondi } = await import('@/gondi');
+import type { Gondi } from '@/gondi';
 
 const deployments = getContracts(mainnet);
 const { USDC_ADDRESS } = getCurrencies(mainnet);
@@ -131,7 +132,7 @@ const prepare = async (input: {
 };
 const publish = mock(prepare);
 const listingRequest = mock(async () => ({ listOrdersV2: { edges: [{ node: listing }] } }));
-const gondi = Object.assign(Object.create(Gondi.prototype) as Gondi, {
+const gondi = stubGondi({
   wallet: { chain: mainnet, account: { address: buyer }, signTypedData: sign },
   apiClient: {
     api: { buyWithLoanListing: listingRequest },

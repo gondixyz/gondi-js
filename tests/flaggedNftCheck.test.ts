@@ -1,10 +1,9 @@
 import { beforeEach, expect, mock, test } from 'bun:test';
 import { zeroAddress } from 'viem';
 
-mock.module('@/clients/api/client', () => ({ apolloClient: () => ({}) }));
-const { Gondi } = await import('@/gondi');
+import { flaggedNftCheckStub, notFlaggedNft } from './utils/gondiStub';
 import { FlaggedNftError } from '@/errors';
-import { EmitLoanArgs } from '@/gondi';
+import { EmitLoanArgs, type Gondi } from '@/gondi';
 
 const nftCollateralAddress = '0x0000000000000000000000000000000000000002';
 const args = {
@@ -16,17 +15,7 @@ const args = {
 
 const emitLoan = mock(async () => ({ txHash: '0xtx' }));
 const Msl = mock(() => ({ emitLoan }));
-const notFlaggedNft = async () => ({
-  nft: { id: '1', isFlagged: false, wrapsNfts: null } as unknown,
-});
-const nftFlaggedByContractAddressAndTokenId = mock(notFlaggedNft);
-
-const createGondi = ({ skipFlaggedNftCheck = false } = {}) =>
-  Object.assign(Object.create(Gondi.prototype) as InstanceType<typeof Gondi>, {
-    skipFlaggedNftCheck,
-    apiClient: { nftFlaggedByContractAddressAndTokenId },
-    contracts: { Msl },
-  });
+const { nftFlaggedByContractAddressAndTokenId, createGondi } = flaggedNftCheckStub({ Msl });
 
 beforeEach(() => {
   emitLoan.mockClear();
@@ -72,10 +61,9 @@ test('skipFlaggedNftCheck sends without asking the API', async () => {
   expect(emitLoan).toHaveBeenCalledWith(args);
 });
 
-type GondiInstance = InstanceType<typeof Gondi>;
 const loan = { contractAddress: zeroAddress };
 
-const guardedEntryPoints: [string, (gondi: GondiInstance) => Promise<unknown>][] = [
+const guardedEntryPoints: [string, (gondi: Gondi) => Promise<unknown>][] = [
   ['emitLoan', (gondi) => gondi.emitLoan(args)],
   [
     'refinanceFromOffers',
@@ -84,7 +72,7 @@ const guardedEntryPoints: [string, (gondi: GondiInstance) => Promise<unknown>][]
         loanId: 1n,
         executionData: args,
         loan,
-      } as unknown as Parameters<GondiInstance['refinanceFromOffers']>[0]),
+      } as unknown as Parameters<Gondi['refinanceFromOffers']>[0]),
   ],
   [
     'efficientRefinanceFromOffers',
@@ -94,7 +82,7 @@ const guardedEntryPoints: [string, (gondi: GondiInstance) => Promise<unknown>][]
         loanId: 1n,
         executionData: args,
         loan,
-      } as unknown as Parameters<GondiInstance['efficientRefinanceFromOffers']>[0]),
+      } as unknown as Parameters<Gondi['efficientRefinanceFromOffers']>[0]),
   ],
   [
     'crossCurrencyRenegotiation',
@@ -104,7 +92,7 @@ const guardedEntryPoints: [string, (gondi: GondiInstance) => Promise<unknown>][]
         executionData: args,
         quote: {},
         loan,
-      } as unknown as Parameters<GondiInstance['crossCurrencyRenegotiation']>[0]),
+      } as unknown as Parameters<Gondi['crossCurrencyRenegotiation']>[0]),
   ],
   [
     'revokeDelegationsAndEmitLoan',

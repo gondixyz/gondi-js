@@ -1,8 +1,7 @@
 import { beforeEach, expect, mock, test } from 'bun:test';
 import { Address } from 'viem';
 
-mock.module('@/clients/api/client', () => ({ apolloClient: () => ({}) }));
-const { Gondi } = await import('@/gondi');
+import { flaggedNftCheckStub } from './utils/gondiStub';
 import { MslV6 } from '@/clients/contracts/MslV6';
 import { FlaggedNftError } from '@/errors';
 import { EmitLoanArgs } from '@/gondi';
@@ -22,16 +21,7 @@ const loanFor = (tokenId: bigint, contractAddress: Address = MSL_ADDRESS) =>
 const emitLoans = mock(async () => ({ txHash: '0xtx' }));
 const mslV6 = Object.assign(Object.create(MslV6.prototype), { emitLoans });
 const Msl = mock((_address: Address): unknown => mslV6);
-const nftFlaggedByContractAddressAndTokenId = mock(async () => ({
-  nft: { id: '1', isFlagged: false, wrapsNfts: null } as unknown,
-}));
-
-const createGondi = ({ skipFlaggedNftCheck = false } = {}) =>
-  Object.assign(Object.create(Gondi.prototype) as InstanceType<typeof Gondi>, {
-    skipFlaggedNftCheck,
-    apiClient: { nftFlaggedByContractAddressAndTokenId },
-    contracts: { Msl },
-  });
+const { nftFlaggedByContractAddressAndTokenId, createGondi } = flaggedNftCheckStub({ Msl });
 
 beforeEach(() => {
   emitLoans.mockClear();
