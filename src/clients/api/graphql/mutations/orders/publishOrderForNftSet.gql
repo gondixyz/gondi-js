@@ -1,0 +1,19 @@
+mutation publishOrderForNftSet($orderInput: NftSetOrderInput!) {
+  result: publishOrderForNftSet(orderInput: $orderInput) {
+    ... on SetBidOrder {
+      id
+      status
+      signature
+      marketPlaceAddress
+    }
+    ... on SignatureRequest {
+      key
+      typedData {
+        types
+        primaryType
+        domain
+        message
+      }
+    }
+  }
+}

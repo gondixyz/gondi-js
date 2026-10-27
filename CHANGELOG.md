@@ -1,3 +1,36 @@
+# New Features 0.50.0
+
+## Important
+
+`gondi.makeOrder` can now publish a set bid: one bid that fills with any of a handpicked set of NFTs of one collection. Existing calls keep working.
+
+## Table of Contents
+
+- [Set bids](#set-bids)
+
+## Set bids
+
+**Description:**
+
+- NEW: `gondi.makeOrder` (and `apiClient.publishOrder`) take a `NftSetOrderInput`: `collectionId`, `nftIds` (2 to 1,000 NFTs of that collection, duplicates ignored) and an optional `maxExecutions`, plus the usual order terms. It is published through the API's `publishOrderForNftSet` mutation, signed like every other bid, and resolves to a `SetBidOrder`.
+- The bid fills with any NFT in `nftIds`, up to `maxExecutions` times. An NFT outside the set, including a wrapped twin in another collection, cannot fill it.
+
+**Migration Steps:**
+
+- None. To bid on a set, pass `nftIds` alongside `collectionId`:
+
+```typescript
+const order = await gondi.makeOrder({
+  collectionId,
+  nftIds: [nftId1, nftId2, nftId3],
+  maxExecutions: 2n,
+  currencyAddress,
+  price,
+  startTime,
+  expirationTime,
+});
+```
+
 # New Features 0.49.0
 
 ## Important
