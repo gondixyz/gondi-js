@@ -16,6 +16,7 @@ import {
   ListOffersQueryVariables,
   LoanOfferPublicationInput,
   NftOrderInput,
+  PreviewItemLoanOfferCompetitionQuery,
   RenegotiationOfferInput,
   SingleNftOfferInput,
   SingleNftOrderInput,
@@ -40,6 +41,19 @@ const mapPageInfo = ({ endCursor, hasNextPage }: PageInfo) =>
     ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       { hasNextPage, cursor: endCursor! }
     : { hasNextPage, cursor: null };
+
+/**
+ * Returns a competition preview only when it qualifies, so a quote that cannot
+ * be published never reaches the wallet for a signature.
+ *
+ * @throws Error with the preview's `reason`, or `INSUFFICIENT_IMPROVEMENT`
+ * when it gives none, if the preview is incomplete or does not qualify.
+ */
+const qualifyingPreview = (preview: PreviewItemLoanOfferCompetitionQuery['preview']) => {
+  if (!preview.complete || !preview.qualifies)
+    throw new Error(preview.reason ?? 'INSUFFICIENT_IMPROVEMENT');
+  return preview;
+};
 
 export const apiDomain = () => process.env.GONDI_URL ?? 'https://api.gondi.xyz';
 export const lendingApiDomain = () => process.env.GONDI_URL ?? 'https://api2.gondi.xyz';
@@ -112,9 +126,7 @@ export class Api {
       offerInput,
       replacementIds: publication.replacementIds,
     });
-    if (!preview.complete || !preview.qualifies)
-      throw new Error(preview.reason ?? 'INSUFFICIENT_IMPROVEMENT');
-    return preview;
+    return qualifyingPreview(preview);
   }
 
   async previewRenegotiationPublication(
@@ -125,9 +137,7 @@ export class Api {
       renegotiationInput,
       replacementIds: publication.replacementIds,
     });
-    if (!preview.complete || !preview.qualifies)
-      throw new Error(preview.reason ?? 'INSUFFICIENT_IMPROVEMENT');
-    return preview;
+    return qualifyingPreview(preview);
   }
 
   async saveSingleNftOffer(
