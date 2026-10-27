@@ -1,8 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test';
 import { Address } from 'viem';
 
-mock.module('@/clients/api/client', () => ({ apolloClient: () => ({}) }));
-const { Gondi } = await import('@/gondi');
+import { stubGondi } from './utils/gondiStub';
 
 const MAKER = '0x0000000000000000000000000000000000000001' as Address;
 const SEAPORT = '0x0000000000000000000000000000000000000002' as Address;
@@ -13,7 +12,7 @@ const getCancelOrdersCalldata = mock();
 const sendTransactionData = mock();
 const GenericContract = mock(() => ({ sendTransactionData }));
 
-const gondi = Object.assign(Object.create(Gondi.prototype) as Gondi, {
+const gondi = stubGondi({
   wallet: { account: { address: MAKER } },
   apiClient: { cancelTradeOrders, getCancelOrdersCalldata },
   contracts: { GenericContract },

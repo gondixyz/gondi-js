@@ -2,12 +2,12 @@ import { beforeEach, expect, mock, test } from 'bun:test';
 import { encodeFunctionData, keccak256, zeroAddress } from 'viem';
 import { mainnet } from 'viem/chains';
 
-mock.module('@/clients/api/client', () => ({ apolloClient: () => ({}) }));
-const { Gondi } = await import('@/gondi');
+import { stubGondi } from './utils/gondiStub';
 import { getContracts, getCurrencies } from '@/deploys';
 import { MslV6 } from '@/clients/contracts/MslV6';
 import { multiSourceLoanAbi } from '@/generated/blockchain/v7';
 import { CreditPurchaseQuote } from '@/utils/creditPurchase';
+import type { Gondi } from '@/gondi';
 
 const deployments = getContracts(mainnet);
 const { USDC_ADDRESS } = getCurrencies(mainnet);
@@ -37,7 +37,7 @@ const sellerMsl = Object.assign(Object.create(MslV6.prototype), {
   contract: { read: { getLoanHash: async () => '0x' + '11'.repeat(32) } },
   signExecutionData,
 });
-const gondi = Object.assign(Object.create(Gondi.prototype) as InstanceType<typeof Gondi>, {
+const gondi = stubGondi({
   wallet: { account: { address: buyer }, chain: mainnet, signTypedData },
   bcClient: { getBlock: async () => ({ timestamp: 100n }), readContract },
   apiClient: { publishBuyNowPayLaterOrder: publish },
@@ -94,7 +94,7 @@ const args = {
   tokenId: 1n,
   repaymentCalldata: '0x1234',
   purchaseBundlerAddress: deployments.PurchaseBundler['3.2'],
-} as Parameters<InstanceType<typeof Gondi>['buyNowPayLater']>[0];
+} as Parameters<Gondi['buyNowPayLater']>[0];
 beforeEach(() => {
   publish.mockReset();
   publish.mockImplementation(defaultPublish);
