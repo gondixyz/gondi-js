@@ -49,7 +49,8 @@ const config: CodegenConfig = {
     },
   },
   hooks: {
-    afterOneFileWrite: ['prettier --write'],
+    // An empty ignore path, since .prettierignore lists src/generated.
+    afterOneFileWrite: ['prettier --write --ignore-path='],
   },
 };
 

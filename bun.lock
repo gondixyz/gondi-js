@@ -954,7 +954,7 @@
 
     "graphemer": ["graphemer@1.4.0", "", {}, "sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag=="],
 
-    "graphql": ["graphql@16.12.0", "", {}, "sha512-DKKrynuQRne0PNpEbzuEdHlYOMksHSUI8Zc9Unei5gTsMNA2/vMpoMz/yKba50pejK56qj98qM0SjYxAKi13gQ=="],
+    "graphql": ["graphql@16.14.2", "", {}, "sha512-Chq1s4CY7jmh8gO2qvLIJyfCDIN+EHLFW/9iShnp1z8FjBQMoodWP1kDC36VAMXXIvAjj4ARa7ntfAV2BrjsbA=="],
 
     "graphql-codegen": ["graphql-codegen@0.4.0", "", { "dependencies": { "babel-runtime": "^6.11.6", "change-case": "^3.0.0", "graphql": "^0.7.0", "inflected": "^1.1.7", "mkdirp": "^0.5.1", "node-fetch": "^1.5.3", "yargs": "^5.0.0" }, "bin": { "graphql-codegen": "./lib/cli.js" } }, "sha512-OnLWOmsg5Wi7Z0rcVBzLr1oWM/sd/CgL65ANcrLxu03KTJt42bTLbgDalRs++oDRg++FuyYXbQXJJCKIV8sHeA=="],
 

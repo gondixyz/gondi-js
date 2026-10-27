@@ -15,7 +15,7 @@ Gondi.js is a TypeScript SDK for NFT-backed lending on Ethereum. It provides fun
 - **Verify**: `bun run verify` (lint, which includes the format check, then tests; what CI runs)
 - **Lint fix**: `bun run lint-fix`
 - **Format**: `bun run fmt`
-- **GraphQL codegen**: `bun run gql:types` (requires `GONDI_API` env var or defaults to `https://api.gondi.xyz/lending/graphql`; uses `.env` file)
+- **GraphQL codegen**: `bun run gql:types` (requires `GONDI_API` env var or defaults to `https://api2.gondi.xyz/lending/graphql`; uses `.env` file)
 - **Docs**: `bun run docs`
 
 Pre-commit hook runs `bun lint && bun fmt-check`.
