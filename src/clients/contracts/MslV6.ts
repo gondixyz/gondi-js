@@ -470,17 +470,8 @@ export class MslV6 extends BaseContract<
           ...revokeEvents.map(({ args }) => args),
           ...emitEvents.map(({ args }) => args),
         ];
-        const emitLoanArgs = emitEvents[0].args;
-        return {
-          loan: {
-            id: `${this.contract.address.toLowerCase()}.${emitLoanArgs.loanId}`,
-            ...emitLoanArgs.loan,
-            contractAddress: this.contract.address,
-          },
-          loanId: emitLoanArgs.loanId,
-          ...receipt,
-          results,
-        };
+        const { loan, loanId } = this.toEmittedLoan(emitEvents[0].args, mslEmitArgs);
+        return { loan, loanId, ...receipt, results };
       },
     };
   }
