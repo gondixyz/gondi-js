@@ -50,6 +50,7 @@ import {
   LoanOfferPublicationInput,
   MarketplaceEnum,
   NftOrderInput,
+  NftSetOrderInput,
   OffersSortField,
   OfferValidatorInput,
   Ordering,
@@ -489,7 +490,17 @@ export class Gondi {
     return await saveOffer(signedOffer);
   }
 
-  async makeOrder(orderInput: SingleNftOrderInput | CollectionOrderInput | TraitOrderInput) {
+  /**
+   * Publishes a bid or listing, signing the order when the API asks for it.
+   *
+   * The input picks the kind: `tokenId` for one NFT, `traitIds` for a trait bid,
+   * `nftIds` for a set bid that fills with any of the listed NFTs of
+   * `collectionId` (2 to 1,000), and `collectionId` alone for a collection bid.
+   * A trait, set or collection bid fills up to `maxExecutions` times.
+   */
+  async makeOrder(
+    orderInput: SingleNftOrderInput | CollectionOrderInput | TraitOrderInput | NftSetOrderInput,
+  ) {
     let response = await this.apiClient.publishOrder(orderInput);
     while (response.__typename === 'SignatureRequest') {
       const key = response.key as 'signature';
@@ -501,7 +512,8 @@ export class Gondi {
       response.__typename !== 'SingleNFTOrder' &&
       response.__typename !== 'CollectionOrder' &&
       response.__typename !== 'TraitOrder' &&
-      response.__typename !== 'MultipleTraitOrder'
+      response.__typename !== 'MultipleTraitOrder' &&
+      response.__typename !== 'SetBidOrder'
     )
       throw new Error('This should never happen');
 

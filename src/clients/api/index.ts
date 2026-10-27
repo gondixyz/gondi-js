@@ -16,6 +16,7 @@ import {
   ListOffersQueryVariables,
   LoanOfferPublicationInput,
   NftOrderInput,
+  NftSetOrderInput,
   PreviewItemLoanOfferCompetitionQuery,
   RenegotiationOfferInput,
   SingleNftOfferInput,
@@ -159,13 +160,19 @@ export class Api {
     };
   }
 
-  async publishOrder(orderInput: SingleNftOrderInput | CollectionOrderInput | TraitOrderInput) {
+  async publishOrder(
+    orderInput: SingleNftOrderInput | CollectionOrderInput | TraitOrderInput | NftSetOrderInput,
+  ) {
     if ('traitIds' in orderInput) {
       const response = await this.api.publishOrderForTrait({ orderInput });
       return response.result;
     }
     if ('tokenId' in orderInput) {
       const response = await this.api.publishOrderForNft({ orderInput });
+      return response.result;
+    }
+    if ('nftIds' in orderInput) {
+      const response = await this.api.publishOrderForNftSet({ orderInput });
       return response.result;
     }
     if ('collectionId' in orderInput) {

@@ -120,6 +120,7 @@ export type Artist = Node & {
   slug: Scalars['String'];
   socials: Array<Scalars['String']>;
   totalVolume: Scalars['Float'];
+  /** Eligible collectors: wallets holding the artist's artworks, counted as the Collectors tab lists them by default (listArtistHolderPopulation with includeCustodians false, hideArtistAndBurnWallets true and addressTypes EOA, DELEGATED_EOA and CONTRACT_WALLET). Excludes the artist's registered mint wallets and burn addresses, custodial platforms, contract addresses that are not wallets, and addresses not classified yet. */
   uniqueCollectors: Scalars['Int'];
   volume1d: Scalars['Float'];
   websites: Array<Scalars['String']>;
@@ -252,6 +253,8 @@ export type ArtistHolderEdge = {
 /** Quantity metrics over eligible holders before wallet search. */
 export type ArtistHolderInsights = {
   __typename?: 'ArtistHolderInsights';
+  /** Distinct artworks the holders hold, each counted once however many copies or holders it has, where items counts every copy. */
+  artworks: Scalars['BigInt'];
   buckets: Array<ArtistHolderSizeBucket>;
   editions: Scalars['BigInt'];
   /** Holders of every classified type present in the population; null when fewer than two classified types are present. */
@@ -291,6 +294,8 @@ export type ArtistHolderPopulationConnectionWalletArgs = {
 export type ArtistHolderScopeInput = {
   collectionIds?: InputMaybe<Array<Scalars['Int']>>;
   editionIds?: InputMaybe<Array<Scalars['Int']>>;
+  /** Restrict every selection to these artwork types (OR). */
+  filterItemTypes?: InputMaybe<Array<ItemType>>;
   itemTypes?: InputMaybe<Array<ItemType>>;
   matchAll?: Scalars['Boolean'];
   nftIds?: InputMaybe<Array<Scalars['Int']>>;
@@ -348,6 +353,11 @@ export type ArtistHolderV2 = {
   seriesOwned: Scalars['BigInt'];
   /** Held units with no classification; included in ownedAmount. */
   unclassifiedOwned: Scalars['BigInt'];
+};
+
+/** A wallet holding NFTs linked to the artist through the NFT or collection. Loan-escrowed NFTs belong to their borrower. Counts ERC1155 copies, including units attributed through held or borrowed vaults. */
+export type ArtistHolderV2PreviewItemsArgs = {
+  first?: Scalars['Int'];
 };
 
 export type ArtistHolderV2Connection = {
@@ -431,6 +441,10 @@ export type ArtistRankedHolder = {
   unclassifiedOwned: Scalars['BigInt'];
 };
 
+export type ArtistRankedHolderPreviewItemsArgs = {
+  first?: Scalars['Int'];
+};
+
 export type ArtistRankedHolderEdge = {
   __typename?: 'ArtistRankedHolderEdge';
   cursor: Scalars['String'];
@@ -444,6 +458,7 @@ export enum ArtistSortField {
   OwnersTotalValue = 'OWNERS_TOTAL_VALUE',
   Sales_1D = 'SALES_1D',
   TotalVolume = 'TOTAL_VOLUME',
+  /** By every wallet holding the artist's artworks, before the Collectors tab's exclusions (mint and burn wallets, custodial platforms, contracts that are not wallets, unclassified addresses). Artist.uniqueCollectors counts eligible collectors only, so the order can differ from it. */
   UniqueCollectors = 'UNIQUE_COLLECTORS',
   Volume_1D = 'VOLUME_1D',
 }
@@ -490,6 +505,10 @@ export type Asset = Node & {
   contentTypeMime: Scalars['String'];
   data: Scalars['String'];
   id: Scalars['String'];
+};
+
+export type AssetDataArgs = {
+  preferCached?: Scalars['Boolean'];
 };
 
 export type Auction = Node & {
@@ -1354,6 +1373,16 @@ export type CollectionStatisticsTotalLoanVolume4mArgs = {
   currencyAddress: Scalars['Address'];
 };
 
+/** The valued items of one wrap family the wallets hold. */
+export type CollectionValuation = {
+  __typename?: 'CollectionValuation';
+  collection: Collection;
+  unvaluedNfts: Scalars['Int'];
+  /** Sum of the valued items' estimates, in ETH. */
+  value: Scalars['Float'];
+  valuedNfts: Scalars['Int'];
+};
+
 /** A collection the recent buyers of another collection also bought. */
 export type CollectorsAlsoBought = {
   __typename?: 'CollectorsAlsoBought';
@@ -1582,6 +1611,8 @@ export type Delegation = Node & {
   delegateTo: Scalars['Address'];
   id: Scalars['String'];
   nft: Nft;
+  /** The delegate.xyz rights values enabled for this delegate: the zero hash is the full delegation; a Shadow delegation ends in its expiry. */
+  rights: Array<Scalars['Hash']>;
   timestamp: Scalars['DateTime'];
 };
 
@@ -1709,6 +1740,13 @@ export type EventEdge = {
   node: Event;
 };
 
+/** Which party of an event `users` must be, as the activity feed shows it: FROM is the party that gives (a seller, a lender funding a loan, a repaying borrower, a maker), TO the one that receives (a buyer, a funded borrower, a repaid lender, a taker). ANY is either. */
+export enum EventSide {
+  Any = 'ANY',
+  From = 'FROM',
+  To = 'TO',
+}
+
 export enum EventType {
   BuyOffer = 'BUY_OFFER',
   Claim = 'CLAIM',
@@ -1788,6 +1826,100 @@ export type FulfillManyOrdersCalldata = {
   __typename?: 'FulfillManyOrdersCalldata';
   calldata: Scalars['Hex'];
   marketPlaceAddress: Scalars['Address'];
+};
+
+/** A collector's gallery of works, their own or anyone's; each work says whether the account holds it. */
+export type Gallery = Node & {
+  __typename?: 'Gallery';
+  /** Empty when the gallery keeps its style's own colour mode. */
+  colorMode?: Maybe<GalleryColorMode>;
+  /** The first work, for the gallery's card. */
+  coverNft?: Maybe<Nft>;
+  createdAt: Scalars['DateTime'];
+  description: Scalars['String'];
+  id: Scalars['String'];
+  isPublished: Scalars['Boolean'];
+  name: Scalars['String'];
+  /** The layout a visitor first sees. */
+  openingView: GalleryView;
+  owner: Scalars['Address'];
+  /** Empty when the gallery keeps its style's own palette. */
+  palette?: Maybe<GalleryPalette>;
+  publishedAt?: Maybe<Scalars['DateTime']>;
+  slug: Scalars['String'];
+  style: GalleryStyle;
+  updatedAt: Scalars['DateTime'];
+  /** Whether visitors get a switch between light and dark. */
+  visitorModeSwitch: Scalars['Boolean'];
+  workCount: Scalars['Int'];
+  /** The works in the collector's order; at most 200. */
+  works: Array<GalleryWork>;
+};
+
+/** Whether a gallery's palette is shown light or dark. */
+export enum GalleryColorMode {
+  Dark = 'DARK',
+  Light = 'LIGHT',
+}
+
+/** Everything a collector writes into a gallery. The works are in the order they are shown, and may be anyone's indexed NFTs. */
+export type GalleryInput = {
+  /** Empty to keep the style's own colour mode. */
+  colorMode?: InputMaybe<GalleryColorMode>;
+  description?: Scalars['String'];
+  name: Scalars['String'];
+  /** The layout a visitor first sees. */
+  openingView?: GalleryView;
+  /** Empty to keep the style's own palette. */
+  palette?: InputMaybe<GalleryPalette>;
+  style: GalleryStyle;
+  /** Whether visitors get a switch between light and dark. */
+  visitorModeSwitch?: Scalars['Boolean'];
+  works: Array<GalleryWorkInput>;
+};
+
+/** The colours a gallery is shown in, each with a light and a dark version. */
+export enum GalleryPalette {
+  Candy = 'CANDY',
+  Ink = 'INK',
+  Paper = 'PAPER',
+  Phosphor = 'PHOSPHOR',
+  Slate = 'SLATE',
+}
+
+/** The typography and colour preset a gallery is shown in. */
+export enum GalleryStyle {
+  Elegant = 'ELEGANT',
+  Gondi = 'GONDI',
+  Pop = 'POP',
+  Terminal = 'TERMINAL',
+  WhiteCube = 'WHITE_CUBE',
+}
+
+/** How a gallery's works are laid out: one at a time, or all in a grid. */
+export enum GalleryView {
+  Grid = 'GRID',
+  Slider = 'SLIDER',
+}
+
+/** One work in a gallery, in the collector's order. */
+export type GalleryWork = {
+  __typename?: 'GalleryWork';
+  /** The title of a chapter that opens at this work and runs until the next work that opens one; empty when the work continues the chapter before it. */
+  chapter: Scalars['String'];
+  /** Whether the gallery's account holds the work now: from any of its wallets, as an ERC1155 balance, or as the borrower of an active loan on it. A gallery can show anyone's works, so this only marks them. */
+  heldByOwner: Scalars['Boolean'];
+  nft: Nft;
+  note: Scalars['String'];
+  position: Scalars['Int'];
+};
+
+/** One work in a gallery, with the collector's note. */
+export type GalleryWorkInput = {
+  /** The title of a chapter that opens at this work and runs until the next work that opens one; empty when the work continues the chapter before it. */
+  chapter?: Scalars['String'];
+  nftId: Scalars['Int'];
+  note?: Scalars['String'];
 };
 
 export type GlobalSearchResult = {
@@ -2652,6 +2784,16 @@ export enum LoanRequestType {
   TopUpRequest = 'TOP_UP_REQUEST',
 }
 
+export enum LoanRequestsSortField {
+  CreatedDate = 'CREATED_DATE',
+  HighestBid = 'HIGHEST_BID',
+}
+
+export type LoanRequestsSortInput = {
+  field: LoanRequestsSortField;
+  order: Ordering;
+};
+
 export type LoanSentToAuction = Event &
   LoanActivity &
   LoanEvent &
@@ -2981,6 +3123,10 @@ export type Mutation = {
   cancelTradeOrders: CancelTradeOrdersResult;
   /** Finishes proving the caller's X account with the `code` and `state` X sent back. Errors TWITTER_VERIFICATION_EXPIRED when the sign-in is unknown or older than ten minutes, TWITTER_VERIFICATION_FAILED when X refuses it. */
   completeTwitterVerification: User;
+  /** Create a draft gallery under a profile wallet you sign for, directly or through a confirmed link. Its slug comes from the name. */
+  createGallery: Gallery;
+  /** Delete a gallery for good. */
+  deleteGallery?: Maybe<Scalars['Void']>;
   deleteProfilePicture: User;
   /** Removes the caller's proven X account from their profile. */
   disconnectTwitter: User;
@@ -3025,10 +3171,14 @@ export type Mutation = {
   publishBuyNowPayLaterOrder: BuyNowPayLaterOrderSignatureRequestExtraSeaportData;
   /** Creates a deal order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive a Deal if everything went well. */
   publishDealOrder: DealSignatureRequest;
+  /** Make a gallery public. Publishing again changes nothing. */
+  publishGallery: Gallery;
   /** Creates a collection trade order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an CollectionOrder if everything went well. An order can only be a BID. Platform fees are added to the fees array if not present.Refer to gondi-js examples for more details. */
   publishOrderForCollection: CollectionOrderSignatureRequest;
   /** Creates a single NFT trade order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an SingleNFTOrder if everything went well. An order can be an ASK or a BID. Platform fees are added to the fees array if not present.Refer to gondi-js examples for more details. */
   publishOrderForNft: SingleNftOrderSignatureRequest;
+  /** Creates a bid that fills with any of a handpicked set of NFTs of one collection, up to maxExecutions of them. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive a SetBidOrder if everything went well. An order can only be a BID. Platform fees are added to the fees array if not present. Refer to gondi-js examples for more details. */
+  publishOrderForNftSet: NftSetOrderSignatureRequest;
   /** Creates a trait bid order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive a TraitOrder if everything went well. An order can only be a BID. Platform fees are added to the fees array if not present. Refer to gondi-js examples for more details. */
   publishOrderForTrait: TraitOrderSignatureRequest;
   /** Creates a sell and repay loan order. Sell and repay orders are orders to sell an NFT and use that money to repay a loan leaving the rest for the borrower. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You will have to do this process two times since multiple signatures are required. You should receive an SellAndRepayOrder if everything went well. Refer to gondi-js examples for more details Platform fees are added to the fees array if not present.on how to sign it and pay the order. */
@@ -3082,6 +3232,10 @@ export type Mutation = {
   unfollowNft?: Maybe<Scalars['Void']>;
   /** Unfollow a wallet from every wallet of your account, including follows made before those wallets were linked. */
   unfollowWallet?: Maybe<Scalars['Void']>;
+  /** Take a gallery back to a draft only its account can see. */
+  unpublishGallery: Gallery;
+  /** Replace a gallery's name, description, style and works. A draft's slug follows its new name; a published gallery keeps its slug. The publication state stays as it is. */
+  updateGallery: Gallery;
   uploadProfilePicture: User;
   verifyMailValidationCode: User;
 };
@@ -3124,6 +3278,15 @@ export type MutationCancelTradeOrdersArgs = {
 export type MutationCompleteTwitterVerificationArgs = {
   code: Scalars['String'];
   state: Scalars['String'];
+};
+
+export type MutationCreateGalleryArgs = {
+  address: Scalars['Address'];
+  gallery: GalleryInput;
+};
+
+export type MutationDeleteGalleryArgs = {
+  galleryId: Scalars['Int'];
 };
 
 export type MutationDeleteProfilePictureArgs = {
@@ -3227,12 +3390,20 @@ export type MutationPublishDealOrderArgs = {
   dealInput: DealInput;
 };
 
+export type MutationPublishGalleryArgs = {
+  galleryId: Scalars['Int'];
+};
+
 export type MutationPublishOrderForCollectionArgs = {
   orderInput: CollectionOrderInput;
 };
 
 export type MutationPublishOrderForNftArgs = {
   orderInput: SingleNftOrderInput;
+};
+
+export type MutationPublishOrderForNftSetArgs = {
+  orderInput: NftSetOrderInput;
 };
 
 export type MutationPublishOrderForTraitArgs = {
@@ -3358,6 +3529,15 @@ export type MutationUnfollowWalletArgs = {
   walletAddress: Scalars['Address'];
 };
 
+export type MutationUnpublishGalleryArgs = {
+  galleryId: Scalars['Int'];
+};
+
+export type MutationUpdateGalleryArgs = {
+  gallery: GalleryInput;
+  galleryId: Scalars['Int'];
+};
+
 export type MutationUploadProfilePictureArgs = {
   profilePicture: Scalars['Upload'];
   userId: Scalars['String'];
@@ -3371,6 +3551,10 @@ export type MutationVerifyMailValidationCodeArgs = {
 
 export type Nft = Node & {
   __typename?: 'NFT';
+  /** When the NFT came to one of the given wallets: the latest transfer or mint of it to a wallet that still holds it, which for an NFT escrowed in a loan or stash is the one before the escrow. The return from escrow when a loan is repaid or a stash unwrapped does not count. The earliest such date when several of the wallets hold it; null when none of them holds it, no arrival is recorded, or no wallet is given. */
+  acquiredAt?: Maybe<Scalars['DateTime']>;
+  /** The purchase that brought the NFT to the wallet acquiredAt dates: the latest sale of it within an hour before that arrival that settled in the wallet, directly or forwarded from the buyer (see Sale.forwardTransfers). Null when the NFT arrived otherwise, such as by mint or a plain transfer, or when acquiredAt is null. */
+  acquisitionSale?: Maybe<Sale>;
   /** Active loan of the NFT, which can be of status INITIATED, SENT_TO_AUCTION or DEFAULTED. */
   activeLoan?: Maybe<Loan>;
   animation?: Maybe<Asset>;
@@ -3453,6 +3637,14 @@ export type Nft = Node & {
    */
   wrappersAndNakedNfts: Array<Nft>;
   wrapsNfts?: Maybe<Array<Nft>>;
+};
+
+export type NftAcquiredAtArgs = {
+  wallets: Array<Scalars['Address']>;
+};
+
+export type NftAcquisitionSaleArgs = {
+  wallets: Array<Scalars['Address']>;
 };
 
 export type NftErc1155BalanceArgs = {
@@ -3595,6 +3787,25 @@ export enum NftSearchField {
   TokenId = 'TOKEN_ID',
 }
 
+export type NftSetOrderInput = {
+  amount?: InputMaybe<Scalars['BigInt']>;
+  collectionId: Scalars['Int'];
+  currencyAddress: Scalars['Address'];
+  expirationTime: Scalars['BigInt'];
+  fees?: InputMaybe<Array<OrderFee>>;
+  isAsk?: InputMaybe<Scalars['Boolean']>;
+  maxExecutions?: InputMaybe<Scalars['BigInt']>;
+  /** The NFTs the bid fills with, all in the collection: at least 2, at most 1000, duplicates ignored. */
+  nftIds: Array<Scalars['Int']>;
+  price?: InputMaybe<Scalars['BigInt']>;
+  signature?: InputMaybe<Scalars['Signature']>;
+  startTime: Scalars['BigInt'];
+  stealth?: InputMaybe<Scalars['Boolean']>;
+  taker?: InputMaybe<Scalars['Address']>;
+};
+
+export type NftSetOrderSignatureRequest = SetBidOrder | SignatureRequest;
+
 export enum NftSortField {
   Collection = 'COLLECTION',
   LastSaleDate = 'LAST_SALE_DATE',
@@ -3709,6 +3920,7 @@ export enum NftsSortField {
   RarityRank = 'RARITY_RANK',
   Status = 'STATUS',
   TokenId = 'TOKEN_ID',
+  Valuation = 'VALUATION',
 }
 
 export type NftsSortInput = {
@@ -4191,6 +4403,52 @@ export type PointActivityEdge = {
   node: PointActivity;
 };
 
+/** Accounts ranked by what their NFTs are worth: each account's items are valued as NFT.valuation was when its collection was last refreshed, and the ranking is refreshed daily. */
+export type PortfolioLeaderboard = {
+  __typename?: 'PortfolioLeaderboard';
+  /** When the ranking was taken; null until its first run. */
+  asOf?: Maybe<Scalars['DateTime']>;
+  endCursor?: Maybe<Scalars['String']>;
+  hasNextPage: Scalars['Boolean'];
+  rows: Array<PortfolioLeaderboardRow>;
+  totalCount: Scalars['Int'];
+  /** The rank of the signed-in user's account; null when signed out or unranked. */
+  viewerRank?: Maybe<Scalars['Int']>;
+};
+
+/** One account on the portfolio leaderboard. */
+export type PortfolioLeaderboardRow = {
+  __typename?: 'PortfolioLeaderboardRow';
+  /** Wrap families among the account's held items. */
+  collectionCount: Scalars['Int'];
+  name?: Maybe<Scalars['String']>;
+  profilePictureUrl?: Maybe<Scalars['String']>;
+  rank: Scalars['Int'];
+  /** Held items nothing in the market prices; they add nothing. */
+  unvaluedNfts: Scalars['Int'];
+  /** Sum of the account's items' valuations at the sample, in ETH. */
+  value: Scalars['Float'];
+  valuedNfts: Scalars['Int'];
+  /** The account's representative wallet; its profile is the row's. */
+  walletAddress: Scalars['Address'];
+  /** The account's wallets: its own and the ones confirmed-linked. */
+  walletCount: Scalars['Int'];
+};
+
+/** NFT.valuation summed over the NFTs the wallets own, hold in a stash or a vault, or have as collateral of their active loans as borrower, in ETH. */
+export type PortfolioValuation = {
+  __typename?: 'PortfolioValuation';
+  /** One row per wrap family, highest value first. */
+  collections: Array<CollectionValuation>;
+  /** True when the wallets hold more items than the per-portfolio cap; the cheapest families by floor are the ones left out. */
+  truncated: Scalars['Boolean'];
+  /** Held items nothing in the market prices; they add nothing. */
+  unvaluedNfts: Scalars['Int'];
+  /** Sum of the valued items' estimates, in ETH. */
+  value: Scalars['Float'];
+  valuedNfts: Scalars['Int'];
+};
+
 /** Query for the lending module */
 export type Query = {
   __typename?: 'Query';
@@ -4200,6 +4458,10 @@ export type Query = {
   dealReadiness: DealReadinessResult;
   /** Featured listings in curated order: pinned NFTs, or the cheapest qualifying listing per approved collection when automatic selection is enabled. Each carries the open offer that lends the most on it among those of at least 30 days at an effective APR of at most 25%. A pick shows only while it has a public ask in ETH or WETH on a supported marketplace and such an offer. `first` is capped at 6. */
   featuredListings: Array<LoanDeal>;
+  /** The galleries listed under a profile wallet, most recently edited first. Visitors get the published ones; the account that owns the wallet gets its drafts too. */
+  galleries: Array<Gallery>;
+  /** One gallery by the profile wallet and slug of its URL. A draft is found only by the account that owns it. */
+  gallery?: Maybe<Gallery>;
   getAddressByName?: Maybe<Scalars['Address']>;
   /** The wallet holding a Gondi username, for profile links; never a recipient lookup. */
   getAddressByUsername?: Maybe<Scalars['Address']>;
@@ -4241,6 +4503,10 @@ export type Query = {
   getOutstandingDebt: Scalars['BigInt'];
   getOutstandingLoanStatistics: OutstandingLoanStatistics;
   getPointsFromReferrals: Scalars['Int'];
+  /** Accounts ranked by their portfolio valuation, highest first. An account is a user with its confirmed-linked wallets. */
+  getPortfolioLeaderboard: PortfolioLeaderboard;
+  /** NFT.valuation summed over the NFTs the wallets own, hold in a stash or a vault, or have as collateral of their active loans as borrower, in ETH, in total and per wrap family. ERC1155 tokens are left out. Takes 1 to 10 distinct wallets. At most max_nfts_per_portfolio items, highest family floor first; truncated says when the cap left items out. */
+  getPortfolioValuation: PortfolioValuation;
   getPurchaseBundlerFromOrder: Scalars['Address'];
   /** Profit `lenders` realized per UTC day and currency: the interest and origination fee of each position, counted on the day they left it by repayment or by being refinanced or renegotiated out. Only days that realized something return a row, ordered by `day` then `currencyAddress`. The window opens at the UTC midnight `days - 1` days before today and runs to now. `days` must be from 1 to 366 and `currencyAddresses` may name at most 10 currencies. Summed over all time, the rows equal `getSourcesStatistics` `profit` and `netProfit` for `statuses: [LOAN_REPAID]`. */
   getRealizedProfitsByDay: Array<RealizedProfitDay>;
@@ -4394,6 +4660,17 @@ export type QueryFeaturedListingsArgs = {
 };
 
 /** Query for the lending module */
+export type QueryGalleriesArgs = {
+  address: Scalars['Address'];
+};
+
+/** Query for the lending module */
+export type QueryGalleryArgs = {
+  address: Scalars['Address'];
+  slug: Scalars['String'];
+};
+
+/** Query for the lending module */
 export type QueryGetAddressByNameArgs = {
   name: Scalars['String'];
 };
@@ -4536,6 +4813,17 @@ export type QueryGetOrderSaleCalldataArgs = {
 export type QueryGetOutstandingDebtArgs = {
   borrowers: Array<Scalars['Address']>;
   currencyAddresses?: InputMaybe<Array<Scalars['Address']>>;
+};
+
+/** Query for the lending module */
+export type QueryGetPortfolioLeaderboardArgs = {
+  after?: InputMaybe<Scalars['String']>;
+  first?: Scalars['Int'];
+};
+
+/** Query for the lending module */
+export type QueryGetPortfolioValuationArgs = {
+  owners: Array<Scalars['Address']>;
 };
 
 /** Query for the lending module */
@@ -4933,6 +5221,7 @@ export type QueryListEventsArgs = {
   topEvents?: InputMaybe<Scalars['Boolean']>;
   traits?: InputMaybe<Array<Scalars['Int']>>;
   users?: InputMaybe<Array<Scalars['Address']>>;
+  usersSide?: EventSide;
 };
 
 /** Query for the lending module */
@@ -4948,6 +5237,7 @@ export type QueryListListingsArgs = {
   marketplaceNames?: InputMaybe<Array<MarketplaceEnum>>;
   searchTerm?: InputMaybe<Scalars['String']>;
   slugs?: InputMaybe<Array<Scalars['String']>>;
+  sortBy?: InputMaybe<LoanRequestsSortInput>;
   userFilter?: InputMaybe<UserFilter>;
   withLoans?: InputMaybe<Scalars['Boolean']>;
 };
@@ -4996,6 +5286,7 @@ export type QueryListLoanEventsArgs = {
 /** Query for the lending module */
 export type QueryListLoansArgs = {
   after?: InputMaybe<Scalars['String']>;
+  aroundNftId?: InputMaybe<Scalars['Int']>;
   blockchains?: InputMaybe<Array<BlockchainEnum>>;
   borrowers?: InputMaybe<Array<Scalars['String']>>;
   collections?: InputMaybe<Array<Scalars['Int']>>;
@@ -6124,6 +6415,7 @@ export type SubscriptionActivityUpdatesArgs = {
   priceUsd?: InputMaybe<Interval>;
   topEvents?: InputMaybe<Scalars['Boolean']>;
   users?: InputMaybe<Array<Scalars['Address']>>;
+  usersSide?: EventSide;
 };
 
 export type SubscriptionLendingMarketStatisticsUpdatesArgs = {
@@ -6181,11 +6473,13 @@ export type TopLender = {
   defaultRateBps?: Maybe<Scalars['BigInt']>;
   earnings?: Maybe<Scalars['BigInt']>;
   earningsUsd?: Maybe<Scalars['Float']>;
+  name?: Maybe<Scalars['String']>;
   netEaprBps?: Maybe<Scalars['BigInt']>;
   originatedCount: Scalars['Int'];
   outstandingPrincipal?: Maybe<Scalars['BigInt']>;
   outstandingUsd?: Maybe<Scalars['Float']>;
   paidInterest?: Maybe<Scalars['BigInt']>;
+  profilePictureUrl?: Maybe<Scalars['String']>;
   rank: Scalars['Int'];
   refinancedCount: Scalars['Int'];
   settledCount: Scalars['Int'];
@@ -6819,6 +7113,7 @@ export enum ValuationBasis {
   ItemBid = 'ITEM_BID',
   LastSale = 'LAST_SALE',
   Listing = 'LISTING',
+  Loan = 'LOAN',
   SaleHistory = 'SALE_HISTORY',
   TraitFloor = 'TRAIT_FLOOR',
 }
@@ -7338,6 +7633,33 @@ export type PublishOrderForNftMutation = {
         status: string;
         signature: Hex;
         marketPlaceAddress: Address;
+      };
+};
+
+export type PublishOrderForNftSetMutationVariables = Exact<{
+  orderInput: NftSetOrderInput;
+}>;
+
+export type PublishOrderForNftSetMutation = {
+  __typename?: 'Mutation';
+  result:
+    | {
+        __typename?: 'SetBidOrder';
+        id: string;
+        status: string;
+        signature: Hex;
+        marketPlaceAddress: Address;
+      }
+    | {
+        __typename?: 'SignatureRequest';
+        key: string;
+        typedData: {
+          __typename?: 'TypedData';
+          types: object;
+          primaryType: string;
+          domain: object;
+          message: object;
+        };
       };
 };
 
@@ -8510,6 +8832,7 @@ export type ArtistHolderEdgeFieldPolicy = {
   node?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type ArtistHolderInsightsKeySpecifier = (
+  | 'artworks'
   | 'buckets'
   | 'editions'
   | 'everyTypeHolders'
@@ -8528,6 +8851,7 @@ export type ArtistHolderInsightsKeySpecifier = (
   | ArtistHolderInsightsKeySpecifier
 )[];
 export type ArtistHolderInsightsFieldPolicy = {
+  artworks?: FieldPolicy<any> | FieldReadFunction<any>;
   buckets?: FieldPolicy<any> | FieldReadFunction<any>;
   editions?: FieldPolicy<any> | FieldReadFunction<any>;
   everyTypeHolders?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -9603,6 +9927,19 @@ export type CollectionStatisticsFieldPolicy = {
   totalVolume3m?: FieldPolicy<any> | FieldReadFunction<any>;
   totalVolume4m?: FieldPolicy<any> | FieldReadFunction<any>;
 };
+export type CollectionValuationKeySpecifier = (
+  | 'collection'
+  | 'unvaluedNfts'
+  | 'value'
+  | 'valuedNfts'
+  | CollectionValuationKeySpecifier
+)[];
+export type CollectionValuationFieldPolicy = {
+  collection?: FieldPolicy<any> | FieldReadFunction<any>;
+  unvaluedNfts?: FieldPolicy<any> | FieldReadFunction<any>;
+  value?: FieldPolicy<any> | FieldReadFunction<any>;
+  valuedNfts?: FieldPolicy<any> | FieldReadFunction<any>;
+};
 export type CollectorsAlsoBoughtKeySpecifier = (
   | 'collection'
   | 'examplePurchases'
@@ -9833,6 +10170,7 @@ export type DelegationKeySpecifier = (
   | 'delegateTo'
   | 'id'
   | 'nft'
+  | 'rights'
   | 'timestamp'
   | DelegationKeySpecifier
 )[];
@@ -9841,6 +10179,7 @@ export type DelegationFieldPolicy = {
   delegateTo?: FieldPolicy<any> | FieldReadFunction<any>;
   id?: FieldPolicy<any> | FieldReadFunction<any>;
   nft?: FieldPolicy<any> | FieldReadFunction<any>;
+  rights?: FieldPolicy<any> | FieldReadFunction<any>;
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type DelegationConnectionKeySpecifier = (
@@ -9998,6 +10337,60 @@ export type FulfillManyOrdersCalldataKeySpecifier = (
 export type FulfillManyOrdersCalldataFieldPolicy = {
   calldata?: FieldPolicy<any> | FieldReadFunction<any>;
   marketPlaceAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type GalleryKeySpecifier = (
+  | 'colorMode'
+  | 'coverNft'
+  | 'createdAt'
+  | 'description'
+  | 'id'
+  | 'isPublished'
+  | 'name'
+  | 'openingView'
+  | 'owner'
+  | 'palette'
+  | 'publishedAt'
+  | 'slug'
+  | 'style'
+  | 'updatedAt'
+  | 'visitorModeSwitch'
+  | 'workCount'
+  | 'works'
+  | GalleryKeySpecifier
+)[];
+export type GalleryFieldPolicy = {
+  colorMode?: FieldPolicy<any> | FieldReadFunction<any>;
+  coverNft?: FieldPolicy<any> | FieldReadFunction<any>;
+  createdAt?: FieldPolicy<any> | FieldReadFunction<any>;
+  description?: FieldPolicy<any> | FieldReadFunction<any>;
+  id?: FieldPolicy<any> | FieldReadFunction<any>;
+  isPublished?: FieldPolicy<any> | FieldReadFunction<any>;
+  name?: FieldPolicy<any> | FieldReadFunction<any>;
+  openingView?: FieldPolicy<any> | FieldReadFunction<any>;
+  owner?: FieldPolicy<any> | FieldReadFunction<any>;
+  palette?: FieldPolicy<any> | FieldReadFunction<any>;
+  publishedAt?: FieldPolicy<any> | FieldReadFunction<any>;
+  slug?: FieldPolicy<any> | FieldReadFunction<any>;
+  style?: FieldPolicy<any> | FieldReadFunction<any>;
+  updatedAt?: FieldPolicy<any> | FieldReadFunction<any>;
+  visitorModeSwitch?: FieldPolicy<any> | FieldReadFunction<any>;
+  workCount?: FieldPolicy<any> | FieldReadFunction<any>;
+  works?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type GalleryWorkKeySpecifier = (
+  | 'chapter'
+  | 'heldByOwner'
+  | 'nft'
+  | 'note'
+  | 'position'
+  | GalleryWorkKeySpecifier
+)[];
+export type GalleryWorkFieldPolicy = {
+  chapter?: FieldPolicy<any> | FieldReadFunction<any>;
+  heldByOwner?: FieldPolicy<any> | FieldReadFunction<any>;
+  nft?: FieldPolicy<any> | FieldReadFunction<any>;
+  note?: FieldPolicy<any> | FieldReadFunction<any>;
+  position?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type GlobalSearchResultKeySpecifier = ('id' | GlobalSearchResultKeySpecifier)[];
 export type GlobalSearchResultFieldPolicy = {
@@ -11539,6 +11932,8 @@ export type MutationKeySpecifier = (
   | 'addOrUpdateTopUpRequest'
   | 'cancelTradeOrders'
   | 'completeTwitterVerification'
+  | 'createGallery'
+  | 'deleteGallery'
   | 'deleteProfilePicture'
   | 'disconnectTwitter'
   | 'editUser'
@@ -11564,8 +11959,10 @@ export type MutationKeySpecifier = (
   | 'publishBulkOrdersForNfts'
   | 'publishBuyNowPayLaterOrder'
   | 'publishDealOrder'
+  | 'publishGallery'
   | 'publishOrderForCollection'
   | 'publishOrderForNft'
+  | 'publishOrderForNftSet'
   | 'publishOrderForTrait'
   | 'publishSellAndRepayOrder'
   | 'recordItemVisit'
@@ -11595,6 +11992,8 @@ export type MutationKeySpecifier = (
   | 'unfollowEdition'
   | 'unfollowNft'
   | 'unfollowWallet'
+  | 'unpublishGallery'
+  | 'updateGallery'
   | 'uploadProfilePicture'
   | 'verifyMailValidationCode'
   | MutationKeySpecifier
@@ -11607,6 +12006,8 @@ export type MutationFieldPolicy = {
   addOrUpdateTopUpRequest?: FieldPolicy<any> | FieldReadFunction<any>;
   cancelTradeOrders?: FieldPolicy<any> | FieldReadFunction<any>;
   completeTwitterVerification?: FieldPolicy<any> | FieldReadFunction<any>;
+  createGallery?: FieldPolicy<any> | FieldReadFunction<any>;
+  deleteGallery?: FieldPolicy<any> | FieldReadFunction<any>;
   deleteProfilePicture?: FieldPolicy<any> | FieldReadFunction<any>;
   disconnectTwitter?: FieldPolicy<any> | FieldReadFunction<any>;
   editUser?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -11632,8 +12033,10 @@ export type MutationFieldPolicy = {
   publishBulkOrdersForNfts?: FieldPolicy<any> | FieldReadFunction<any>;
   publishBuyNowPayLaterOrder?: FieldPolicy<any> | FieldReadFunction<any>;
   publishDealOrder?: FieldPolicy<any> | FieldReadFunction<any>;
+  publishGallery?: FieldPolicy<any> | FieldReadFunction<any>;
   publishOrderForCollection?: FieldPolicy<any> | FieldReadFunction<any>;
   publishOrderForNft?: FieldPolicy<any> | FieldReadFunction<any>;
+  publishOrderForNftSet?: FieldPolicy<any> | FieldReadFunction<any>;
   publishOrderForTrait?: FieldPolicy<any> | FieldReadFunction<any>;
   publishSellAndRepayOrder?: FieldPolicy<any> | FieldReadFunction<any>;
   recordItemVisit?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -11663,10 +12066,14 @@ export type MutationFieldPolicy = {
   unfollowEdition?: FieldPolicy<any> | FieldReadFunction<any>;
   unfollowNft?: FieldPolicy<any> | FieldReadFunction<any>;
   unfollowWallet?: FieldPolicy<any> | FieldReadFunction<any>;
+  unpublishGallery?: FieldPolicy<any> | FieldReadFunction<any>;
+  updateGallery?: FieldPolicy<any> | FieldReadFunction<any>;
   uploadProfilePicture?: FieldPolicy<any> | FieldReadFunction<any>;
   verifyMailValidationCode?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type NFTKeySpecifier = (
+  | 'acquiredAt'
+  | 'acquisitionSale'
   | 'activeLoan'
   | 'animation'
   | 'artists'
@@ -11714,6 +12121,8 @@ export type NFTKeySpecifier = (
   | NFTKeySpecifier
 )[];
 export type NFTFieldPolicy = {
+  acquiredAt?: FieldPolicy<any> | FieldReadFunction<any>;
+  acquisitionSale?: FieldPolicy<any> | FieldReadFunction<any>;
   activeLoan?: FieldPolicy<any> | FieldReadFunction<any>;
   animation?: FieldPolicy<any> | FieldReadFunction<any>;
   artists?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -12342,11 +12751,68 @@ export type PointActivityEdgeFieldPolicy = {
   cursor?: FieldPolicy<any> | FieldReadFunction<any>;
   node?: FieldPolicy<any> | FieldReadFunction<any>;
 };
+export type PortfolioLeaderboardKeySpecifier = (
+  | 'asOf'
+  | 'endCursor'
+  | 'hasNextPage'
+  | 'rows'
+  | 'totalCount'
+  | 'viewerRank'
+  | PortfolioLeaderboardKeySpecifier
+)[];
+export type PortfolioLeaderboardFieldPolicy = {
+  asOf?: FieldPolicy<any> | FieldReadFunction<any>;
+  endCursor?: FieldPolicy<any> | FieldReadFunction<any>;
+  hasNextPage?: FieldPolicy<any> | FieldReadFunction<any>;
+  rows?: FieldPolicy<any> | FieldReadFunction<any>;
+  totalCount?: FieldPolicy<any> | FieldReadFunction<any>;
+  viewerRank?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type PortfolioLeaderboardRowKeySpecifier = (
+  | 'collectionCount'
+  | 'name'
+  | 'profilePictureUrl'
+  | 'rank'
+  | 'unvaluedNfts'
+  | 'value'
+  | 'valuedNfts'
+  | 'walletAddress'
+  | 'walletCount'
+  | PortfolioLeaderboardRowKeySpecifier
+)[];
+export type PortfolioLeaderboardRowFieldPolicy = {
+  collectionCount?: FieldPolicy<any> | FieldReadFunction<any>;
+  name?: FieldPolicy<any> | FieldReadFunction<any>;
+  profilePictureUrl?: FieldPolicy<any> | FieldReadFunction<any>;
+  rank?: FieldPolicy<any> | FieldReadFunction<any>;
+  unvaluedNfts?: FieldPolicy<any> | FieldReadFunction<any>;
+  value?: FieldPolicy<any> | FieldReadFunction<any>;
+  valuedNfts?: FieldPolicy<any> | FieldReadFunction<any>;
+  walletAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  walletCount?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type PortfolioValuationKeySpecifier = (
+  | 'collections'
+  | 'truncated'
+  | 'unvaluedNfts'
+  | 'value'
+  | 'valuedNfts'
+  | PortfolioValuationKeySpecifier
+)[];
+export type PortfolioValuationFieldPolicy = {
+  collections?: FieldPolicy<any> | FieldReadFunction<any>;
+  truncated?: FieldPolicy<any> | FieldReadFunction<any>;
+  unvaluedNfts?: FieldPolicy<any> | FieldReadFunction<any>;
+  value?: FieldPolicy<any> | FieldReadFunction<any>;
+  valuedNfts?: FieldPolicy<any> | FieldReadFunction<any>;
+};
 export type QueryKeySpecifier = (
   | 'collectionMarketDepth'
   | 'collectorsAlsoBought'
   | 'dealReadiness'
   | 'featuredListings'
+  | 'galleries'
+  | 'gallery'
   | 'getAddressByName'
   | 'getAddressByUsername'
   | 'getArtist'
@@ -12376,6 +12842,8 @@ export type QueryKeySpecifier = (
   | 'getOutstandingDebt'
   | 'getOutstandingLoanStatistics'
   | 'getPointsFromReferrals'
+  | 'getPortfolioLeaderboard'
+  | 'getPortfolioValuation'
   | 'getPurchaseBundlerFromOrder'
   | 'getRealizedProfitsByDay'
   | 'getReferredWallets'
@@ -12462,6 +12930,8 @@ export type QueryFieldPolicy = {
   collectorsAlsoBought?: FieldPolicy<any> | FieldReadFunction<any>;
   dealReadiness?: FieldPolicy<any> | FieldReadFunction<any>;
   featuredListings?: FieldPolicy<any> | FieldReadFunction<any>;
+  galleries?: FieldPolicy<any> | FieldReadFunction<any>;
+  gallery?: FieldPolicy<any> | FieldReadFunction<any>;
   getAddressByName?: FieldPolicy<any> | FieldReadFunction<any>;
   getAddressByUsername?: FieldPolicy<any> | FieldReadFunction<any>;
   getArtist?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -12491,6 +12961,8 @@ export type QueryFieldPolicy = {
   getOutstandingDebt?: FieldPolicy<any> | FieldReadFunction<any>;
   getOutstandingLoanStatistics?: FieldPolicy<any> | FieldReadFunction<any>;
   getPointsFromReferrals?: FieldPolicy<any> | FieldReadFunction<any>;
+  getPortfolioLeaderboard?: FieldPolicy<any> | FieldReadFunction<any>;
+  getPortfolioValuation?: FieldPolicy<any> | FieldReadFunction<any>;
   getPurchaseBundlerFromOrder?: FieldPolicy<any> | FieldReadFunction<any>;
   getRealizedProfitsByDay?: FieldPolicy<any> | FieldReadFunction<any>;
   getReferredWallets?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -13570,11 +14042,13 @@ export type TopLenderKeySpecifier = (
   | 'defaultRateBps'
   | 'earnings'
   | 'earningsUsd'
+  | 'name'
   | 'netEaprBps'
   | 'originatedCount'
   | 'outstandingPrincipal'
   | 'outstandingUsd'
   | 'paidInterest'
+  | 'profilePictureUrl'
   | 'rank'
   | 'refinancedCount'
   | 'settledCount'
@@ -13586,11 +14060,13 @@ export type TopLenderFieldPolicy = {
   defaultRateBps?: FieldPolicy<any> | FieldReadFunction<any>;
   earnings?: FieldPolicy<any> | FieldReadFunction<any>;
   earningsUsd?: FieldPolicy<any> | FieldReadFunction<any>;
+  name?: FieldPolicy<any> | FieldReadFunction<any>;
   netEaprBps?: FieldPolicy<any> | FieldReadFunction<any>;
   originatedCount?: FieldPolicy<any> | FieldReadFunction<any>;
   outstandingPrincipal?: FieldPolicy<any> | FieldReadFunction<any>;
   outstandingUsd?: FieldPolicy<any> | FieldReadFunction<any>;
   paidInterest?: FieldPolicy<any> | FieldReadFunction<any>;
+  profilePictureUrl?: FieldPolicy<any> | FieldReadFunction<any>;
   rank?: FieldPolicy<any> | FieldReadFunction<any>;
   refinancedCount?: FieldPolicy<any> | FieldReadFunction<any>;
   settledCount?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -14649,6 +15125,13 @@ export type StrictTypedTypePolicies = {
       | (() => undefined | CollectionStatisticsKeySpecifier);
     fields?: CollectionStatisticsFieldPolicy;
   };
+  CollectionValuation?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | CollectionValuationKeySpecifier
+      | (() => undefined | CollectionValuationKeySpecifier);
+    fields?: CollectionValuationFieldPolicy;
+  };
   CollectorsAlsoBought?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?:
       | false
@@ -14813,6 +15296,14 @@ export type StrictTypedTypePolicies = {
       | FulfillManyOrdersCalldataKeySpecifier
       | (() => undefined | FulfillManyOrdersCalldataKeySpecifier);
     fields?: FulfillManyOrdersCalldataFieldPolicy;
+  };
+  Gallery?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?: false | GalleryKeySpecifier | (() => undefined | GalleryKeySpecifier);
+    fields?: GalleryFieldPolicy;
+  };
+  GalleryWork?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?: false | GalleryWorkKeySpecifier | (() => undefined | GalleryWorkKeySpecifier);
+    fields?: GalleryWorkFieldPolicy;
   };
   GlobalSearchResult?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?:
@@ -15463,6 +15954,27 @@ export type StrictTypedTypePolicies = {
       | PointActivityEdgeKeySpecifier
       | (() => undefined | PointActivityEdgeKeySpecifier);
     fields?: PointActivityEdgeFieldPolicy;
+  };
+  PortfolioLeaderboard?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | PortfolioLeaderboardKeySpecifier
+      | (() => undefined | PortfolioLeaderboardKeySpecifier);
+    fields?: PortfolioLeaderboardFieldPolicy;
+  };
+  PortfolioLeaderboardRow?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | PortfolioLeaderboardRowKeySpecifier
+      | (() => undefined | PortfolioLeaderboardRowKeySpecifier);
+    fields?: PortfolioLeaderboardRowFieldPolicy;
+  };
+  PortfolioValuation?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | PortfolioValuationKeySpecifier
+      | (() => undefined | PortfolioValuationKeySpecifier);
+    fields?: PortfolioValuationFieldPolicy;
   };
   Query?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | QueryKeySpecifier | (() => undefined | QueryKeySpecifier);
@@ -16183,6 +16695,27 @@ export const PublishOrderForNftDocument = gql`
   mutation publishOrderForNft($orderInput: SingleNFTOrderInput!) {
     result: publishOrderForNft(orderInput: $orderInput) {
       ... on SingleNFTOrder {
+        id
+        status
+        signature
+        marketPlaceAddress
+      }
+      ... on SignatureRequest {
+        key
+        typedData {
+          types
+          primaryType
+          domain
+          message
+        }
+      }
+    }
+  }
+`;
+export const PublishOrderForNftSetDocument = gql`
+  mutation publishOrderForNftSet($orderInput: NftSetOrderInput!) {
+    result: publishOrderForNftSet(orderInput: $orderInput) {
+      ... on SetBidOrder {
         id
         status
         signature
@@ -17060,6 +17593,16 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
         variables,
         options,
       ) as Promise<PublishOrderForNftMutation>;
+    },
+    publishOrderForNftSet(
+      variables: PublishOrderForNftSetMutationVariables,
+      options?: C,
+    ): Promise<PublishOrderForNftSetMutation> {
+      return requester<PublishOrderForNftSetMutation, PublishOrderForNftSetMutationVariables>(
+        PublishOrderForNftSetDocument,
+        variables,
+        options,
+      ) as Promise<PublishOrderForNftSetMutation>;
     },
     publishOrderForTrait(
       variables: PublishOrderForTraitMutationVariables,

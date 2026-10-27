@@ -125,6 +125,10 @@ type Artist implements Node {
   slug: String!
   socials: [String!]!
   totalVolume: Float!
+
+  """
+  Eligible collectors: wallets holding the artist's artworks, counted as the Collectors tab lists them by default (listArtistHolderPopulation with includeCustodians false, hideArtistAndBurnWallets true and addressTypes EOA, DELEGATED_EOA and CONTRACT_WALLET). Excludes the artist's registered mint wallets and burn addresses, custodial platforms, contract addresses that are not wallets, and addresses not classified yet.
+  """
   uniqueCollectors: Int!
   volume1d: Float!
   websites: [String!]!
@@ -289,6 +293,10 @@ type ArtistHolderEdge {
 Quantity metrics over eligible holders before wallet search.
 """
 type ArtistHolderInsights {
+  """
+  Distinct artworks the holders hold, each counted once however many copies or holders it has, where items counts every copy.
+  """
+  artworks: BigInt!
   buckets: [ArtistHolderSizeBucket!]!
   editions: BigInt!
 
@@ -337,6 +345,11 @@ Union of collection, edition, NFT and item-type selections, intersected with the
 input ArtistHolderScopeInput {
   collectionIds: [Int!] = null
   editionIds: [Int!] = null
+
+  """
+  Restrict every selection to these artwork types (OR).
+  """
+  filterItemTypes: [ItemType!] = null
   itemTypes: [ItemType!] = null
   matchAll: Boolean! = false
   nftIds: [Int!] = null
@@ -414,7 +427,7 @@ type ArtistHolderV2 {
   """
   Up to 24 distinct held artworks, with copies grouped by NFT.
   """
-  previewItems: [ArtistHolding!]!
+  previewItems(first: Int! = 24): [ArtistHolding!]!
   profilePictureUrl: String
 
   """
@@ -530,7 +543,7 @@ type ArtistRankedHolder {
   """
   Up to 24 distinct held artworks, with copies grouped by NFT.
   """
-  previewItems: [ArtistHolding!]!
+  previewItems(first: Int! = 24): [ArtistHolding!]!
   profilePictureUrl: String
 
   """
@@ -556,6 +569,10 @@ enum ArtistSortField {
   OWNERS_TOTAL_VALUE
   SALES_1D
   TOTAL_VOLUME
+
+  """
+  By every wallet holding the artist's artworks, before the Collectors tab's exclusions (mint and burn wallets, custodial platforms, contracts that are not wallets, unclassified addresses). Artist.uniqueCollectors counts eligible collectors only, so the order can differ from it.
+  """
   UNIQUE_COLLECTORS
   VOLUME_1D
 }
@@ -595,7 +612,7 @@ type Asset implements Node {
   accessTypeName: String!
   cacheUrl: String
   contentTypeMime: String!
-  data: String!
+  data(preferCached: Boolean! = false): String!
   id: String!
 }
 
@@ -1340,6 +1357,20 @@ type CollectionStatistics {
 }
 
 """
+The valued items of one wrap family the wallets hold.
+"""
+type CollectionValuation {
+  collection: Collection!
+  unvaluedNfts: Int!
+
+  """
+  Sum of the valued items' estimates, in ETH.
+  """
+  value: Float!
+  valuedNfts: Int!
+}
+
+"""
 A collection the recent buyers of another collection also bought.
 """
 type CollectorsAlsoBought {
@@ -1551,6 +1582,11 @@ type Delegation implements Node {
   delegateTo: Address!
   id: String!
   nft: NFT!
+
+  """
+  The delegate.xyz rights values enabled for this delegate: the zero hash is the full delegation; a Shadow delegation ends in its expiry.
+  """
+  rights: [Hash!]!
   timestamp: DateTime!
 }
 
@@ -1673,6 +1709,15 @@ type EventEdge {
   node: Event!
 }
 
+"""
+Which party of an event `users` must be, as the activity feed shows it: FROM is the party that gives (a seller, a lender funding a loan, a repaying borrower, a maker), TO the one that receives (a buyer, a funded borrower, a repaid lender, a taker). ANY is either.
+"""
+enum EventSide {
+  ANY
+  FROM
+  TO
+}
+
 enum EventType {
   BUY_OFFER
   CLAIM
@@ -1747,6 +1792,149 @@ type FulfillManyBidOrdersCalldata {
 type FulfillManyOrdersCalldata {
   calldata: Hex!
   marketPlaceAddress: Address!
+}
+
+"""
+A collector's gallery of works, their own or anyone's; each work says whether the account holds it.
+"""
+type Gallery implements Node {
+  """
+  Empty when the gallery keeps its style's own colour mode.
+  """
+  colorMode: GalleryColorMode
+
+  """
+  The first work, for the gallery's card.
+  """
+  coverNft: NFT
+  createdAt: DateTime!
+  description: String!
+  id: String!
+  isPublished: Boolean!
+  name: String!
+
+  """
+  The layout a visitor first sees.
+  """
+  openingView: GalleryView!
+  owner: Address!
+
+  """
+  Empty when the gallery keeps its style's own palette.
+  """
+  palette: GalleryPalette
+  publishedAt: DateTime
+  slug: String!
+  style: GalleryStyle!
+  updatedAt: DateTime!
+
+  """
+  Whether visitors get a switch between light and dark.
+  """
+  visitorModeSwitch: Boolean!
+  workCount: Int!
+
+  """
+  The works in the collector's order; at most 200.
+  """
+  works: [GalleryWork!]!
+}
+
+"""
+Whether a gallery's palette is shown light or dark.
+"""
+enum GalleryColorMode {
+  DARK
+  LIGHT
+}
+
+"""
+Everything a collector writes into a gallery. The works are in the order they are shown, and may be anyone's indexed NFTs.
+"""
+input GalleryInput {
+  """
+  Empty to keep the style's own colour mode.
+  """
+  colorMode: GalleryColorMode = null
+  description: String! = ""
+  name: String!
+
+  """
+  The layout a visitor first sees.
+  """
+  openingView: GalleryView! = SLIDER
+
+  """
+  Empty to keep the style's own palette.
+  """
+  palette: GalleryPalette = null
+  style: GalleryStyle!
+
+  """
+  Whether visitors get a switch between light and dark.
+  """
+  visitorModeSwitch: Boolean! = false
+  works: [GalleryWorkInput!]!
+}
+
+"""
+The colours a gallery is shown in, each with a light and a dark version.
+"""
+enum GalleryPalette {
+  CANDY
+  INK
+  PAPER
+  PHOSPHOR
+  SLATE
+}
+
+"""
+The typography and colour preset a gallery is shown in.
+"""
+enum GalleryStyle {
+  ELEGANT
+  GONDI
+  POP
+  TERMINAL
+  WHITE_CUBE
+}
+
+"""
+How a gallery's works are laid out: one at a time, or all in a grid.
+"""
+enum GalleryView {
+  GRID
+  SLIDER
+}
+
+"""
+One work in a gallery, in the collector's order.
+"""
+type GalleryWork {
+  """
+  The title of a chapter that opens at this work and runs until the next work that opens one; empty when the work continues the chapter before it.
+  """
+  chapter: String!
+
+  """
+  Whether the gallery's account holds the work now: from any of its wallets, as an ERC1155 balance, or as the borrower of an active loan on it. A gallery can show anyone's works, so this only marks them.
+  """
+  heldByOwner: Boolean!
+  nft: NFT!
+  note: String!
+  position: Int!
+}
+
+"""
+One work in a gallery, with the collector's note.
+"""
+input GalleryWorkInput {
+  """
+  The title of a chapter that opens at this work and runs until the next work that opens one; empty when the work continues the chapter before it.
+  """
+  chapter: String! = ""
+  nftId: Int!
+  note: String! = ""
 }
 
 interface GlobalSearchResult {
@@ -2640,6 +2828,16 @@ enum LoanRequestType {
   TOP_UP_REQUEST
 }
 
+enum LoanRequestsSortField {
+  CREATED_DATE
+  HIGHEST_BID
+}
+
+input LoanRequestsSortInput {
+  field: LoanRequestsSortField!
+  order: Ordering!
+}
+
 type LoanSentToAuction implements Event & LoanActivity & LoanEvent & Node {
   activityType: String!
   eventType: String!
@@ -3005,6 +3203,16 @@ type Mutation {
   Finishes proving the caller's X account with the `code` and `state` X sent back. Errors TWITTER_VERIFICATION_EXPIRED when the sign-in is unknown or older than ten minutes, TWITTER_VERIFICATION_FAILED when X refuses it.
   """
   completeTwitterVerification(code: String!, state: String!): User!
+
+  """
+  Create a draft gallery under a profile wallet you sign for, directly or through a confirmed link. Its slug comes from the name.
+  """
+  createGallery(address: Address!, gallery: GalleryInput!): Gallery!
+
+  """
+  Delete a gallery for good.
+  """
+  deleteGallery(galleryId: Int!): Void
   deleteProfilePicture(userId: Int!): User!
 
   """
@@ -3110,6 +3318,11 @@ type Mutation {
   publishDealOrder(dealInput: DealInput!): DealSignatureRequest!
 
   """
+  Make a gallery public. Publishing again changes nothing.
+  """
+  publishGallery(galleryId: Int!): Gallery!
+
+  """
   Creates a collection trade order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an CollectionOrder if everything went well. An order can only be a BID. Platform fees are added to the fees array if not present.Refer to gondi-js examples for more details.
   """
   publishOrderForCollection(orderInput: CollectionOrderInput!): CollectionOrderSignatureRequest!
@@ -3118,6 +3331,11 @@ type Mutation {
   Creates a single NFT trade order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive an SingleNFTOrder if everything went well. An order can be an ASK or a BID. Platform fees are added to the fees array if not present.Refer to gondi-js examples for more details.
   """
   publishOrderForNft(orderInput: SingleNFTOrderInput!): SingleNFTOrderSignatureRequest!
+
+  """
+  Creates a bid that fills with any of a handpicked set of NFTs of one collection, up to maxExecutions of them. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive a SetBidOrder if everything went well. An order can only be a BID. Platform fees are added to the fees array if not present. Refer to gondi-js examples for more details.
+  """
+  publishOrderForNftSet(orderInput: NftSetOrderInput!): NftSetOrderSignatureRequest!
 
   """
   Creates a trait bid order. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You should receive a TraitOrder if everything went well. An order can only be a BID. Platform fees are added to the fees array if not present. Refer to gondi-js examples for more details.
@@ -3261,11 +3479,31 @@ type Mutation {
   Unfollow a wallet from every wallet of your account, including follows made before those wallets were linked.
   """
   unfollowWallet(walletAddress: Address!): Void
+
+  """
+  Take a gallery back to a draft only its account can see.
+  """
+  unpublishGallery(galleryId: Int!): Gallery!
+
+  """
+  Replace a gallery's name, description, style and works. A draft's slug follows its new name; a published gallery keeps its slug. The publication state stays as it is.
+  """
+  updateGallery(gallery: GalleryInput!, galleryId: Int!): Gallery!
   uploadProfilePicture(profilePicture: Upload!, userId: String!): User!
   verifyMailValidationCode(email: String!, userId: Int!, validationCode: String!): User!
 }
 
 type NFT implements Node {
+  """
+  When the NFT came to one of the given wallets: the latest transfer or mint of it to a wallet that still holds it, which for an NFT escrowed in a loan or stash is the one before the escrow. The return from escrow when a loan is repaid or a stash unwrapped does not count. The earliest such date when several of the wallets hold it; null when none of them holds it, no arrival is recorded, or no wallet is given.
+  """
+  acquiredAt(wallets: [Address!]!): DateTime
+
+  """
+  The purchase that brought the NFT to the wallet acquiredAt dates: the latest sale of it within an hour before that arrival that settled in the wallet, directly or forwarded from the buyer (see Sale.forwardTransfers). Null when the NFT arrived otherwise, such as by mint or a plain transfer, or when acquiredAt is null.
+  """
+  acquisitionSale(wallets: [Address!]!): Sale
+
   """
   Active loan of the NFT, which can be of status INITIATED, SENT_TO_AUCTION or DEFAULTED.
   """
@@ -3478,6 +3716,28 @@ enum NftSearchField {
   TOKEN_ID
 }
 
+input NftSetOrderInput {
+  amount: BigInt = null
+  collectionId: Int!
+  currencyAddress: Address!
+  expirationTime: BigInt!
+  fees: [OrderFee!] = null
+  isAsk: Boolean = null
+  maxExecutions: BigInt = null
+
+  """
+  The NFTs the bid fills with, all in the collection: at least 2, at most 1000, duplicates ignored.
+  """
+  nftIds: [Int!]!
+  price: BigInt = null
+  signature: Signature = null
+  startTime: BigInt!
+  stealth: Boolean = null
+  taker: Address = null
+}
+
+union NftSetOrderSignatureRequest = SetBidOrder | SignatureRequest
+
 enum NftSortField {
   COLLECTION
   LAST_SALE_DATE
@@ -3590,6 +3850,7 @@ enum NftsSortField {
   RARITY_RANK
   STATUS
   TOKEN_ID
+  VALUATION
 }
 
 input NftsSortInput {
@@ -4063,6 +4324,85 @@ type PointActivityEdge {
 }
 
 """
+Accounts ranked by what their NFTs are worth: each account's items are valued as NFT.valuation was when its collection was last refreshed, and the ranking is refreshed daily.
+"""
+type PortfolioLeaderboard {
+  """
+  When the ranking was taken; null until its first run.
+  """
+  asOf: DateTime
+  endCursor: String
+  hasNextPage: Boolean!
+  rows: [PortfolioLeaderboardRow!]!
+  totalCount: Int!
+
+  """
+  The rank of the signed-in user's account; null when signed out or unranked.
+  """
+  viewerRank: Int
+}
+
+"""
+One account on the portfolio leaderboard.
+"""
+type PortfolioLeaderboardRow {
+  """
+  Wrap families among the account's held items.
+  """
+  collectionCount: Int!
+  name: String
+  profilePictureUrl: String
+  rank: Int!
+
+  """
+  Held items nothing in the market prices; they add nothing.
+  """
+  unvaluedNfts: Int!
+
+  """
+  Sum of the account's items' valuations at the sample, in ETH.
+  """
+  value: Float!
+  valuedNfts: Int!
+
+  """
+  The account's representative wallet; its profile is the row's.
+  """
+  walletAddress: Address!
+
+  """
+  The account's wallets: its own and the ones confirmed-linked.
+  """
+  walletCount: Int!
+}
+
+"""
+NFT.valuation summed over the NFTs the wallets own, hold in a stash or a vault, or have as collateral of their active loans as borrower, in ETH.
+"""
+type PortfolioValuation {
+  """
+  One row per wrap family, highest value first.
+  """
+  collections: [CollectionValuation!]!
+
+  """
+  True when the wallets hold more items than the per-portfolio cap; the cheapest families by floor are the ones left out.
+  """
+  truncated: Boolean!
+
+  """
+  Held items nothing in the market prices; they add nothing.
+  """
+  unvaluedNfts: Int!
+
+  """
+  Sum of the valued items' estimates, in ETH.
+  """
+  value: Float!
+  valuedNfts: Int!
+}
+
+"""
 Query for the lending module
 """
 type Query {
@@ -4090,6 +4430,16 @@ type Query {
     """
     first: Int! = 6
   ): [LoanDeal!]!
+
+  """
+  The galleries listed under a profile wallet, most recently edited first. Visitors get the published ones; the account that owns the wallet gets its drafts too.
+  """
+  galleries(address: Address!): [Gallery!]!
+
+  """
+  One gallery by the profile wallet and slug of its URL. A draft is found only by the account that owns it.
+  """
+  gallery(address: Address!, slug: String!): Gallery
   getAddressByName(name: String!): Address
 
   """
@@ -4187,6 +4537,16 @@ type Query {
   getOutstandingDebt(borrowers: [Address!]!, currencyAddresses: [Address!] = null): BigInt!
   getOutstandingLoanStatistics: OutstandingLoanStatistics!
   getPointsFromReferrals: Int!
+
+  """
+  Accounts ranked by their portfolio valuation, highest first. An account is a user with its confirmed-linked wallets.
+  """
+  getPortfolioLeaderboard(after: String, first: Int! = 20): PortfolioLeaderboard!
+
+  """
+  NFT.valuation summed over the NFTs the wallets own, hold in a stash or a vault, or have as collateral of their active loans as borrower, in ETH, in total and per wrap family. ERC1155 tokens are left out. Takes 1 to 10 distinct wallets. At most max_nfts_per_portfolio items, highest family floor first; truncated says when the cap left items out.
+  """
+  getPortfolioValuation(owners: [Address!]!): PortfolioValuation!
   getPurchaseBundlerFromOrder(
     """
     Loan ID if NFT to execute with the purchase bundler is a loan.
@@ -4628,6 +4988,11 @@ type Query {
     topEvents: Boolean = null
     traits: [Int!] = null
     users: [Address!] = null
+
+    """
+    Which side of an event `users` must be on, as the activity feed shows it: FROM the giving party (a seller, the lenders funding or refinancing a loan, a repaying borrower, an order's maker, a listing's or an offer's author, a deal's maker), TO the receiving one (a buyer, also of a sale forwarded to another wallet; a funded borrower; the lenders a loan is repaid to, foreclosed by or defaulted on; a deal's taker). Listings, offers, bids and renegotiation offers name nobody on the TO side, and a loan extension, auction start or auction sale nobody on either, so those never match that side. ANY, the default, is either side.
+    """
+    usersSide: EventSide! = ANY
   ): EventConnection!
   listListings(
     after: String
@@ -4645,6 +5010,7 @@ type Query {
     marketplaceNames: [MarketplaceEnum!] = null
     searchTerm: String = null
     slugs: [String!] = null
+    sortBy: LoanRequestsSortInput = null
     userFilter: UserFilter = null
     withLoans: Boolean = false
   ): ListingConnection!
@@ -4705,6 +5071,11 @@ type Query {
   """
   listLoans(
     after: String
+
+    """
+    Open the page on the loan of this NFT (its internal id): it comes back with up to (first - 1) / 2 loans on each side under the requested sort, and the edges' cursors page on from there. An NFT with several matching loans opens on the first of them. When the filters exclude it (a repaid loan with statuses [LOAN_INITIATED]), the page holds the first (first - 1) / 2 loans instead. Cannot be combined with after.
+    """
+    aroundNftId: Int = null
     blockchains: [BlockchainEnum!] = null
     borrowers: [String!] = null
     collections: [Int!] = null
@@ -5895,6 +6266,11 @@ type Subscription {
     priceUsd: Interval = null
     topEvents: Boolean = null
     users: [Address!] = null
+
+    """
+    Which side of an event `users` must be on, as `listEvents(usersSide)` reads it. A forwarded sale's holder is not known when the sale is published, so TO matches its buyer; the forward arrives as a transfer of its own.
+    """
+    usersSide: EventSide! = ANY
   ): ActivityUpdate!
 
   """
@@ -5955,11 +6331,13 @@ type TopLender {
   defaultRateBps: BigInt
   earnings: BigInt
   earningsUsd: Float
+  name: String
   netEaprBps: BigInt
   originatedCount: Int!
   outstandingPrincipal: BigInt
   outstandingUsd: Float
   paidInterest: BigInt
+  profilePictureUrl: String
   rank: Int!
   refinancedCount: Int!
   settledCount: Int!
@@ -6498,6 +6876,7 @@ enum ValuationBasis {
   ITEM_BID
   LAST_SALE
   LISTING
+  LOAN
   SALE_HISTORY
   TRAIT_FLOOR
 }
