@@ -130,6 +130,18 @@ const prepare = async (input: {
     },
   };
 };
+/** Contract reads the quote and confirmation flows make, keyed by function name. */
+const CONTRACT_READS: Record<string, () => unknown> = {
+  getMultiSourceLoanAddress: () => deployments.MultiSourceLoan['3.1'],
+  paused: () => false,
+  getTaxes: () => ({ buyTax: 0n, sellTax: 0n }),
+  allowance: () => 10n ** 30n,
+};
+/** Builds a `readContract` stub that serves each function from `reads`, and `true` for any other. */
+const serveReads =
+  (reads: Record<string, () => unknown>) =>
+  async ({ functionName }: { functionName: string }) =>
+    (reads[functionName] ?? (() => true))();
 const publish = mock(prepare);
 const listingRequest = mock(async () => ({ listOrdersV2: { edges: [{ node: listing }] } }));
 const gondi = stubGondi({
@@ -141,16 +153,7 @@ const gondi = stubGondi({
   contracts: { Msl: () => buyerMsl },
   bcClient: {
     getBlock: async () => ({ timestamp: 100n }),
-    readContract: async ({ functionName }: { functionName: string }) =>
-      functionName === 'getMultiSourceLoanAddress'
-        ? deployments.MultiSourceLoan['3.1']
-        : functionName === 'paused'
-          ? false
-          : functionName === 'getTaxes'
-            ? { buyTax: 0n, sellTax: 0n }
-            : functionName === 'allowance'
-              ? 10n ** 30n
-              : true,
+    readContract: serveReads(CONTRACT_READS),
     simulateContract: async ({ functionName }: { functionName: string }) => ({
       result: [functionName === 'quoteExactOutput' ? 3_000_000_000n : 500_000_000_000_000_000n],
     }),
@@ -196,15 +199,10 @@ const prepareWithCallback =
     return response;
   };
 
-/** Serves every contract read from the shared mock except those named in `overrides`. */
+/** Serves every contract read from `CONTRACT_READS` except those named in `overrides`. */
 const overrideReads = (overrides: Record<string, () => unknown>) => {
   const originalRead = gondi.bcClient.readContract;
-  Object.assign(gondi.bcClient, {
-    readContract: async (input: { functionName: string }) =>
-      input.functionName in overrides
-        ? overrides[input.functionName]()
-        : originalRead(input as never),
-  });
+  Object.assign(gondi.bcClient, { readContract: serveReads({ ...CONTRACT_READS, ...overrides }) });
   return () => Object.assign(gondi.bcClient, { readContract: originalRead });
 };
 
@@ -433,14 +431,14 @@ for (const [guard, message, change] of [
 }
 
 test('refuses a paused buyer bundler before asking the borrower to sign', async () => {
-  const restoreRead = overrideReads({ paused: () => true });
+  const restoreReads = overrideReads({ paused: () => true });
   try {
     await expect(gondi.quoteBuyWithLoan(args as never)).rejects.toThrow(
       'Purchase route changed or expired',
     );
     expect(sign).not.toHaveBeenCalled();
   } finally {
-    restoreRead();
+    restoreReads();
   }
 });
 
@@ -471,7 +469,7 @@ test('refuses a substituted authorization prepared at confirmation before signin
 test('rechecks the route after confirmation preparation and before signing', async () => {
   const quote = await gondi.quoteBuyWithLoan(args as never);
   let paused = false;
-  const restoreRead = overrideReads({ paused: () => paused });
+  const restoreReads = overrideReads({ paused: () => paused });
   try {
     await expect(
       confirmPurchase(quote, {
@@ -484,14 +482,14 @@ test('rechecks the route after confirmation preparation and before signing', asy
     expect(signExecution).not.toHaveBeenCalled();
     expect(broadcast).not.toHaveBeenCalled();
   } finally {
-    restoreRead();
+    restoreReads();
   }
 });
 
 test('rechecks the route after publication and before broadcasting', async () => {
   const quote = await gondi.quoteBuyWithLoan(args as never);
   let paused = false;
-  const restoreRead = overrideReads({ paused: () => paused });
+  const restoreReads = overrideReads({ paused: () => paused });
   try {
     await expect(
       confirmPurchase(quote, {
@@ -504,7 +502,7 @@ test('rechecks the route after publication and before broadcasting', async () =>
     expect(signExecution).toHaveBeenCalled();
     expect(broadcast).not.toHaveBeenCalled();
   } finally {
-    restoreRead();
+    restoreReads();
   }
 });
 
