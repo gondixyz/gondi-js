@@ -10,3 +10,5 @@
 # braces — 3.0.3 is latest and no version is patched; GitHub withdrew the advisory
 # on 2026-10-23 but `bun audit` still reports it. Reached only via chokidar/micromatch globbing.
 GHSA-vfj7-8cjw-p6xm
+# deepmerge — "deepmerge mergeObject() allows prototype poisoning of returned objects"; 4.3.1 is the latest release and no version is patched. Reached only via jest's jest-config, which merges its own config.
+GHSA-gcqx-w48m-w2h4
