@@ -8,7 +8,7 @@ export {
   MarketplaceEnum,
   TokenStandardType,
 } from '@/generated/graphql';
-export type { OnStepChange } from '@/gondi';
+export type { OnStepChange, Punk721WrapState } from '@/gondi';
 export type { CreditPurchaseInput, CreditPurchaseQuote } from '@/utils/creditPurchase';
 export type {
   CrossCurrencyRenegotiationInput,

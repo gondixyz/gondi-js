@@ -1,3 +1,34 @@
+# New Features 0.51.0
+
+## Important
+
+The SDK can now wrap a naked CryptoPunk into CryptoPunks 721, one transaction per step. Existing calls keep working.
+
+## Table of Contents
+
+- [Wrap a CryptoPunk into CryptoPunks 721](#wrap-a-cryptopunk-into-cryptopunks-721)
+
+## Wrap a CryptoPunk into CryptoPunks 721
+
+**Description:**
+
+- NEW: `gondi.punk721WrapState({ tokenId })` reads where the wallet's punk stands: `'wallet'` (held naked), `'stash'` (in the wallet's Stash, ready to wrap), `'wrapped'` (the wallet holds its 721 token) or `'other'`. The `Punk721WrapState` type is exported.
+- NEW: `gondi.transferPunkToStash721({ tokenId })` moves a punk the wallet holds into its Stash, and `gondi.wrapPunk721({ tokenId })` wraps a punk waiting there, minting the 721 token to the wallet. Each refuses a punk in any other state, and returns `{ txHash, waitTxInBlock }`.
+- NEW: `Cryptopunks721` in the address book (`CRYPTOPUNKS_721` overrides it on Anvil) and a `contracts.Cryptopunks721(address)` client.
+
+**Migration Steps:**
+
+- None. To wrap a punk, run only the steps its state still needs:
+
+```typescript
+if ((await gondi.punk721WrapState({ tokenId })) === 'wallet') {
+  await(await gondi.transferPunkToStash721({ tokenId })).waitTxInBlock();
+}
+if ((await gondi.punk721WrapState({ tokenId })) === 'stash') {
+  await(await gondi.wrapPunk721({ tokenId })).waitTxInBlock();
+}
+```
+
 # New Features 0.50.0
 
 ## Important
