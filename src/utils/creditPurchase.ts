@@ -67,6 +67,19 @@ export type CreditPurchaseQuote = Readonly<{
   callbackData: Hex;
 }>;
 
+/** Decodes the purchase bundler's `executionInfo` callback carried by an execution or a seller repayment. */
+export const decodePurchaseCallback = (data: Hex) =>
+  decodeAbiParameters([PurchaseBundlerV2.EXECUTION_INFO], data)[0];
+
+/** The callback's purchase currency, with every native spelling (including the ETH sentinel) as `zeroAddress`. */
+export const callbackPurchaseCurrency = (
+  callback: ReturnType<typeof decodePurchaseCallback>,
+): Address =>
+  isNativeCurrency(callback.purchaseCurrency) ||
+  areSameAddress(callback.purchaseCurrency, PurchaseBundlerV2.ETH_SENTINEL)
+    ? zeroAddress
+    : callback.purchaseCurrency;
+
 /** Compares every ABI field against the confirmed terms before signing or submitting an API execution. */
 export const assertCreditPurchaseExecution = (expected: ExecutionDataV7, received: unknown) => {
   const parameter = getAbiItem({ abi: multiSourceLoanAbi, name: 'emitLoan' }).inputs[0]
@@ -238,14 +251,9 @@ export const quoteCreditPurchase = async ({
   )
     throw new Error('Invalid buyer credit currency or funding');
   const repayment = sellerMsl.decodeRepaymentCalldata(input.repaymentCalldata);
-  const sellerCallback = decodeAbiParameters(
-    [PurchaseBundlerV2.EXECUTION_INFO],
-    repayment.data.callbackData,
-  )[0];
-  const native =
-    isNativeCurrency(sellerCallback.purchaseCurrency) ||
-    areSameAddress(sellerCallback.purchaseCurrency, PurchaseBundlerV2.ETH_SENTINEL);
-  const purchaseCurrency = native ? zeroAddress : sellerCallback.purchaseCurrency;
+  const sellerCallback = decodePurchaseCallback(repayment.data.callbackData);
+  const purchaseCurrency = callbackPurchaseCurrency(sellerCallback);
+  const native = isNativeCurrency(purchaseCurrency);
   if (
     !native &&
     ![currencies.USDC_ADDRESS, currencies.WETH_ADDRESS].some((currency) =>

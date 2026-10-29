@@ -387,6 +387,84 @@ test('reports the nested buyer swap budget instead of zero', async () => {
   }
 });
 
+/**
+ * Serves `listing` as a USDC sale of a v3.1 seller loan whose signed repayment pays `callbackCurrency`,
+ * with a 5 bps Aave premium, and quotes it through the flash route.
+ */
+const quoteFlashPurchase = async (callbackCurrency: `0x${string}`) => {
+  const originalListing = { ...listing };
+  const loanHash = ('0x' + '22'.repeat(32)) as `0x${string}`;
+  const repaymentCallback = await prepareWithCallback(() => ({
+    purchaseCurrency: callbackCurrency,
+    amount: 3_000_000_000n,
+  }))({
+    creditPurchaseExecution: { initialPayment: 0n, loanSwapData: '0x', expirationTime: 500n },
+  });
+  Object.assign(listing, {
+    __typename: 'SellAndRepayOrder',
+    currencyAddress: USDC_ADDRESS,
+    price: 3_000_000_000n,
+    loan: {
+      address: deployments.MultiSourceLoan['3.1'],
+      loanId: '7',
+      startTime: new Date(0),
+      duration: 2000n,
+    },
+    repaymentCalldata: '0xab',
+  });
+  Object.assign(buyerMsl, {
+    contract: { read: { getLoanHash: async () => loanHash } },
+    decodeRepaymentCalldata: () => ({
+      data: { loanId: 7n, callbackData: repaymentCallback.typedData.message.callbackData },
+      loan: { nftCollateralAddress: nft, nftCollateralTokenId: 1n, principalAddress: USDC_ADDRESS },
+    }),
+  });
+  publish.mockImplementation(async (input) => {
+    const response = await prepare(input);
+    response.typedData.message = {
+      ...response.typedData.message,
+      principalReceiver: buyer,
+      callbackData: '0x',
+    };
+    return response;
+  });
+  const restoreReads = overrideReads({ FLASHLOAN_PREMIUM_TOTAL: () => 5n });
+  try {
+    return await gondi.quoteBuyWithLoan(args as never);
+  } finally {
+    Object.assign(listing, originalListing);
+    delete (listing as unknown as { loan?: unknown }).loan;
+    delete (listing as unknown as { repaymentCalldata?: unknown }).repaymentCalldata;
+    delete (buyerMsl as unknown as { contract?: unknown }).contract;
+    delete (buyerMsl as unknown as { decodeRepaymentCalldata?: unknown }).decodeRepaymentCalldata;
+    publish.mockImplementation(prepare);
+    restoreReads();
+  }
+};
+
+test('quotes a v3.1 seller loan through the flash route with the premium in the contribution', async () => {
+  const quote = await quoteFlashPurchase(USDC_ADDRESS);
+  expect(quote.route).toBe('flash');
+  expect(quote.route === 'flash' && [quote.premiumBps, quote.loanId, quote.module]).toEqual([
+    5n,
+    7n,
+    marketplace,
+  ]);
+  expect([quote.initialPayment, quote.loanSwapData, quote.execution.callbackData]).toEqual([
+    1_001_500_000n,
+    '0x',
+    '0x',
+  ]);
+  expect(sign).not.toHaveBeenCalled();
+});
+
+test('refuses a flash seller repayment that pays in another currency', async () => {
+  await expect(quoteFlashPurchase(PurchaseBundlerV2.ETH_SENTINEL as `0x${string}`)).rejects.toThrow(
+    'Seller repayment terms or conversion changed',
+  );
+  expect(sign).not.toHaveBeenCalled();
+});
+
 for (const [guard, message, change] of [
   [
     'a listing for another token',
