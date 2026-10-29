@@ -25,7 +25,7 @@ import {
   zeroHash,
   zeroHex,
 } from '@/blockchain';
-import { Api, Props as ApiProps } from '@/clients/api';
+import { Api, OrderInput, Props as ApiProps } from '@/clients/api';
 import { buildSiweMessage } from '@/clients/api/siwe';
 import { Contracts, GondiPublicClient, Wallet } from '@/clients/contracts';
 import {
@@ -43,21 +43,18 @@ import { multiSourceLoanAbi } from '@/generated/blockchain/v7';
 import {
   BnplOrderInput,
   BulkNftOrdersInput,
-  CollectionOrderInput,
   CollectionSignedOfferInput,
   DealInput,
   GenerateCollectionOfferHashMutation,
   LoanOfferPublicationInput,
   MarketplaceEnum,
   NftOrderInput,
-  NftSetOrderInput,
   OffersSortField,
   OfferValidatorInput,
   Ordering,
   SingleNftOrderInput,
   SingleNftSignedOfferInput,
   TokenStandardType,
-  TraitOrderInput,
 } from '@/generated/graphql';
 import * as model from '@/model';
 import { NftStandard } from '@/model';
@@ -92,6 +89,21 @@ import { isDefined, OptionalNullable } from '@/utils/types';
 
 /** The most orders `cancelOrders` takes at once: the API's cancel calldata limit. */
 const MAX_CANCEL_ORDERS = 50;
+
+/** The `__typename` of every order `makeOrder` can publish. */
+const PUBLISHED_ORDER_TYPENAMES = [
+  'SingleNFTOrder',
+  'CollectionOrder',
+  'TraitOrder',
+  'MultipleTraitOrder',
+  'SetBidOrder',
+] as const;
+
+/** Whether `response` is an order `makeOrder` can publish, not a request for more input. */
+const isPublishedOrder = <Response extends { __typename?: string }>(
+  response: Response,
+): response is Extract<Response, { __typename?: (typeof PUBLISHED_ORDER_TYPENAMES)[number] }> =>
+  PUBLISHED_ORDER_TYPENAMES.some((publishedTypename) => publishedTypename === response.__typename);
 
 /** An offer any NFT of a set, a collection or the NFTs carrying some traits, can borrow against. */
 type MakeOfferInput = model.CollectionOfferInput | model.TraitOfferInput;
@@ -498,9 +510,7 @@ export class Gondi {
    * `collectionId` (2 to 1,000), and `collectionId` alone for a collection bid.
    * A trait, set or collection bid fills up to `maxExecutions` times.
    */
-  async makeOrder(
-    orderInput: SingleNftOrderInput | CollectionOrderInput | TraitOrderInput | NftSetOrderInput,
-  ) {
+  async makeOrder(orderInput: OrderInput) {
     let response = await this.apiClient.publishOrder(orderInput);
     while (response.__typename === 'SignatureRequest') {
       const key = response.key as 'signature';
@@ -508,14 +518,7 @@ export class Gondi {
       response = await this.apiClient.publishOrder(orderInput);
     }
 
-    if (
-      response.__typename !== 'SingleNFTOrder' &&
-      response.__typename !== 'CollectionOrder' &&
-      response.__typename !== 'TraitOrder' &&
-      response.__typename !== 'MultipleTraitOrder' &&
-      response.__typename !== 'SetBidOrder'
-    )
-      throw new Error('This should never happen');
+    if (!isPublishedOrder(response)) throw new Error('This should never happen');
 
     return { ...response, ...orderInput };
   }
