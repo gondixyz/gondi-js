@@ -12,6 +12,7 @@ import {
   getVersionFromUserVaultAddress,
 } from '@/deploys';
 import { cryptopunksABI } from '@/generated/blockchain/cryptopunks';
+import { iCryptoPunks721Abi } from '@/generated/blockchain/cryptopunks721';
 import { oldErc721Abi } from '@/generated/blockchain/oldERC721';
 import { seaportABI } from '@/generated/blockchain/seaport';
 import { erc721ABI } from '@/generated/blockchain/v5';
@@ -199,6 +200,15 @@ export class Contracts {
     return new BaseContract({
       address,
       abi: cryptopunksABI,
+      walletClient: this.walletClient,
+      publicClient: this.publicClient,
+    });
+  }
+
+  Cryptopunks721(address: Address) {
+    return new BaseContract({
+      address,
+      abi: iCryptoPunks721Abi,
       walletClient: this.walletClient,
       publicClient: this.publicClient,
     });

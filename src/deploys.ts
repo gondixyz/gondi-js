@@ -50,6 +50,7 @@ interface Contracts {
   Permit2: Address;
   UniswapQuoterV2: Address;
   Cryptopunks: Address;
+  Cryptopunks721: Address;
 }
 
 interface ApiKeys {
@@ -151,6 +152,8 @@ const buildContractsByChain = (): Record<number, Contracts> => ({
     Aave: ensureAddress(process.env.GONDI_AAVE) ?? '0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2',
     Cryptopunks:
       ensureAddress(process.env.CRYPTOPUNKS) ?? '0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb',
+    Cryptopunks721:
+      ensureAddress(process.env.CRYPTOPUNKS_721) ?? '0x000000000000003607fce1ac9e043a86675c5c2f',
   },
   [mainnet.id]: {
     PositionMigrator: '0xDCd85fEe491De4B1fc11CbC0Ba0e78537732f5b8',
@@ -187,6 +190,7 @@ const buildContractsByChain = (): Record<number, Contracts> => ({
     Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
     Aave: '0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2',
     Cryptopunks: '0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb',
+    Cryptopunks721: '0x000000000000003607fce1ac9e043a86675c5c2f',
   },
   [hyperliquid.id]: {
     PositionMigrator: zeroAddress,
@@ -223,6 +227,7 @@ const buildContractsByChain = (): Record<number, Contracts> => ({
     Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
     Aave: zeroAddress,
     Cryptopunks: zeroAddress,
+    Cryptopunks721: zeroAddress,
   },
   [robinhood.id]: {
     PositionMigrator: zeroAddress,
@@ -259,6 +264,7 @@ const buildContractsByChain = (): Record<number, Contracts> => ({
     Seaport: '0x0000000000000068F116a894984e2DB1123eB395',
     Aave: zeroAddress,
     Cryptopunks: zeroAddress,
+    Cryptopunks721: zeroAddress,
   },
 });
 

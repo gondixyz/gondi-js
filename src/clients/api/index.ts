@@ -35,6 +35,13 @@ export type Props = {
   onStepChange?: OnStepChange;
 };
 
+/** A bid or listing `publishOrder` accepts: one NFT, a collection, some traits or a set of NFTs. */
+export type OrderInput =
+  | SingleNftOrderInput
+  | CollectionOrderInput
+  | TraitOrderInput
+  | NftSetOrderInput;
+
 type PageInfo = { endCursor?: string | null; hasNextPage: boolean };
 
 const mapPageInfo = ({ endCursor, hasNextPage }: PageInfo) =>
@@ -160,9 +167,7 @@ export class Api {
     };
   }
 
-  async publishOrder(
-    orderInput: SingleNftOrderInput | CollectionOrderInput | TraitOrderInput | NftSetOrderInput,
-  ) {
+  async publishOrder(orderInput: OrderInput) {
     if ('traitIds' in orderInput) {
       const response = await this.api.publishOrderForTrait({ orderInput });
       return response.result;

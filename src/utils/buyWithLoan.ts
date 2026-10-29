@@ -1,6 +1,5 @@
 import {
   Address,
-  decodeAbiParameters,
   decodeFunctionData,
   erc20Abi,
   hashTypedData,
@@ -14,7 +13,6 @@ import { mainnet } from 'viem/chains';
 
 import { ExecutionDataV7, isNativeCurrency } from '@/blockchain';
 import { MslV6 } from '@/clients/contracts/MslV6';
-import { PurchaseBundlerV2 } from '@/clients/contracts/PurchaseBundlerV2';
 import { getContracts, getCurrencies } from '@/deploys';
 import { multiSourceLoanAbi } from '@/generated/blockchain/v7';
 import { BnplOrderInput, BuyWithLoanListingQuery } from '@/generated/graphql';
@@ -22,7 +20,9 @@ import type { Gondi } from '@/gondi';
 import {
   assertCreditPurchaseExecution,
   assertCreditPurchaseRoute,
+  callbackPurchaseCurrency,
   CreditPurchaseQuote,
+  decodePurchaseCallback,
   quotePurchaseFunding,
 } from '@/utils/creditPurchase';
 import { crossCurrencyDeadline } from '@/utils/crossCurrencyRenegotiation';
@@ -44,6 +44,8 @@ type Context = Pick<
 >;
 type PurchaseInput = Parameters<Gondi['buyNowPayLater']>[0];
 type Listing = BuyWithLoanListingQuery['listOrdersV2']['edges'][number]['node'];
+type SellerListing = Extract<Listing, { __typename?: 'SellAndRepayOrder' }>;
+type PurchaseCallback = ReturnType<typeof decodePurchaseCallback>;
 
 /** Selected buyer financing; quote preparation never requests a wallet signature. */
 export type BuyWithLoanInput = Pick<
@@ -76,6 +78,17 @@ type QuoteBase = {
   loanSwapData: Hex;
   repaymentSwapData: Hex;
 };
+/** The quote fields fixed before a route is chosen. */
+type QuoteFields = Omit<
+  QuoteBase,
+  | 'initialPayment'
+  | 'inputAmount'
+  | 'module'
+  | 'execution'
+  | 'approvalCaps'
+  | 'extraSeaportData'
+  | 'loanSwapData'
+>;
 type SellerQuote = {
   sellerContract: Address;
   loanId: bigint;
@@ -156,13 +169,14 @@ export const quoteBuyWithLoan = async (
   );
   const block = await context.bcClient.getBlock();
   const expiration = BigInt(Math.floor(listing.expiration.getTime() / 1000));
+  const offerExpirations = [expiration, ...input.offers.map((offer) => offer.expirationTime)];
   const seller = listing.__typename === 'SellAndRepayOrder' ? listing : undefined;
   const deadline = crossCurrencyDeadline({
     now: block.timestamp,
     maturity: seller
       ? BigInt(Math.floor(seller.loan.startTime.getTime() / 1000)) + seller.loan.duration
       : expiration,
-    expirations: [expiration, ...input.offers.map((offer) => offer.expirationTime)],
+    expirations: offerExpirations,
   });
   const totalPrice =
     listing.price +
@@ -170,7 +184,7 @@ export const quoteBuyWithLoan = async (
       ? 0n
       : listing.platformFees.reduce((fees, fee) => fees + (listing.price * fee.bps) / BPS, 0n));
   const buyerBundler = deployments.PurchaseBundler['3.1_PB_V2'];
-  const base = {
+  const base: QuoteFields = {
     orderId: input.orderId,
     price: listing.price,
     totalPrice,
@@ -195,7 +209,7 @@ export const quoteBuyWithLoan = async (
       netPrincipal,
       minimumInitialPayment: input.minimumInitialPayment,
       slippageBps: input.slippageBps,
-      offerExpirations: [expiration, ...input.offers.map((offer) => offer.expirationTime)],
+      offerExpirations,
     });
     quote = {
       ...base,
@@ -209,89 +223,27 @@ export const quoteBuyWithLoan = async (
       loanSwapData: creditPurchaseQuote.loanSwapData,
       module: creditPurchaseQuote.sellerBundler,
     };
-  } else {
-    const route = seller ? 'flash' : 'ordinary';
-    if (seller && !areSameAddress(seller.loan.address, deployments.MultiSourceLoan['3.1']))
-      throw new Error('Purchase requires a v3.1 or v3.2 seller loan');
-    const premiumBps = seller
-      ? await context.bcClient.readContract({
-          address: deployments.Aave,
-          abi: routeAbi,
-          functionName: 'FLASHLOAN_PREMIUM_TOTAL',
-        })
-      : 0n;
-    const funding = await quotePurchaseFunding({
-      client: context.bcClient,
-      loanCurrency,
-      purchaseCurrency,
-      price: totalPrice,
-      netPrincipal,
-      deadline,
-      slippageBps: input.slippageBps ?? 100n,
-      minimumInitialPayment: input.minimumInitialPayment ?? 0n,
-      route,
-      premiumBps,
-    });
-    if (seller) {
-      const sellerMsl = context.contracts.Msl(seller.loan.address);
-      if (!(sellerMsl instanceof MslV6)) throw new Error('Unsupported seller contract');
-      const repayment = sellerMsl.decodeRepaymentCalldata(seller.repaymentCalldata);
-      if (
-        repayment.data.loanId !== BigInt(seller.loan.loanId) ||
-        !areSameAddress(repayment.loan.nftCollateralAddress, input.contractAddress) ||
-        repayment.loan.nftCollateralTokenId !== input.tokenId
-      )
-        throw new Error('Seller repayment collateral changed');
-      const callback = decodeAbiParameters(
-        [PurchaseBundlerV2.EXECUTION_INFO],
-        repayment.data.callbackData,
-      )[0];
-      if (
-        !areSameAddress(
-          isNativeCurrency(callback.purchaseCurrency) ||
-            areSameAddress(callback.purchaseCurrency, PurchaseBundlerV2.ETH_SENTINEL)
-            ? zeroAddress
-            : callback.purchaseCurrency,
-          purchaseCurrency,
-        ) ||
-        callback.amount <= 0n ||
-        callback.amount > listing.price ||
-        (!areSameAddress(
-          repayment.loan.principalAddress,
-          isNativeCurrency(purchaseCurrency) ? currencies.WETH_ADDRESS : purchaseCurrency,
-        ) &&
-          base.repaymentSwapData === '0x')
-      )
-        throw new Error('Seller repayment terms or conversion changed');
-      const loanHash = await sellerMsl.contract.read.getLoanHash([repayment.data.loanId]);
-      if (loanHash === zeroHash) throw new Error('Seller loan is no longer active');
-      quote = {
-        ...base,
-        ...funding,
-        route: 'flash',
-        ...sellerQuote(seller),
-        loanHash,
-        premiumBps,
-        module: callback.reservoirExecutionInfo.module,
-      };
-    } else quote = { ...base, ...funding, route: 'ordinary', module: listing.marketPlaceAddress };
-  }
+  } else if (seller) quote = await quoteFlashRoute(context, input, seller, base);
+  else
+    quote = {
+      ...base,
+      ...(await quoteRouteFunding(context, input, base, 'ordinary', 0n)),
+      route: 'ordinary',
+      module: listing.marketPlaceAddress,
+    };
   const orderInput = buyWithLoanOrderInput(input, quote);
   const typed = await unsignedBuyWithLoanExecution(context, orderInput);
   const callbackData = (typed.message as ExecutionDataV7).callbackData;
   if (quote.route === 'ordinary') {
-    assertOrdinaryPurchaseCallback(quote, callbackData);
+    const callback = decodePurchaseCallback(callbackData);
+    assertOrdinaryPurchaseCallback(quote, callback);
     const mustBeOwner = assertPurchaseMarketplace(
       listing,
       quote,
       input,
-      decodeAbiParameters([PurchaseBundlerV2.EXECUTION_INFO], callbackData)[0]
-        .reservoirExecutionInfo.data,
+      callback.reservoirExecutionInfo.data,
     );
-    if (
-      decodeAbiParameters([PurchaseBundlerV2.EXECUTION_INFO], callbackData)[0]
-        .contractMustBeOwner !== mustBeOwner
-    )
+    if (callback.contractMustBeOwner !== mustBeOwner)
       throw new Error('Marketplace custody authorization changed');
   }
   const execution = buyWithLoanExecution(
@@ -347,6 +299,78 @@ const buyWithLoanCurrency = (context: Context, input: BuyWithLoanInput) => {
   return loanCurrency;
 };
 
+/** Quotes the buyer's loan-to-purchase conversion for the ordinary or flash route. */
+const quoteRouteFunding = (
+  context: Context,
+  input: BuyWithLoanInput,
+  base: QuoteFields,
+  route: 'ordinary' | 'flash',
+  premiumBps: bigint,
+) =>
+  quotePurchaseFunding({
+    client: context.bcClient,
+    loanCurrency: base.loanCurrency,
+    purchaseCurrency: base.purchaseCurrency,
+    price: base.totalPrice,
+    netPrincipal: base.netPrincipal,
+    deadline: base.deadline,
+    slippageBps: input.slippageBps ?? 100n,
+    minimumInitialPayment: input.minimumInitialPayment ?? 0n,
+    route,
+    premiumBps,
+  });
+
+/** Quotes an Aave flash-loan purchase of a v3.1 seller loan after checking its signed repayment. */
+const quoteFlashRoute = async (
+  context: Context,
+  input: BuyWithLoanInput,
+  seller: SellerListing,
+  base: QuoteFields,
+): Promise<UnpreparedQuote> => {
+  const deployments = getContracts(context.wallet.chain);
+  const currencies = getCurrencies(context.wallet.chain);
+  if (!areSameAddress(seller.loan.address, deployments.MultiSourceLoan['3.1']))
+    throw new Error('Purchase requires a v3.1 or v3.2 seller loan');
+  const premiumBps = await context.bcClient.readContract({
+    address: deployments.Aave,
+    abi: routeAbi,
+    functionName: 'FLASHLOAN_PREMIUM_TOTAL',
+  });
+  const funding = await quoteRouteFunding(context, input, base, 'flash', premiumBps);
+  const sellerMsl = context.contracts.Msl(seller.loan.address);
+  if (!(sellerMsl instanceof MslV6)) throw new Error('Unsupported seller contract');
+  const repayment = sellerMsl.decodeRepaymentCalldata(seller.repaymentCalldata);
+  if (
+    repayment.data.loanId !== BigInt(seller.loan.loanId) ||
+    !areSameAddress(repayment.loan.nftCollateralAddress, input.contractAddress) ||
+    repayment.loan.nftCollateralTokenId !== input.tokenId
+  )
+    throw new Error('Seller repayment collateral changed');
+  const callback = decodePurchaseCallback(repayment.data.callbackData);
+  if (
+    !areSameAddress(callbackPurchaseCurrency(callback), base.purchaseCurrency) ||
+    callback.amount <= 0n ||
+    callback.amount > base.price ||
+    (!areSameAddress(
+      repayment.loan.principalAddress,
+      isNativeCurrency(base.purchaseCurrency) ? currencies.WETH_ADDRESS : base.purchaseCurrency,
+    ) &&
+      base.repaymentSwapData === '0x')
+  )
+    throw new Error('Seller repayment terms or conversion changed');
+  const loanHash = await sellerMsl.contract.read.getLoanHash([repayment.data.loanId]);
+  if (loanHash === zeroHash) throw new Error('Seller loan is no longer active');
+  return {
+    ...base,
+    ...funding,
+    route: 'flash',
+    ...sellerQuote(seller),
+    loanHash,
+    premiumBps,
+    module: callback.reservoirExecutionInfo.module,
+  };
+};
+
 /** Refuses inactive or substituted listings using one bounded, exact-ID query. */
 const buyWithLoanListing = async (context: Context, orderId: number) => {
   const response = await context.apiClient.api.buyWithLoanListing(
@@ -370,7 +394,7 @@ const buyWithLoanListing = async (context: Context, orderId: number) => {
 };
 
 /** Carries the signed seller authorization while its active hash is checked separately. */
-const sellerQuote = (seller: Extract<Listing, { __typename?: 'SellAndRepayOrder' }>) => ({
+const sellerQuote = (seller: SellerListing) => ({
   sellerContract: seller.loan.address,
   loanId: BigInt(seller.loan.loanId),
   repaymentCalldata: seller.repaymentCalldata,
@@ -457,17 +481,10 @@ const assertBuyWithLoanTypedData = (
 };
 
 /** Requires the marketplace callback to honor the separately quoted listing and loan units. */
-const assertOrdinaryPurchaseCallback = (quote: UnpreparedQuote, data: Hex) => {
-  const callback = decodeAbiParameters([PurchaseBundlerV2.EXECUTION_INFO], data)[0];
+const assertOrdinaryPurchaseCallback = (quote: UnpreparedQuote, callback: PurchaseCallback) => {
   if (
     !areSameAddress(callback.reservoirExecutionInfo.module, quote.module) ||
-    !areSameAddress(
-      isNativeCurrency(callback.purchaseCurrency) ||
-        areSameAddress(callback.purchaseCurrency, PurchaseBundlerV2.ETH_SENTINEL)
-        ? zeroAddress
-        : callback.purchaseCurrency,
-      quote.purchaseCurrency,
-    ) ||
+    !areSameAddress(callbackPurchaseCurrency(callback), quote.purchaseCurrency) ||
     callback.amount !== quote.initialPayment ||
     callback.swapData !== quote.loanSwapData ||
     callback.swapValue !== 0n ||
@@ -514,15 +531,13 @@ export const assertBuyWithLoanRoute = async (context: Context, quote: BuyWithLoa
   if (quote.route === 'nested')
     await assertCreditPurchaseRoute(context.bcClient, quote.creditPurchaseQuote);
   else {
-    const callback =
+    const callback = decodePurchaseCallback(
       quote.route === 'ordinary'
-        ? decodeAbiParameters([PurchaseBundlerV2.EXECUTION_INFO], quote.execution.callbackData)[0]
-        : decodeAbiParameters(
-            [PurchaseBundlerV2.EXECUTION_INFO],
-            (context.contracts.Msl(quote.sellerContract) as MslV6).decodeRepaymentCalldata(
-              quote.repaymentCalldata,
-            ).data.callbackData,
-          )[0];
+        ? quote.execution.callbackData
+        : (context.contracts.Msl(quote.sellerContract) as MslV6).decodeRepaymentCalldata(
+            quote.repaymentCalldata,
+          ).data.callbackData,
+    );
     const whitelisted = await context.bcClient.readContract({
       address: deployments.MethodManager,
       abi: managerAbi,

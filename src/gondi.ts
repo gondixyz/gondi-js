@@ -25,7 +25,7 @@ import {
   zeroHash,
   zeroHex,
 } from '@/blockchain';
-import { Api, Props as ApiProps } from '@/clients/api';
+import { Api, OrderInput, Props as ApiProps } from '@/clients/api';
 import { buildSiweMessage } from '@/clients/api/siwe';
 import { Contracts, GondiPublicClient, Wallet } from '@/clients/contracts';
 import {
@@ -43,25 +43,26 @@ import { multiSourceLoanAbi } from '@/generated/blockchain/v7';
 import {
   BnplOrderInput,
   BulkNftOrdersInput,
-  CollectionOrderInput,
   CollectionSignedOfferInput,
   DealInput,
   GenerateCollectionOfferHashMutation,
   LoanOfferPublicationInput,
   MarketplaceEnum,
   NftOrderInput,
-  NftSetOrderInput,
   OffersSortField,
   OfferValidatorInput,
   Ordering,
   SingleNftOrderInput,
   SingleNftSignedOfferInput,
   TokenStandardType,
-  TraitOrderInput,
 } from '@/generated/graphql';
 import * as model from '@/model';
 import { NftStandard } from '@/model';
-import { isEmptyCalldata, withRetriedReceiptWait } from '@/utils/blockchain';
+import {
+  assertTransactionSucceeded,
+  isEmptyCalldata,
+  withRetriedReceiptWait,
+} from '@/utils/blockchain';
 import {
   buyWithLoan,
   BuyWithLoanInput,
@@ -92,6 +93,21 @@ import { isDefined, OptionalNullable } from '@/utils/types';
 
 /** The most orders `cancelOrders` takes at once: the API's cancel calldata limit. */
 const MAX_CANCEL_ORDERS = 50;
+
+/** The `__typename` of every order `makeOrder` can publish. */
+const PUBLISHED_ORDER_TYPENAMES = [
+  'SingleNFTOrder',
+  'CollectionOrder',
+  'TraitOrder',
+  'MultipleTraitOrder',
+  'SetBidOrder',
+] as const;
+
+/** Whether `response` is an order `makeOrder` can publish, not a request for more input. */
+const isPublishedOrder = <Response extends { __typename?: string }>(
+  response: Response,
+): response is Extract<Response, { __typename?: (typeof PUBLISHED_ORDER_TYPENAMES)[number] }> =>
+  PUBLISHED_ORDER_TYPENAMES.some((publishedTypename) => publishedTypename === response.__typename);
 
 /** An offer any NFT of a set, a collection or the NFTs carrying some traits, can borrow against. */
 type MakeOfferInput = model.CollectionOfferInput | model.TraitOfferInput;
@@ -498,9 +514,7 @@ export class Gondi {
    * `collectionId` (2 to 1,000), and `collectionId` alone for a collection bid.
    * A trait, set or collection bid fills up to `maxExecutions` times.
    */
-  async makeOrder(
-    orderInput: SingleNftOrderInput | CollectionOrderInput | TraitOrderInput | NftSetOrderInput,
-  ) {
+  async makeOrder(orderInput: OrderInput) {
     let response = await this.apiClient.publishOrder(orderInput);
     while (response.__typename === 'SignatureRequest') {
       const key = response.key as 'signature';
@@ -508,14 +522,7 @@ export class Gondi {
       response = await this.apiClient.publishOrder(orderInput);
     }
 
-    if (
-      response.__typename !== 'SingleNFTOrder' &&
-      response.__typename !== 'CollectionOrder' &&
-      response.__typename !== 'TraitOrder' &&
-      response.__typename !== 'MultipleTraitOrder' &&
-      response.__typename !== 'SetBidOrder'
-    )
-      throw new Error('This should never happen');
+    if (!isPublishedOrder(response)) throw new Error('This should never happen');
 
     return { ...response, ...orderInput };
   }
@@ -1882,6 +1889,83 @@ export class Gondi {
     return await wrapper.unwrap(tokenId);
   }
 
+  /**
+   * Where the wallet's CryptoPunk `tokenId` stands on its way into CryptoPunks 721, read from
+   * chain: `'wallet'` while the wallet holds it naked, `'stash'` once it sits in the wallet's
+   * Stash waiting for {@link wrapPunk721}, `'wrapped'` once the wallet holds its 721 token, and
+   * `'other'` when none of these holds.
+   *
+   * IMPLEMENTATION NOTE: the punks market's `punkIndexToAddress` names the punk's holder and
+   * `CryptoPunks721.punkProxyForUser` the wallet's Stash, deployed or not yet; a wrapped punk is
+   * held by the 721 contract, which mints its token to the wallet
+   * (https://721.cryptopunks.app, https://etherscan.io/address/0x000000000000003607fce1ac9e043a86675c5c2f#code).
+   */
+  async punk721WrapState({ tokenId }: { tokenId: bigint }): Promise<Punk721WrapState> {
+    return (await this._punk721Holding(tokenId)).state;
+  }
+
+  /**
+   * Moves the wallet's naked CryptoPunk `tokenId` into its Stash, the first of the two
+   * transactions that wrap it into CryptoPunks 721. Refuses a punk the wallet does not hold.
+   */
+  async transferPunkToStash721({ tokenId }: { tokenId: bigint }) {
+    const { state, stash, punksAddress } = await this._punk721Holding(tokenId);
+    if (state !== 'wallet') {
+      throw new Error(`Punk ${tokenId} is not held by the wallet (${state})`);
+    }
+    const txHash = await this.contracts
+      .Cryptopunks(punksAddress)
+      .safeContractWrite.transferPunk([stash, tokenId]);
+    return this._minedTransaction(txHash);
+  }
+
+  /**
+   * Wraps the CryptoPunk `tokenId` waiting in the wallet's Stash into CryptoPunks 721, minting
+   * its 721 token to the wallet. Refuses a punk that is not in the Stash: move it there first
+   * with {@link transferPunkToStash721}.
+   */
+  async wrapPunk721({ tokenId }: { tokenId: bigint }) {
+    const { state, wrapperAddress } = await this._punk721Holding(tokenId);
+    if (state !== 'stash') {
+      throw new Error(`Punk ${tokenId} is not in the wallet's Stash (${state})`);
+    }
+    const txHash = await this.contracts
+      .Cryptopunks721(wrapperAddress)
+      .safeContractWrite.wrapPunk([tokenId]);
+    return this._minedTransaction(txHash);
+  }
+
+  /** The punk's wrap state with the addresses the wrap transactions need. */
+  private async _punk721Holding(tokenId: bigint) {
+    const { Cryptopunks: punksAddress, Cryptopunks721: wrapperAddress } = getContracts(
+      this.wallet.chain,
+    );
+    const wrapper = this.contracts.Cryptopunks721(wrapperAddress);
+    const account = this.wallet.account.address;
+    const [holder, stash] = await Promise.all([
+      this.contracts.Cryptopunks(punksAddress).contract.read.punkIndexToAddress([tokenId]),
+      wrapper.contract.read.punkProxyForUser([account]),
+    ]);
+    const stateOf = async (): Promise<Punk721WrapState> => {
+      if (areSameAddress(holder, account)) return 'wallet';
+      if (areSameAddress(holder, stash)) return 'stash';
+      const isWrapped =
+        areSameAddress(holder, wrapperAddress) &&
+        areSameAddress(await wrapper.contract.read.ownerOf([tokenId]), account);
+      return isWrapped ? 'wrapped' : 'other';
+    };
+    return { state: await stateOf(), stash, punksAddress, wrapperAddress };
+  }
+
+  /** A sent transaction whose `waitTxInBlock` resolves with its receipt once it succeeds. */
+  private _minedTransaction(txHash: Hash) {
+    return {
+      txHash,
+      waitTxInBlock: async () =>
+        assertTransactionSucceeded(await this.bcClient.waitForTransactionReceipt({ hash: txHash })),
+    };
+  }
+
   async buyWithSellAndRepay({
     repaymentCalldata,
     purchaseBundlerAddress,
@@ -2075,6 +2159,9 @@ export type BurnAndWithdrawArgs = {
   erc1155Collections?: Address[];
   erc1155TokenIds?: bigint[];
 };
+
+/** Where a CryptoPunk stands on its way into CryptoPunks 721; see `Gondi.punk721WrapState`. */
+export type Punk721WrapState = 'wallet' | 'stash' | 'wrapped' | 'other';
 
 type wrapOldERC721Args = {
   collection: {
