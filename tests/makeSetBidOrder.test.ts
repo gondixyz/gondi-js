@@ -18,6 +18,7 @@ const ORDER_TERMS = {
   collectionId: 7,
 };
 const SET_BID = { ...ORDER_TERMS, nftIds: [11, 12, 13], maxExecutions: 2n };
+const OR_TRAIT_BID = { ...ORDER_TERMS, condition: { anyTraitIds: [21, 22] }, maxExecutions: 2n };
 
 const publishOrderForNftSet = mock();
 const publishOrderForCollection = mock();
@@ -51,6 +52,15 @@ beforeEach(() => {
 describe('publishOrder', () => {
   test('sends a set bid to publishOrderForNftSet, not to the collection mutation', async () => {
     await api.publishOrder({ ...SET_BID });
+
+    expect([
+      publishOrderForNftSet.mock.calls.length,
+      publishOrderForCollection.mock.calls.length,
+    ]).toEqual([1, 0]);
+  });
+
+  test('sends an OR trait bid to publishOrderForNftSet, not to the collection mutation', async () => {
+    await api.publishOrder({ ...OR_TRAIT_BID });
 
     expect([
       publishOrderForNftSet.mock.calls.length,

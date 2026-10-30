@@ -176,7 +176,7 @@ export class Api {
       const response = await this.api.publishOrderForNft({ orderInput });
       return response.result;
     }
-    if ('nftIds' in orderInput) {
+    if ('nftIds' in orderInput || 'condition' in orderInput) {
       const response = await this.api.publishOrderForNftSet({ orderInput });
       return response.result;
     }
