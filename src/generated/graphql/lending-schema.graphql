@@ -370,6 +370,11 @@ enum ArtistHolderSortField {
   OWNED_AMOUNT
   PFPS_OWNED
   SERIES_OWNED
+
+  """
+  Stored valuation in ETH of the held items, times the copies held where copies are counted; holders with nothing valued sort last.
+  """
+  VALUE
 }
 
 input ArtistHolderSortInput {
@@ -555,6 +560,11 @@ type ArtistRankedHolder {
   Held units with no classification; included in ownedAmount.
   """
   unclassifiedOwned: BigInt!
+
+  """
+  Estimated value in ETH of the eligible holdings: each item's stored valuation times the copies held. Refreshed every few hours, so it may lag NFT.valuation; null when none of the holdings is valued.
+  """
+  value: Float
 }
 
 type ArtistRankedHolderEdge {
@@ -870,6 +880,16 @@ type BuyNowPayLaterOrder implements Event & Node & Order {
   startTime: DateTime!
   status: String!
   stealth: Boolean!
+
+  """
+  A bid's net amount floored to its bid step, what a bid listing sorted by NET_AMOUNT ranks on; null for an ask or an unstepped bid.
+  """
+  steppedNetAmount: BigInt
+
+  """
+  A bid's price floored to its bid step, what a bid listing sorted by PRICE ranks on; null for an ask or an unstepped bid.
+  """
+  steppedPrice: BigInt
   taker: Address!
   takerName: String
   takerProfilePictureUrl: String
@@ -958,6 +978,7 @@ type Collection implements Node {
   previewNfts(artistId: Int = null): [NFT!]!
   rarityEnabled: Boolean!
   royalties: [Royalty!]!
+  seaportConduitKey: Hash!
   slug: String!
   statistics: CollectionStatistics!
   supply: BigInt
@@ -1176,6 +1197,16 @@ type CollectionOrder implements Event & Node & Order {
   startTime: DateTime!
   status: String!
   stealth: Boolean!
+
+  """
+  A bid's net amount floored to its bid step, what a bid listing sorted by NET_AMOUNT ranks on; null for an ask or an unstepped bid.
+  """
+  steppedNetAmount: BigInt
+
+  """
+  A bid's price floored to its bid step, what a bid listing sorted by PRICE ranks on; null for an ask or an unstepped bid.
+  """
+  steppedPrice: BigInt
   taker: Address!
   takerName: String
   takerProfilePictureUrl: String
@@ -2167,6 +2198,18 @@ The `JSON` scalar type represents JSON values as specified by [ECMA-404](https:/
 """
 scalar JSON
 
+"""
+How far back the portfolio leaderboard compares ranks; ALL compares with its first day.
+"""
+enum LeaderboardPeriod {
+  ALL
+  DAYS_7
+  DAYS_30
+  MONTHS_3
+  MONTHS_6
+  YEAR_1
+}
+
 enum LenderRankingMetric {
   EARNINGS
   LOWEST_DEFAULT_RATE
@@ -2258,6 +2301,11 @@ type LendingMarketPeriodStatistics {
   Distinct loans initiated in the window; refinances are excluded.
   """
   originatedCount: Int!
+
+  """
+  Percent change in originatedCount from the matching prior window; null when the prior window had no loan.
+  """
+  originatedCountDeltaPct: Float
 
   """
   Percent change in originated USD from the matching prior window; null if either total is unavailable or the prior total is zero.
@@ -3144,6 +3192,16 @@ type MultipleTraitOrder implements Event & Node & Order {
   startTime: DateTime!
   status: String!
   stealth: Boolean!
+
+  """
+  A bid's net amount floored to its bid step, what a bid listing sorted by NET_AMOUNT ranks on; null for an ask or an unstepped bid.
+  """
+  steppedNetAmount: BigInt
+
+  """
+  A bid's price floored to its bid step, what a bid listing sorted by PRICE ranks on; null for an ask or an unstepped bid.
+  """
+  steppedPrice: BigInt
   taker: Address!
   takerName: String
   takerProfilePictureUrl: String
@@ -3596,6 +3654,11 @@ type NFT implements Node {
   "\n        All NFTs for the same token_id in all related collections (including itself,\n        naked and wrappers). Useful for finding analog NFTs across naked/wrapper\n        collections. Unrelated to the `wrap_nfts` and `wrapped_count` fields.\n        "
   wrappersAndNakedNfts: [NFT!]!
   wrapsNfts: [NFT!]
+
+  """
+  X posts that link to this NFT's GONDI item page, newest first.
+  """
+  xPosts(first: Int = null): [XPost!]!
 }
 
 type NFTConnection {
@@ -3716,9 +3779,21 @@ enum NftSearchField {
   TOKEN_ID
 }
 
+input NftSetConditionInput {
+  """
+  Traits of one key in the collection: the bid fills with any NFT carrying one of them. At least 2, at most 10.
+  """
+  anyTraitIds: [Int!]!
+}
+
 input NftSetOrderInput {
   amount: BigInt = null
   collectionId: Int!
+
+  """
+  A trait condition the backend resolves into the NFTs the bid fills with, fixed when the bid is signed. Pass either nftIds or condition.
+  """
+  condition: NftSetConditionInput = null
   currencyAddress: Address!
   expirationTime: BigInt!
   fees: [OrderFee!] = null
@@ -3726,9 +3801,9 @@ input NftSetOrderInput {
   maxExecutions: BigInt = null
 
   """
-  The NFTs the bid fills with, all in the collection: at least 2, at most 1000, duplicates ignored.
+  The NFTs the bid fills with, all in the collection: at least 2, at most 1000, duplicates ignored. Pass either nftIds or condition.
   """
-  nftIds: [Int!]!
+  nftIds: [Int!] = null
   price: BigInt = null
   signature: Signature = null
   startTime: BigInt!
@@ -3835,6 +3910,10 @@ input NftWithAsksConfigInput {
 }
 
 enum NftsSortField {
+  """
+  When the wallets of ownersFilter.owners received the NFT, by the rule of NFT.acquiredAt; NFTs without a recorded arrival go last. Requires ownersFilter.owners.
+  """
+  ACQUIRED_AT
   HIGHEST_BID
   LAST_SALE_DATE
   LAST_SALE_PRICE
@@ -4153,6 +4232,16 @@ interface Order implements Event & Node {
   startTime: DateTime!
   status: String!
   stealth: Boolean!
+
+  """
+  A bid's net amount floored to its bid step, what a bid listing sorted by NET_AMOUNT ranks on; null for an ask or an unstepped bid.
+  """
+  steppedNetAmount: BigInt
+
+  """
+  A bid's price floored to its bid step, what a bid listing sorted by PRICE ranks on; null for an ask or an unstepped bid.
+  """
+  steppedPrice: BigInt
   taker: Address!
   takerName: String
   takerProfilePictureUrl: String
@@ -4331,6 +4420,11 @@ type PortfolioLeaderboard {
   When the ranking was taken; null until its first run.
   """
   asOf: DateTime
+
+  """
+  The sampled day the rank movement compares with; null without one.
+  """
+  comparedWith: Date
   endCursor: String
   hasNextPage: Boolean!
   rows: [PortfolioLeaderboardRow!]!
@@ -4350,12 +4444,27 @@ type PortfolioLeaderboardRow {
   Wrap families among the account's held items.
   """
   collectionCount: Int!
+
+  """
+  The account had no rank on the compared day.
+  """
+  isNew: Boolean!
   name: String
   profilePictureUrl: String
   rank: Int!
 
   """
-  Held items nothing in the market prices; they add nothing.
+  Places moved since the compared day: positive moved up. Null when the history does not reach back that far, or for a new entry.
+  """
+  rankChange: Int
+
+  """
+  The most valuable items the row's wallet holds, highest first, by their valuation at the sample; at most five. Only that wallet's, so the row never reveals the account's other wallets.
+  """
+  topNfts: [NFT!]!
+
+  """
+  Held items nothing in the market prices; they add nothing. Always 0 under an artist or collection filter, which counts valued items only.
   """
   unvaluedNfts: Int!
 
@@ -4363,6 +4472,11 @@ type PortfolioLeaderboardRow {
   Sum of the account's items' valuations at the sample, in ETH.
   """
   value: Float!
+
+  """
+  Value change in ETH since the compared day, under the same filter.
+  """
+  valueChange: Float
   valuedNfts: Int!
 
   """
@@ -4486,7 +4600,7 @@ type Query {
   getCollectionBySlug(slug: String!): Collection
 
   """
-  Highest active bid targeting a single collection whose trait constraint is satisfied by the supplied trait IDs. Considers single-trait bids whose trait is in the input, multi-trait bids whose trait set is contained in the input, and collection-level bids. Returns null when traitIds is empty or no matching bid exists.
+  Highest active bid targeting a single collection whose trait constraint is satisfied by the supplied trait IDs. Considers single-trait bids whose trait is in the input, multi-trait bids whose trait set is contained in the input, collection-level bids, and native set bids covering every NFT that carries all the input traits. Returns null when traitIds is empty or no matching bid exists.
   """
   getCollectionHighestBidMatchingTraits(collectionId: Int!, traitIds: [Int!]!): Order
 
@@ -4541,7 +4655,21 @@ type Query {
   """
   Accounts ranked by their portfolio valuation, highest first. An account is a user with its confirmed-linked wallets.
   """
-  getPortfolioLeaderboard(after: String, first: Int! = 20): PortfolioLeaderboard!
+  getPortfolioLeaderboard(
+    after: String
+
+    """
+    Rank by the items of these artists only (own or collection link); at most 20.
+    """
+    artistIds: [Int!] = null
+
+    """
+    Rank by the items of these collections only (wrap families); at most 20.
+    """
+    collectionIds: [Int!] = null
+    first: Int! = 20
+    period: LeaderboardPeriod! = DAYS_7
+  ): PortfolioLeaderboard!
 
   """
   NFT.valuation summed over the NFTs the wallets own, hold in a stash or a vault, or have as collateral of their active loans as borrower, in ETH, in total and per wrap family. ERC1155 tokens are left out. Takes 1 to 10 distinct wallets. At most max_nfts_per_portfolio items, highest family floor first; truncated says when the cap left items out.
@@ -5410,6 +5538,11 @@ type Query {
   ): SaleConnection!
 
   """
+  The 1/1 and edition NFTs the www sitemap lists: not flagged, excluded, burned or in a hidden collection, oldest first. Each row is two columns, so a page holds up to 2,000.
+  """
+  listSitemapNfts(after: String, first: Int! = 2000): SitemapNftConnection!
+
+  """
   List all sources. Sources are the lender/s of a loan. Lost sources on the other hand are the lender/s that have lost a loan because of renegotiation or refinance. When a renegotiation or refinance happens, the sources compromised turn into lost sources and new sources appear.
   """
   listSources(
@@ -5755,6 +5888,16 @@ type SellAndRepayOrder implements Event & Node & Order {
   startTime: DateTime!
   status: String!
   stealth: Boolean!
+
+  """
+  A bid's net amount floored to its bid step, what a bid listing sorted by NET_AMOUNT ranks on; null for an ask or an unstepped bid.
+  """
+  steppedNetAmount: BigInt
+
+  """
+  A bid's price floored to its bid step, what a bid listing sorted by PRICE ranks on; null for an ask or an unstepped bid.
+  """
+  steppedPrice: BigInt
   taker: Address!
   takerName: String
   takerProfilePictureUrl: String
@@ -5767,12 +5910,27 @@ union SellAndRepayOrderSignatureRequestExtraSeaportData =
   | SellAndRepayOrder
   | SignatureRequest
 
+"""
+An OR trait bid: it fills with any NFT carrying one of anyTraits.
+"""
+type SetBidCondition {
+  """
+  Traits of one key.
+  """
+  anyTraits: [Trait!]!
+}
+
 type SetBidOrder implements Event & Node & Order {
   """
   Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone.
   """
   cancelsOffChain: Boolean!
   collectionId: Int!
+
+  """
+  The trait condition the set was resolved from when the bid was signed; null for a handpicked set.
+  """
+  condition: SetBidCondition
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
@@ -5808,6 +5966,16 @@ type SetBidOrder implements Event & Node & Order {
   startTime: DateTime!
   status: String!
   stealth: Boolean!
+
+  """
+  A bid's net amount floored to its bid step, what a bid listing sorted by NET_AMOUNT ranks on; null for an ask or an unstepped bid.
+  """
+  steppedNetAmount: BigInt
+
+  """
+  A bid's price floored to its bid step, what a bid listing sorted by PRICE ranks on; null for an ask or an unstepped bid.
+  """
+  steppedPrice: BigInt
   taker: Address!
   takerName: String
   takerProfilePictureUrl: String
@@ -6017,6 +6185,16 @@ type SingleNFTOrder implements Event & Node & Order {
   startTime: DateTime!
   status: String!
   stealth: Boolean!
+
+  """
+  A bid's net amount floored to its bid step, what a bid listing sorted by NET_AMOUNT ranks on; null for an ask or an unstepped bid.
+  """
+  steppedNetAmount: BigInt
+
+  """
+  A bid's price floored to its bid step, what a bid listing sorted by PRICE ranks on; null for an ask or an unstepped bid.
+  """
+  steppedPrice: BigInt
   taker: Address!
   takerName: String
   takerProfilePictureUrl: String
@@ -6062,6 +6240,25 @@ input SingleNFTSignedOfferInput {
   requiresLiquidation: Boolean = null
   signature: Signature!
   signerAddress: Address = null
+}
+
+"""
+An NFT the www sitemap lists, by the collection slug and token id its page URL is built from.
+"""
+type SitemapNft {
+  collectionSlug: String!
+  tokenId: BigInt!
+}
+
+type SitemapNftConnection {
+  edges: [SitemapNftEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type SitemapNftEdge {
+  cursor: String!
+  node: SitemapNft!
 }
 
 input SiweInput {
@@ -6238,6 +6435,16 @@ type StealthMaskedOrder implements Event & Node & Order {
   startTime: DateTime!
   status: String!
   stealth: Boolean!
+
+  """
+  A bid's net amount floored to its bid step, what a bid listing sorted by NET_AMOUNT ranks on; null for an ask or an unstepped bid.
+  """
+  steppedNetAmount: BigInt
+
+  """
+  A bid's price floored to its bid step, what a bid listing sorted by PRICE ranks on; null for an ask or an unstepped bid.
+  """
+  steppedPrice: BigInt
   taker: Address!
   takerName: String
   takerProfilePictureUrl: String
@@ -6537,6 +6744,16 @@ type TraitOrder implements Event & Node & Order {
   startTime: DateTime!
   status: String!
   stealth: Boolean!
+
+  """
+  A bid's net amount floored to its bid step, what a bid listing sorted by NET_AMOUNT ranks on; null for an ask or an unstepped bid.
+  """
+  steppedNetAmount: BigInt
+
+  """
+  A bid's price floored to its bid step, what a bid listing sorted by PRICE ranks on; null for an ask or an unstepped bid.
+  """
+  steppedPrice: BigInt
   taker: Address!
   takerName: String
   takerProfilePictureUrl: String
@@ -7002,4 +7219,35 @@ type WatchedNftNotification implements Node & Notification {
 input WithAsksInput {
   enabled: Boolean = false
   marketplaces: [MarketPlaceType!] = null
+}
+
+"""
+An X post that links to an NFT's GONDI item page.
+"""
+type XPost {
+  """
+  The author's handle, no @.
+  """
+  authorHandle: String!
+  authorName: String!
+  authorProfileImageUrl: String
+
+  """
+  The post's id on X.
+  """
+  id: String!
+  likeCount: Int!
+  postedAt: DateTime!
+  replyCount: Int!
+  repostCount: Int!
+
+  """
+  The post's text, its shortened links replaced by what they show.
+  """
+  text: String!
+
+  """
+  The post on x.com.
+  """
+  url: String!
 }

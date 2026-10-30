@@ -1,3 +1,38 @@
+# New Features 0.52.0
+
+## Important
+
+`gondi.makeOrder` can now publish an OR trait bid: one price for any NFT of a collection carrying one of several values of a trait key, such as "Background: Blue or Red". Existing calls keep working.
+
+## Table of Contents
+
+- [OR trait bids](#or-trait-bids)
+
+## OR trait bids
+
+**Description:**
+
+- NEW: `NftSetOrderInput` takes `condition: { anyTraitIds }` in place of `nftIds`: 2 to 10 trait ids of the same key in `collectionId`. The API resolves the NFTs carrying any of them (up to 20,000) when the bid is signed and publishes a `SetBidOrder` through `publishOrderForNftSet`, which fills up to `maxExecutions` times with any of those NFTs.
+- NEW: `SetBidOrder.condition { anyTraits }` in the generated types, null for a handpicked set.
+- `nftIds` is now optional on `NftSetOrderInput`; pass exactly one of `nftIds` or `condition`.
+- OR trait bids are switched on per API environment. Where they are not yet enabled, `makeOrder` with a `condition` rejects with `OR trait bids are not enabled`.
+
+**Migration Steps:**
+
+- None. To bid on several values of one trait key, pass `condition` alongside `collectionId`:
+
+```typescript
+const order = await gondi.makeOrder({
+  collectionId,
+  condition: { anyTraitIds: [blueBackgroundTraitId, redBackgroundTraitId] },
+  maxExecutions: 3n,
+  currencyAddress,
+  price,
+  startTime,
+  expirationTime,
+});
+```
+
 # New Features 0.51.0
 
 ## Important

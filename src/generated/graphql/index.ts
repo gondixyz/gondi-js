@@ -317,6 +317,8 @@ export enum ArtistHolderSortField {
   OwnedAmount = 'OWNED_AMOUNT',
   PfpsOwned = 'PFPS_OWNED',
   SeriesOwned = 'SERIES_OWNED',
+  /** Stored valuation in ETH of the held items, times the copies held where copies are counted; holders with nothing valued sort last. */
+  Value = 'VALUE',
 }
 
 export type ArtistHolderSortInput = {
@@ -439,6 +441,8 @@ export type ArtistRankedHolder = {
   seriesOwned: Scalars['BigInt'];
   /** Held units with no classification; included in ownedAmount. */
   unclassifiedOwned: Scalars['BigInt'];
+  /** Estimated value in ETH of the eligible holdings: each item's stored valuation times the copies held. Refreshed every few hours, so it may lag NFT.valuation; null when none of the holdings is valued. */
+  value?: Maybe<Scalars['Float']>;
 };
 
 export type ArtistRankedHolderPreviewItemsArgs = {
@@ -776,6 +780,10 @@ export type BuyNowPayLaterOrder = Event &
     startTime: Scalars['DateTime'];
     status: Scalars['String'];
     stealth: Scalars['Boolean'];
+    /** A bid's net amount floored to its bid step, what a bid listing sorted by NET_AMOUNT ranks on; null for an ask or an unstepped bid. */
+    steppedNetAmount?: Maybe<Scalars['BigInt']>;
+    /** A bid's price floored to its bid step, what a bid listing sorted by PRICE ranks on; null for an ask or an unstepped bid. */
+    steppedPrice?: Maybe<Scalars['BigInt']>;
     taker: Scalars['Address'];
     takerName?: Maybe<Scalars['String']>;
     takerProfilePictureUrl?: Maybe<Scalars['String']>;
@@ -850,6 +858,7 @@ export type Collection = Node & {
   previewNfts: Array<Nft>;
   rarityEnabled: Scalars['Boolean'];
   royalties: Array<Royalty>;
+  seaportConduitKey: Scalars['Hash'];
   slug: Scalars['String'];
   statistics: CollectionStatistics;
   supply?: Maybe<Scalars['BigInt']>;
@@ -1108,6 +1117,10 @@ export type CollectionOrder = Event &
     startTime: Scalars['DateTime'];
     status: Scalars['String'];
     stealth: Scalars['Boolean'];
+    /** A bid's net amount floored to its bid step, what a bid listing sorted by NET_AMOUNT ranks on; null for an ask or an unstepped bid. */
+    steppedNetAmount?: Maybe<Scalars['BigInt']>;
+    /** A bid's price floored to its bid step, what a bid listing sorted by PRICE ranks on; null for an ask or an unstepped bid. */
+    steppedPrice?: Maybe<Scalars['BigInt']>;
     taker: Scalars['Address'];
     takerName?: Maybe<Scalars['String']>;
     takerProfilePictureUrl?: Maybe<Scalars['String']>;
@@ -2154,6 +2167,16 @@ export enum ItemVisitType {
   Nft = 'NFT',
 }
 
+/** How far back the portfolio leaderboard compares ranks; ALL compares with its first day. */
+export enum LeaderboardPeriod {
+  All = 'ALL',
+  Days_7 = 'DAYS_7',
+  Days_30 = 'DAYS_30',
+  Months_3 = 'MONTHS_3',
+  Months_6 = 'MONTHS_6',
+  Year_1 = 'YEAR_1',
+}
+
 export enum LenderRankingMetric {
   Earnings = 'EARNINGS',
   LowestDefaultRate = 'LOWEST_DEFAULT_RATE',
@@ -2211,6 +2234,8 @@ export type LendingMarketPeriodStatistics = {
   medianEaprDeltaBps?: Maybe<Scalars['Int']>;
   /** Distinct loans initiated in the window; refinances are excluded. */
   originatedCount: Scalars['Int'];
+  /** Percent change in originatedCount from the matching prior window; null when the prior window had no loan. */
+  originatedCountDeltaPct?: Maybe<Scalars['Float']>;
   /** Percent change in originated USD from the matching prior window; null if either total is unavailable or the prior total is zero. */
   originatedDeltaPct?: Maybe<Scalars['Float']>;
   /** Principal of loans initiated in the window at current USD rates, in micro-USD; null if conversion is unavailable. */
@@ -3092,6 +3117,10 @@ export type MultipleTraitOrder = Event &
     startTime: Scalars['DateTime'];
     status: Scalars['String'];
     stealth: Scalars['Boolean'];
+    /** A bid's net amount floored to its bid step, what a bid listing sorted by NET_AMOUNT ranks on; null for an ask or an unstepped bid. */
+    steppedNetAmount?: Maybe<Scalars['BigInt']>;
+    /** A bid's price floored to its bid step, what a bid listing sorted by PRICE ranks on; null for an ask or an unstepped bid. */
+    steppedPrice?: Maybe<Scalars['BigInt']>;
     taker: Scalars['Address'];
     takerName?: Maybe<Scalars['String']>;
     takerProfilePictureUrl?: Maybe<Scalars['String']>;
@@ -3637,6 +3666,8 @@ export type Nft = Node & {
    */
   wrappersAndNakedNfts: Array<Nft>;
   wrapsNfts?: Maybe<Array<Nft>>;
+  /** X posts that link to this NFT's GONDI item page, newest first. */
+  xPosts: Array<XPost>;
 };
 
 export type NftAcquiredAtArgs = {
@@ -3658,6 +3689,10 @@ export type NftMaxNetPrincipalOfferArgs = {
 export type NftNftPriceSampleArgs = {
   currencyAddresses?: InputMaybe<Array<Scalars['Address']>>;
   includeUserPrivateListings?: InputMaybe<Scalars['Boolean']>;
+};
+
+export type NftxPostsArgs = {
+  first?: InputMaybe<Scalars['Int']>;
 };
 
 export type NftConnection = {
@@ -3787,16 +3822,23 @@ export enum NftSearchField {
   TokenId = 'TOKEN_ID',
 }
 
+export type NftSetConditionInput = {
+  /** Traits of one key in the collection: the bid fills with any NFT carrying one of them. At least 2, at most 10. */
+  anyTraitIds: Array<Scalars['Int']>;
+};
+
 export type NftSetOrderInput = {
   amount?: InputMaybe<Scalars['BigInt']>;
   collectionId: Scalars['Int'];
+  /** A trait condition the backend resolves into the NFTs the bid fills with, fixed when the bid is signed. Pass either nftIds or condition. */
+  condition?: InputMaybe<NftSetConditionInput>;
   currencyAddress: Scalars['Address'];
   expirationTime: Scalars['BigInt'];
   fees?: InputMaybe<Array<OrderFee>>;
   isAsk?: InputMaybe<Scalars['Boolean']>;
   maxExecutions?: InputMaybe<Scalars['BigInt']>;
-  /** The NFTs the bid fills with, all in the collection: at least 2, at most 1000, duplicates ignored. */
-  nftIds: Array<Scalars['Int']>;
+  /** The NFTs the bid fills with, all in the collection: at least 2, at most 1000, duplicates ignored. Pass either nftIds or condition. */
+  nftIds?: InputMaybe<Array<Scalars['Int']>>;
   price?: InputMaybe<Scalars['BigInt']>;
   signature?: InputMaybe<Scalars['Signature']>;
   startTime: Scalars['BigInt'];
@@ -3905,6 +3947,8 @@ export type NftWithAsksConfigInput = {
 };
 
 export enum NftsSortField {
+  /** When the wallets of ownersFilter.owners received the NFT, by the rule of NFT.acquiredAt; NFTs without a recorded arrival go last. Requires ownersFilter.owners. */
+  AcquiredAt = 'ACQUIRED_AT',
   HighestBid = 'HIGHEST_BID',
   LastSaleDate = 'LAST_SALE_DATE',
   LastSalePrice = 'LAST_SALE_PRICE',
@@ -4210,6 +4254,10 @@ export type Order = {
   startTime: Scalars['DateTime'];
   status: Scalars['String'];
   stealth: Scalars['Boolean'];
+  /** A bid's net amount floored to its bid step, what a bid listing sorted by NET_AMOUNT ranks on; null for an ask or an unstepped bid. */
+  steppedNetAmount?: Maybe<Scalars['BigInt']>;
+  /** A bid's price floored to its bid step, what a bid listing sorted by PRICE ranks on; null for an ask or an unstepped bid. */
+  steppedPrice?: Maybe<Scalars['BigInt']>;
   taker: Scalars['Address'];
   takerName?: Maybe<Scalars['String']>;
   takerProfilePictureUrl?: Maybe<Scalars['String']>;
@@ -4408,6 +4456,8 @@ export type PortfolioLeaderboard = {
   __typename?: 'PortfolioLeaderboard';
   /** When the ranking was taken; null until its first run. */
   asOf?: Maybe<Scalars['DateTime']>;
+  /** The sampled day the rank movement compares with; null without one. */
+  comparedWith?: Maybe<Scalars['Date']>;
   endCursor?: Maybe<Scalars['String']>;
   hasNextPage: Scalars['Boolean'];
   rows: Array<PortfolioLeaderboardRow>;
@@ -4421,13 +4471,21 @@ export type PortfolioLeaderboardRow = {
   __typename?: 'PortfolioLeaderboardRow';
   /** Wrap families among the account's held items. */
   collectionCount: Scalars['Int'];
+  /** The account had no rank on the compared day. */
+  isNew: Scalars['Boolean'];
   name?: Maybe<Scalars['String']>;
   profilePictureUrl?: Maybe<Scalars['String']>;
   rank: Scalars['Int'];
-  /** Held items nothing in the market prices; they add nothing. */
+  /** Places moved since the compared day: positive moved up. Null when the history does not reach back that far, or for a new entry. */
+  rankChange?: Maybe<Scalars['Int']>;
+  /** The most valuable items the row's wallet holds, highest first, by their valuation at the sample; at most five. Only that wallet's, so the row never reveals the account's other wallets. */
+  topNfts: Array<Nft>;
+  /** Held items nothing in the market prices; they add nothing. Always 0 under an artist or collection filter, which counts valued items only. */
   unvaluedNfts: Scalars['Int'];
   /** Sum of the account's items' valuations at the sample, in ETH. */
   value: Scalars['Float'];
+  /** Value change in ETH since the compared day, under the same filter. */
+  valueChange?: Maybe<Scalars['Float']>;
   valuedNfts: Scalars['Int'];
   /** The account's representative wallet; its profile is the row's. */
   walletAddress: Scalars['Address'];
@@ -4477,7 +4535,7 @@ export type Query = {
   getCollectionActivitiesCount: CollectionEventsCountByDayAndCurrency;
   /** Get a collection by its slug. Slugs are unique identifiers for collections.  */
   getCollectionBySlug?: Maybe<Collection>;
-  /** Highest active bid targeting a single collection whose trait constraint is satisfied by the supplied trait IDs. Considers single-trait bids whose trait is in the input, multi-trait bids whose trait set is contained in the input, and collection-level bids. Returns null when traitIds is empty or no matching bid exists. */
+  /** Highest active bid targeting a single collection whose trait constraint is satisfied by the supplied trait IDs. Considers single-trait bids whose trait is in the input, multi-trait bids whose trait set is contained in the input, collection-level bids, and native set bids covering every NFT that carries all the input traits. Returns null when traitIds is empty or no matching bid exists. */
   getCollectionHighestBidMatchingTraits?: Maybe<Order>;
   /** Get some general loans stats from a collection. */
   getCollectionLoansData: CollectionLoansData;
@@ -4617,6 +4675,8 @@ export type Query = {
   listProfiles: Array<AddressProfile>;
   listRenegotiations: RenegotiationConnection;
   listSales: SaleConnection;
+  /** The 1/1 and edition NFTs the www sitemap lists: not flagged, excluded, burned or in a hidden collection, oldest first. Each row is two columns, so a page holds up to 2,000. */
+  listSitemapNfts: SitemapNftConnection;
   /** List all sources. Sources are the lender/s of a loan. Lost sources on the other hand are the lender/s that have lost a loan because of renegotiation or refinance. When a renegotiation or refinance happens, the sources compromised turn into lost sources and new sources appear. */
   listSources: SourceLostSourceConnection;
   listUsers: UserConnection;
@@ -4818,7 +4878,10 @@ export type QueryGetOutstandingDebtArgs = {
 /** Query for the lending module */
 export type QueryGetPortfolioLeaderboardArgs = {
   after?: InputMaybe<Scalars['String']>;
+  artistIds?: InputMaybe<Array<Scalars['Int']>>;
+  collectionIds?: InputMaybe<Array<Scalars['Int']>>;
   first?: Scalars['Int'];
+  period?: LeaderboardPeriod;
 };
 
 /** Query for the lending module */
@@ -5553,6 +5616,12 @@ export type QueryListSalesArgs = {
 };
 
 /** Query for the lending module */
+export type QueryListSitemapNftsArgs = {
+  after?: InputMaybe<Scalars['String']>;
+  first?: Scalars['Int'];
+};
+
+/** Query for the lending module */
 export type QueryListSourcesArgs = {
   after?: InputMaybe<Scalars['String']>;
   blockchains?: InputMaybe<Array<BlockchainEnum>>;
@@ -5864,6 +5933,10 @@ export type SellAndRepayOrder = Event &
     startTime: Scalars['DateTime'];
     status: Scalars['String'];
     stealth: Scalars['Boolean'];
+    /** A bid's net amount floored to its bid step, what a bid listing sorted by NET_AMOUNT ranks on; null for an ask or an unstepped bid. */
+    steppedNetAmount?: Maybe<Scalars['BigInt']>;
+    /** A bid's price floored to its bid step, what a bid listing sorted by PRICE ranks on; null for an ask or an unstepped bid. */
+    steppedPrice?: Maybe<Scalars['BigInt']>;
     taker: Scalars['Address'];
     takerName?: Maybe<Scalars['String']>;
     takerProfilePictureUrl?: Maybe<Scalars['String']>;
@@ -5884,6 +5957,13 @@ export type SellAndRepayOrderSignatureRequestExtraSeaportData =
   | SellAndRepayOrder
   | SignatureRequest;
 
+/** An OR trait bid: it fills with any NFT carrying one of anyTraits. */
+export type SetBidCondition = {
+  __typename?: 'SetBidCondition';
+  /** Traits of one key. */
+  anyTraits: Array<Trait>;
+};
+
 export type SetBidOrder = Event &
   Node &
   Order & {
@@ -5891,6 +5971,8 @@ export type SetBidOrder = Event &
     /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone. */
     cancelsOffChain: Scalars['Boolean'];
     collectionId: Scalars['Int'];
+    /** The trait condition the set was resolved from when the bid was signed; null for a handpicked set. */
+    condition?: Maybe<SetBidCondition>;
     createdDate: Scalars['DateTime'];
     currency: Currency;
     currencyAddress: Scalars['Address'];
@@ -5923,6 +6005,10 @@ export type SetBidOrder = Event &
     startTime: Scalars['DateTime'];
     status: Scalars['String'];
     stealth: Scalars['Boolean'];
+    /** A bid's net amount floored to its bid step, what a bid listing sorted by NET_AMOUNT ranks on; null for an ask or an unstepped bid. */
+    steppedNetAmount?: Maybe<Scalars['BigInt']>;
+    /** A bid's price floored to its bid step, what a bid listing sorted by PRICE ranks on; null for an ask or an unstepped bid. */
+    steppedPrice?: Maybe<Scalars['BigInt']>;
     taker: Scalars['Address'];
     takerName?: Maybe<Scalars['String']>;
     takerProfilePictureUrl?: Maybe<Scalars['String']>;
@@ -6145,6 +6231,10 @@ export type SingleNftOrder = Event &
     startTime: Scalars['DateTime'];
     status: Scalars['String'];
     stealth: Scalars['Boolean'];
+    /** A bid's net amount floored to its bid step, what a bid listing sorted by NET_AMOUNT ranks on; null for an ask or an unstepped bid. */
+    steppedNetAmount?: Maybe<Scalars['BigInt']>;
+    /** A bid's price floored to its bid step, what a bid listing sorted by PRICE ranks on; null for an ask or an unstepped bid. */
+    steppedPrice?: Maybe<Scalars['BigInt']>;
     taker: Scalars['Address'];
     takerName?: Maybe<Scalars['String']>;
     takerProfilePictureUrl?: Maybe<Scalars['String']>;
@@ -6198,6 +6288,26 @@ export type SingleNftSignedOfferInput = {
   requiresLiquidation?: InputMaybe<Scalars['Boolean']>;
   signature: Scalars['Signature'];
   signerAddress?: InputMaybe<Scalars['Address']>;
+};
+
+/** An NFT the www sitemap lists, by the collection slug and token id its page URL is built from. */
+export type SitemapNft = {
+  __typename?: 'SitemapNft';
+  collectionSlug: Scalars['String'];
+  tokenId: Scalars['BigInt'];
+};
+
+export type SitemapNftConnection = {
+  __typename?: 'SitemapNftConnection';
+  edges: Array<SitemapNftEdge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int'];
+};
+
+export type SitemapNftEdge = {
+  __typename?: 'SitemapNftEdge';
+  cursor: Scalars['String'];
+  node: SitemapNft;
 };
 
 export type SiweInput = {
@@ -6373,6 +6483,10 @@ export type StealthMaskedOrder = Event &
     startTime: Scalars['DateTime'];
     status: Scalars['String'];
     stealth: Scalars['Boolean'];
+    /** A bid's net amount floored to its bid step, what a bid listing sorted by NET_AMOUNT ranks on; null for an ask or an unstepped bid. */
+    steppedNetAmount?: Maybe<Scalars['BigInt']>;
+    /** A bid's price floored to its bid step, what a bid listing sorted by PRICE ranks on; null for an ask or an unstepped bid. */
+    steppedPrice?: Maybe<Scalars['BigInt']>;
     taker: Scalars['Address'];
     takerName?: Maybe<Scalars['String']>;
     takerProfilePictureUrl?: Maybe<Scalars['String']>;
@@ -6694,6 +6808,10 @@ export type TraitOrder = Event &
     startTime: Scalars['DateTime'];
     status: Scalars['String'];
     stealth: Scalars['Boolean'];
+    /** A bid's net amount floored to its bid step, what a bid listing sorted by NET_AMOUNT ranks on; null for an ask or an unstepped bid. */
+    steppedNetAmount?: Maybe<Scalars['BigInt']>;
+    /** A bid's price floored to its bid step, what a bid listing sorted by PRICE ranks on; null for an ask or an unstepped bid. */
+    steppedPrice?: Maybe<Scalars['BigInt']>;
     taker: Scalars['Address'];
     takerName?: Maybe<Scalars['String']>;
     takerProfilePictureUrl?: Maybe<Scalars['String']>;
@@ -7227,6 +7345,25 @@ export type WatchedNftNotification = Node &
 export type WithAsksInput = {
   enabled?: InputMaybe<Scalars['Boolean']>;
   marketplaces?: InputMaybe<Array<MarketPlaceType>>;
+};
+
+/** An X post that links to an NFT's GONDI item page. */
+export type XPost = {
+  __typename?: 'XPost';
+  /** The author's handle, no @. */
+  authorHandle: Scalars['String'];
+  authorName: Scalars['String'];
+  authorProfileImageUrl?: Maybe<Scalars['String']>;
+  /** The post's id on X. */
+  id: Scalars['String'];
+  likeCount: Scalars['Int'];
+  postedAt: Scalars['DateTime'];
+  replyCount: Scalars['Int'];
+  repostCount: Scalars['Int'];
+  /** The post's text, its shortened links replaced by what they show. */
+  text: Scalars['String'];
+  /** The post on x.com. */
+  url: Scalars['String'];
 };
 
 export type CurrencyAmountInfoFragment = {
@@ -9015,6 +9152,7 @@ export type ArtistRankedHolderKeySpecifier = (
   | 'profilePictureUrl'
   | 'seriesOwned'
   | 'unclassifiedOwned'
+  | 'value'
   | ArtistRankedHolderKeySpecifier
 )[];
 export type ArtistRankedHolderFieldPolicy = {
@@ -9035,6 +9173,7 @@ export type ArtistRankedHolderFieldPolicy = {
   profilePictureUrl?: FieldPolicy<any> | FieldReadFunction<any>;
   seriesOwned?: FieldPolicy<any> | FieldReadFunction<any>;
   unclassifiedOwned?: FieldPolicy<any> | FieldReadFunction<any>;
+  value?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type ArtistRankedHolderEdgeKeySpecifier = (
   | 'cursor'
@@ -9386,6 +9525,8 @@ export type BuyNowPayLaterOrderKeySpecifier = (
   | 'startTime'
   | 'status'
   | 'stealth'
+  | 'steppedNetAmount'
+  | 'steppedPrice'
   | 'taker'
   | 'takerName'
   | 'takerProfilePictureUrl'
@@ -9426,6 +9567,8 @@ export type BuyNowPayLaterOrderFieldPolicy = {
   startTime?: FieldPolicy<any> | FieldReadFunction<any>;
   status?: FieldPolicy<any> | FieldReadFunction<any>;
   stealth?: FieldPolicy<any> | FieldReadFunction<any>;
+  steppedNetAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  steppedPrice?: FieldPolicy<any> | FieldReadFunction<any>;
   taker?: FieldPolicy<any> | FieldReadFunction<any>;
   takerName?: FieldPolicy<any> | FieldReadFunction<any>;
   takerProfilePictureUrl?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -9484,6 +9627,7 @@ export type CollectionKeySpecifier = (
   | 'previewNfts'
   | 'rarityEnabled'
   | 'royalties'
+  | 'seaportConduitKey'
   | 'slug'
   | 'statistics'
   | 'supply'
@@ -9529,6 +9673,7 @@ export type CollectionFieldPolicy = {
   previewNfts?: FieldPolicy<any> | FieldReadFunction<any>;
   rarityEnabled?: FieldPolicy<any> | FieldReadFunction<any>;
   royalties?: FieldPolicy<any> | FieldReadFunction<any>;
+  seaportConduitKey?: FieldPolicy<any> | FieldReadFunction<any>;
   slug?: FieldPolicy<any> | FieldReadFunction<any>;
   statistics?: FieldPolicy<any> | FieldReadFunction<any>;
   supply?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -9781,6 +9926,8 @@ export type CollectionOrderKeySpecifier = (
   | 'startTime'
   | 'status'
   | 'stealth'
+  | 'steppedNetAmount'
+  | 'steppedPrice'
   | 'taker'
   | 'takerName'
   | 'takerProfilePictureUrl'
@@ -9820,6 +9967,8 @@ export type CollectionOrderFieldPolicy = {
   startTime?: FieldPolicy<any> | FieldReadFunction<any>;
   status?: FieldPolicy<any> | FieldReadFunction<any>;
   stealth?: FieldPolicy<any> | FieldReadFunction<any>;
+  steppedNetAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  steppedPrice?: FieldPolicy<any> | FieldReadFunction<any>;
   taker?: FieldPolicy<any> | FieldReadFunction<any>;
   takerName?: FieldPolicy<any> | FieldReadFunction<any>;
   takerProfilePictureUrl?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -10731,6 +10880,7 @@ export type LendingMarketPeriodStatisticsKeySpecifier = (
   | 'medianEaprBps'
   | 'medianEaprDeltaBps'
   | 'originatedCount'
+  | 'originatedCountDeltaPct'
   | 'originatedDeltaPct'
   | 'originatedUsd'
   | 'period'
@@ -10748,6 +10898,7 @@ export type LendingMarketPeriodStatisticsFieldPolicy = {
   medianEaprBps?: FieldPolicy<any> | FieldReadFunction<any>;
   medianEaprDeltaBps?: FieldPolicy<any> | FieldReadFunction<any>;
   originatedCount?: FieldPolicy<any> | FieldReadFunction<any>;
+  originatedCountDeltaPct?: FieldPolicy<any> | FieldReadFunction<any>;
   originatedDeltaPct?: FieldPolicy<any> | FieldReadFunction<any>;
   originatedUsd?: FieldPolicy<any> | FieldReadFunction<any>;
   period?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -11877,6 +12028,8 @@ export type MultipleTraitOrderKeySpecifier = (
   | 'startTime'
   | 'status'
   | 'stealth'
+  | 'steppedNetAmount'
+  | 'steppedPrice'
   | 'taker'
   | 'takerName'
   | 'takerProfilePictureUrl'
@@ -11917,6 +12070,8 @@ export type MultipleTraitOrderFieldPolicy = {
   startTime?: FieldPolicy<any> | FieldReadFunction<any>;
   status?: FieldPolicy<any> | FieldReadFunction<any>;
   stealth?: FieldPolicy<any> | FieldReadFunction<any>;
+  steppedNetAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  steppedPrice?: FieldPolicy<any> | FieldReadFunction<any>;
   taker?: FieldPolicy<any> | FieldReadFunction<any>;
   takerName?: FieldPolicy<any> | FieldReadFunction<any>;
   takerProfilePictureUrl?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -12118,6 +12273,7 @@ export type NFTKeySpecifier = (
   | 'wrappersAndNakedNftIds'
   | 'wrappersAndNakedNfts'
   | 'wrapsNfts'
+  | 'xPosts'
   | NFTKeySpecifier
 )[];
 export type NFTFieldPolicy = {
@@ -12167,6 +12323,7 @@ export type NFTFieldPolicy = {
   wrappersAndNakedNftIds?: FieldPolicy<any> | FieldReadFunction<any>;
   wrappersAndNakedNfts?: FieldPolicy<any> | FieldReadFunction<any>;
   wrapsNfts?: FieldPolicy<any> | FieldReadFunction<any>;
+  xPosts?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type NFTConnectionKeySpecifier = (
   | 'edges'
@@ -12582,6 +12739,8 @@ export type OrderKeySpecifier = (
   | 'startTime'
   | 'status'
   | 'stealth'
+  | 'steppedNetAmount'
+  | 'steppedPrice'
   | 'taker'
   | 'takerName'
   | 'takerProfilePictureUrl'
@@ -12619,6 +12778,8 @@ export type OrderFieldPolicy = {
   startTime?: FieldPolicy<any> | FieldReadFunction<any>;
   status?: FieldPolicy<any> | FieldReadFunction<any>;
   stealth?: FieldPolicy<any> | FieldReadFunction<any>;
+  steppedNetAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  steppedPrice?: FieldPolicy<any> | FieldReadFunction<any>;
   taker?: FieldPolicy<any> | FieldReadFunction<any>;
   takerName?: FieldPolicy<any> | FieldReadFunction<any>;
   takerProfilePictureUrl?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -12753,6 +12914,7 @@ export type PointActivityEdgeFieldPolicy = {
 };
 export type PortfolioLeaderboardKeySpecifier = (
   | 'asOf'
+  | 'comparedWith'
   | 'endCursor'
   | 'hasNextPage'
   | 'rows'
@@ -12762,6 +12924,7 @@ export type PortfolioLeaderboardKeySpecifier = (
 )[];
 export type PortfolioLeaderboardFieldPolicy = {
   asOf?: FieldPolicy<any> | FieldReadFunction<any>;
+  comparedWith?: FieldPolicy<any> | FieldReadFunction<any>;
   endCursor?: FieldPolicy<any> | FieldReadFunction<any>;
   hasNextPage?: FieldPolicy<any> | FieldReadFunction<any>;
   rows?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -12770,11 +12933,15 @@ export type PortfolioLeaderboardFieldPolicy = {
 };
 export type PortfolioLeaderboardRowKeySpecifier = (
   | 'collectionCount'
+  | 'isNew'
   | 'name'
   | 'profilePictureUrl'
   | 'rank'
+  | 'rankChange'
+  | 'topNfts'
   | 'unvaluedNfts'
   | 'value'
+  | 'valueChange'
   | 'valuedNfts'
   | 'walletAddress'
   | 'walletCount'
@@ -12782,11 +12949,15 @@ export type PortfolioLeaderboardRowKeySpecifier = (
 )[];
 export type PortfolioLeaderboardRowFieldPolicy = {
   collectionCount?: FieldPolicy<any> | FieldReadFunction<any>;
+  isNew?: FieldPolicy<any> | FieldReadFunction<any>;
   name?: FieldPolicy<any> | FieldReadFunction<any>;
   profilePictureUrl?: FieldPolicy<any> | FieldReadFunction<any>;
   rank?: FieldPolicy<any> | FieldReadFunction<any>;
+  rankChange?: FieldPolicy<any> | FieldReadFunction<any>;
+  topNfts?: FieldPolicy<any> | FieldReadFunction<any>;
   unvaluedNfts?: FieldPolicy<any> | FieldReadFunction<any>;
   value?: FieldPolicy<any> | FieldReadFunction<any>;
+  valueChange?: FieldPolicy<any> | FieldReadFunction<any>;
   valuedNfts?: FieldPolicy<any> | FieldReadFunction<any>;
   walletAddress?: FieldPolicy<any> | FieldReadFunction<any>;
   walletCount?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -12912,6 +13083,7 @@ export type QueryKeySpecifier = (
   | 'listProfiles'
   | 'listRenegotiations'
   | 'listSales'
+  | 'listSitemapNfts'
   | 'listSources'
   | 'listUsers'
   | 'listWalletFollowers'
@@ -13031,6 +13203,7 @@ export type QueryFieldPolicy = {
   listProfiles?: FieldPolicy<any> | FieldReadFunction<any>;
   listRenegotiations?: FieldPolicy<any> | FieldReadFunction<any>;
   listSales?: FieldPolicy<any> | FieldReadFunction<any>;
+  listSitemapNfts?: FieldPolicy<any> | FieldReadFunction<any>;
   listSources?: FieldPolicy<any> | FieldReadFunction<any>;
   listUsers?: FieldPolicy<any> | FieldReadFunction<any>;
   listWalletFollowers?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -13324,6 +13497,8 @@ export type SellAndRepayOrderKeySpecifier = (
   | 'startTime'
   | 'status'
   | 'stealth'
+  | 'steppedNetAmount'
+  | 'steppedPrice'
   | 'taker'
   | 'takerName'
   | 'takerProfilePictureUrl'
@@ -13367,15 +13542,22 @@ export type SellAndRepayOrderFieldPolicy = {
   startTime?: FieldPolicy<any> | FieldReadFunction<any>;
   status?: FieldPolicy<any> | FieldReadFunction<any>;
   stealth?: FieldPolicy<any> | FieldReadFunction<any>;
+  steppedNetAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  steppedPrice?: FieldPolicy<any> | FieldReadFunction<any>;
   taker?: FieldPolicy<any> | FieldReadFunction<any>;
   takerName?: FieldPolicy<any> | FieldReadFunction<any>;
   takerProfilePictureUrl?: FieldPolicy<any> | FieldReadFunction<any>;
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   updatedDate?: FieldPolicy<any> | FieldReadFunction<any>;
 };
+export type SetBidConditionKeySpecifier = ('anyTraits' | SetBidConditionKeySpecifier)[];
+export type SetBidConditionFieldPolicy = {
+  anyTraits?: FieldPolicy<any> | FieldReadFunction<any>;
+};
 export type SetBidOrderKeySpecifier = (
   | 'cancelsOffChain'
   | 'collectionId'
+  | 'condition'
   | 'createdDate'
   | 'currency'
   | 'currencyAddress'
@@ -13407,6 +13589,8 @@ export type SetBidOrderKeySpecifier = (
   | 'startTime'
   | 'status'
   | 'stealth'
+  | 'steppedNetAmount'
+  | 'steppedPrice'
   | 'taker'
   | 'takerName'
   | 'takerProfilePictureUrl'
@@ -13417,6 +13601,7 @@ export type SetBidOrderKeySpecifier = (
 export type SetBidOrderFieldPolicy = {
   cancelsOffChain?: FieldPolicy<any> | FieldReadFunction<any>;
   collectionId?: FieldPolicy<any> | FieldReadFunction<any>;
+  condition?: FieldPolicy<any> | FieldReadFunction<any>;
   createdDate?: FieldPolicy<any> | FieldReadFunction<any>;
   currency?: FieldPolicy<any> | FieldReadFunction<any>;
   currencyAddress?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -13448,6 +13633,8 @@ export type SetBidOrderFieldPolicy = {
   startTime?: FieldPolicy<any> | FieldReadFunction<any>;
   status?: FieldPolicy<any> | FieldReadFunction<any>;
   stealth?: FieldPolicy<any> | FieldReadFunction<any>;
+  steppedNetAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  steppedPrice?: FieldPolicy<any> | FieldReadFunction<any>;
   taker?: FieldPolicy<any> | FieldReadFunction<any>;
   takerName?: FieldPolicy<any> | FieldReadFunction<any>;
   takerProfilePictureUrl?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -13684,6 +13871,8 @@ export type SingleNFTOrderKeySpecifier = (
   | 'startTime'
   | 'status'
   | 'stealth'
+  | 'steppedNetAmount'
+  | 'steppedPrice'
   | 'taker'
   | 'takerName'
   | 'takerProfilePictureUrl'
@@ -13724,11 +13913,34 @@ export type SingleNFTOrderFieldPolicy = {
   startTime?: FieldPolicy<any> | FieldReadFunction<any>;
   status?: FieldPolicy<any> | FieldReadFunction<any>;
   stealth?: FieldPolicy<any> | FieldReadFunction<any>;
+  steppedNetAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  steppedPrice?: FieldPolicy<any> | FieldReadFunction<any>;
   taker?: FieldPolicy<any> | FieldReadFunction<any>;
   takerName?: FieldPolicy<any> | FieldReadFunction<any>;
   takerProfilePictureUrl?: FieldPolicy<any> | FieldReadFunction<any>;
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   updatedDate?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type SitemapNftKeySpecifier = ('collectionSlug' | 'tokenId' | SitemapNftKeySpecifier)[];
+export type SitemapNftFieldPolicy = {
+  collectionSlug?: FieldPolicy<any> | FieldReadFunction<any>;
+  tokenId?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type SitemapNftConnectionKeySpecifier = (
+  | 'edges'
+  | 'pageInfo'
+  | 'totalCount'
+  | SitemapNftConnectionKeySpecifier
+)[];
+export type SitemapNftConnectionFieldPolicy = {
+  edges?: FieldPolicy<any> | FieldReadFunction<any>;
+  pageInfo?: FieldPolicy<any> | FieldReadFunction<any>;
+  totalCount?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type SitemapNftEdgeKeySpecifier = ('cursor' | 'node' | SitemapNftEdgeKeySpecifier)[];
+export type SitemapNftEdgeFieldPolicy = {
+  cursor?: FieldPolicy<any> | FieldReadFunction<any>;
+  node?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type SourceKeySpecifier = (
   | 'accruedInterest'
@@ -13944,6 +14156,8 @@ export type StealthMaskedOrderKeySpecifier = (
   | 'startTime'
   | 'status'
   | 'stealth'
+  | 'steppedNetAmount'
+  | 'steppedPrice'
   | 'taker'
   | 'takerName'
   | 'takerProfilePictureUrl'
@@ -13986,6 +14200,8 @@ export type StealthMaskedOrderFieldPolicy = {
   startTime?: FieldPolicy<any> | FieldReadFunction<any>;
   status?: FieldPolicy<any> | FieldReadFunction<any>;
   stealth?: FieldPolicy<any> | FieldReadFunction<any>;
+  steppedNetAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  steppedPrice?: FieldPolicy<any> | FieldReadFunction<any>;
   taker?: FieldPolicy<any> | FieldReadFunction<any>;
   takerName?: FieldPolicy<any> | FieldReadFunction<any>;
   takerProfilePictureUrl?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -14309,6 +14525,8 @@ export type TraitOrderKeySpecifier = (
   | 'startTime'
   | 'status'
   | 'stealth'
+  | 'steppedNetAmount'
+  | 'steppedPrice'
   | 'taker'
   | 'takerName'
   | 'takerProfilePictureUrl'
@@ -14351,6 +14569,8 @@ export type TraitOrderFieldPolicy = {
   startTime?: FieldPolicy<any> | FieldReadFunction<any>;
   status?: FieldPolicy<any> | FieldReadFunction<any>;
   stealth?: FieldPolicy<any> | FieldReadFunction<any>;
+  steppedNetAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  steppedPrice?: FieldPolicy<any> | FieldReadFunction<any>;
   taker?: FieldPolicy<any> | FieldReadFunction<any>;
   takerName?: FieldPolicy<any> | FieldReadFunction<any>;
   takerProfilePictureUrl?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -14764,6 +14984,31 @@ export type WatchedNftNotificationFieldPolicy = {
   sender?: FieldPolicy<any> | FieldReadFunction<any>;
   senderName?: FieldPolicy<any> | FieldReadFunction<any>;
   user?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type XPostKeySpecifier = (
+  | 'authorHandle'
+  | 'authorName'
+  | 'authorProfileImageUrl'
+  | 'id'
+  | 'likeCount'
+  | 'postedAt'
+  | 'replyCount'
+  | 'repostCount'
+  | 'text'
+  | 'url'
+  | XPostKeySpecifier
+)[];
+export type XPostFieldPolicy = {
+  authorHandle?: FieldPolicy<any> | FieldReadFunction<any>;
+  authorName?: FieldPolicy<any> | FieldReadFunction<any>;
+  authorProfileImageUrl?: FieldPolicy<any> | FieldReadFunction<any>;
+  id?: FieldPolicy<any> | FieldReadFunction<any>;
+  likeCount?: FieldPolicy<any> | FieldReadFunction<any>;
+  postedAt?: FieldPolicy<any> | FieldReadFunction<any>;
+  replyCount?: FieldPolicy<any> | FieldReadFunction<any>;
+  repostCount?: FieldPolicy<any> | FieldReadFunction<any>;
+  text?: FieldPolicy<any> | FieldReadFunction<any>;
+  url?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type StrictTypedTypePolicies = {
   ActiveOfferNotification?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
@@ -16063,6 +16308,13 @@ export type StrictTypedTypePolicies = {
       | (() => undefined | SellAndRepayOrderKeySpecifier);
     fields?: SellAndRepayOrderFieldPolicy;
   };
+  SetBidCondition?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | SetBidConditionKeySpecifier
+      | (() => undefined | SetBidConditionKeySpecifier);
+    fields?: SetBidConditionFieldPolicy;
+  };
   SetBidOrder?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | SetBidOrderKeySpecifier | (() => undefined | SetBidOrderKeySpecifier);
     fields?: SetBidOrderFieldPolicy;
@@ -16109,6 +16361,21 @@ export type StrictTypedTypePolicies = {
   SingleNFTOrder?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | SingleNFTOrderKeySpecifier | (() => undefined | SingleNFTOrderKeySpecifier);
     fields?: SingleNFTOrderFieldPolicy;
+  };
+  SitemapNft?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?: false | SitemapNftKeySpecifier | (() => undefined | SitemapNftKeySpecifier);
+    fields?: SitemapNftFieldPolicy;
+  };
+  SitemapNftConnection?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | SitemapNftConnectionKeySpecifier
+      | (() => undefined | SitemapNftConnectionKeySpecifier);
+    fields?: SitemapNftConnectionFieldPolicy;
+  };
+  SitemapNftEdge?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?: false | SitemapNftEdgeKeySpecifier | (() => undefined | SitemapNftEdgeKeySpecifier);
+    fields?: SitemapNftEdgeFieldPolicy;
   };
   Source?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | SourceKeySpecifier | (() => undefined | SourceKeySpecifier);
@@ -16379,6 +16646,10 @@ export type StrictTypedTypePolicies = {
       | WatchedNftNotificationKeySpecifier
       | (() => undefined | WatchedNftNotificationKeySpecifier);
     fields?: WatchedNftNotificationFieldPolicy;
+  };
+  XPost?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?: false | XPostKeySpecifier | (() => undefined | XPostKeySpecifier);
+    fields?: XPostFieldPolicy;
   };
 };
 export type TypedTypePolicies = StrictTypedTypePolicies & TypePolicies;
