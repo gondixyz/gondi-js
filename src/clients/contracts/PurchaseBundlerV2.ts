@@ -1,6 +1,7 @@
 import { Maybe } from 'graphql/jsutils/Maybe';
-import { Address, decodeAbiParameters, Hex, PublicClient } from 'viem';
+import { Address, decodeAbiParameters, Hex, PublicClient, zeroAddress } from 'viem';
 
+import { isNativeCurrency } from '@/blockchain';
 import { Wallet } from '@/clients/contracts';
 import { MslV5 } from '@/clients/contracts/MslV5';
 import { MslV6 } from '@/clients/contracts/MslV6';
@@ -59,6 +60,21 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
 
   static ETH_SENTINEL = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
 
+  /** Decodes the `executionInfo` callback carried by an execution or a seller repayment. */
+  static decodePurchaseCallback(data: Hex) {
+    return decodeAbiParameters([PurchaseBundlerV2.EXECUTION_INFO], data)[0];
+  }
+
+  /** The callback's purchase currency, with every native spelling (including the ETH sentinel) as `zeroAddress`. */
+  static callbackPurchaseCurrency(
+    callback: ReturnType<typeof PurchaseBundlerV2.decodePurchaseCallback>,
+  ): Address {
+    return isNativeCurrency(callback.purchaseCurrency) ||
+      areSameAddress(callback.purchaseCurrency, PurchaseBundlerV2.ETH_SENTINEL)
+      ? zeroAddress
+      : callback.purchaseCurrency;
+  }
+
   async buy({ emitCalldata, value }: { emitCalldata: Hex; value: bigint }) {
     const txHash = await this.safeContractWrite.buy([[emitCalldata]], { value });
 
@@ -109,38 +125,30 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
   }) {
     const repaymentArgs = this.msl.decodeRepaymentCalldata(repaymentCalldata);
 
-    const callbackData = decodeAbiParameters(
-      [PurchaseBundlerV2.EXECUTION_INFO],
-      repaymentArgs.data.callbackData,
-    );
+    const callback = PurchaseBundlerV2.decodePurchaseCallback(repaymentArgs.data.callbackData);
 
     const { nftCollateralAddress, nftCollateralTokenId, principalAddress } = repaymentArgs.loan;
 
-    if (
-      !areSameAddress(principalAddress, callbackData[0].purchaseCurrency) &&
-      swapData === undefined
-    ) {
+    if (!areSameAddress(principalAddress, callback.purchaseCurrency) && swapData === undefined) {
       throw new Error(
         'Swap data is required when paying with different currency than loan currency.',
       );
     }
 
-    const isNativeCurrency = areSameAddress(
-      callbackData[0].purchaseCurrency,
-      PurchaseBundlerV2.ETH_SENTINEL,
-    );
+    const purchaseCurrency = PurchaseBundlerV2.callbackPurchaseCurrency(callback);
+    const native = isNativeCurrency(purchaseCurrency);
 
     const txHash = await this.safeContractWrite.executeSell(
       [
-        isNativeCurrency ? [] : [callbackData[0].purchaseCurrency],
-        isNativeCurrency ? [] : [price],
+        native ? [] : [purchaseCurrency],
+        native ? [] : [price],
         [nftCollateralAddress],
         [nftCollateralTokenId],
-        callbackData[0].reservoirExecutionInfo.module,
+        callback.reservoirExecutionInfo.module,
         [repaymentCalldata],
         swapData ? [swapData] : [],
       ],
-      { value: isNativeCurrency ? callbackData[0].reservoirExecutionInfo.value : undefined },
+      { value: native ? callback.reservoirExecutionInfo.value : undefined },
     );
 
     return {
@@ -180,32 +188,26 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
     const { Aave } = getContracts(this.wallet.chain);
     const repaymentArgs = this.msl.decodeRepaymentCalldata(repaymentCalldata);
 
-    const callbackData = decodeAbiParameters(
-      [PurchaseBundlerV2.EXECUTION_INFO],
-      repaymentArgs.data.callbackData,
-    );
+    const callback = PurchaseBundlerV2.decodePurchaseCallback(repaymentArgs.data.callbackData);
 
     const { nftCollateralAddress, nftCollateralTokenId } = repaymentArgs.loan;
-    const purchaseCurrency = callbackData[0].purchaseCurrency;
-
-    const isNativeCurrency = areSameAddress(purchaseCurrency, PurchaseBundlerV2.ETH_SENTINEL);
+    const purchaseCurrency = PurchaseBundlerV2.callbackPurchaseCurrency(callback);
+    const native = isNativeCurrency(purchaseCurrency);
 
     const txHash = await this.safeContractWrite.executeSellWithLoan(
       [
         {
           borrowArgs: {
             pool: Aave,
-            assets: isNativeCurrency
-              ? [getCurrencies(this.wallet.chain).WETH_ADDRESS]
-              : [purchaseCurrency],
-            amounts: isNativeCurrency ? [price - initialPayment] : [price], // TODO: This could be improved to be price-initialPayment everytime
+            assets: native ? [getCurrencies(this.wallet.chain).WETH_ADDRESS] : [purchaseCurrency],
+            amounts: native ? [price - initialPayment] : [price], // TODO: This could be improved to be price-initialPayment everytime
           },
           executeSellArgs: {
-            currencies: isNativeCurrency ? [] : [purchaseCurrency],
-            currencyAmounts: isNativeCurrency ? [] : [price],
+            currencies: native ? [] : [purchaseCurrency],
+            currencyAmounts: native ? [] : [price],
             collections: [nftCollateralAddress],
             tokenIds: [nftCollateralTokenId],
-            marketPlace: callbackData[0].reservoirExecutionInfo.module,
+            marketPlace: callback.reservoirExecutionInfo.module,
             executionData: [repaymentCalldata],
             swapData: executeSellSwapData ? [executeSellSwapData] : [],
           },
@@ -213,10 +215,10 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
           swapCurrencies: repayFlashLoanSwapParams ? [repayFlashLoanSwapParams.inputCurrency] : [],
           swapAmounts: repayFlashLoanSwapParams ? [repayFlashLoanSwapParams.inputAmount] : [],
           swapData: repayFlashLoanSwapParams ? [repayFlashLoanSwapParams.swapData] : [],
-          unwrap: isNativeCurrency,
+          unwrap: native,
         },
       ],
-      { value: isNativeCurrency ? initialPayment : undefined },
+      { value: native ? initialPayment : undefined },
     );
 
     return {
