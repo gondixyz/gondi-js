@@ -1,6 +1,5 @@
 import {
   Address,
-  decodeAbiParameters,
   encodeAbiParameters,
   encodeFunctionData,
   encodePacked,
@@ -10,7 +9,6 @@ import {
   keccak256,
   parseAbi,
   toFunctionSelector,
-  zeroAddress,
   zeroHash,
 } from 'viem';
 import { mainnet } from 'viem/chains';
@@ -66,19 +64,6 @@ export type CreditPurchaseQuote = Readonly<{
   loanSwapData: Hex;
   callbackData: Hex;
 }>;
-
-/** Decodes the purchase bundler's `executionInfo` callback carried by an execution or a seller repayment. */
-export const decodePurchaseCallback = (data: Hex) =>
-  decodeAbiParameters([PurchaseBundlerV2.EXECUTION_INFO], data)[0];
-
-/** The callback's purchase currency, with every native spelling (including the ETH sentinel) as `zeroAddress`. */
-export const callbackPurchaseCurrency = (
-  callback: ReturnType<typeof decodePurchaseCallback>,
-): Address =>
-  isNativeCurrency(callback.purchaseCurrency) ||
-  areSameAddress(callback.purchaseCurrency, PurchaseBundlerV2.ETH_SENTINEL)
-    ? zeroAddress
-    : callback.purchaseCurrency;
 
 /** Compares every ABI field against the confirmed terms before signing or submitting an API execution. */
 export const assertCreditPurchaseExecution = (expected: ExecutionDataV7, received: unknown) => {
@@ -251,8 +236,8 @@ export const quoteCreditPurchase = async ({
   )
     throw new Error('Invalid buyer credit currency or funding');
   const repayment = sellerMsl.decodeRepaymentCalldata(input.repaymentCalldata);
-  const sellerCallback = decodePurchaseCallback(repayment.data.callbackData);
-  const purchaseCurrency = callbackPurchaseCurrency(sellerCallback);
+  const sellerCallback = PurchaseBundlerV2.decodePurchaseCallback(repayment.data.callbackData);
+  const purchaseCurrency = PurchaseBundlerV2.callbackPurchaseCurrency(sellerCallback);
   const native = isNativeCurrency(purchaseCurrency);
   if (
     !native &&

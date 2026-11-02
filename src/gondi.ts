@@ -58,11 +58,7 @@ import {
 } from '@/generated/graphql';
 import * as model from '@/model';
 import { NftStandard } from '@/model';
-import {
-  assertTransactionSucceeded,
-  isEmptyCalldata,
-  withRetriedReceiptWait,
-} from '@/utils/blockchain';
+import { isEmptyCalldata, minedTransaction, withRetriedReceiptWait } from '@/utils/blockchain';
 import {
   buyWithLoan,
   BuyWithLoanInput,
@@ -1918,7 +1914,7 @@ export class Gondi {
     const txHash = await this.contracts
       .Cryptopunks(punksAddress)
       .safeContractWrite.transferPunk([stash, tokenId]);
-    return this._minedTransaction(txHash);
+    return minedTransaction(this.bcClient, txHash);
   }
 
   /**
@@ -1934,10 +1930,27 @@ export class Gondi {
     const txHash = await this.contracts
       .Cryptopunks721(wrapperAddress)
       .safeContractWrite.wrapPunk([tokenId]);
-    return this._minedTransaction(txHash);
+    return minedTransaction(this.bcClient, txHash);
   }
 
-  /** The punk's wrap state with the addresses the wrap transactions need. */
+  /**
+   * Unwraps the wallet's CryptoPunks 721 token `tokenId` back into a naked CryptoPunk: the 721
+   * contract burns the token and hands the punk to the wallet, in one transaction with no
+   * approval. Refuses unless the wallet holds the 721 token, so a token held by a loan, a vault
+   * or someone else is never sent.
+   */
+  async unwrapPunk721({ tokenId }: { tokenId: bigint }) {
+    const { state, wrapperAddress } = await this._punk721Holding(tokenId);
+    if (state !== 'wrapped') {
+      throw new Error(`Punk ${tokenId} is not wrapped in the wallet (${state})`);
+    }
+    const txHash = await this.contracts
+      .Cryptopunks721(wrapperAddress)
+      .safeContractWrite.unwrapPunk([tokenId]);
+    return minedTransaction(this.bcClient, txHash);
+  }
+
+  /** The punk's wrap state with the addresses the wrap and unwrap transactions need. */
   private async _punk721Holding(tokenId: bigint) {
     const { Cryptopunks: punksAddress, Cryptopunks721: wrapperAddress } = getContracts(
       this.wallet.chain,
@@ -1957,15 +1970,6 @@ export class Gondi {
       return isWrapped ? 'wrapped' : 'other';
     };
     return { state: await stateOf(), stash, punksAddress, wrapperAddress };
-  }
-
-  /** A sent transaction whose `waitTxInBlock` resolves with its receipt once it succeeds. */
-  private _minedTransaction(txHash: Hash) {
-    return {
-      txHash,
-      waitTxInBlock: async () =>
-        assertTransactionSucceeded(await this.bcClient.waitForTransactionReceipt({ hash: txHash })),
-    };
   }
 
   async buyWithSellAndRepay({

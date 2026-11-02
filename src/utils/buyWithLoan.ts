@@ -13,6 +13,7 @@ import { mainnet } from 'viem/chains';
 
 import { ExecutionDataV7, isNativeCurrency } from '@/blockchain';
 import { MslV6 } from '@/clients/contracts/MslV6';
+import { PurchaseBundlerV2 } from '@/clients/contracts/PurchaseBundlerV2';
 import { getContracts, getCurrencies } from '@/deploys';
 import { multiSourceLoanAbi } from '@/generated/blockchain/v7';
 import { BnplOrderInput, BuyWithLoanListingQuery } from '@/generated/graphql';
@@ -20,9 +21,7 @@ import type { Gondi } from '@/gondi';
 import {
   assertCreditPurchaseExecution,
   assertCreditPurchaseRoute,
-  callbackPurchaseCurrency,
   CreditPurchaseQuote,
-  decodePurchaseCallback,
   quotePurchaseFunding,
 } from '@/utils/creditPurchase';
 import { crossCurrencyDeadline } from '@/utils/crossCurrencyRenegotiation';
@@ -45,7 +44,7 @@ type Context = Pick<
 type PurchaseInput = Parameters<Gondi['buyNowPayLater']>[0];
 type Listing = BuyWithLoanListingQuery['listOrdersV2']['edges'][number]['node'];
 type SellerListing = Extract<Listing, { __typename?: 'SellAndRepayOrder' }>;
-type PurchaseCallback = ReturnType<typeof decodePurchaseCallback>;
+type PurchaseCallback = ReturnType<typeof PurchaseBundlerV2.decodePurchaseCallback>;
 
 /** Selected buyer financing; quote preparation never requests a wallet signature. */
 export type BuyWithLoanInput = Pick<
@@ -235,7 +234,7 @@ export const quoteBuyWithLoan = async (
   const typed = await unsignedBuyWithLoanExecution(context, orderInput);
   const callbackData = (typed.message as ExecutionDataV7).callbackData;
   if (quote.route === 'ordinary') {
-    const callback = decodePurchaseCallback(callbackData);
+    const callback = PurchaseBundlerV2.decodePurchaseCallback(callbackData);
     assertOrdinaryPurchaseCallback(quote, callback);
     const mustBeOwner = assertPurchaseMarketplace(
       listing,
@@ -346,9 +345,9 @@ const quoteFlashRoute = async (
     repayment.loan.nftCollateralTokenId !== input.tokenId
   )
     throw new Error('Seller repayment collateral changed');
-  const callback = decodePurchaseCallback(repayment.data.callbackData);
+  const callback = PurchaseBundlerV2.decodePurchaseCallback(repayment.data.callbackData);
   if (
-    !areSameAddress(callbackPurchaseCurrency(callback), base.purchaseCurrency) ||
+    !areSameAddress(PurchaseBundlerV2.callbackPurchaseCurrency(callback), base.purchaseCurrency) ||
     callback.amount <= 0n ||
     callback.amount > base.price ||
     (!areSameAddress(
@@ -484,7 +483,7 @@ const assertBuyWithLoanTypedData = (
 const assertOrdinaryPurchaseCallback = (quote: UnpreparedQuote, callback: PurchaseCallback) => {
   if (
     !areSameAddress(callback.reservoirExecutionInfo.module, quote.module) ||
-    !areSameAddress(callbackPurchaseCurrency(callback), quote.purchaseCurrency) ||
+    !areSameAddress(PurchaseBundlerV2.callbackPurchaseCurrency(callback), quote.purchaseCurrency) ||
     callback.amount !== quote.initialPayment ||
     callback.swapData !== quote.loanSwapData ||
     callback.swapValue !== 0n ||
@@ -531,7 +530,7 @@ export const assertBuyWithLoanRoute = async (context: Context, quote: BuyWithLoa
   if (quote.route === 'nested')
     await assertCreditPurchaseRoute(context.bcClient, quote.creditPurchaseQuote);
   else {
-    const callback = decodePurchaseCallback(
+    const callback = PurchaseBundlerV2.decodePurchaseCallback(
       quote.route === 'ordinary'
         ? quote.execution.callbackData
         : (context.contracts.Msl(quote.sellerContract) as MslV6).decodeRepaymentCalldata(

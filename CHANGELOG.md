@@ -1,3 +1,29 @@
+# New Features 0.53.0
+
+## Important
+
+The SDK can now unwrap a CryptoPunks 721 token back into a naked CryptoPunk. Existing calls keep working.
+
+## Table of Contents
+
+- [Unwrap a CryptoPunks 721 punk](#unwrap-a-cryptopunks-721-punk)
+
+## Unwrap a CryptoPunks 721 punk
+
+**Description:**
+
+- NEW: `gondi.unwrapPunk721({ tokenId })` burns the wallet's CryptoPunks 721 token and returns the naked punk to the wallet, in one transaction with no approval. It refuses unless `punk721WrapState` is `'wrapped'`, so a 721 token held by a loan, a vault or anyone else is never sent. It returns `{ txHash, waitTxInBlock }`.
+
+**Migration Steps:**
+
+- None. To unwrap a punk the wallet holds as a 721 token:
+
+```typescript
+if ((await gondi.punk721WrapState({ tokenId })) === 'wrapped') {
+  await(await gondi.unwrapPunk721({ tokenId })).waitTxInBlock();
+}
+```
+
 # New Features 0.52.0
 
 ## Important
