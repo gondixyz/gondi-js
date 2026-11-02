@@ -58,11 +58,7 @@ import {
 } from '@/generated/graphql';
 import * as model from '@/model';
 import { NftStandard } from '@/model';
-import {
-  assertTransactionSucceeded,
-  isEmptyCalldata,
-  withRetriedReceiptWait,
-} from '@/utils/blockchain';
+import { isEmptyCalldata, minedTransaction, withRetriedReceiptWait } from '@/utils/blockchain';
 import {
   buyWithLoan,
   BuyWithLoanInput,
@@ -1918,7 +1914,7 @@ export class Gondi {
     const txHash = await this.contracts
       .Cryptopunks(punksAddress)
       .safeContractWrite.transferPunk([stash, tokenId]);
-    return this._minedTransaction(txHash);
+    return minedTransaction(this.bcClient, txHash);
   }
 
   /**
@@ -1934,7 +1930,7 @@ export class Gondi {
     const txHash = await this.contracts
       .Cryptopunks721(wrapperAddress)
       .safeContractWrite.wrapPunk([tokenId]);
-    return this._minedTransaction(txHash);
+    return minedTransaction(this.bcClient, txHash);
   }
 
   /** The punk's wrap state with the addresses the wrap transactions need. */
@@ -1957,15 +1953,6 @@ export class Gondi {
       return isWrapped ? 'wrapped' : 'other';
     };
     return { state: await stateOf(), stash, punksAddress, wrapperAddress };
-  }
-
-  /** A sent transaction whose `waitTxInBlock` resolves with its receipt once it succeeds. */
-  private _minedTransaction(txHash: Hash) {
-    return {
-      txHash,
-      waitTxInBlock: async () =>
-        assertTransactionSucceeded(await this.bcClient.waitForTransactionReceipt({ hash: txHash })),
-    };
   }
 
   async buyWithSellAndRepay({

@@ -1,4 +1,5 @@
 import {
+  Hash,
   PublicClient,
   TransactionNotFoundError,
   TransactionReceipt,
@@ -26,6 +27,15 @@ export const assertTransactionSucceeded = (receipt: TransactionReceipt) => {
   return receipt;
 };
 
+type ReceiptWaiter = Pick<PublicClient, 'waitForTransactionReceipt'>;
+
+/** A sent transaction whose `waitTxInBlock` resolves with its receipt once it succeeds. */
+export const minedTransaction = (client: ReceiptWaiter, txHash: Hash) => ({
+  txHash,
+  waitTxInBlock: async () =>
+    assertTransactionSucceeded(await client.waitForTransactionReceipt({ hash: txHash })),
+});
+
 /**
  * Total time a receipt wait keeps trying before giving up on a broadcast
  * transaction. Slow-to-mine transactions usually confirm well within this
@@ -34,8 +44,6 @@ export const assertTransactionSucceeded = (receipt: TransactionReceipt) => {
 export const WAIT_FOR_RECEIPT_TIMEOUT_MILLIS = 360_000;
 
 const RECEIPT_RETRY_DELAY_MILLIS = 5_000;
-
-type ReceiptWaiter = Pick<PublicClient, 'waitForTransactionReceipt'>;
 
 interface ReceiptWaitOptions {
   timeoutMillis?: number;
