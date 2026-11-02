@@ -16,6 +16,7 @@ const punkIndexToAddress = mock(async (): Promise<Address> => WALLET);
 const ownerOf = mock(async (): Promise<Address> => WALLET);
 const transferPunk = mock(async () => TX_HASH);
 const wrapPunk = mock(async () => TX_HASH);
+const unwrapPunk = mock(async () => TX_HASH);
 const waitForTransactionReceipt = mock(async () => ({
   status: 'success',
   transactionHash: TX_HASH,
@@ -31,7 +32,7 @@ const gondi = stubGondi({
     }),
     Cryptopunks721: () => ({
       contract: { read: { punkProxyForUser: async () => STASH, ownerOf } },
-      safeContractWrite: { wrapPunk },
+      safeContractWrite: { wrapPunk, unwrapPunk },
     }),
   },
 });
@@ -40,7 +41,9 @@ const gondi = stubGondi({
 const heldBy = (holder: Address) => punkIndexToAddress.mockImplementation(async () => holder);
 
 beforeEach(() => {
-  [transferPunk, wrapPunk, waitForTransactionReceipt].forEach((write) => write.mockClear());
+  [transferPunk, wrapPunk, unwrapPunk, waitForTransactionReceipt].forEach((write) =>
+    write.mockClear(),
+  );
   ownerOf.mockImplementation(async () => WALLET);
   heldBy(WALLET);
 });
@@ -100,6 +103,47 @@ describe('wrapPunk721', () => {
     }));
 
     const { waitTxInBlock } = await gondi.wrapPunk721({ tokenId: TOKEN_ID });
+
+    await expect(waitTxInBlock()).rejects.toThrow(TX_HASH);
+  });
+});
+
+describe('unwrapPunk721', () => {
+  test('unwraps a punk whose 721 token the wallet holds', async () => {
+    heldBy(WRAPPER);
+
+    await gondi.unwrapPunk721({ tokenId: TOKEN_ID });
+
+    expect(unwrapPunk).toHaveBeenCalledWith([TOKEN_ID]);
+  });
+
+  test.each([
+    ['wallet', WALLET],
+    ['stash', STASH],
+    ['other', STRANGER],
+  ] as const)('refuses a punk in the %s state', async (state, holder) => {
+    heldBy(holder);
+
+    await expect(gondi.unwrapPunk721({ tokenId: TOKEN_ID })).rejects.toThrow(state);
+    expect(unwrapPunk).not.toHaveBeenCalled();
+  });
+
+  test('refuses a 721 token held by someone else, such as a loan contract', async () => {
+    heldBy(WRAPPER);
+    ownerOf.mockImplementation(async () => STRANGER);
+
+    await expect(gondi.unwrapPunk721({ tokenId: TOKEN_ID })).rejects.toThrow('other');
+    expect(unwrapPunk).not.toHaveBeenCalled();
+  });
+
+  test('waitTxInBlock rejects with the hash when the unwrap reverts', async () => {
+    heldBy(WRAPPER);
+    waitForTransactionReceipt.mockImplementationOnce(async () => ({
+      status: 'reverted',
+      transactionHash: TX_HASH,
+    }));
+
+    const { waitTxInBlock } = await gondi.unwrapPunk721({ tokenId: TOKEN_ID });
 
     await expect(waitTxInBlock()).rejects.toThrow(TX_HASH);
   });
