@@ -509,7 +509,9 @@ export class Gondi {
    * `nftIds` for a set bid that fills with any of the listed NFTs of
    * `collectionId` (2 to 1,000), `condition.anyTraitIds` for an OR trait bid that
    * fills with any NFT of `collectionId` carrying one of those values of a trait
-   * key, and `collectionId` alone for a collection bid.
+   * key, `condition.expression` for a condition bid that fills with any NFT of
+   * `collectionId` an all/any/not tree of traits and NFTs matches, and
+   * `collectionId` alone for a collection bid.
    * A trait, set or collection bid fills up to `maxExecutions` times.
    */
   async makeOrder(orderInput: OrderInput) {

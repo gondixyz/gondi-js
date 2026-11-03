@@ -1875,6 +1875,19 @@ export enum GalleryColorMode {
   Light = 'LIGHT',
 }
 
+export type GalleryConnection = {
+  __typename?: 'GalleryConnection';
+  edges: Array<GalleryEdge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int'];
+};
+
+export type GalleryEdge = {
+  __typename?: 'GalleryEdge';
+  cursor: Scalars['String'];
+  node: Gallery;
+};
+
 /** Everything a collector writes into a gallery. The works are in the order they are shown, and may be anyone's indexed NFTs. */
 export type GalleryInput = {
   /** Empty to keep the style's own colour mode. */
@@ -1899,6 +1912,19 @@ export enum GalleryPalette {
   Phosphor = 'PHOSPHOR',
   Slate = 'SLATE',
 }
+
+/** What the galleries directory orders by: when a gallery was published, when it was last edited, how many works it shows, or its name. */
+export enum GallerySortField {
+  Name = 'NAME',
+  PublishedAt = 'PUBLISHED_AT',
+  UpdatedAt = 'UPDATED_AT',
+  WorkCount = 'WORK_COUNT',
+}
+
+export type GallerySortInput = {
+  field: GallerySortField;
+  order: Ordering;
+};
 
 /** The typography and colour preset a gallery is shown in. */
 export enum GalleryStyle {
@@ -1933,6 +1959,12 @@ export type GalleryWorkInput = {
   chapter?: Scalars['String'];
   nftId: Scalars['Int'];
   note?: Scalars['String'];
+};
+
+export type GeoAccess = {
+  __typename?: 'GeoAccess';
+  blocked: Scalars['Boolean'];
+  country?: Maybe<Scalars['String']>;
 };
 
 export type GlobalSearchResult = {
@@ -2988,6 +3020,7 @@ export enum MarketPlaceType {
   Nftx = 'NFTX',
   NftStrategy = 'NFT_STRATEGY',
   OpenSea = 'OPEN_SEA',
+  SuperRare = 'SUPER_RARE',
   X2Y2 = 'X2Y2',
 }
 
@@ -3824,7 +3857,18 @@ export enum NftSearchField {
 
 export type NftSetConditionInput = {
   /** Traits of one key in the collection: the bid fills with any NFT carrying one of them. At least 2, at most 10. */
-  anyTraitIds: Array<Scalars['Int']>;
+  anyTraitIds?: InputMaybe<Array<Scalars['Int']>>;
+  /** A nested condition over the collection's traits, for example {"all": [{"any": [{"trait": 1}, {"trait": 2}]}, {"any": [{"trait": 3}, {"trait": 4}]}]} for (Background: Blue or Red) and (Fur: Gold or Silver). A node is {"all": [nodes]} (every node matches), {"any": [nodes]} (at least one matches) or {"trait": traitId}; all and any take at least 2 nodes. The root is an all or an any; at most 4 levels and 10 traits. */
+  expression?: InputMaybe<Scalars['JSON']>;
+};
+
+/** What a set bid's trait condition would match if published now. */
+export type NftSetConditionPreview = {
+  __typename?: 'NftSetConditionPreview';
+  /** How many NFTs of the collection the condition matches. */
+  matchCount: Scalars['Int'];
+  /** Up to 10 of them, in NFT id order. */
+  previewNfts: Array<Nft>;
 };
 
 export type NftSetOrderInput = {
@@ -4520,6 +4564,7 @@ export type Query = {
   galleries: Array<Gallery>;
   /** One gallery by the profile wallet and slug of its URL. A draft is found only by the account that owns it. */
   gallery?: Maybe<Gallery>;
+  geoAccess: GeoAccess;
   getAddressByName?: Maybe<Scalars['Address']>;
   /** The wallet holding a Gondi username, for profile links; never a recipient lookup. */
   getAddressByUsername?: Maybe<Scalars['Address']>;
@@ -4636,6 +4681,8 @@ export type Query = {
   listEditionsV2: EditionNftConnection;
   /** List all activities. Includes loan activities, loan offers, loan renegotiations, trade orders, nft transfers. priceUsd bounds are USD amounts converted with current rates; events without a priced amount (transfers, loan listings, executed trades) are excluded while a price filter is set. */
   listEvents: EventConnection;
+  /** The galleries directory: every profile's published galleries that show at least one work. Most recently published first unless `sortBy` says otherwise; ties go to the most recently published. */
+  listGalleries: GalleryConnection;
   listListings: ListingConnection;
   listListingsForSale: OrderConnection;
   /**
@@ -4695,6 +4742,8 @@ export type Query = {
   notificationPreferences: Array<NotificationPreference>;
   /** Evaluate an item quote before signing; publication rechecks under a transaction lock. */
   previewItemLoanOfferCompetition: LoanOfferCompetitionPreview;
+  /** What a set bid's trait condition matches in the collection right now: the count and up to 10 of the NFTs, under the checks publishOrderForNftSet applies (an empty match counts 0 here, where publishing it fails). For a live count while a condition is built. */
+  previewNftSetCondition: NftSetConditionPreview;
   previewRenegotiationCompetition: LoanOfferCompetitionPreview;
 };
 
@@ -4818,6 +4867,7 @@ export type QueryGetEditionBySlugArgs = {
 /** Query for the lending module */
 export type QueryGetFulfillManyOrdersCalldataArgs = {
   orderIds: Array<Scalars['Int64']>;
+  recipient?: InputMaybe<Scalars['Address']>;
 };
 
 /** Query for the lending module */
@@ -5288,6 +5338,13 @@ export type QueryListEventsArgs = {
 };
 
 /** Query for the lending module */
+export type QueryListGalleriesArgs = {
+  after?: InputMaybe<Scalars['String']>;
+  first?: InputMaybe<Scalars['Int']>;
+  sortBy?: InputMaybe<Array<GallerySortInput>>;
+};
+
+/** Query for the lending module */
 export type QueryListListingsArgs = {
   after?: InputMaybe<Scalars['String']>;
   blockchains?: InputMaybe<Array<BlockchainEnum>>;
@@ -5682,6 +5739,12 @@ export type QueryPreviewItemLoanOfferCompetitionArgs = {
 };
 
 /** Query for the lending module */
+export type QueryPreviewNftSetConditionArgs = {
+  collectionId: Scalars['Int'];
+  condition: NftSetConditionInput;
+};
+
+/** Query for the lending module */
 export type QueryPreviewRenegotiationCompetitionArgs = {
   renegotiationInput: RenegotiationOfferInput;
   replacementIds?: InputMaybe<Array<Scalars['String']>>;
@@ -5957,11 +6020,15 @@ export type SellAndRepayOrderSignatureRequestExtraSeaportData =
   | SellAndRepayOrder
   | SignatureRequest;
 
-/** An OR trait bid: it fills with any NFT carrying one of anyTraits. */
+/** The trait condition a set bid was resolved from: the bid fills with any NFT the expression matches. */
 export type SetBidCondition = {
   __typename?: 'SetBidCondition';
-  /** Traits of one key. */
+  /** The values of an OR trait bid, an any of traits of one key; empty for any other condition. */
   anyTraits: Array<Trait>;
+  /** The condition in its stored form: {"all": [nodes]}, {"any": [nodes]} and {"trait": traitId} nodes. */
+  expression: Scalars['JSON'];
+  /** Every trait the condition names, in id order. */
+  traits: Array<Trait>;
 };
 
 export type SetBidOrder = Event &
@@ -10526,6 +10593,22 @@ export type GalleryFieldPolicy = {
   workCount?: FieldPolicy<any> | FieldReadFunction<any>;
   works?: FieldPolicy<any> | FieldReadFunction<any>;
 };
+export type GalleryConnectionKeySpecifier = (
+  | 'edges'
+  | 'pageInfo'
+  | 'totalCount'
+  | GalleryConnectionKeySpecifier
+)[];
+export type GalleryConnectionFieldPolicy = {
+  edges?: FieldPolicy<any> | FieldReadFunction<any>;
+  pageInfo?: FieldPolicy<any> | FieldReadFunction<any>;
+  totalCount?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type GalleryEdgeKeySpecifier = ('cursor' | 'node' | GalleryEdgeKeySpecifier)[];
+export type GalleryEdgeFieldPolicy = {
+  cursor?: FieldPolicy<any> | FieldReadFunction<any>;
+  node?: FieldPolicy<any> | FieldReadFunction<any>;
+};
 export type GalleryWorkKeySpecifier = (
   | 'chapter'
   | 'heldByOwner'
@@ -10540,6 +10623,11 @@ export type GalleryWorkFieldPolicy = {
   nft?: FieldPolicy<any> | FieldReadFunction<any>;
   note?: FieldPolicy<any> | FieldReadFunction<any>;
   position?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type GeoAccessKeySpecifier = ('blocked' | 'country' | GeoAccessKeySpecifier)[];
+export type GeoAccessFieldPolicy = {
+  blocked?: FieldPolicy<any> | FieldReadFunction<any>;
+  country?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type GlobalSearchResultKeySpecifier = ('id' | GlobalSearchResultKeySpecifier)[];
 export type GlobalSearchResultFieldPolicy = {
@@ -12438,6 +12526,15 @@ export type NewRenegotiationOfferNotificationFieldPolicy = {
   renegotiationId?: FieldPolicy<any> | FieldReadFunction<any>;
   user?: FieldPolicy<any> | FieldReadFunction<any>;
 };
+export type NftSetConditionPreviewKeySpecifier = (
+  | 'matchCount'
+  | 'previewNfts'
+  | NftSetConditionPreviewKeySpecifier
+)[];
+export type NftSetConditionPreviewFieldPolicy = {
+  matchCount?: FieldPolicy<any> | FieldReadFunction<any>;
+  previewNfts?: FieldPolicy<any> | FieldReadFunction<any>;
+};
 export type NftStatisticsKeySpecifier = (
   | 'highestBid'
   | 'lastSale'
@@ -12984,6 +13081,7 @@ export type QueryKeySpecifier = (
   | 'featuredListings'
   | 'galleries'
   | 'gallery'
+  | 'geoAccess'
   | 'getAddressByName'
   | 'getAddressByUsername'
   | 'getArtist'
@@ -13061,6 +13159,7 @@ export type QueryKeySpecifier = (
   | 'listEditions'
   | 'listEditionsV2'
   | 'listEvents'
+  | 'listGalleries'
   | 'listListings'
   | 'listListingsForSale'
   | 'listLoanActivities'
@@ -13094,6 +13193,7 @@ export type QueryKeySpecifier = (
   | 'minimumOfferAmount'
   | 'notificationPreferences'
   | 'previewItemLoanOfferCompetition'
+  | 'previewNftSetCondition'
   | 'previewRenegotiationCompetition'
   | QueryKeySpecifier
 )[];
@@ -13104,6 +13204,7 @@ export type QueryFieldPolicy = {
   featuredListings?: FieldPolicy<any> | FieldReadFunction<any>;
   galleries?: FieldPolicy<any> | FieldReadFunction<any>;
   gallery?: FieldPolicy<any> | FieldReadFunction<any>;
+  geoAccess?: FieldPolicy<any> | FieldReadFunction<any>;
   getAddressByName?: FieldPolicy<any> | FieldReadFunction<any>;
   getAddressByUsername?: FieldPolicy<any> | FieldReadFunction<any>;
   getArtist?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -13181,6 +13282,7 @@ export type QueryFieldPolicy = {
   listEditions?: FieldPolicy<any> | FieldReadFunction<any>;
   listEditionsV2?: FieldPolicy<any> | FieldReadFunction<any>;
   listEvents?: FieldPolicy<any> | FieldReadFunction<any>;
+  listGalleries?: FieldPolicy<any> | FieldReadFunction<any>;
   listListings?: FieldPolicy<any> | FieldReadFunction<any>;
   listListingsForSale?: FieldPolicy<any> | FieldReadFunction<any>;
   listLoanActivities?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -13214,6 +13316,7 @@ export type QueryFieldPolicy = {
   minimumOfferAmount?: FieldPolicy<any> | FieldReadFunction<any>;
   notificationPreferences?: FieldPolicy<any> | FieldReadFunction<any>;
   previewItemLoanOfferCompetition?: FieldPolicy<any> | FieldReadFunction<any>;
+  previewNftSetCondition?: FieldPolicy<any> | FieldReadFunction<any>;
   previewRenegotiationCompetition?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type RealizedProfitDayKeySpecifier = (
@@ -13550,9 +13653,16 @@ export type SellAndRepayOrderFieldPolicy = {
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   updatedDate?: FieldPolicy<any> | FieldReadFunction<any>;
 };
-export type SetBidConditionKeySpecifier = ('anyTraits' | SetBidConditionKeySpecifier)[];
+export type SetBidConditionKeySpecifier = (
+  | 'anyTraits'
+  | 'expression'
+  | 'traits'
+  | SetBidConditionKeySpecifier
+)[];
 export type SetBidConditionFieldPolicy = {
   anyTraits?: FieldPolicy<any> | FieldReadFunction<any>;
+  expression?: FieldPolicy<any> | FieldReadFunction<any>;
+  traits?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type SetBidOrderKeySpecifier = (
   | 'cancelsOffChain'
@@ -15546,9 +15656,24 @@ export type StrictTypedTypePolicies = {
     keyFields?: false | GalleryKeySpecifier | (() => undefined | GalleryKeySpecifier);
     fields?: GalleryFieldPolicy;
   };
+  GalleryConnection?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | GalleryConnectionKeySpecifier
+      | (() => undefined | GalleryConnectionKeySpecifier);
+    fields?: GalleryConnectionFieldPolicy;
+  };
+  GalleryEdge?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?: false | GalleryEdgeKeySpecifier | (() => undefined | GalleryEdgeKeySpecifier);
+    fields?: GalleryEdgeFieldPolicy;
+  };
   GalleryWork?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | GalleryWorkKeySpecifier | (() => undefined | GalleryWorkKeySpecifier);
     fields?: GalleryWorkFieldPolicy;
+  };
+  GeoAccess?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?: false | GeoAccessKeySpecifier | (() => undefined | GeoAccessKeySpecifier);
+    fields?: GeoAccessFieldPolicy;
   };
   GlobalSearchResult?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?:
@@ -16042,6 +16167,13 @@ export type StrictTypedTypePolicies = {
       | NewRenegotiationOfferNotificationKeySpecifier
       | (() => undefined | NewRenegotiationOfferNotificationKeySpecifier);
     fields?: NewRenegotiationOfferNotificationFieldPolicy;
+  };
+  NftSetConditionPreview?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | NftSetConditionPreviewKeySpecifier
+      | (() => undefined | NftSetConditionPreviewKeySpecifier);
+    fields?: NftSetConditionPreviewFieldPolicy;
   };
   NftStatistics?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | NftStatisticsKeySpecifier | (() => undefined | NftStatisticsKeySpecifier);

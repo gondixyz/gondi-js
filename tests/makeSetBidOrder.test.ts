@@ -19,6 +19,18 @@ const ORDER_TERMS = {
 };
 const SET_BID = { ...ORDER_TERMS, nftIds: [11, 12, 13], maxExecutions: 2n };
 const OR_TRAIT_BID = { ...ORDER_TERMS, condition: { anyTraitIds: [21, 22] }, maxExecutions: 2n };
+const CONDITION_BID = {
+  ...ORDER_TERMS,
+  condition: {
+    expression: {
+      all: [
+        { any: [{ trait: 21 }, { trait: 22 }] },
+        { not: { any: [{ trait: 31 }, { token: 41 }] } },
+      ],
+    },
+  },
+  maxExecutions: 2n,
+};
 
 const publishOrderForNftSet = mock();
 const publishOrderForCollection = mock();
@@ -66,6 +78,12 @@ describe('publishOrder', () => {
       publishOrderForNftSet.mock.calls.length,
       publishOrderForCollection.mock.calls.length,
     ]).toEqual([1, 0]);
+  });
+
+  test('sends a condition expression to publishOrderForNftSet as given', async () => {
+    await api.publishOrder({ ...CONDITION_BID });
+
+    expect(publishOrderForNftSet.mock.calls[0][0]).toEqual({ orderInput: CONDITION_BID });
   });
 
   test('still sends a collection bid to publishOrderForCollection', async () => {

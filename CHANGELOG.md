@@ -1,3 +1,39 @@
+# New Features 0.54.0
+
+## Important
+
+A bid can now fill with any NFT that a condition over the collection's traits and items matches: AND, OR and exclusions, in one bid. Existing calls keep working. Condition bids are not enabled yet, so the API rejects them until they are.
+
+## Table of Contents
+
+- [Condition bids](#condition-bids)
+
+## Condition bids
+
+**Description:**
+
+- NEW: `gondi.makeOrder({ ..., collectionId, condition: { expression } })` publishes a condition bid. `expression` is a tree of `{ all: [nodes] }`, `{ any: [nodes] }`, `{ not: node }` (only inside an `all`, beside what it excludes from), `{ trait: traitId }`, `{ token: nftId }` and `{ collection: true }` (only inside an `all` with a `not`). The API resolves it into the NFTs the bid fills with when the bid is signed, as a set bid. The root is an `all` or an `any`, at most 4 levels deep, naming at most 10 traits and 1,000 NFTs. `condition.anyTraitIds` still works.
+
+**Migration Steps:**
+
+- None. To bid on (Background: Blue or Red) and Fur: Gold, excluding Hat: Cap and one item:
+
+```typescript
+await gondi.makeOrder({
+  ...orderTerms,
+  collectionId,
+  condition: {
+    expression: {
+      all: [
+        { any: [{ trait: blueId }, { trait: redId }] },
+        { trait: goldFurId },
+        { not: { any: [{ trait: capId }, { token: nftId }] } },
+      ],
+    },
+  },
+});
+```
+
 # New Features 0.53.0
 
 ## Important
