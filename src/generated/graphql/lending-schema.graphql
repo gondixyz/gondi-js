@@ -1879,6 +1879,17 @@ enum GalleryColorMode {
   LIGHT
 }
 
+type GalleryConnection {
+  edges: [GalleryEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type GalleryEdge {
+  cursor: String!
+  node: Gallery!
+}
+
 """
 Everything a collector writes into a gallery. The works are in the order they are shown, and may be anyone's indexed NFTs.
 """
@@ -1917,6 +1928,21 @@ enum GalleryPalette {
   PAPER
   PHOSPHOR
   SLATE
+}
+
+"""
+What the galleries directory orders by: when a gallery was published, when it was last edited, how many works it shows, or its name.
+"""
+enum GallerySortField {
+  NAME
+  PUBLISHED_AT
+  UPDATED_AT
+  WORK_COUNT
+}
+
+input GallerySortInput {
+  field: GallerySortField!
+  order: Ordering!
 }
 
 """
@@ -1966,6 +1992,11 @@ input GalleryWorkInput {
   chapter: String! = ""
   nftId: Int!
   note: String! = ""
+}
+
+type GeoAccess {
+  blocked: Boolean!
+  country: String
 }
 
 interface GlobalSearchResult {
@@ -3065,6 +3096,7 @@ enum MarketPlaceType {
   NFTX
   NFT_STRATEGY
   OPEN_SEA
+  SUPER_RARE
   X2Y2
 }
 
@@ -3783,7 +3815,27 @@ input NftSetConditionInput {
   """
   Traits of one key in the collection: the bid fills with any NFT carrying one of them. At least 2, at most 10.
   """
-  anyTraitIds: [Int!]!
+  anyTraitIds: [Int!]
+
+  """
+  A nested condition over the collection's traits, for example {"all": [{"any": [{"trait": 1}, {"trait": 2}]}, {"any": [{"trait": 3}, {"trait": 4}]}]} for (Background: Blue or Red) and (Fur: Gold or Silver). A node is {"all": [nodes]} (every node matches), {"any": [nodes]} (at least one matches) or {"trait": traitId}; all and any take at least 2 nodes. The root is an all or an any; at most 4 levels and 10 traits.
+  """
+  expression: JSON
+}
+
+"""
+What a set bid's trait condition would match if published now.
+"""
+type NftSetConditionPreview {
+  """
+  How many NFTs of the collection the condition matches.
+  """
+  matchCount: Int!
+
+  """
+  Up to 10 of them, in NFT id order.
+  """
+  previewNfts: [NFT!]!
 }
 
 input NftSetOrderInput {
@@ -4554,6 +4606,7 @@ type Query {
   One gallery by the profile wallet and slug of its URL. A draft is found only by the account that owns it.
   """
   gallery(address: Address!, slug: String!): Gallery
+  geoAccess: GeoAccess!
   getAddressByName(name: String!): Address
 
   """
@@ -4617,7 +4670,10 @@ type Query {
   """
   getEditionBySlug(slug: String!): Edition!
   getFeedId: String!
-  getFulfillManyOrdersCalldata(orderIds: [Int64!]!): [FulfillManyOrdersCalldata!]!
+  getFulfillManyOrdersCalldata(
+    orderIds: [Int64!]!
+    recipient: Address = null
+  ): [FulfillManyOrdersCalldata!]!
 
   """
   Current lending principal and lender interest snapshot.
@@ -5122,6 +5178,15 @@ type Query {
     """
     usersSide: EventSide! = ANY
   ): EventConnection!
+
+  """
+  The galleries directory: every profile's published galleries that show at least one work. Most recently published first unless `sortBy` says otherwise; ties go to the most recently published.
+  """
+  listGalleries(
+    after: String
+    first: Int = null
+    sortBy: [GallerySortInput!] = null
+  ): GalleryConnection!
   listListings(
     after: String
     blockchains: [BlockchainEnum!] = null
@@ -5629,6 +5694,14 @@ type Query {
     offerInput: SingleNFTOfferInput!
     replacementIds: [String!] = null
   ): LoanOfferCompetitionPreview!
+
+  """
+  What a set bid's trait condition matches in the collection right now: the count and up to 10 of the NFTs, under the checks publishOrderForNftSet applies (an empty match counts 0 here, where publishing it fails). For a live count while a condition is built.
+  """
+  previewNftSetCondition(
+    collectionId: Int!
+    condition: NftSetConditionInput!
+  ): NftSetConditionPreview!
   previewRenegotiationCompetition(
     renegotiationInput: RenegotiationOfferInput!
     replacementIds: [String!] = null
@@ -5911,13 +5984,23 @@ union SellAndRepayOrderSignatureRequestExtraSeaportData =
   | SignatureRequest
 
 """
-An OR trait bid: it fills with any NFT carrying one of anyTraits.
+The trait condition a set bid was resolved from: the bid fills with any NFT the expression matches.
 """
 type SetBidCondition {
   """
-  Traits of one key.
+  The values of an OR trait bid, an any of traits of one key; empty for any other condition.
   """
   anyTraits: [Trait!]!
+
+  """
+  The condition in its stored form: {"all": [nodes]}, {"any": [nodes]} and {"trait": traitId} nodes.
+  """
+  expression: JSON!
+
+  """
+  Every trait the condition names, in id order.
+  """
+  traits: [Trait!]!
 }
 
 type SetBidOrder implements Event & Node & Order {
