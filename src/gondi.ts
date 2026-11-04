@@ -52,6 +52,8 @@ import {
   OffersSortField,
   OfferValidatorInput,
   Ordering,
+  OrderSortField,
+  OrderStatusType,
   SingleNftOrderInput,
   SingleNftSignedOfferInput,
   TokenStandardType,
@@ -1441,6 +1443,70 @@ export class Gondi {
     }
   }
 
+  /**
+   * Lists trade orders — bids and listings — across the marketplaces GONDI indexes, newest first
+   * unless `sortBy` says otherwise. Only active orders unless `statuses` is given.
+   *
+   * @returns One page of orders, with the cursor of the next one.
+   */
+  async orders({
+    side,
+    collections,
+    traits,
+    nfts,
+    makers,
+    excludeMakers,
+    currencies,
+    statuses = [OrderStatusType.Active],
+    matchMode,
+    orderTypes,
+    sortBy = [{ field: OrderSortField.CreatedDate, order: Ordering.Desc }],
+    limit = 20,
+    cursor,
+  }: model.ListOrdersProps) {
+    return this.apiClient.listOrders({
+      side,
+      collectionIds: collections,
+      traitIds: traits,
+      nfts,
+      maker: makers,
+      excludeMaker: excludeMakers,
+      currencyAddresses: currencies,
+      statuses,
+      matchMode,
+      orderTypes,
+      sortBy,
+      first: limit,
+      after: cursor,
+    });
+  }
+
+  /**
+   * Reads what pricing and placing a bid or a listing on a collection needs: its id and contract
+   * address, the Seaport conduit key its listings are approved through (zero for Seaport itself),
+   * its floor (the cheapest active listing in `currencies`, any currency when omitted), its highest
+   * bid that any item can fill, and its royalties (`required` ones must be paid as listing fees).
+   *
+   * Looks the collection up by slug, the lookup the API answers fastest.
+   *
+   * @throws Error when no collection has `slug`.
+   */
+  async collectionMarket({ slug, currencies }: { slug: string; currencies?: Address[] }) {
+    const collection = await this.apiClient.collectionMarket({
+      slug,
+      currencyAddresses: currencies,
+    });
+    if (!collection) throw new Error(`invalid collection ${slug}`);
+    return {
+      collectionId: Number(collection.id),
+      contractAddress: collection.contractData.contractAddress,
+      seaportConduitKey: collection.seaportConduitKey,
+      floorPrice: collection.statistics.minAskPrice ?? null,
+      highestBid: collection.statistics.highestApplicableBid ?? null,
+      royalties: collection.royalties,
+    };
+  }
+
   async collectionStepsById(props: { collectionId: number }) {
     const result = await this.apiClient.collectionStepsById(props);
     return result.steps;
@@ -1873,11 +1939,11 @@ export class Gondi {
     const naked = this.contracts.OldERC721(collection.contractData.contractAddress);
     const stashAddress = await wrapper.contract.read.stashAddress([this.wallet.account.address]);
     const currentOwner = await naked.contract.read.ownerOf([tokenId]);
-    if (currentOwner == this.wallet.account.address) {
+    if (areSameAddress(currentOwner, this.wallet.account.address)) {
       const txTransfer = await naked.safeContractWrite.transfer([stashAddress, tokenId]);
-      await this.bcClient.waitForTransactionReceipt({ hash: txTransfer });
-    } else if (currentOwner != stashAddress) {
-      throw Error('NFT not owned');
+      await minedTransaction(this.bcClient, txTransfer).waitTxInBlock();
+    } else if (!areSameAddress(currentOwner, stashAddress)) {
+      throw new Error('NFT not owned');
     }
     return await wrapper.wrapOldERC721({ tokenId });
   }

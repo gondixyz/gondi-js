@@ -89,13 +89,31 @@ export const signIn = async ({ wallet, issuedAt }: { wallet: Wallet; issuedAt?: 
   return accessToken;
 };
 
+/**
+ * The wallet's API session: signs in on the first request and reuses the token after it.
+ *
+ * Requests that start before the first sign-in finishes wait for that same sign-in rather than
+ * starting their own: every sign-in asks the API for a fresh nonce, which replaces the previous
+ * one, so concurrent sign-ins reject all but the last with `SIWE_ERROR`.
+ */
 export class SessionToken {
   token?: string;
   wallet: Wallet;
+  private readonly requestToken: typeof signIn;
+  private pendingSignIn?: Promise<string>;
 
-  constructor({ token, wallet }: { token?: string; wallet: Wallet }) {
+  constructor({
+    token,
+    wallet,
+    requestToken = signIn,
+  }: {
+    token?: string;
+    wallet: Wallet;
+    requestToken?: typeof signIn;
+  }) {
     this.token = token;
     this.wallet = wallet;
+    this.requestToken = requestToken;
   }
 
   async authorizeRequest(request: GraphQLRequest) {
@@ -109,8 +127,10 @@ export class SessionToken {
     };
   }
   private async signIn() {
-    if (!this.token) {
-      this.token = await signIn({ wallet: this.wallet });
-    }
+    if (this.token) return;
+    this.pendingSignIn ??= this.requestToken({ wallet: this.wallet }).finally(() => {
+      this.pendingSignIn = undefined;
+    });
+    this.token = await this.pendingSignIn;
   }
 }

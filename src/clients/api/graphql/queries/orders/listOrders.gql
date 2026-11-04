@@ -1,0 +1,41 @@
+query listOrders(
+  $side: OrderSide
+  $collectionIds: [Int!]
+  $traitIds: [Int!]
+  $nfts: [OrderForNft!]
+  $maker: [Address!]
+  $excludeMaker: [Address!]
+  $currencyAddresses: [Address!]
+  $statuses: [OrderStatusType!]
+  $matchMode: OrderMatchMode! = ALL
+  $orderTypes: [CollectionOrderType!]
+  $sortBy: [OrderSortInput!]
+  $first: Int = 20
+  $after: String
+) {
+  result: listOrdersV2(
+    side: $side
+    collectionIds: $collectionIds
+    traitIds: $traitIds
+    nfts: $nfts
+    maker: $maker
+    excludeMaker: $excludeMaker
+    currencyAddresses: $currencyAddresses
+    statuses: $statuses
+    matchMode: $matchMode
+    orderTypes: $orderTypes
+    sortBy: $sortBy
+    first: $first
+    after: $after
+  ) {
+    pageInfo {
+      endCursor
+      hasNextPage
+    }
+    edges {
+      node {
+        ...MarketOrderInfo
+      }
+    }
+  }
+}

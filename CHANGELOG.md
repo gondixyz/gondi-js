@@ -1,3 +1,67 @@
+# New Features 0.55.0
+
+## Important
+
+The SDK can now read the order book: the bids and listings on a collection, a trait or an item, and a collection's floor, highest bid and royalties. Existing calls are unchanged.
+
+## Table of Contents
+
+- [Order book reads](#order-book-reads)
+- [Concurrent first requests](#concurrent-first-requests)
+
+## Order book reads
+
+**Description:**
+
+- NEW: `gondi.orders({ side, collections, traits, nfts, makers, excludeMakers, currencies, statuses, matchMode, orderTypes, sortBy, limit, cursor })` lists trade orders across the marketplaces GONDI indexes, active ones unless `statuses` says otherwise, newest first unless `sortBy` says otherwise, one page at a time. `matchMode: ANY` with `side: BID` lists every bid an item of the collection can fill; `orderTypes` narrows it, e.g. to collection bids only.
+- NEW: `gondi.collectionMarket({ slug, currencies })` returns the collection's `collectionId`, `contractAddress` and `seaportConduitKey`, its `floorPrice` (cheapest active listing in `currencies`), its `highestBid` any item can fill, and its `royalties`.
+
+**Migration Steps:**
+
+- None. To read the best competing collection bid, excluding your own:
+
+```typescript
+const { orders } = await gondi.orders({
+  side: OrderSide.Bid,
+  collections: [collectionId],
+  orderTypes: [CollectionOrderType.Collection],
+  excludeMakers: [myAddress],
+  sortBy: [{ field: OrderSortField.Price, order: Ordering.Desc }],
+  limit: 1,
+});
+```
+
+## Concurrent first requests
+
+**Description:**
+
+- FIX: requests that start together before the wallet has signed in now share one sign-in. Each sign-in asked the API for a fresh nonce, which replaced the previous one, so all but the last concurrent request failed with `SIWE_ERROR` (for example a `Promise.all` of reads right after `new Gondi(...)`).
+
+**Migration Steps:**
+
+- None.
+
+# Bug Fixes 0.54.1
+
+## Important
+
+`wrapOldERC721` no longer sends the wrap after its transfer to the Stash reverts. Existing calls keep working.
+
+## Table of Contents
+
+- [wrapOldERC721 stops when its Stash transfer reverts](#wrapolderc721-stops-when-its-stash-transfer-reverts)
+
+## wrapOldERC721 stops when its Stash transfer reverts
+
+**Description:**
+
+- FIX: `gondi.wrapOldERC721` now rejects with the transaction hash when the transfer of the NFT to the wallet's Stash reverts, instead of sending a `wrap` that reverts too and costs a second transaction's gas.
+- FIX: `gondi.wrapOldERC721` compares the NFT's owner with the wallet and the Stash case-insensitively, so a checksummed owner address is no longer refused as `NFT not owned`.
+
+**Migration Steps:**
+
+- None.
+
 # New Features 0.54.0
 
 ## Important
