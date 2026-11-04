@@ -1,5 +1,5 @@
 import { ApolloClient, NormalizedCacheObject } from '@apollo/client';
-import { getAddress } from 'viem';
+import { Address, getAddress } from 'viem';
 
 import { zeroAddress } from '@/blockchain';
 import { apolloClient } from '@/clients/api/client';
@@ -14,6 +14,7 @@ import {
   ListListingsQueryVariables,
   ListLoansQueryVariables,
   ListOffersQueryVariables,
+  ListOrdersQueryVariables,
   LoanOfferPublicationInput,
   NftOrderInput,
   NftSetOrderInput,
@@ -327,6 +328,22 @@ export class Api {
       ...mapPageInfo(pageInfo),
       listings,
     };
+  }
+
+  async listOrders(props: ListOrdersQueryVariables) {
+    const {
+      result: { edges, pageInfo },
+    } = await this.api.listOrders(props);
+    return {
+      ...mapPageInfo(pageInfo),
+      orders: edges.map((edge) => edge.node),
+    };
+  }
+
+  /** The collection's market, or `null` when no collection has that slug. */
+  async collectionMarket(props: { slug: string; currencyAddresses?: Address[] }) {
+    const { collection } = await this.api.collectionMarket(props);
+    return collection ?? null;
   }
 
   async getWrapperAddress(collection: {

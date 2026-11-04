@@ -1,0 +1,25 @@
+query collectionMarket($slug: String!, $currencyAddresses: [Address!]) {
+  collection: getCollectionBySlug(slug: $slug) {
+    id
+    seaportConduitKey
+    contractData {
+      contractAddress
+    }
+    royalties {
+      beneficiary
+      percentage
+      required
+    }
+    statistics {
+      minAskPrice(currencyAddresses: $currencyAddresses) {
+        amount
+        currency {
+          address
+        }
+      }
+      highestApplicableBid {
+        ...MarketOrderInfo
+      }
+    }
+  }
+}
