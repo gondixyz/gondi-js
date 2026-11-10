@@ -108,7 +108,7 @@ After transactions, events are parsed with `parseEventLogs`. Always validate the
 
 ### Step Callback (UI Integration)
 
-`Gondi.create()` accepts `onStepChange` to track transaction progress (signature waiting/success, tx broadcasted/confirmed). The callback wraps the wallet via `addStepCallback.ts`.
+`Gondi.create()` accepts `onStepChange` to track transaction progress (signature waiting/success, tx broadcasted/confirmed, and an `error` status for any failed step). The callback wraps the wallet via `addStepCallback.ts`.
 
 ## Code Style
 

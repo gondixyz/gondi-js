@@ -1,3 +1,41 @@
+# Breaking Changes 0.57.0
+
+## Important
+
+`onStepChange` now reports a failed step: a signature, transaction or API mutation that fails is reported with `status: 'error'` before the SDK call rejects. Callbacks that treat every status other than `waiting` as done need a change.
+
+## Table of Contents
+
+- [Steps report an error status](#steps-report-an-error-status)
+
+## Steps report an error status
+
+**Description:**
+
+- BREAKING: every step type gains `status: 'error'` with the `error` the SDK call rejects with. A signature or API mutation step reports it when the wallet refuses the signature or the mutation fails. A transaction step reports it when the wallet refuses to send it (no `transactionHash`), or when it was sent and then reverted, was cancelled or was replaced by a different call (with the broadcast `transactionHash`).
+- An error thrown by the `onStepChange` callback itself is not reported as a failed step: the SDK call rejects with it, and no `error` step follows a `broadcasted` or `success` one. An error thrown while handling `status: 'error'` is dropped, so the call still rejects with the original cause.
+- FIX: API mutation steps are now awaited like signature and transaction steps, so the mutation is sent only after the `waiting` callback settles, and resolves only after the `success` one does.
+
+**Reason:**
+
+Without a failure state, a UI listening to `onStepChange` stayed on `waiting` or `broadcasted` after a step threw, and had to infer the failure from the rejected SDK call.
+
+**Migration Steps:**
+
+- Handle `status: 'error'` wherever a callback branches on `status`. A check such as `step.status === 'waiting' ? 'requested' : 'completed'` now also reads a refused signature as completed:
+
+```typescript
+const onStepChange: OnStepChange = async (step) => {
+  if (step.status === 'error') {
+    showFailure(step.error);
+    return;
+  }
+  if (step.type === 'transaction' && step.status === 'broadcasted') {
+    showPending(step.transactionHash);
+  }
+};
+```
+
 # Breaking Changes 0.56.0
 
 ## Important

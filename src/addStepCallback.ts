@@ -10,6 +10,7 @@ import {
 import { Wallet } from '@/clients/contracts';
 import { type OnStepChange } from '@/gondi';
 import { assertTransactionSucceeded, withRetriedReceiptWait } from '@/utils/blockchain';
+import { withStepError } from '@/utils/steps';
 
 export const addStepCallback = (props: {
   wallet: Wallet;
@@ -57,18 +58,24 @@ export const addStepCallback = (props: {
     return assertTransactionSucceeded(receipt);
   };
 
+  /** Reports a signature to `onStepChange` as waiting, then success or error. */
   const signTypedData: Wallet['signTypedData'] = async (typedData) => {
     const step = { type: 'signature', primaryType: String(typedData.primaryType) } as const;
     await onStepChange({ ...step, status: 'waiting' });
-    const signature = await originalSignTypedData(typedData);
+    const signature = await withStepError(
+      () => originalSignTypedData(typedData),
+      (error) => onStepChange({ ...step, status: 'error', error }),
+    );
     await onStepChange({ ...step, status: 'success' });
     return signature;
   };
 
   /**
    * Broadcasts a contract call through `broadcast` and reports it to `onStepChange`
-   * as waiting, broadcasted and, once its receipt mined the call, success.
-   * Returns the hash of the broadcast transaction.
+   * as waiting, broadcasted and, once its receipt mined the call, success. A
+   * refused broadcast or a failed receipt is reported as error, with the hash
+   * once there is one, before rethrowing; an error thrown by a callback is not a
+   * failed step and rejects as is. Returns the hash of the broadcast transaction.
    */
   const trackTransaction = async (
     to: Address,
@@ -78,9 +85,14 @@ export const addStepCallback = (props: {
     const call = { type: 'transaction', to, functionNameOrSelector } as const;
     const chainId = wallet.chain?.id;
     await onStepChange({ ...call, status: 'waiting' });
-    const transactionHash = await broadcast();
+    const transactionHash = await withStepError(broadcast, (error) =>
+      onStepChange({ ...call, status: 'error', error, chainId }),
+    );
     await onStepChange({ ...call, status: 'broadcasted', transactionHash, chainId });
-    const receipt = await waitForSentCallReceipt(transactionHash);
+    const receipt = await withStepError(
+      () => waitForSentCallReceipt(transactionHash),
+      (error) => onStepChange({ ...call, status: 'error', error, chainId, transactionHash }),
+    );
     await onStepChange({
       ...call,
       status: 'success',

@@ -175,22 +175,37 @@ type TransactionStep = TransactionStepBase &
         /** Hash the wallet broadcast; equals `transactionHash` unless it was replaced. */
         originalTransactionHash: Hash;
       }
+    | {
+        /**
+         * The wallet refused to send the transaction, or it was sent and then
+         * reverted, was cancelled or was replaced by a different call.
+         */
+        status: 'error';
+        /** Hash the wallet broadcast; absent when the wallet never sent it. */
+        transactionHash?: Hash;
+        /** What the SDK call rejects with. */
+        error: unknown;
+      }
   );
 
+/** A step that failed; the SDK call rejects with `error` right after reporting it. */
+type FailedStep = { status: 'error'; error: unknown };
+
 type Step =
-  | {
-      type: 'signature';
-      primaryType: string;
-      status: 'waiting' | 'success';
-    }
+  | ({ type: 'signature'; primaryType: string } & ({ status: 'waiting' | 'success' } | FailedStep))
   | TransactionStep
-  | {
+  | ({
       type: 'api';
-      status: 'waiting' | 'success';
       mutationName: string;
       variables?: OperationVariables;
-    };
+    } & ({ status: 'waiting' | 'success' } | FailedStep));
 
+/**
+ * Reports each signature, transaction and API mutation as it moves from
+ * `waiting` to `success`, or to `error` when it fails. The SDK awaits every call.
+ * An error the callback itself throws is not a failed step: the SDK call
+ * rejects with it and no `error` step follows.
+ */
 // TODO: Add TS types for primaryType, functionNameOrSelector and mutationName
 export type OnStepChange = (step: Step) => Promise<void>;
 

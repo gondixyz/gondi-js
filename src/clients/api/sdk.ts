@@ -8,6 +8,7 @@ import { type DocumentNode } from 'graphql';
 
 import { getSdk, Requester } from '@/generated/graphql';
 import { OnStepChange } from '@/gondi';
+import { withStepError } from '@/utils/steps';
 
 export type ApolloRequesterOptions<V, R> =
   | Omit<QueryOptions<V>, 'variables' | 'query'>
@@ -48,34 +49,35 @@ export function getSdkApollo<C>(client: ApolloClient<C>, onStepChange?: OnStepCh
 
     switch (definition.operation) {
       case 'mutation': {
-        onStepChange?.({
+        const step = {
           type: 'api',
-          status: 'waiting',
           mutationName: definition.name?.value ?? '',
           variables: apolloVariables,
-        });
-        const response = await client.mutate({
-          mutation: doc,
-          variables: apolloVariables,
-          ...options,
-          fetchPolicy: 'no-cache',
-        });
+        } as const;
+        await onStepChange?.({ ...step, status: 'waiting' });
+        const data = await withStepError(
+          async () => {
+            const response = await client.mutate({
+              mutation: doc,
+              variables: apolloVariables,
+              ...options,
+              fetchPolicy: 'no-cache',
+            });
 
-        if (response.errors) {
-          throw new Error(JSON.stringify(response.errors));
-        }
+            if (response.errors) {
+              throw new Error(JSON.stringify(response.errors));
+            }
 
-        if (response.data === undefined || response.data === null) {
-          throw new Error('No data presented in the GraphQL response');
-        }
+            if (response.data === undefined || response.data === null) {
+              throw new Error('No data presented in the GraphQL response');
+            }
 
-        onStepChange?.({
-          type: 'api',
-          status: 'success',
-          mutationName: definition.name?.value ?? '',
-          variables: apolloVariables,
-        });
-        return response.data;
+            return response.data;
+          },
+          async (error) => onStepChange?.({ ...step, status: 'error', error }),
+        );
+        await onStepChange?.({ ...step, status: 'success' });
+        return data;
       }
       case 'query': {
         const response = await client.query({
