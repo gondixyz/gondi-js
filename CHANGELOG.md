@@ -1,3 +1,24 @@
+# Bug Fixes 0.54.1
+
+## Important
+
+`wrapOldERC721` no longer sends the wrap after its transfer to the Stash reverts. Existing calls keep working.
+
+## Table of Contents
+
+- [wrapOldERC721 stops when its Stash transfer reverts](#wrapolderc721-stops-when-its-stash-transfer-reverts)
+
+## wrapOldERC721 stops when its Stash transfer reverts
+
+**Description:**
+
+- FIX: `gondi.wrapOldERC721` now rejects with the transaction hash when the transfer of the NFT to the wallet's Stash reverts, instead of sending a `wrap` that reverts too and costs a second transaction's gas.
+- FIX: `gondi.wrapOldERC721` compares the NFT's owner with the wallet and the Stash case-insensitively, so a checksummed owner address is no longer refused as `NFT not owned`.
+
+**Migration Steps:**
+
+- None.
+
 # New Features 0.54.0
 
 ## Important
