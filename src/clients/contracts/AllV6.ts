@@ -1,4 +1,4 @@
-import { Address, PublicClient } from 'viem';
+import { Address, PublicClient, zeroHash } from 'viem';
 
 import { Auction, LoanV6 } from '@/blockchain';
 import { Wallet } from '@/clients/contracts';
@@ -23,6 +23,21 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
       abi: auctionWithBuyoutLoanLiquidatorABIV6,
       publicClient,
     });
+  }
+
+  /** Whether this liquidator records an auction on the collateral; settling clears the record. */
+  async hasAuction({
+    collectionContractAddress,
+    tokenId,
+  }: {
+    collectionContractAddress: Address;
+    tokenId: bigint;
+  }) {
+    const auctionHash = await this.contract.read.getAuctionHash([
+      collectionContractAddress,
+      tokenId,
+    ]);
+    return auctionHash !== zeroHash;
   }
 
   async placeBid({

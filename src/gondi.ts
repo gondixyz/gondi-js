@@ -1705,21 +1705,32 @@ export class Gondi {
     bid: bigint;
     auction: Auction;
   }) {
-    return this.contracts
-      .All(auction.loanAddress)
-      .placeBid({ collectionContractAddress, tokenId, bid, auction });
+    const liquidator = await this.contracts.AllForCollateral({
+      mslContractAddress: auction.loanAddress,
+      collectionContractAddress,
+      tokenId,
+    });
+    return liquidator.placeBid({ collectionContractAddress, tokenId, bid, auction });
   }
 
   async settleAuction({ loan, auction }: { loan: LoanToMslLoanType; auction: Auction }) {
-    return this.contracts
-      .All(auction.loanAddress)
-      .settleAuction({ auction, loan: loanToMslLoan(loan) });
+    const mslLoan = loanToMslLoan(loan);
+    const liquidator = await this.contracts.AllForCollateral({
+      mslContractAddress: auction.loanAddress,
+      collectionContractAddress: mslLoan.nftCollateralAddress,
+      tokenId: mslLoan.nftCollateralTokenId,
+    });
+    return liquidator.settleAuction({ auction, loan: mslLoan });
   }
 
   async settleAuctionWithBuyout({ loan, auction }: { loan: LoanToMslLoanType; auction: Auction }) {
-    return this.contracts
-      .All(auction.loanAddress)
-      .settleAuctionWithBuyout({ auction, loan: loanToMslLoan(loan) });
+    const mslLoan = loanToMslLoan(loan);
+    const liquidator = await this.contracts.AllForCollateral({
+      mslContractAddress: auction.loanAddress,
+      collectionContractAddress: mslLoan.nftCollateralAddress,
+      tokenId: mslLoan.nftCollateralTokenId,
+    });
+    return liquidator.settleAuctionWithBuyout({ auction, loan: mslLoan });
   }
 
   async getAuctionRemainingLockupSeconds({
