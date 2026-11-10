@@ -1873,11 +1873,11 @@ export class Gondi {
     const naked = this.contracts.OldERC721(collection.contractData.contractAddress);
     const stashAddress = await wrapper.contract.read.stashAddress([this.wallet.account.address]);
     const currentOwner = await naked.contract.read.ownerOf([tokenId]);
-    if (currentOwner == this.wallet.account.address) {
+    if (areSameAddress(currentOwner, this.wallet.account.address)) {
       const txTransfer = await naked.safeContractWrite.transfer([stashAddress, tokenId]);
-      await this.bcClient.waitForTransactionReceipt({ hash: txTransfer });
-    } else if (currentOwner != stashAddress) {
-      throw Error('NFT not owned');
+      await minedTransaction(this.bcClient, txTransfer).waitTxInBlock();
+    } else if (!areSameAddress(currentOwner, stashAddress)) {
+      throw new Error('NFT not owned');
     }
     return await wrapper.wrapOldERC721({ tokenId });
   }
