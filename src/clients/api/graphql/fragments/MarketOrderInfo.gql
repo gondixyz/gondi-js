@@ -1,0 +1,38 @@
+fragment MarketOrderInfo on Order {
+  __typename
+  id
+  price
+  steppedPrice
+  currencyAddress
+  maker
+  isAsk
+  status
+  startTime
+  expiration
+  executions
+  maxExecutions
+  cancelsOffChain
+  marketPlace
+  marketPlaceAddress
+  ... on SingleNFTOrder {
+    nft {
+      id
+      tokenId
+      collection {
+        id
+      }
+    }
+  }
+  ... on CollectionOrder {
+    collectionId
+  }
+  ... on TraitOrder {
+    collectionId
+  }
+  ... on MultipleTraitOrder {
+    collectionId
+  }
+  ... on SetBidOrder {
+    collectionId
+  }
+}
