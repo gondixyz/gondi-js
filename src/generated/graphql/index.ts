@@ -631,6 +631,27 @@ export type BnplOrderInput = {
   tokenId: Scalars['BigInt'];
 };
 
+/** An open offer the best-offer policy picks for one duration (pixel_backend/lending/lib/best_offer.py): offers are grouped by duration and scored by net principal discounted by the cost of a configured horizon at their effective APR, so a slightly smaller offer at a much lower APR outranks a bigger one. The candidates are the open, unexpired offers of the item's wrap family, each target ranking at most its largest best_offer_candidate_limit offers of each kind. With the policy flag off the score is the net principal and the headline is the largest net principal among them, which is the offer maxNetPrincipalOffer returns except where that field keeps an expired offer or misses a twin's. */
+export type BestOffer = {
+  __typename?: 'BestOffer';
+  duration: Scalars['BigInt'];
+  /** Full-term effective APR with the fee prorated, floored. */
+  eaprBps: Scalars['BigInt'];
+  netPrincipal: Scalars['BigInt'];
+  offer: Offer;
+  roles: Array<BestOfferRole>;
+  /** Net principal discounted by the horizon's cost, floored; in ETH base units when no currency was asked, else in the offer's. */
+  score: Scalars['BigInt'];
+};
+
+/** BEST is the headline pick; MOST_FUNDING and LOWEST_COST mark a pick that also leads its duration on net principal or on effective APR; LONGEST_DURATION marks the pick of the longest duration on offer. */
+export enum BestOfferRole {
+  Best = 'BEST',
+  LongestDuration = 'LONGEST_DURATION',
+  LowestCost = 'LOWEST_COST',
+  MostFunding = 'MOST_FUNDING',
+}
+
 export type Bid = Node & {
   __typename?: 'Bid';
   amount: Scalars['BigInt'];
@@ -643,6 +664,29 @@ export type Bid = Node & {
   indexInBlock: Scalars['Int'];
   timestamp: Scalars['DateTime'];
   txHash: Scalars['Hash'];
+};
+
+export type BidBudget = {
+  __typename?: 'BidBudget';
+  cancelled: Scalars['Boolean'];
+  currencyAddress: Scalars['Address'];
+  id: Scalars['Int64'];
+  maker: Scalars['Address'];
+  /** Most NFTs the budget's bids may buy; null when uncapped. */
+  maxQuantity?: Maybe<Scalars['BigInt']>;
+  /** Most the budget's bids may pay in total, fees included; null when uncapped. */
+  maxSpend?: Maybe<Scalars['BigInt']>;
+  /** The `zoneHash` every bid in the budget is signed with. */
+  zoneHash: Scalars['Hash'];
+};
+
+export type BidBudgetInput = {
+  /** ERC20 every bid in the budget pays in. */
+  currencyAddress: Scalars['Address'];
+  /** Most NFTs the budget's bids may buy in total. */
+  maxQuantity?: InputMaybe<Scalars['BigInt']>;
+  /** Most the budget's bids may pay in total, fees included. */
+  maxSpend?: InputMaybe<Scalars['BigInt']>;
 };
 
 export type BidConnection = {
@@ -732,12 +776,18 @@ export enum BlockchainEnum {
 }
 
 export type BulkNftOrdersInput = {
+  /** The maker's Seaport counter, which every order is built with. Optional: GONDI looks it up when it is missing. A signed order whose counter is not the maker's current one is rejected. */
+  counter?: InputMaybe<Scalars['BigInt']>;
+  /** Also lists each ask on OpenSea at the same price, signed with the same signature; public asks on Ethereum only. */
+  listOnOpenSea?: Scalars['Boolean'];
   orders: Array<SingleNftOrderInput>;
   signature?: InputMaybe<Scalars['Signature']>;
 };
 
 export type BulkNftOrdersResult = {
   __typename?: 'BulkNFTOrdersResult';
+  /** One entry per ask when listOnOpenSea was set, else none. */
+  openSeaListings: Array<OpenSeaListingResult>;
   orders: Array<SingleNftOrder>;
 };
 
@@ -831,6 +881,10 @@ export type Collection = Node & {
   artistUniqueCollectorsCount: Scalars['Int'];
   artists: Array<Artist>;
   bannerImage?: Maybe<Asset>;
+  /** The best-offer policy's headline pick over this collection's collection offers, what any holder can take. The viewer is advisory: their accepted loans choose the default duration. */
+  bestOffer?: Maybe<BestOffer>;
+  /** The best-offer policy's pick for each duration on offer, shortest first. */
+  bestOffersByDuration: Array<BestOffer>;
   collectionUrl?: Maybe<Scalars['String']>;
   contractData: ContractData;
   description?: Maybe<Scalars['String']>;
@@ -895,6 +949,18 @@ export type CollectionArtistTotalVolume1dArgs = {
 /** An NFT collection. */
 export type CollectionArtistUniqueCollectorsCountArgs = {
   artistId: Scalars['Int'];
+};
+
+/** An NFT collection. */
+export type CollectionBestOfferArgs = {
+  currencyAddress: Scalars['Address'];
+  viewerAddress?: InputMaybe<Scalars['Address']>;
+};
+
+/** An NFT collection. */
+export type CollectionBestOffersByDurationArgs = {
+  currencyAddress: Scalars['Address'];
+  viewerAddress?: InputMaybe<Scalars['Address']>;
 };
 
 /** An NFT collection. */
@@ -1138,7 +1204,11 @@ export type CollectionOrderPlatformFeesArgs = {
 
 export type CollectionOrderInput = {
   amount?: InputMaybe<Scalars['BigInt']>;
+  /** A `BidBudget` of the caller to add this bid to. The bid is restricted to the budget zone, which stops its fills once the budget is used up. */
+  budgetId?: InputMaybe<Scalars['Int64']>;
   collectionId: Scalars['Int'];
+  /** The maker's Seaport counter, which the order is built with. Optional: GONDI looks it up when it is missing. A signed order whose counter is not the maker's current one is rejected. */
+  counter?: InputMaybe<Scalars['BigInt']>;
   currencyAddress: Scalars['Address'];
   expirationTime: Scalars['BigInt'];
   fees?: InputMaybe<Array<OrderFee>>;
@@ -1788,6 +1858,7 @@ export enum EventType {
   LoanTraitOffer = 'LOAN_TRAIT_OFFER',
   LoanTrancheRefinanced = 'LOAN_TRANCHE_REFINANCED',
   LoanTrancheRefinancedTransfer = 'LOAN_TRANCHE_REFINANCED_TRANSFER',
+  OffChainSale = 'OFF_CHAIN_SALE',
   Sale = 'SALE',
   SaleListing = 'SALE_LISTING',
   TradeExecuted = 'TRADE_EXECUTED',
@@ -1862,11 +1933,18 @@ export type Gallery = Node & {
   slug: Scalars['String'];
   style: GalleryStyle;
   updatedAt: Scalars['DateTime'];
+  /** How many times visitors outside the gallery's account opened it. Only that account reads it; anyone else gets null. */
+  visitCount?: Maybe<Scalars['Int']>;
   /** Whether visitors get a switch between light and dark. */
   visitorModeSwitch: Scalars['Boolean'];
   workCount: Scalars['Int'];
-  /** The works in the collector's order; at most 200. */
+  /** The works in the collector's order; at most 200, or the first `first` of them, for a card that only shows a few. */
   works: Array<GalleryWork>;
+};
+
+/** A collector's gallery of works, their own or anyone's; each work says whether the account holds it. */
+export type GalleryWorksArgs = {
+  first?: InputMaybe<Scalars['Int']>;
 };
 
 /** Whether a gallery's palette is shown light or dark. */
@@ -2196,6 +2274,7 @@ export enum ItemVisitType {
   Account = 'ACCOUNT',
   Artist = 'ARTIST',
   Collection = 'COLLECTION',
+  Gallery = 'GALLERY',
   Nft = 'NFT',
 }
 
@@ -2417,6 +2496,8 @@ export type LoanActivity = {
   prevActivity?: Maybe<LoanActivity>;
   timestamp: Scalars['DateTime'];
   txHash: Scalars['Hash'];
+  /** The USDC price of one unit of the loan's principal currency at the event's timestamp: a principal or repayment amount times it is its USD value then. Null when no rate is recorded for either currency at that time. */
+  usdcPriceAtTimestamp?: Maybe<Scalars['Float']>;
 };
 
 export type LoanActivityConnection = {
@@ -2470,6 +2551,8 @@ export type LoanAuctioned = Event &
     timestamp: Scalars['DateTime'];
     totalAuctioned: Scalars['BigInt'];
     txHash: Scalars['Hash'];
+    /** The USDC price of one unit of the loan's principal currency at the event's timestamp: a principal or repayment amount times it is its USD value then. Null when no rate is recorded for either currency at that time. */
+    usdcPriceAtTimestamp?: Maybe<Scalars['Float']>;
     withBuyout: Scalars['Boolean'];
   };
 
@@ -2539,6 +2622,8 @@ export type LoanDefaulted = Event &
     loan: Loan;
     loanId: Scalars['String'];
     timestamp: Scalars['DateTime'];
+    /** The USDC price of one unit of the loan's principal currency at the event's timestamp: a principal or repayment amount times it is its USD value then. Null when no rate is recorded for either currency at that time. */
+    usdcPriceAtTimestamp?: Maybe<Scalars['Float']>;
   };
 
 export type LoanDefaultedNotification = Node &
@@ -2559,6 +2644,8 @@ export type LoanEvent = {
   loan: Loan;
   loanId: Scalars['String'];
   timestamp: Scalars['DateTime'];
+  /** The USDC price of one unit of the loan's principal currency at the event's timestamp: a principal or repayment amount times it is its USD value then. Null when no rate is recorded for either currency at that time. */
+  usdcPriceAtTimestamp?: Maybe<Scalars['Float']>;
 };
 
 export type LoanEventConnection = {
@@ -2614,6 +2701,8 @@ export type LoanExtended = Event &
     prevActivity?: Maybe<LoanActivity>;
     timestamp: Scalars['DateTime'];
     txHash: Scalars['Hash'];
+    /** The USDC price of one unit of the loan's principal currency at the event's timestamp: a principal or repayment amount times it is its USD value then. Null when no rate is recorded for either currency at that time. */
+    usdcPriceAtTimestamp?: Maybe<Scalars['Float']>;
   };
 
 export type LoanExtendedNotification = Node &
@@ -2646,6 +2735,8 @@ export type LoanForeclosed = Event &
     prevActivity?: Maybe<LoanActivity>;
     timestamp: Scalars['DateTime'];
     txHash: Scalars['Hash'];
+    /** The USDC price of one unit of the loan's principal currency at the event's timestamp: a principal or repayment amount times it is its USD value then. Null when no rate is recorded for either currency at that time. */
+    usdcPriceAtTimestamp?: Maybe<Scalars['Float']>;
   };
 
 /** A single loan origination used to build a collection loans history. */
@@ -2675,6 +2766,8 @@ export type LoanInitiated = Event &
     prevActivity?: Maybe<LoanActivity>;
     timestamp: Scalars['DateTime'];
     txHash: Scalars['Hash'];
+    /** The USDC price of one unit of the loan's principal currency at the event's timestamp: a principal or repayment amount times it is its USD value then. Null when no rate is recorded for either currency at that time. */
+    usdcPriceAtTimestamp?: Maybe<Scalars['Float']>;
   };
 
 export type LoanInitiatedNotification = Node &
@@ -2769,6 +2862,8 @@ export type LoanRefinanced = Event &
     prevActivity?: Maybe<LoanActivity>;
     timestamp: Scalars['DateTime'];
     txHash: Scalars['Hash'];
+    /** The USDC price of one unit of the loan's principal currency at the event's timestamp: a principal or repayment amount times it is its USD value then. Null when no rate is recorded for either currency at that time. */
+    usdcPriceAtTimestamp?: Maybe<Scalars['Float']>;
   };
 
 export type LoanRefinancedFromOffers = Event &
@@ -2788,6 +2883,8 @@ export type LoanRefinancedFromOffers = Event &
     prevActivity?: Maybe<LoanActivity>;
     timestamp: Scalars['DateTime'];
     txHash: Scalars['Hash'];
+    /** The USDC price of one unit of the loan's principal currency at the event's timestamp: a principal or repayment amount times it is its USD value then. Null when no rate is recorded for either currency at that time. */
+    usdcPriceAtTimestamp?: Maybe<Scalars['Float']>;
   };
 
 export type LoanRefinancedNotification = Node &
@@ -2821,6 +2918,8 @@ export type LoanRepaid = Event &
     timestamp: Scalars['DateTime'];
     totalInterest: Scalars['BigInt'];
     txHash: Scalars['Hash'];
+    /** The USDC price of one unit of the loan's principal currency at the event's timestamp: a principal or repayment amount times it is its USD value then. Null when no rate is recorded for either currency at that time. */
+    usdcPriceAtTimestamp?: Maybe<Scalars['Float']>;
   };
 
 export type LoanRepaidNotification = Node &
@@ -2868,6 +2967,8 @@ export type LoanSentToAuction = Event &
     prevActivity?: Maybe<LoanActivity>;
     timestamp: Scalars['DateTime'];
     txHash: Scalars['Hash'];
+    /** The USDC price of one unit of the loan's principal currency at the event's timestamp: a principal or repayment amount times it is its USD value then. Null when no rate is recorded for either currency at that time. */
+    usdcPriceAtTimestamp?: Maybe<Scalars['Float']>;
   };
 
 export enum LoanSortField {
@@ -3185,11 +3286,17 @@ export type Mutation = {
   cancelTradeOrders: CancelTradeOrdersResult;
   /** Finishes proving the caller's X account with the `code` and `state` X sent back. Errors TWITTER_VERIFICATION_EXPIRED when the sign-in is unknown or older than ten minutes, TWITTER_VERIFICATION_FAILED when X refuses it. */
   completeTwitterVerification: User;
+  /** Creates a budget the caller's next bids can join through `budgetId`, capping what they may buy in total. No transaction: the limits reach the chain inside each bid's signed `zoneHash`. */
+  createBidBudget: BidBudget;
   /** Create a draft gallery under a profile wallet you sign for, directly or through a confirmed link. Its slug comes from the name. */
   createGallery: Gallery;
+  /** A link that opens the account bot in Telegram and, once started, links that chat to your account, replacing the chat it had. It works once, for ten minutes. */
+  createTelegramLink: Scalars['String'];
   /** Delete a gallery for good. */
   deleteGallery?: Maybe<Scalars['Void']>;
   deleteProfilePicture: User;
+  /** Stop sending your account's notifications to its Telegram chat. Returns whether a chat was linked. */
+  disconnectTelegram: Scalars['Boolean'];
   /** Removes the caller's proven X account from their profile. */
   disconnectTwitter: User;
   editUser: User;
@@ -3205,14 +3312,14 @@ export type Mutation = {
   followNft?: Maybe<Scalars['Void']>;
   /** Follow a wallet from the wallet you are signed in with. Every wallet linked to yours then reads it as followed. A wallet of your own account cannot be followed. */
   followWallet?: Maybe<Scalars['Void']>;
-  /** This is the first step of the collection loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_signed_collection_offer. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 3, 5, 7, 10, 15, 20 or 45 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details. */
+  /** This is the first step of the collection loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_signed_collection_offer. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 3, 5, 7, 10, 15, 20 or 45 days, and at most 3650 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details. */
   generateCollectionOfferToBeSigned: CollectionOffer;
-  /** This is the first step of the renegotiation loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_renegotiation_signed_offer. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 3, 5, 7, 10, 15, 20 or 45 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details. */
+  /** This is the first step of the renegotiation loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_renegotiation_signed_offer. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 3, 5, 7, 10, 15, 20 or 45 days, and at most 3650 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details. */
   generateRenegotiationOfferToBeSigned: Renegotiation;
   generateSignInNonce: Scalars['String'];
-  /** This is the first step of the single NFT loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_signed_single_nft_offer. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 3, 5, 7, 10, 15, 20 or 45 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details. */
+  /** This is the first step of the single NFT loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_signed_single_nft_offer. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 3, 5, 7, 10, 15, 20 or 45 days, and at most 3650 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details. */
   generateSingleNftOfferToBeSigned: SingleNftOffer;
-  /** This is the first step of the trait loan offer flow: an offer any NFT carrying every one of the traits can borrow against. This step populates some fields of the offer, among them the validator holding the token ids that carry them now. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 3, 5, 7, 10, 15, 20 or 45 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details. */
+  /** This is the first step of the trait loan offer flow: an offer any NFT carrying every one of the traits can borrow against. This step populates some fields of the offer, among them the validator holding the token ids that carry them now. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 3, 5, 7, 10, 15, 20 or 45 days, and at most 3650 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details. */
   generateTraitOfferToBeSigned: TraitOffer;
   /** Hides all loan offers from a user for a given contract address.  */
   hideAllOffers: Array<Offer>;
@@ -3245,6 +3352,8 @@ export type Mutation = {
   publishOrderForTrait: TraitOrderSignatureRequest;
   /** Creates a sell and repay loan order. Sell and repay orders are orders to sell an NFT and use that money to repay a loan leaving the rest for the borrower. This method could return a SignatureRequest in __typename in which case you have to use this method again with the same input but you have to sign the 'typedData' response attribute and store it in the 'key' response attribute. You will have to do this process two times since multiple signatures are required. You should receive an SellAndRepayOrder if everything went well. Refer to gondi-js examples for more details Platform fees are added to the fees array if not present.on how to sign it and pay the order. */
   publishSellAndRepayOrder: SellAndRepayOrderSignatureRequestExtraSeaportData;
+  /** Count one open of a published gallery. Opens by the gallery's own account and of drafts are not counted; returns whether it counted. */
+  recordGalleryVisit: Scalars['Boolean'];
   recordItemVisit: Scalars['Boolean'];
   /** Refreshes NFT metadata and image */
   refreshNftMetadata: Nft;
@@ -3258,13 +3367,15 @@ export type Mutation = {
   /** Removes a loan top-up request. */
   removeTopUpRequest: TopUpRequest;
   resendVerificationEmail?: Maybe<Scalars['Void']>;
-  /** This is the second step of the renegotiation loan offer flow after generate_renegotiation_offer_to_be_signed. It saves the signed offer. `duration` is re-validated against the allowed values (multiples of 30 days, or 3, 5, 7, 10, 15, 20 or 45 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active single-NFT offers and renegotiations for the same (NFT, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveOffersLimitReachedError. The optional `fallback_offer_input` is subject to the same checks. Refer to gondi-js examples for more details. */
+  /** Save a compact item browse list under its key, the first 16 URL-safe base64 characters of the list's SHA-256. Saving the same list again does nothing; a key that is not the list's is refused. */
+  saveItemBrowseList?: Maybe<Scalars['Void']>;
+  /** This is the second step of the renegotiation loan offer flow after generate_renegotiation_offer_to_be_signed. It saves the signed offer. `duration` is re-validated against the allowed values (multiples of 30 days, or 3, 5, 7, 10, 15, 20 or 45 days, and at most 3650 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active single-NFT offers and renegotiations for the same (NFT, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveOffersLimitReachedError. The optional `fallback_offer_input` is subject to the same checks. Refer to gondi-js examples for more details. */
   saveRenegotiationSignedOffer: Renegotiation;
-  /** This is the second step of the collection loan offer flow after generate_collection_offer_to_be_signed. It saves the signed offer. `duration` is re-validated against the allowed values (multiples of 30 days, or 3, 5, 7, 10, 15, 20 or 45 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active collection offers for the same (collection, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveCollectionOffersLimitReachedError. Refer to gondi-js examples for more details. */
+  /** This is the second step of the collection loan offer flow after generate_collection_offer_to_be_signed. It saves the signed offer. `duration` is re-validated against the allowed values (multiples of 30 days, or 3, 5, 7, 10, 15, 20 or 45 days, and at most 3650 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active collection offers for the same (collection, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveCollectionOffersLimitReachedError. Refer to gondi-js examples for more details. */
   saveSignedCollectionOffer: CollectionOffer;
-  /** This is the second step of the single NFT loan offer flow after generate_single_nft_offer_to_be_signed. It saves the signed offer. `duration` is re-validated against the allowed values (multiples of 30 days, or 3, 5, 7, 10, 15, 20 or 45 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active single-NFT offers and renegotiations for the same (NFT, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveOffersLimitReachedError. Refer to gondi-js examples for more details. */
+  /** This is the second step of the single NFT loan offer flow after generate_single_nft_offer_to_be_signed. It saves the signed offer. `duration` is re-validated against the allowed values (multiples of 30 days, or 3, 5, 7, 10, 15, 20 or 45 days, and at most 3650 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active single-NFT offers and renegotiations for the same (NFT, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveOffersLimitReachedError. Refer to gondi-js examples for more details. */
   saveSignedSingleNftOffer: SingleNftOffer;
-  /** This is the second step of the trait loan offer flow after generate_trait_offer_to_be_signed. It saves the signed offer, as long as its validator is still the one the traits produce: if the NFTs carrying them changed since the first step, it fails with INVALID_OFFER_VALIDATORS_ERROR and the offer has to be generated again. `duration` is re-validated against the allowed values (multiples of 30 days, or 3, 5, 7, 10, 15, 20 or 45 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active offers for the same (traits, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveTraitOffersLimitReachedError. Refer to gondi-js examples for more details. */
+  /** This is the second step of the trait loan offer flow after generate_trait_offer_to_be_signed. It saves the signed offer, as long as its validator is still the one the traits produce: if the NFTs carrying them changed since the first step, it fails with INVALID_OFFER_VALIDATORS_ERROR and the offer has to be generated again. `duration` is re-validated against the allowed values (multiples of 30 days, or 3, 5, 7, 10, 15, 20 or 45 days, and at most 3650 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active offers for the same (traits, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveTraitOffersLimitReachedError. Refer to gondi-js examples for more details. */
   saveSignedTraitOffer: TraitOffer;
   /** Set the minimum offer amount, in US dollars, from the wallet you are signed in with; null or zero clears it. Every wallet linked to yours then reads the same amount. Returns the amount now in force. */
   setMinimumOfferAmount?: Maybe<Scalars['Float']>;
@@ -3340,6 +3451,10 @@ export type MutationCancelTradeOrdersArgs = {
 export type MutationCompleteTwitterVerificationArgs = {
   code: Scalars['String'];
   state: Scalars['String'];
+};
+
+export type MutationCreateBidBudgetArgs = {
+  budget: BidBudgetInput;
 };
 
 export type MutationCreateGalleryArgs = {
@@ -3476,6 +3591,11 @@ export type MutationPublishSellAndRepayOrderArgs = {
   orderInput: NftOrderInput;
 };
 
+export type MutationRecordGalleryVisitArgs = {
+  galleryId: Scalars['Int'];
+  turnstileToken: Scalars['String'];
+};
+
 export type MutationRecordItemVisitArgs = {
   itemId: Scalars['String'];
   itemType: ItemVisitType;
@@ -3510,6 +3630,11 @@ export type MutationRemoveTopUpRequestArgs = {
 
 export type MutationResendVerificationEmailArgs = {
   userId: Scalars['Int'];
+};
+
+export type MutationSaveItemBrowseListArgs = {
+  encodedList: Scalars['String'];
+  key: Scalars['String'];
 };
 
 export type MutationSaveRenegotiationSignedOfferArgs = {
@@ -3621,6 +3746,10 @@ export type Nft = Node & {
   activeLoan?: Maybe<Loan>;
   animation?: Maybe<Asset>;
   artists: Array<Artist>;
+  /** The best-offer policy's headline pick over the item and collection offers of this item's wrap family; across every currency, in ETH terms, when no currency is given. The viewer is advisory: their accepted loans choose the default duration, nothing more. */
+  bestOffer?: Maybe<BestOffer>;
+  /** The best-offer policy's pick for each duration on offer, shortest first. */
+  bestOffersByDuration: Array<BestOffer>;
   collection?: Maybe<Collection>;
   collectionId?: Maybe<Scalars['Int']>;
   createdDate: Scalars['DateTime'];
@@ -3709,6 +3838,16 @@ export type NftAcquiredAtArgs = {
 
 export type NftAcquisitionSaleArgs = {
   wallets: Array<Scalars['Address']>;
+};
+
+export type NftBestOfferArgs = {
+  currencyAddress?: InputMaybe<Scalars['Address']>;
+  viewerAddress?: InputMaybe<Scalars['Address']>;
+};
+
+export type NftBestOffersByDurationArgs = {
+  currencyAddress: Scalars['Address'];
+  viewerAddress?: InputMaybe<Scalars['Address']>;
 };
 
 export type NftErc1155BalanceArgs = {
@@ -3858,7 +3997,7 @@ export enum NftSearchField {
 export type NftSetConditionInput = {
   /** Traits of one key in the collection: the bid fills with any NFT carrying one of them. At least 2, at most 10. */
   anyTraitIds?: InputMaybe<Array<Scalars['Int']>>;
-  /** A nested condition over the collection's traits, for example {"all": [{"any": [{"trait": 1}, {"trait": 2}]}, {"any": [{"trait": 3}, {"trait": 4}]}]} for (Background: Blue or Red) and (Fur: Gold or Silver). A node is {"all": [nodes]} (every node matches), {"any": [nodes]} (at least one matches) or {"trait": traitId}; all and any take at least 2 nodes. The root is an all or an any; at most 4 levels and 10 traits. */
+  /** A nested condition over the collection's traits, for example {"all": [{"any": [{"trait": 1}, {"trait": 2}]}, {"any": [{"trait": 3}, {"trait": 4}]}]} for (Background: Blue or Red) and (Fur: Gold or Silver). A node is {"all": [nodes]} (every node matches), {"any": [nodes]} (at least one matches), {"not": node} (excludes what node matches; only inside an all with something to exclude from), {"trait": traitId}, {"token": nftId} or {"collection": true} (every NFT of the collection; only inside an all with a not). all and any take at least 2 nodes. The root is an all or an any; at most 4 levels, 10 traits and 1,000 NFTs. Excluding NFTs from the whole collection is {"all": [{"collection": true}, {"not": {"any": [{"token": 1}, {"token": 2}]}}]}. */
   expression?: InputMaybe<Scalars['JSON']>;
 };
 
@@ -3873,9 +4012,13 @@ export type NftSetConditionPreview = {
 
 export type NftSetOrderInput = {
   amount?: InputMaybe<Scalars['BigInt']>;
+  /** A `BidBudget` of the caller to add this bid to. The bid is restricted to the budget zone, which stops its fills once the budget is used up. */
+  budgetId?: InputMaybe<Scalars['Int64']>;
   collectionId: Scalars['Int'];
   /** A trait condition the backend resolves into the NFTs the bid fills with, fixed when the bid is signed. Pass either nftIds or condition. */
   condition?: InputMaybe<NftSetConditionInput>;
+  /** The maker's Seaport counter, which the order is built with. Optional: GONDI looks it up when it is missing. A signed order whose counter is not the maker's current one is rejected. */
+  counter?: InputMaybe<Scalars['BigInt']>;
   currencyAddress: Scalars['Address'];
   expirationTime: Scalars['BigInt'];
   fees?: InputMaybe<Array<OrderFee>>;
@@ -4121,6 +4264,31 @@ export enum NotificationType {
   WatchedNftNotification = 'WATCHED_NFT_NOTIFICATION',
 }
 
+/** A curated sale of the NFT that never touched a marketplace contract: an auction-house lot, a custodial-marketplace sale or a private deal. priceUsd is the published figure in micro-USD; price and currencyAddress carry the native amount when the sale was denominated in a currency GONDI prices. */
+export type OffChainSale = Event &
+  Node & {
+    __typename?: 'OffChainSale';
+    currencyAddress?: Maybe<Scalars['Address']>;
+    id: Scalars['String'];
+    nft: Nft;
+    note?: Maybe<Scalars['String']>;
+    price?: Maybe<Scalars['BigInt']>;
+    priceUsd: Scalars['BigInt'];
+    sourceUrl: Scalars['String'];
+    timestamp: Scalars['DateTime'];
+    venue: OffChainSaleVenue;
+  };
+
+export enum OffChainSaleVenue {
+  Bonhams = 'BONHAMS',
+  Christies = 'CHRISTIES',
+  NiftyGateway = 'NIFTY_GATEWAY',
+  Other = 'OTHER',
+  Phillips = 'PHILLIPS',
+  Private = 'PRIVATE',
+  Sothebys = 'SOTHEBYS',
+}
+
 export type Offer = {
   aprBps: Scalars['BigInt'];
   availablePrincipalAmount: Scalars['BigInt'];
@@ -4255,6 +4423,22 @@ export type OffersSortInput = {
   field: OffersSortField;
   order: Ordering;
   principalOfInterest?: InputMaybe<Scalars['BigInt']>;
+};
+
+export type OpenSeaListingResult = {
+  __typename?: 'OpenSeaListingResult';
+  contractAddress: Scalars['Address'];
+  error?: Maybe<Scalars['String']>;
+  orderHash?: Maybe<Scalars['Hash']>;
+  tokenId: Scalars['BigInt'];
+};
+
+export type OpenSeaListingTerms = {
+  __typename?: 'OpenSeaListingTerms';
+  collectionId: Scalars['Int'];
+  creatorFees: Array<PlatformFee>;
+  listingCurrency: Scalars['Address'];
+  marketplaceFeeBps: Scalars['BigInt'];
 };
 
 /** What holds an approval, which decides how it can be used. */
@@ -4537,7 +4721,7 @@ export type PortfolioLeaderboardRow = {
   walletCount: Scalars['Int'];
 };
 
-/** NFT.valuation summed over the NFTs the wallets own, hold in a stash or a vault, or have as collateral of their active loans as borrower, in ETH. */
+/** NFT.valuation as of its collection's last daily refresh, summed over the NFTs the wallets own, hold in a stash or a vault, or have as collateral of their active loans as borrower, in ETH. */
 export type PortfolioValuation = {
   __typename?: 'PortfolioValuation';
   /** One row per wrap family, highest value first. */
@@ -4608,7 +4792,7 @@ export type Query = {
   getPointsFromReferrals: Scalars['Int'];
   /** Accounts ranked by their portfolio valuation, highest first. An account is a user with its confirmed-linked wallets. */
   getPortfolioLeaderboard: PortfolioLeaderboard;
-  /** NFT.valuation summed over the NFTs the wallets own, hold in a stash or a vault, or have as collateral of their active loans as borrower, in ETH, in total and per wrap family. ERC1155 tokens are left out. Takes 1 to 10 distinct wallets. At most max_nfts_per_portfolio items, highest family floor first; truncated says when the cap left items out. */
+  /** NFT.valuation as of its collection's last daily refresh, summed over the NFTs the wallets own, hold in a stash or a vault, or have as collateral of their active loans as borrower, in ETH, in total and per wrap family. ERC1155 tokens are left out. Takes 1 to 10 distinct wallets. At most max_nfts_per_portfolio items, highest family floor first; truncated says when the cap left items out. */
   getPortfolioValuation: PortfolioValuation;
   getPurchaseBundlerFromOrder: Scalars['Address'];
   /** Profit `lenders` realized per UTC day and currency: the interest and origination fee of each position, counted on the day they left it by repayment or by being refinanced or renegotiated out. Only days that realized something return a row, ordered by `day` then `currencyAddress`. The window opens at the UTC midnight `days - 1` days before today and runs to now. `days` must be from 1 to 366 and `currencyAddresses` may name at most 10 currencies. Summed over all time, the rows equal `getSourcesStatistics` `profit` and `netProfit` for `statuses: [LOAN_REPAID]`. */
@@ -4637,6 +4821,8 @@ export type Query = {
   globalSearch: Array<GlobalSearchResult>;
   globalSearchV2: GlobalSearchV2Results;
   isUsernameAvailable: Scalars['Boolean'];
+  /** The compact item browse list saved under `key` by `saveItemBrowseList`, or null when none is. */
+  itemBrowseList?: Maybe<Scalars['String']>;
   /** Full-loan choices selected across all matching quotes before pagination. Supply group for inline additional choices. */
   itemLoanOfferBook: ItemLoanOfferBook;
   /** Live ApprovalForAll grants of the wallets on Ethereum, read from Etherscan and confirmed on-chain, highest exposed floor value first, plus the wallets whose history could not be read in full. At most 10 wallets. */
@@ -4714,6 +4900,7 @@ export type Query = {
   listNftsFromUser: NftConnection;
   listNotifications: NotificationConnection;
   listOffers: OfferConnection;
+  listOpenSeaListingTerms: Array<OpenSeaListingTerms>;
   /** This field is deprecated. Use list_orders_v2 instead. This field will be removed in the next major version. */
   listOrders: OrderConnection;
   listOrdersV2: OrderConnection;
@@ -4738,6 +4925,10 @@ export type Query = {
   me?: Maybe<User>;
   /** The viewer's account's minimum offer amount, in US dollars: loan and buy offers on its items worth less notify it on no channel. Null when there is none. */
   minimumOfferAmount?: Maybe<Scalars['Float']>;
+  /** The published galleries whose pages were visited most over the last 30 days, most visited first; a visitor counts once a day, and a gallery's own account not at all. At most 20. */
+  mostViewedGalleries: Array<Gallery>;
+  /** The published galleries that show an NFT, most recently edited first; at most 50, since anyone's gallery can list any work. */
+  nftGalleries: Array<Gallery>;
   /** Every notification event on every channel it reaches, as the viewer's account has it. The most recent choice any of its linked wallets made is the one in force. */
   notificationPreferences: Array<NotificationPreference>;
   /** Evaluate an item quote before signing; publication rechecks under a transaction lock. */
@@ -4745,6 +4936,8 @@ export type Query = {
   /** What a set bid's trait condition matches in the collection right now: the count and up to 10 of the NFTs, under the checks publishOrderForNftSet applies (an empty match counts 0 here, where publishing it fails). For a live count while a condition is built. */
   previewNftSetCondition: NftSetConditionPreview;
   previewRenegotiationCompetition: LoanOfferCompetitionPreview;
+  /** The Telegram chat the viewer's account gets its notifications in, or null when no wallet of the account linked one. */
+  telegramConnection?: Maybe<TelegramConnection>;
 };
 
 /** Query for the lending module */
@@ -5045,6 +5238,11 @@ export type QueryGlobalSearchV2Args = {
 /** Query for the lending module */
 export type QueryIsUsernameAvailableArgs = {
   username: Scalars['String'];
+};
+
+/** Query for the lending module */
+export type QueryItemBrowseListArgs = {
+  key: Scalars['String'];
 };
 
 /** Query for the lending module */
@@ -5573,6 +5771,11 @@ export type QueryListOffersArgs = {
 };
 
 /** Query for the lending module */
+export type QueryListOpenSeaListingTermsArgs = {
+  collectionIds: Array<Scalars['Int']>;
+};
+
+/** Query for the lending module */
 export type QueryListOrdersArgs = {
   after?: InputMaybe<Scalars['String']>;
   collectionId?: InputMaybe<Scalars['Int']>;
@@ -5729,6 +5932,16 @@ export type QueryLoanDealsArgs = {
   first?: Scalars['Int'];
   grouping?: LoanDealGrouping;
   ranking: LoanDealRanking;
+};
+
+/** Query for the lending module */
+export type QueryMostViewedGalleriesArgs = {
+  first?: InputMaybe<Scalars['Int']>;
+};
+
+/** Query for the lending module */
+export type QueryNftGalleriesArgs = {
+  nftId: Scalars['Int'];
 };
 
 /** Query for the lending module */
@@ -5905,6 +6118,8 @@ export type Sale = Activity &
     taker?: Maybe<Scalars['Address']>;
     timestamp: Scalars['DateTime'];
     txHash: Scalars['Hash'];
+    /** The USDC price of one unit of the sale's currency at the sale's timestamp: the price times it is the sale's USD value then. Null when no rate is recorded for either currency at that time. */
+    usdcPriceAtTimestamp?: Maybe<Scalars['Float']>;
   };
 
 export type SaleConnection = {
@@ -6025,9 +6240,11 @@ export type SetBidCondition = {
   __typename?: 'SetBidCondition';
   /** The values of an OR trait bid, an any of traits of one key; empty for any other condition. */
   anyTraits: Array<Trait>;
-  /** The condition in its stored form: {"all": [nodes]}, {"any": [nodes]} and {"trait": traitId} nodes. */
+  /** The condition in its stored form: {"all": [nodes]}, {"any": [nodes]}, {"not": node}, {"trait": traitId}, {"token": nftId} and {"collection": true} nodes. */
   expression: Scalars['JSON'];
-  /** Every trait the condition names, in id order. */
+  /** Every NFT the condition names by id, excluded ones included, in id order. */
+  nfts: Array<Nft>;
+  /** Every trait the condition names, excluded ones included, in id order. */
   traits: Array<Trait>;
 };
 
@@ -6319,7 +6536,11 @@ export type SingleNftOrderPlatformFeesArgs = {
 
 export type SingleNftOrderInput = {
   amount?: InputMaybe<Scalars['BigInt']>;
+  /** A `BidBudget` of the caller to add this bid to. The bid is restricted to the budget zone, which stops its fills once the budget is used up. */
+  budgetId?: InputMaybe<Scalars['Int64']>;
   contractAddress: Scalars['Address'];
+  /** The maker's Seaport counter, which the order is built with. Optional: GONDI looks it up when it is missing. A signed order whose counter is not the maker's current one is rejected. */
+  counter?: InputMaybe<Scalars['BigInt']>;
   currencyAddress: Scalars['Address'];
   expirationTime: Scalars['BigInt'];
   fees?: InputMaybe<Array<OrderFee>>;
@@ -6616,6 +6837,13 @@ export type SwapQuote = {
   slippageBps: Scalars['Int'];
 };
 
+/** The Telegram chat the viewer's account gets its notifications in, through the account bot. */
+export type TelegramConnection = {
+  __typename?: 'TelegramConnection';
+  /** When a wallet of the account linked the chat. */
+  linkedOn: Scalars['DateTime'];
+};
+
 export type TermsFilter = {
   aprBps?: InputMaybe<Interval>;
   duration?: InputMaybe<Interval>;
@@ -6898,6 +7126,10 @@ export type TraitOrderPlatformFeesArgs = {
 
 export type TraitOrderInput = {
   amount?: InputMaybe<Scalars['BigInt']>;
+  /** A `BidBudget` of the caller to add this bid to. The bid is restricted to the budget zone, which stops its fills once the budget is used up. */
+  budgetId?: InputMaybe<Scalars['Int64']>;
+  /** The maker's Seaport counter, which the order is built with. Optional: GONDI looks it up when it is missing. A signed order whose counter is not the maker's current one is rejected. */
+  counter?: InputMaybe<Scalars['BigInt']>;
   currencyAddress: Scalars['Address'];
   expirationTime: Scalars['BigInt'];
   fees?: InputMaybe<Array<OrderFee>>;
@@ -7301,6 +7533,7 @@ export enum ValuationBasis {
   Loan = 'LOAN',
   SaleHistory = 'SALE_HISTORY',
   TraitFloor = 'TRAIT_FLOOR',
+  VaultContents = 'VAULT_CONTENTS',
 }
 
 export enum VaultsFilter {
@@ -7883,6 +8116,13 @@ export type PublishBulkOrdersMutation = {
           marketPlaceAddress: Address;
           evmOrder?: object | null;
           nft: { __typename?: 'NFT'; id: string };
+        }>;
+        openSeaListings: Array<{
+          __typename?: 'OpenSeaListingResult';
+          contractAddress: Address;
+          tokenId: bigint;
+          orderHash?: Hash | null;
+          error?: string | null;
         }>;
       }
     | {
@@ -9958,6 +10198,23 @@ export type AuctionWonNotificationFieldPolicy = {
   readOn?: FieldPolicy<any> | FieldReadFunction<any>;
   user?: FieldPolicy<any> | FieldReadFunction<any>;
 };
+export type BestOfferKeySpecifier = (
+  | 'duration'
+  | 'eaprBps'
+  | 'netPrincipal'
+  | 'offer'
+  | 'roles'
+  | 'score'
+  | BestOfferKeySpecifier
+)[];
+export type BestOfferFieldPolicy = {
+  duration?: FieldPolicy<any> | FieldReadFunction<any>;
+  eaprBps?: FieldPolicy<any> | FieldReadFunction<any>;
+  netPrincipal?: FieldPolicy<any> | FieldReadFunction<any>;
+  offer?: FieldPolicy<any> | FieldReadFunction<any>;
+  roles?: FieldPolicy<any> | FieldReadFunction<any>;
+  score?: FieldPolicy<any> | FieldReadFunction<any>;
+};
 export type BidKeySpecifier = (
   | 'amount'
   | 'auction'
@@ -9982,6 +10239,25 @@ export type BidFieldPolicy = {
   indexInBlock?: FieldPolicy<any> | FieldReadFunction<any>;
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   txHash?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type BidBudgetKeySpecifier = (
+  | 'cancelled'
+  | 'currencyAddress'
+  | 'id'
+  | 'maker'
+  | 'maxQuantity'
+  | 'maxSpend'
+  | 'zoneHash'
+  | BidBudgetKeySpecifier
+)[];
+export type BidBudgetFieldPolicy = {
+  cancelled?: FieldPolicy<any> | FieldReadFunction<any>;
+  currencyAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  id?: FieldPolicy<any> | FieldReadFunction<any>;
+  maker?: FieldPolicy<any> | FieldReadFunction<any>;
+  maxQuantity?: FieldPolicy<any> | FieldReadFunction<any>;
+  maxSpend?: FieldPolicy<any> | FieldReadFunction<any>;
+  zoneHash?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type BidConnectionKeySpecifier = (
   | 'edges'
@@ -10070,8 +10346,13 @@ export type BlendLienFieldPolicy = {
   startTime?: FieldPolicy<any> | FieldReadFunction<any>;
   tokenId?: FieldPolicy<any> | FieldReadFunction<any>;
 };
-export type BulkNFTOrdersResultKeySpecifier = ('orders' | BulkNFTOrdersResultKeySpecifier)[];
+export type BulkNFTOrdersResultKeySpecifier = (
+  | 'openSeaListings'
+  | 'orders'
+  | BulkNFTOrdersResultKeySpecifier
+)[];
 export type BulkNFTOrdersResultFieldPolicy = {
+  openSeaListings?: FieldPolicy<any> | FieldReadFunction<any>;
   orders?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type BuyNowPayLaterOrderKeySpecifier = (
@@ -10186,6 +10467,8 @@ export type CollectionKeySpecifier = (
   | 'artistUniqueCollectorsCount'
   | 'artists'
   | 'bannerImage'
+  | 'bestOffer'
+  | 'bestOffersByDuration'
   | 'collectionUrl'
   | 'contractData'
   | 'description'
@@ -10232,6 +10515,8 @@ export type CollectionFieldPolicy = {
   artistUniqueCollectorsCount?: FieldPolicy<any> | FieldReadFunction<any>;
   artists?: FieldPolicy<any> | FieldReadFunction<any>;
   bannerImage?: FieldPolicy<any> | FieldReadFunction<any>;
+  bestOffer?: FieldPolicy<any> | FieldReadFunction<any>;
+  bestOffersByDuration?: FieldPolicy<any> | FieldReadFunction<any>;
   collectionUrl?: FieldPolicy<any> | FieldReadFunction<any>;
   contractData?: FieldPolicy<any> | FieldReadFunction<any>;
   description?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -11084,6 +11369,7 @@ export type GalleryKeySpecifier = (
   | 'slug'
   | 'style'
   | 'updatedAt'
+  | 'visitCount'
   | 'visitorModeSwitch'
   | 'workCount'
   | 'works'
@@ -11104,6 +11390,7 @@ export type GalleryFieldPolicy = {
   slug?: FieldPolicy<any> | FieldReadFunction<any>;
   style?: FieldPolicy<any> | FieldReadFunction<any>;
   updatedAt?: FieldPolicy<any> | FieldReadFunction<any>;
+  visitCount?: FieldPolicy<any> | FieldReadFunction<any>;
   visitorModeSwitch?: FieldPolicy<any> | FieldReadFunction<any>;
   workCount?: FieldPolicy<any> | FieldReadFunction<any>;
   works?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -11705,6 +11992,7 @@ export type LoanActivityKeySpecifier = (
   | 'prevActivity'
   | 'timestamp'
   | 'txHash'
+  | 'usdcPriceAtTimestamp'
   | LoanActivityKeySpecifier
 )[];
 export type LoanActivityFieldPolicy = {
@@ -11719,6 +12007,7 @@ export type LoanActivityFieldPolicy = {
   prevActivity?: FieldPolicy<any> | FieldReadFunction<any>;
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   txHash?: FieldPolicy<any> | FieldReadFunction<any>;
+  usdcPriceAtTimestamp?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type LoanActivityConnectionKeySpecifier = (
   | 'edges'
@@ -11750,6 +12039,7 @@ export type LoanAuctionedKeySpecifier = (
   | 'timestamp'
   | 'totalAuctioned'
   | 'txHash'
+  | 'usdcPriceAtTimestamp'
   | 'withBuyout'
   | LoanAuctionedKeySpecifier
 )[];
@@ -11767,6 +12057,7 @@ export type LoanAuctionedFieldPolicy = {
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   totalAuctioned?: FieldPolicy<any> | FieldReadFunction<any>;
   txHash?: FieldPolicy<any> | FieldReadFunction<any>;
+  usdcPriceAtTimestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   withBuyout?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type LoanAuctionedNotificationKeySpecifier = (
@@ -11841,6 +12132,7 @@ export type LoanDefaultedKeySpecifier = (
   | 'loan'
   | 'loanId'
   | 'timestamp'
+  | 'usdcPriceAtTimestamp'
   | LoanDefaultedKeySpecifier
 )[];
 export type LoanDefaultedFieldPolicy = {
@@ -11849,6 +12141,7 @@ export type LoanDefaultedFieldPolicy = {
   loan?: FieldPolicy<any> | FieldReadFunction<any>;
   loanId?: FieldPolicy<any> | FieldReadFunction<any>;
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
+  usdcPriceAtTimestamp?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type LoanDefaultedNotificationKeySpecifier = (
   | 'createdOn'
@@ -11875,6 +12168,7 @@ export type LoanEventKeySpecifier = (
   | 'loan'
   | 'loanId'
   | 'timestamp'
+  | 'usdcPriceAtTimestamp'
   | LoanEventKeySpecifier
 )[];
 export type LoanEventFieldPolicy = {
@@ -11883,6 +12177,7 @@ export type LoanEventFieldPolicy = {
   loan?: FieldPolicy<any> | FieldReadFunction<any>;
   loanId?: FieldPolicy<any> | FieldReadFunction<any>;
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
+  usdcPriceAtTimestamp?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type LoanEventConnectionKeySpecifier = (
   | 'edges'
@@ -11912,6 +12207,7 @@ export type LoanExtendedKeySpecifier = (
   | 'prevActivity'
   | 'timestamp'
   | 'txHash'
+  | 'usdcPriceAtTimestamp'
   | LoanExtendedKeySpecifier
 )[];
 export type LoanExtendedFieldPolicy = {
@@ -11926,6 +12222,7 @@ export type LoanExtendedFieldPolicy = {
   prevActivity?: FieldPolicy<any> | FieldReadFunction<any>;
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   txHash?: FieldPolicy<any> | FieldReadFunction<any>;
+  usdcPriceAtTimestamp?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type LoanExtendedNotificationKeySpecifier = (
   | 'createdOn'
@@ -11962,6 +12259,7 @@ export type LoanForeclosedKeySpecifier = (
   | 'prevActivity'
   | 'timestamp'
   | 'txHash'
+  | 'usdcPriceAtTimestamp'
   | LoanForeclosedKeySpecifier
 )[];
 export type LoanForeclosedFieldPolicy = {
@@ -11976,6 +12274,7 @@ export type LoanForeclosedFieldPolicy = {
   prevActivity?: FieldPolicy<any> | FieldReadFunction<any>;
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   txHash?: FieldPolicy<any> | FieldReadFunction<any>;
+  usdcPriceAtTimestamp?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type LoanHistoryItemKeySpecifier = (
   | 'currency'
@@ -12002,6 +12301,7 @@ export type LoanInitiatedKeySpecifier = (
   | 'prevActivity'
   | 'timestamp'
   | 'txHash'
+  | 'usdcPriceAtTimestamp'
   | LoanInitiatedKeySpecifier
 )[];
 export type LoanInitiatedFieldPolicy = {
@@ -12016,6 +12316,7 @@ export type LoanInitiatedFieldPolicy = {
   prevActivity?: FieldPolicy<any> | FieldReadFunction<any>;
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   txHash?: FieldPolicy<any> | FieldReadFunction<any>;
+  usdcPriceAtTimestamp?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type LoanInitiatedNotificationKeySpecifier = (
   | 'aprBps'
@@ -12147,6 +12448,7 @@ export type LoanRefinancedKeySpecifier = (
   | 'prevActivity'
   | 'timestamp'
   | 'txHash'
+  | 'usdcPriceAtTimestamp'
   | LoanRefinancedKeySpecifier
 )[];
 export type LoanRefinancedFieldPolicy = {
@@ -12163,6 +12465,7 @@ export type LoanRefinancedFieldPolicy = {
   prevActivity?: FieldPolicy<any> | FieldReadFunction<any>;
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   txHash?: FieldPolicy<any> | FieldReadFunction<any>;
+  usdcPriceAtTimestamp?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type LoanRefinancedFromOffersKeySpecifier = (
   | 'activityType'
@@ -12177,6 +12480,7 @@ export type LoanRefinancedFromOffersKeySpecifier = (
   | 'prevActivity'
   | 'timestamp'
   | 'txHash'
+  | 'usdcPriceAtTimestamp'
   | LoanRefinancedFromOffersKeySpecifier
 )[];
 export type LoanRefinancedFromOffersFieldPolicy = {
@@ -12192,6 +12496,7 @@ export type LoanRefinancedFromOffersFieldPolicy = {
   prevActivity?: FieldPolicy<any> | FieldReadFunction<any>;
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   txHash?: FieldPolicy<any> | FieldReadFunction<any>;
+  usdcPriceAtTimestamp?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type LoanRefinancedNotificationKeySpecifier = (
   | 'createdOn'
@@ -12229,6 +12534,7 @@ export type LoanRepaidKeySpecifier = (
   | 'timestamp'
   | 'totalInterest'
   | 'txHash'
+  | 'usdcPriceAtTimestamp'
   | LoanRepaidKeySpecifier
 )[];
 export type LoanRepaidFieldPolicy = {
@@ -12244,6 +12550,7 @@ export type LoanRepaidFieldPolicy = {
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   totalInterest?: FieldPolicy<any> | FieldReadFunction<any>;
   txHash?: FieldPolicy<any> | FieldReadFunction<any>;
+  usdcPriceAtTimestamp?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type LoanRepaidNotificationKeySpecifier = (
   | 'createdOn'
@@ -12277,6 +12584,7 @@ export type LoanSentToAuctionKeySpecifier = (
   | 'prevActivity'
   | 'timestamp'
   | 'txHash'
+  | 'usdcPriceAtTimestamp'
   | LoanSentToAuctionKeySpecifier
 )[];
 export type LoanSentToAuctionFieldPolicy = {
@@ -12292,6 +12600,7 @@ export type LoanSentToAuctionFieldPolicy = {
   prevActivity?: FieldPolicy<any> | FieldReadFunction<any>;
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   txHash?: FieldPolicy<any> | FieldReadFunction<any>;
+  usdcPriceAtTimestamp?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type LoansDataKeySpecifier = (
   | 'maxAprBps'
@@ -12690,9 +12999,12 @@ export type MutationKeySpecifier = (
   | 'addOrUpdateTopUpRequest'
   | 'cancelTradeOrders'
   | 'completeTwitterVerification'
+  | 'createBidBudget'
   | 'createGallery'
+  | 'createTelegramLink'
   | 'deleteGallery'
   | 'deleteProfilePicture'
+  | 'disconnectTelegram'
   | 'disconnectTwitter'
   | 'editUser'
   | 'followArtist'
@@ -12723,6 +13035,7 @@ export type MutationKeySpecifier = (
   | 'publishOrderForNftSet'
   | 'publishOrderForTrait'
   | 'publishSellAndRepayOrder'
+  | 'recordGalleryVisit'
   | 'recordItemVisit'
   | 'refreshNftMetadata'
   | 'removeLinkedWallets'
@@ -12731,6 +13044,7 @@ export type MutationKeySpecifier = (
   | 'removeRenegotiationRequest'
   | 'removeTopUpRequest'
   | 'resendVerificationEmail'
+  | 'saveItemBrowseList'
   | 'saveRenegotiationSignedOffer'
   | 'saveSignedCollectionOffer'
   | 'saveSignedSingleNftOffer'
@@ -12764,9 +13078,12 @@ export type MutationFieldPolicy = {
   addOrUpdateTopUpRequest?: FieldPolicy<any> | FieldReadFunction<any>;
   cancelTradeOrders?: FieldPolicy<any> | FieldReadFunction<any>;
   completeTwitterVerification?: FieldPolicy<any> | FieldReadFunction<any>;
+  createBidBudget?: FieldPolicy<any> | FieldReadFunction<any>;
   createGallery?: FieldPolicy<any> | FieldReadFunction<any>;
+  createTelegramLink?: FieldPolicy<any> | FieldReadFunction<any>;
   deleteGallery?: FieldPolicy<any> | FieldReadFunction<any>;
   deleteProfilePicture?: FieldPolicy<any> | FieldReadFunction<any>;
+  disconnectTelegram?: FieldPolicy<any> | FieldReadFunction<any>;
   disconnectTwitter?: FieldPolicy<any> | FieldReadFunction<any>;
   editUser?: FieldPolicy<any> | FieldReadFunction<any>;
   followArtist?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -12797,6 +13114,7 @@ export type MutationFieldPolicy = {
   publishOrderForNftSet?: FieldPolicy<any> | FieldReadFunction<any>;
   publishOrderForTrait?: FieldPolicy<any> | FieldReadFunction<any>;
   publishSellAndRepayOrder?: FieldPolicy<any> | FieldReadFunction<any>;
+  recordGalleryVisit?: FieldPolicy<any> | FieldReadFunction<any>;
   recordItemVisit?: FieldPolicy<any> | FieldReadFunction<any>;
   refreshNftMetadata?: FieldPolicy<any> | FieldReadFunction<any>;
   removeLinkedWallets?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -12805,6 +13123,7 @@ export type MutationFieldPolicy = {
   removeRenegotiationRequest?: FieldPolicy<any> | FieldReadFunction<any>;
   removeTopUpRequest?: FieldPolicy<any> | FieldReadFunction<any>;
   resendVerificationEmail?: FieldPolicy<any> | FieldReadFunction<any>;
+  saveItemBrowseList?: FieldPolicy<any> | FieldReadFunction<any>;
   saveRenegotiationSignedOffer?: FieldPolicy<any> | FieldReadFunction<any>;
   saveSignedCollectionOffer?: FieldPolicy<any> | FieldReadFunction<any>;
   saveSignedSingleNftOffer?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -12835,6 +13154,8 @@ export type NFTKeySpecifier = (
   | 'activeLoan'
   | 'animation'
   | 'artists'
+  | 'bestOffer'
+  | 'bestOffersByDuration'
   | 'collection'
   | 'collectionId'
   | 'createdDate'
@@ -12885,6 +13206,8 @@ export type NFTFieldPolicy = {
   activeLoan?: FieldPolicy<any> | FieldReadFunction<any>;
   animation?: FieldPolicy<any> | FieldReadFunction<any>;
   artists?: FieldPolicy<any> | FieldReadFunction<any>;
+  bestOffer?: FieldPolicy<any> | FieldReadFunction<any>;
+  bestOffersByDuration?: FieldPolicy<any> | FieldReadFunction<any>;
   collection?: FieldPolicy<any> | FieldReadFunction<any>;
   collectionId?: FieldPolicy<any> | FieldReadFunction<any>;
   createdDate?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -13163,6 +13486,29 @@ export type NotificationPreferenceFieldPolicy = {
   enabled?: FieldPolicy<any> | FieldReadFunction<any>;
   event?: FieldPolicy<any> | FieldReadFunction<any>;
 };
+export type OffChainSaleKeySpecifier = (
+  | 'currencyAddress'
+  | 'id'
+  | 'nft'
+  | 'note'
+  | 'price'
+  | 'priceUsd'
+  | 'sourceUrl'
+  | 'timestamp'
+  | 'venue'
+  | OffChainSaleKeySpecifier
+)[];
+export type OffChainSaleFieldPolicy = {
+  currencyAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  id?: FieldPolicy<any> | FieldReadFunction<any>;
+  nft?: FieldPolicy<any> | FieldReadFunction<any>;
+  note?: FieldPolicy<any> | FieldReadFunction<any>;
+  price?: FieldPolicy<any> | FieldReadFunction<any>;
+  priceUsd?: FieldPolicy<any> | FieldReadFunction<any>;
+  sourceUrl?: FieldPolicy<any> | FieldReadFunction<any>;
+  timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
+  venue?: FieldPolicy<any> | FieldReadFunction<any>;
+};
 export type OfferKeySpecifier = (
   | 'aprBps'
   | 'availablePrincipalAmount'
@@ -13320,6 +13666,32 @@ export type OfferValidatorFieldPolicy = {
   id?: FieldPolicy<any> | FieldReadFunction<any>;
   offerId?: FieldPolicy<any> | FieldReadFunction<any>;
   validator?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type OpenSeaListingResultKeySpecifier = (
+  | 'contractAddress'
+  | 'error'
+  | 'orderHash'
+  | 'tokenId'
+  | OpenSeaListingResultKeySpecifier
+)[];
+export type OpenSeaListingResultFieldPolicy = {
+  contractAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  error?: FieldPolicy<any> | FieldReadFunction<any>;
+  orderHash?: FieldPolicy<any> | FieldReadFunction<any>;
+  tokenId?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type OpenSeaListingTermsKeySpecifier = (
+  | 'collectionId'
+  | 'creatorFees'
+  | 'listingCurrency'
+  | 'marketplaceFeeBps'
+  | OpenSeaListingTermsKeySpecifier
+)[];
+export type OpenSeaListingTermsFieldPolicy = {
+  collectionId?: FieldPolicy<any> | FieldReadFunction<any>;
+  creatorFees?: FieldPolicy<any> | FieldReadFunction<any>;
+  listingCurrency?: FieldPolicy<any> | FieldReadFunction<any>;
+  marketplaceFeeBps?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type OrderKeySpecifier = (
   | 'cancelsOffChain'
@@ -13647,6 +14019,7 @@ export type QueryKeySpecifier = (
   | 'globalSearch'
   | 'globalSearchV2'
   | 'isUsernameAvailable'
+  | 'itemBrowseList'
   | 'itemLoanOfferBook'
   | 'listApprovalExposures'
   | 'listArtistCatalog'
@@ -13690,6 +14063,7 @@ export type QueryKeySpecifier = (
   | 'listNftsFromUser'
   | 'listNotifications'
   | 'listOffers'
+  | 'listOpenSeaListingTerms'
   | 'listOrders'
   | 'listOrdersV2'
   | 'listPlatformFees'
@@ -13706,10 +14080,13 @@ export type QueryKeySpecifier = (
   | 'loanDeals'
   | 'me'
   | 'minimumOfferAmount'
+  | 'mostViewedGalleries'
+  | 'nftGalleries'
   | 'notificationPreferences'
   | 'previewItemLoanOfferCompetition'
   | 'previewNftSetCondition'
   | 'previewRenegotiationCompetition'
+  | 'telegramConnection'
   | QueryKeySpecifier
 )[];
 export type QueryFieldPolicy = {
@@ -13770,6 +14147,7 @@ export type QueryFieldPolicy = {
   globalSearch?: FieldPolicy<any> | FieldReadFunction<any>;
   globalSearchV2?: FieldPolicy<any> | FieldReadFunction<any>;
   isUsernameAvailable?: FieldPolicy<any> | FieldReadFunction<any>;
+  itemBrowseList?: FieldPolicy<any> | FieldReadFunction<any>;
   itemLoanOfferBook?: FieldPolicy<any> | FieldReadFunction<any>;
   listApprovalExposures?: FieldPolicy<any> | FieldReadFunction<any>;
   listArtistCatalog?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -13813,6 +14191,7 @@ export type QueryFieldPolicy = {
   listNftsFromUser?: FieldPolicy<any> | FieldReadFunction<any>;
   listNotifications?: FieldPolicy<any> | FieldReadFunction<any>;
   listOffers?: FieldPolicy<any> | FieldReadFunction<any>;
+  listOpenSeaListingTerms?: FieldPolicy<any> | FieldReadFunction<any>;
   listOrders?: FieldPolicy<any> | FieldReadFunction<any>;
   listOrdersV2?: FieldPolicy<any> | FieldReadFunction<any>;
   listPlatformFees?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -13829,10 +14208,13 @@ export type QueryFieldPolicy = {
   loanDeals?: FieldPolicy<any> | FieldReadFunction<any>;
   me?: FieldPolicy<any> | FieldReadFunction<any>;
   minimumOfferAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  mostViewedGalleries?: FieldPolicy<any> | FieldReadFunction<any>;
+  nftGalleries?: FieldPolicy<any> | FieldReadFunction<any>;
   notificationPreferences?: FieldPolicy<any> | FieldReadFunction<any>;
   previewItemLoanOfferCompetition?: FieldPolicy<any> | FieldReadFunction<any>;
   previewNftSetCondition?: FieldPolicy<any> | FieldReadFunction<any>;
   previewRenegotiationCompetition?: FieldPolicy<any> | FieldReadFunction<any>;
+  telegramConnection?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type RealizedProfitDayKeySpecifier = (
   | 'currencyAddress'
@@ -14004,6 +14386,7 @@ export type SaleKeySpecifier = (
   | 'taker'
   | 'timestamp'
   | 'txHash'
+  | 'usdcPriceAtTimestamp'
   | SaleKeySpecifier
 )[];
 export type SaleFieldPolicy = {
@@ -14027,6 +14410,7 @@ export type SaleFieldPolicy = {
   taker?: FieldPolicy<any> | FieldReadFunction<any>;
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   txHash?: FieldPolicy<any> | FieldReadFunction<any>;
+  usdcPriceAtTimestamp?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type SaleConnectionKeySpecifier = (
   | 'edges'
@@ -14171,12 +14555,14 @@ export type SellAndRepayOrderFieldPolicy = {
 export type SetBidConditionKeySpecifier = (
   | 'anyTraits'
   | 'expression'
+  | 'nfts'
   | 'traits'
   | SetBidConditionKeySpecifier
 )[];
 export type SetBidConditionFieldPolicy = {
   anyTraits?: FieldPolicy<any> | FieldReadFunction<any>;
   expression?: FieldPolicy<any> | FieldReadFunction<any>;
+  nfts?: FieldPolicy<any> | FieldReadFunction<any>;
   traits?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type SetBidOrderKeySpecifier = (
@@ -14860,6 +15246,10 @@ export type SwapQuoteFieldPolicy = {
   feeBps?: FieldPolicy<any> | FieldReadFunction<any>;
   rate?: FieldPolicy<any> | FieldReadFunction<any>;
   slippageBps?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type TelegramConnectionKeySpecifier = ('linkedOn' | TelegramConnectionKeySpecifier)[];
+export type TelegramConnectionFieldPolicy = {
+  linkedOn?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type TopHoldersInfoKeySpecifier = (
   | 'anonymousHolders'
@@ -15862,9 +16252,17 @@ export type StrictTypedTypePolicies = {
       | (() => undefined | AuctionWonNotificationKeySpecifier);
     fields?: AuctionWonNotificationFieldPolicy;
   };
+  BestOffer?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?: false | BestOfferKeySpecifier | (() => undefined | BestOfferKeySpecifier);
+    fields?: BestOfferFieldPolicy;
+  };
   Bid?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | BidKeySpecifier | (() => undefined | BidKeySpecifier);
     fields?: BidFieldPolicy;
+  };
+  BidBudget?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?: false | BidBudgetKeySpecifier | (() => undefined | BidBudgetKeySpecifier);
+    fields?: BidBudgetFieldPolicy;
   };
   BidConnection?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | BidConnectionKeySpecifier | (() => undefined | BidConnectionKeySpecifier);
@@ -16748,6 +17146,10 @@ export type StrictTypedTypePolicies = {
       | (() => undefined | NotificationPreferenceKeySpecifier);
     fields?: NotificationPreferenceFieldPolicy;
   };
+  OffChainSale?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?: false | OffChainSaleKeySpecifier | (() => undefined | OffChainSaleKeySpecifier);
+    fields?: OffChainSaleFieldPolicy;
+  };
   Offer?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | OfferKeySpecifier | (() => undefined | OfferKeySpecifier);
     fields?: OfferFieldPolicy;
@@ -16784,6 +17186,20 @@ export type StrictTypedTypePolicies = {
   OfferValidator?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | OfferValidatorKeySpecifier | (() => undefined | OfferValidatorKeySpecifier);
     fields?: OfferValidatorFieldPolicy;
+  };
+  OpenSeaListingResult?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | OpenSeaListingResultKeySpecifier
+      | (() => undefined | OpenSeaListingResultKeySpecifier);
+    fields?: OpenSeaListingResultFieldPolicy;
+  };
+  OpenSeaListingTerms?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | OpenSeaListingTermsKeySpecifier
+      | (() => undefined | OpenSeaListingTermsKeySpecifier);
+    fields?: OpenSeaListingTermsFieldPolicy;
   };
   Order?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | OrderKeySpecifier | (() => undefined | OrderKeySpecifier);
@@ -17088,6 +17504,13 @@ export type StrictTypedTypePolicies = {
   SwapQuote?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | SwapQuoteKeySpecifier | (() => undefined | SwapQuoteKeySpecifier);
     fields?: SwapQuoteFieldPolicy;
+  };
+  TelegramConnection?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | TelegramConnectionKeySpecifier
+      | (() => undefined | TelegramConnectionKeySpecifier);
+    fields?: TelegramConnectionFieldPolicy;
   };
   TopHoldersInfo?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | TopHoldersInfoKeySpecifier | (() => undefined | TopHoldersInfoKeySpecifier);
@@ -17576,6 +17999,12 @@ export const PublishBulkOrdersDocument = gql`
           signature
           marketPlaceAddress
           evmOrder
+        }
+        openSeaListings {
+          contractAddress
+          tokenId
+          orderHash
+          error
         }
       }
     }
