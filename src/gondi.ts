@@ -303,7 +303,7 @@ export class Gondi {
     skipSave?: boolean,
     publication?: LoanOfferPublicationInput,
   ) {
-    const contract = this.contracts.Msl(mslContractAddress ?? this.getDefaults().Msl);
+    const contract = this.contracts.Msl(mslContractAddress ?? this.offerContractAddress());
     const contractAddress = contract.address;
 
     const publicationKey = this.publicationKey(offer, contractAddress, publication);
@@ -392,7 +392,7 @@ export class Gondi {
     publication?: LoanOfferPublicationInput,
   ) {
     const contractAddress = this.contracts.Msl(
-      mslContractAddress ?? this.getDefaults().Msl,
+      mslContractAddress ?? this.offerContractAddress(),
     ).address;
 
     const publicationKey = this.publicationKey(offer, contractAddress, publication);
@@ -454,7 +454,7 @@ export class Gondi {
     ) => Promise<{ offer: Omit<GenerateCollectionOfferHashMutation['offer'], '__typename'> }>;
     saveOffer: (signedOffer: TOffer & MakeOfferSignedFields) => Promise<TSaved>;
   }) {
-    const contract = this.contracts.Msl(mslContractAddress ?? this.getDefaults().Msl);
+    const contract = this.contracts.Msl(mslContractAddress ?? this.offerContractAddress());
 
     const baseOffer: MakeOfferInput = offer;
     const defaults: MakeOfferDefaults = {
@@ -1534,6 +1534,15 @@ export class Gondi {
     });
   }
 
+  /**
+   * The MultiSourceLoan address `makeSingleNftOffer`, `makeCollectionOffer` and
+   * `makeTraitOffer` sign for on the wallet's chain: the `to` a lender approves
+   * the principal for before publishing those offers.
+   */
+  offerContractAddress() {
+    return this.getDefaults().Msl;
+  }
+
   private getDefaults() {
     const contracts = getContracts(this.wallet.chain);
     return {
@@ -1722,31 +1731,31 @@ export class Gondi {
     return erc1155.contract.read.balanceOf([this.wallet.account.address, tokenId]);
   }
 
+  /** Whether the wallet has approved `to` as operator for every NFT of `nftAddress`. */
   async isApprovedNFTForAll({
     nftAddress,
     standard,
-    to: externalTo,
+    to,
   }: {
     nftAddress: Address;
     standard: Parameters<Contracts['Nft']>[1];
-    to?: Address;
+    to: Address;
   }) {
     const nft = this.contracts.Nft(nftAddress, standard);
-    const to = externalTo ?? this.getDefaults().Msl;
     return nft.contract.read.isApprovedForAll([this.account.address, to]);
   }
 
+  /** Approves `to`, the contract that will pull the NFT, as operator for all of `nftAddress`. */
   async approveNFTForAll({
     nftAddress,
     standard,
-    to: externalTo,
+    to,
   }: {
     nftAddress: Address;
     standard: Parameters<Contracts['Nft']>[1];
-    to?: Address;
+    to: Address;
   }) {
     const nft = this.contracts.Nft(nftAddress, standard);
-    const to = externalTo ?? this.getDefaults().Msl;
     const txHash = await nft.safeContractWrite.setApprovalForAll([to, true]);
 
     return {
@@ -1822,31 +1831,31 @@ export class Gondi {
     return buildTransferResult(txHash, (logs) => nft.parseEventLogs('Transfer', logs));
   }
 
+  /** Whether the wallet's allowance of `tokenAddress` to `to` covers `amount`. */
   async isApprovedToken({
     tokenAddress,
     amount,
-    to: externalTo,
+    to,
   }: {
     tokenAddress: Address;
     amount: bigint;
-    to?: Address;
+    to: Address;
   }) {
     const erc20 = this.contracts.ERC20(tokenAddress);
-    const to = externalTo ?? this.getDefaults().Msl;
     return (await erc20.contract.read.allowance([this.account.address, to])) >= amount;
   }
 
+  /** Approves `to`, the contract that will pull it, to spend `amount` (default unlimited). */
   async approveToken({
     tokenAddress,
     amount = model.MAX_NUMBER,
-    to: externalTo,
+    to,
   }: {
     tokenAddress: Address;
     amount?: bigint;
-    to?: Address;
+    to: Address;
   }) {
     const erc20 = this.contracts.ERC20(tokenAddress);
-    const to = externalTo ?? this.getDefaults().Msl;
     const txHash = await erc20.safeContractWrite.approve([to, amount]);
 
     return {
@@ -1862,15 +1871,9 @@ export class Gondi {
     };
   }
 
-  async currencyAllowance({
-    tokenAddress,
-    to: externalTo,
-  }: {
-    tokenAddress: Address;
-    to?: Address;
-  }) {
+  /** The wallet's allowance of `tokenAddress` to `to`. */
+  async currencyAllowance({ tokenAddress, to }: { tokenAddress: Address; to: Address }) {
     const erc20 = this.contracts.ERC20(tokenAddress);
-    const to = externalTo ?? this.getDefaults().Msl;
     return await erc20.contract.read.allowance([this.account.address, to]);
   }
 

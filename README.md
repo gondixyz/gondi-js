@@ -68,11 +68,12 @@ const wallet = createWalletClient({
   chain: mainnet,
 });
 const gondi = new Gondi({ wallet });
+const MSL = gondi.offerContractAddress(); // The loan contract makeCollectionOffer signs for on this chain.
 
 // 1. Let the loan contract pull the principal when a borrower takes the offer (onchain, once).
 const principalAmount = parseEther('1');
-if (!(await gondi.isApprovedToken({ tokenAddress: WETH, amount: principalAmount }))) {
-  const approval = await gondi.approveToken({ tokenAddress: WETH }); // Unlimited unless you pass `amount`.
+if (!(await gondi.isApprovedToken({ tokenAddress: WETH, amount: principalAmount, to: MSL }))) {
+  const approval = await gondi.approveToken({ tokenAddress: WETH, to: MSL }); // Unlimited unless you pass `amount`.
   await approval.waitTxInBlock();
 }
 

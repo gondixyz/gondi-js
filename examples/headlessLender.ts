@@ -15,13 +15,15 @@ const SECONDS_PER_DAY = 86_400n;
 async function main() {
   const lender = new Gondi({ wallet: wallets[0] });
   const principalAmount = parseEther('1');
+  const msl = lender.offerContractAddress();
 
   const isApproved = await lender.isApprovedToken({
     tokenAddress: testCurrency,
     amount: principalAmount,
+    to: msl,
   });
   if (!isApproved) {
-    const approval = await lender.approveToken({ tokenAddress: testCurrency });
+    const approval = await lender.approveToken({ tokenAddress: testCurrency, to: msl });
     await approval.waitTxInBlock();
   }
 
