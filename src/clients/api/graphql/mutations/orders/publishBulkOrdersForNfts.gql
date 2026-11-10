@@ -30,6 +30,12 @@ mutation publishBulkOrders($bulkInput: BulkNFTOrdersInput!) {
         marketPlaceAddress
         evmOrder
       }
+      openSeaListings {
+        contractAddress
+        tokenId
+        orderHash
+        error
+      }
     }
   }
 }

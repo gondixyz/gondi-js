@@ -1,3 +1,21 @@
+# New Features 0.58.0
+
+## Important
+
+No breaking changes. Bulk asks can be listed on OpenSea under the same signature.
+
+## Table of Contents
+
+- [List bulk asks on OpenSea](#list-bulk-asks-on-opensea)
+
+## List bulk asks on OpenSea
+
+**Description:**
+
+- NEW: `makeOrdersOnOpenSea(orders)` publishes the batch like `makeOrders` and lists each ask on OpenSea too, with one signature. It returns `{ orders, openSeaListings }`, with one `openSeaListings` entry per ask: its `orderHash` once OpenSea took it, or the `error` saying why not.
+- Public asks on Ethereum only. The owner must have approved OpenSea's conduit for each collection. A refusal never touches the GONDI ask.
+- `makeOrders` is unchanged.
+
 # Bug Fixes 0.57.1
 
 ## Important

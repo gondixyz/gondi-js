@@ -545,17 +545,32 @@ export class Gondi {
   }
 
   async makeOrders(orders: SingleNftOrderInput[]) {
-    const bulkInput: BulkNftOrdersInput = { orders };
+    const { orders: publishedOrders } = await this.publishBulkOrders({ orders });
+    return publishedOrders;
+  }
+
+  /**
+   * Publishes `orders` like `makeOrders` and lists each one on OpenSea too, under the same
+   * signature. Public asks on Ethereum only; the owner must have approved OpenSea's conduit for
+   * each collection. A refusal never touches the GONDI ask: `openSeaListings` holds one entry per
+   * ask, with its `orderHash` once OpenSea took it, or the `error` saying why it did not.
+   */
+  async makeOrdersOnOpenSea(orders: SingleNftOrderInput[]) {
+    return this.publishBulkOrders({ orders, listOnOpenSea: true });
+  }
+
+  /** Publishes the batch, signing the typed data the API answers with when it asks for it. */
+  private async publishBulkOrders(bulkInput: BulkNftOrdersInput) {
     let response = await this.apiClient.publishBulkOrders(bulkInput);
 
     if (response.__typename === 'SignatureRequest') {
       const signature = await this.wallet.signTypedData(response.typedData as TypedDataDefinition);
-      response = await this.apiClient.publishBulkOrders({ orders, signature });
+      response = await this.apiClient.publishBulkOrders({ ...bulkInput, signature });
     }
 
     if (response.__typename !== 'BulkNFTOrdersResult') throw new Error('This should never happen');
 
-    return response.orders;
+    return response;
   }
 
   async makeDeal(dealInput: DealInput) {
