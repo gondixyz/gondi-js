@@ -61,6 +61,21 @@ export class AllV4 extends BaseContract<typeof auctionLoanLiquidatorABIV4> {
     });
   }
 
+  /**
+   * Whether this liquidator records an auction on the collateral; settling deletes it, which
+   * leaves a zero `startTime`.
+   */
+  async hasAuction({
+    collectionContractAddress,
+    tokenId,
+  }: {
+    collectionContractAddress: Address;
+    tokenId: bigint;
+  }) {
+    const auction = await this.contract.read.getAuction([collectionContractAddress, tokenId]);
+    return auction.startTime !== 0n;
+  }
+
   async placeBid({
     collectionContractAddress,
     tokenId,

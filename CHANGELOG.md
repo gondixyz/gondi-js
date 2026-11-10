@@ -1,3 +1,24 @@
+# Bug Fixes 0.57.1
+
+## Important
+
+Bids and settlements go to the liquidator running the auction, even after the loan contract's liquidator has been rotated. Existing calls keep working.
+
+## Table of Contents
+
+- [Auctions use their own liquidator](#auctions-use-their-own-liquidator)
+
+## Auctions use their own liquidator
+
+**Description:**
+
+- FIX: `gondi.placeBid`, `gondi.settleAuction` and `gondi.settleAuctionWithBuyout` send the transaction to the collateral's current owner, which is the liquidator the auction was started on, instead of the address book's current liquidator for the loan contract's version. An auction started before a liquidator rotation was sent to the new liquidator, where it does not exist. When the collateral's owner records no running auction on it (the auction already settled, or the loan was foreclosed to the lender), they throw `No running auction` before simulating anything, instead of sending a transaction to the new owner.
+- NEW: `contracts.AllForCollateral({ mslContractAddress, collectionContractAddress, tokenId })` returns the liquidator holding the collateral, and `contracts.All` takes an optional liquidator `address`. Every liquidator wrapper gets `hasAuction({ collectionContractAddress, tokenId })`.
+
+**Migration Steps:**
+
+- None.
+
 # Breaking Changes 0.57.0
 
 ## Important

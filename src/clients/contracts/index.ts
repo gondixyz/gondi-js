@@ -111,20 +111,63 @@ export class Contracts {
   }
 
   /**
-   *
-   * @param contractAddress The contract address of the MSL contract
+   * @param mslContractAddress The contract address of the MSL contract
+   * @param address The liquidator's address; defaults to the address book's current entry for
+   * the MSL version, which is not the liquidator of an auction started before a rotation
+   * (use `AllForCollateral` for those)
    * @returns The corresponding AuctionLoanLiquidator contract
    */
-  All(mslContractAddress: Address) {
+  All(mslContractAddress: Address, address?: Address) {
     const version = getVersionFromMslAddress(this.walletClient.chain, mslContractAddress);
     const All = this._Alls[version];
     const contracts = getContracts(this.walletClient.chain);
 
     return new All({
       walletClient: this.walletClient,
-      address: contracts.AuctionLoanLiquidator[version],
+      address: address ?? contracts.AuctionLoanLiquidator[version],
       publicClient: this.publicClient,
     });
+  }
+
+  /**
+   * The AuctionLoanLiquidator running the auction on a loan's collateral.
+   *
+   * An MSL can rotate its liquidator, so the address book only names the current one. The MSL
+   * transfers the ERC721 collateral to its liquidator when the auction starts, and the
+   * liquidator keeps it until the auction settles, so the collateral's owner is the liquidator
+   * of the running auction, before or after a rotation.
+   *
+   * Once the auction settles, or when the loan was foreclosed to the lender instead, the owner is
+   * an account that is not running an auction on it, so the owner must still record one: a write
+   * with no outputs simulates as a success against an account without code and would broadcast.
+   *
+   * @param mslContractAddress The contract address of the loan's MSL contract
+   * @param collectionContractAddress The collateral's collection
+   * @param tokenId The collateral's token id
+   * @throws When the collateral's owner records no auction on it
+   */
+  async AllForCollateral({
+    mslContractAddress,
+    collectionContractAddress,
+    tokenId,
+  }: {
+    mslContractAddress: Address;
+    collectionContractAddress: Address;
+    tokenId: bigint;
+  }) {
+    const liquidator = await this.ERC721(collectionContractAddress).contract.read.ownerOf([
+      tokenId,
+    ]);
+    const auctionLoanLiquidator = this.All(mslContractAddress, liquidator);
+    const hasAuction = await auctionLoanLiquidator
+      .hasAuction({ collectionContractAddress, tokenId })
+      .catch(() => false);
+    if (!hasAuction) {
+      throw new Error(
+        `No running auction for ${collectionContractAddress} #${tokenId}: its owner ${liquidator} records none`,
+      );
+    }
+    return auctionLoanLiquidator;
   }
 
   /**
