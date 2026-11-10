@@ -1,3 +1,47 @@
+# Breaking Changes 0.56.0
+
+## Important
+
+The approval helpers no longer guess the spender: `to` is required. Calls that already pass `to` are unchanged.
+
+## Table of Contents
+
+- [Approval helpers require the spender](#approval-helpers-require-the-spender)
+
+## Approval helpers require the spender
+
+**Description:**
+
+- BREAKING: `isApprovedToken`, `approveToken`, `currencyAllowance`, `isApprovedNFTForAll` and `approveNFTForAll` take `to` as a required parameter. Without it they used to fall back to MultiSourceLoan 3.1.
+- NEW: `offerContractAddress()` returns the MultiSourceLoan address the offer methods sign for on the wallet's chain.
+
+**Reason:**
+
+The spender depends on the call the approval is for: `repayLoan` pulls from `loan.contractAddress`, which can be any MultiSourceLoan version, a buy now pay later purchase pulls from its PurchaseBundler, and Seaport orders from Seaport. The read and the write helpers shared the same 3.1 default, so a check-then-approve guard reported success while the real spender stayed unapproved, `approveToken` granted 3.1 an unlimited allowance it did not need, and the later transaction reverted on allowance with no hint which contract was short.
+
+**Migration Steps:**
+
+- Pass the contract that will pull the tokens or the NFT. For a repayment, that is the loan's contract:
+
+```typescript
+if (!(await gondi.isApprovedToken({ tokenAddress, amount, to: loan.contractAddress }))) {
+  const approval = await gondi.approveToken({ tokenAddress, amount, to: loan.contractAddress });
+  await approval.waitTxInBlock();
+}
+```
+
+- For offers made with `makeSingleNftOffer`, `makeCollectionOffer` or `makeTraitOffer`, pass the new `offerContractAddress()`: the MultiSourceLoan contract those offers sign for on the wallet's chain, and the address the previous default resolved to. The address differs per chain, so do not hardcode it:
+
+```typescript
+const to = gondi.offerContractAddress();
+if (!(await gondi.isApprovedToken({ tokenAddress, amount, to }))) {
+  const approval = await gondi.approveToken({ tokenAddress, to });
+  await approval.waitTxInBlock();
+}
+```
+
+- JavaScript callers get no compile error: a call that still omits `to` now fails at runtime instead of approving MultiSourceLoan 3.1.
+
 # New Features 0.55.0
 
 ## Important
