@@ -78,7 +78,7 @@ describe('transferPunkToStash721', () => {
   test('refuses a punk already in the Stash', async () => {
     heldBy(STASH);
 
-    await expect(gondi.transferPunkToStash721({ tokenId: TOKEN_ID })).rejects.toThrow('stash');
+    await expect(gondi.transferPunkToStash721({ tokenId: TOKEN_ID })).rejects.toThrow('(stash)');
   });
 });
 
@@ -92,7 +92,7 @@ describe('wrapPunk721', () => {
   });
 
   test('refuses a punk the wallet still holds', async () => {
-    await expect(gondi.wrapPunk721({ tokenId: TOKEN_ID })).rejects.toThrow('wallet');
+    await expect(gondi.wrapPunk721({ tokenId: TOKEN_ID })).rejects.toThrow('(wallet)');
   });
 
   test('waitTxInBlock rejects with the hash when the wrap reverts', async () => {
@@ -124,7 +124,7 @@ describe('unwrapPunk721', () => {
   ] as const)('refuses a punk in the %s state', async (state, holder) => {
     heldBy(holder);
 
-    await expect(gondi.unwrapPunk721({ tokenId: TOKEN_ID })).rejects.toThrow(state);
+    await expect(gondi.unwrapPunk721({ tokenId: TOKEN_ID })).rejects.toThrow(`(${state})`);
     expect(unwrapPunk).not.toHaveBeenCalled();
   });
 
@@ -132,7 +132,7 @@ describe('unwrapPunk721', () => {
     heldBy(WRAPPER);
     ownerOf.mockImplementation(async () => STRANGER);
 
-    await expect(gondi.unwrapPunk721({ tokenId: TOKEN_ID })).rejects.toThrow('other');
+    await expect(gondi.unwrapPunk721({ tokenId: TOKEN_ID })).rejects.toThrow('(other)');
     expect(unwrapPunk).not.toHaveBeenCalled();
   });
 
