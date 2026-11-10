@@ -1,7 +1,12 @@
-import { afterAll, beforeAll, describe, expect, setSystemTime, test } from 'bun:test';
+import { afterAll, beforeAll, describe, expect, mock, setSystemTime, test } from 'bun:test';
+import { gql } from 'graphql-tag';
 import { SiweMessage } from 'siwe';
 
 import { buildSiweMessage } from '@/clients/api/siwe';
+import { Wallet } from '@/clients/contracts';
+
+mock.module('@/clients/api/client', () => ({ apolloClient: () => ({}) }));
+const { SessionToken } = await import('@/clients/api/auth');
 
 describe('buildSiweMessage', () => {
   beforeAll(() => {
@@ -83,5 +88,56 @@ describe('buildSiweMessage', () => {
 
     expect(() => buildSiweMessage({ ...base, address })).toThrow();
     expect(() => new SiweMessage({ ...base, address })).toThrow();
+  });
+});
+
+describe('SessionToken', () => {
+  const wallet = {} as Wallet;
+
+  test('signs in once for requests that start before the first sign-in finishes', async () => {
+    const requestToken = mock(async () => 'token');
+    const session = new SessionToken({ wallet, requestToken });
+
+    const requests = await Promise.all(
+      [1, 2, 3].map(() =>
+        session.authorizeRequest({
+          query: gql`
+            {
+              a
+            }
+          `,
+        }),
+      ),
+    );
+
+    expect(requestToken).toHaveBeenCalledTimes(1);
+    expect(requests.map((request) => request.headers)).toEqual(
+      Array(3).fill({ authorization: 'Bearer token' }),
+    );
+  });
+
+  test('signs in again after a failed sign-in', async () => {
+    const requestToken = mock(async () => 'token');
+    requestToken.mockRejectedValueOnce(new Error('SIWE_ERROR'));
+    const session = new SessionToken({ wallet, requestToken });
+
+    await expect(
+      session.authorizeRequest({
+        query: gql`
+          {
+            a
+          }
+        `,
+      }),
+    ).rejects.toThrow('SIWE_ERROR');
+    await session.authorizeRequest({
+      query: gql`
+        {
+          a
+        }
+      `,
+    });
+
+    expect(requestToken).toHaveBeenCalledTimes(2);
   });
 });

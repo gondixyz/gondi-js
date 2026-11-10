@@ -52,6 +52,8 @@ import {
   OffersSortField,
   OfferValidatorInput,
   Ordering,
+  OrderSortField,
+  OrderStatusType,
   SingleNftOrderInput,
   SingleNftSignedOfferInput,
   TokenStandardType,
@@ -1439,6 +1441,70 @@ export class Gondi {
       }
       return result.collections.map((collection) => Number(collection.id));
     }
+  }
+
+  /**
+   * Lists trade orders — bids and listings — across the marketplaces GONDI indexes, newest first
+   * unless `sortBy` says otherwise. Only active orders unless `statuses` is given.
+   *
+   * @returns One page of orders, with the cursor of the next one.
+   */
+  async orders({
+    side,
+    collections,
+    traits,
+    nfts,
+    makers,
+    excludeMakers,
+    currencies,
+    statuses = [OrderStatusType.Active],
+    matchMode,
+    orderTypes,
+    sortBy = [{ field: OrderSortField.CreatedDate, order: Ordering.Desc }],
+    limit = 20,
+    cursor,
+  }: model.ListOrdersProps) {
+    return this.apiClient.listOrders({
+      side,
+      collectionIds: collections,
+      traitIds: traits,
+      nfts,
+      maker: makers,
+      excludeMaker: excludeMakers,
+      currencyAddresses: currencies,
+      statuses,
+      matchMode,
+      orderTypes,
+      sortBy,
+      first: limit,
+      after: cursor,
+    });
+  }
+
+  /**
+   * Reads what pricing and placing a bid or a listing on a collection needs: its id and contract
+   * address, the Seaport conduit key its listings are approved through (zero for Seaport itself),
+   * its floor (the cheapest active listing in `currencies`, any currency when omitted), its highest
+   * bid that any item can fill, and its royalties (`required` ones must be paid as listing fees).
+   *
+   * Looks the collection up by slug, the lookup the API answers fastest.
+   *
+   * @throws Error when no collection has `slug`.
+   */
+  async collectionMarket({ slug, currencies }: { slug: string; currencies?: Address[] }) {
+    const collection = await this.apiClient.collectionMarket({
+      slug,
+      currencyAddresses: currencies,
+    });
+    if (!collection) throw new Error(`invalid collection ${slug}`);
+    return {
+      collectionId: Number(collection.id),
+      contractAddress: collection.contractData.contractAddress,
+      seaportConduitKey: collection.seaportConduitKey,
+      floorPrice: collection.statistics.minAskPrice ?? null,
+      highestBid: collection.statistics.highestApplicableBid ?? null,
+      royalties: collection.royalties,
+    };
   }
 
   async collectionStepsById(props: { collectionId: number }) {

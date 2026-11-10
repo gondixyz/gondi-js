@@ -7441,6 +7441,170 @@ export type CurrencyAmountInfoFragment = {
 
 export type CurrencyInfoFragment = { __typename?: 'Currency'; address: Address; decimals: number };
 
+type MarketOrderInfo_BuyNowPayLaterOrder_Fragment = {
+  __typename: 'BuyNowPayLaterOrder';
+  id: string;
+  price: bigint;
+  steppedPrice?: bigint | null;
+  currencyAddress: Address;
+  maker: Address;
+  isAsk: boolean;
+  status: string;
+  startTime: Date;
+  expiration: Date;
+  executions: number;
+  maxExecutions: number;
+  cancelsOffChain: boolean;
+  marketPlace: string;
+  marketPlaceAddress: Address;
+};
+
+type MarketOrderInfo_CollectionOrder_Fragment = {
+  __typename: 'CollectionOrder';
+  collectionId: number;
+  id: string;
+  price: bigint;
+  steppedPrice?: bigint | null;
+  currencyAddress: Address;
+  maker: Address;
+  isAsk: boolean;
+  status: string;
+  startTime: Date;
+  expiration: Date;
+  executions: number;
+  maxExecutions: number;
+  cancelsOffChain: boolean;
+  marketPlace: string;
+  marketPlaceAddress: Address;
+};
+
+type MarketOrderInfo_MultipleTraitOrder_Fragment = {
+  __typename: 'MultipleTraitOrder';
+  collectionId: number;
+  id: string;
+  price: bigint;
+  steppedPrice?: bigint | null;
+  currencyAddress: Address;
+  maker: Address;
+  isAsk: boolean;
+  status: string;
+  startTime: Date;
+  expiration: Date;
+  executions: number;
+  maxExecutions: number;
+  cancelsOffChain: boolean;
+  marketPlace: string;
+  marketPlaceAddress: Address;
+};
+
+type MarketOrderInfo_SellAndRepayOrder_Fragment = {
+  __typename: 'SellAndRepayOrder';
+  id: string;
+  price: bigint;
+  steppedPrice?: bigint | null;
+  currencyAddress: Address;
+  maker: Address;
+  isAsk: boolean;
+  status: string;
+  startTime: Date;
+  expiration: Date;
+  executions: number;
+  maxExecutions: number;
+  cancelsOffChain: boolean;
+  marketPlace: string;
+  marketPlaceAddress: Address;
+};
+
+type MarketOrderInfo_SetBidOrder_Fragment = {
+  __typename: 'SetBidOrder';
+  collectionId: number;
+  id: string;
+  price: bigint;
+  steppedPrice?: bigint | null;
+  currencyAddress: Address;
+  maker: Address;
+  isAsk: boolean;
+  status: string;
+  startTime: Date;
+  expiration: Date;
+  executions: number;
+  maxExecutions: number;
+  cancelsOffChain: boolean;
+  marketPlace: string;
+  marketPlaceAddress: Address;
+};
+
+type MarketOrderInfo_SingleNftOrder_Fragment = {
+  __typename: 'SingleNFTOrder';
+  id: string;
+  price: bigint;
+  steppedPrice?: bigint | null;
+  currencyAddress: Address;
+  maker: Address;
+  isAsk: boolean;
+  status: string;
+  startTime: Date;
+  expiration: Date;
+  executions: number;
+  maxExecutions: number;
+  cancelsOffChain: boolean;
+  marketPlace: string;
+  marketPlaceAddress: Address;
+  nft: {
+    __typename?: 'NFT';
+    id: string;
+    tokenId: bigint;
+    collection?: { __typename?: 'Collection'; id: string } | null;
+  };
+};
+
+type MarketOrderInfo_StealthMaskedOrder_Fragment = {
+  __typename: 'StealthMaskedOrder';
+  id: string;
+  price: bigint;
+  steppedPrice?: bigint | null;
+  currencyAddress: Address;
+  maker: Address;
+  isAsk: boolean;
+  status: string;
+  startTime: Date;
+  expiration: Date;
+  executions: number;
+  maxExecutions: number;
+  cancelsOffChain: boolean;
+  marketPlace: string;
+  marketPlaceAddress: Address;
+};
+
+type MarketOrderInfo_TraitOrder_Fragment = {
+  __typename: 'TraitOrder';
+  collectionId: number;
+  id: string;
+  price: bigint;
+  steppedPrice?: bigint | null;
+  currencyAddress: Address;
+  maker: Address;
+  isAsk: boolean;
+  status: string;
+  startTime: Date;
+  expiration: Date;
+  executions: number;
+  maxExecutions: number;
+  cancelsOffChain: boolean;
+  marketPlace: string;
+  marketPlaceAddress: Address;
+};
+
+export type MarketOrderInfoFragment =
+  | MarketOrderInfo_BuyNowPayLaterOrder_Fragment
+  | MarketOrderInfo_CollectionOrder_Fragment
+  | MarketOrderInfo_MultipleTraitOrder_Fragment
+  | MarketOrderInfo_SellAndRepayOrder_Fragment
+  | MarketOrderInfo_SetBidOrder_Fragment
+  | MarketOrderInfo_SingleNftOrder_Fragment
+  | MarketOrderInfo_StealthMaskedOrder_Fragment
+  | MarketOrderInfo_TraitOrder_Fragment;
+
 export type SaleOfferInfoFragment = {
   __typename?: 'SingleNFTOrder';
   id: string;
@@ -8108,6 +8272,183 @@ export type CollectionIdBySlugQuery = {
   collection?: { __typename?: 'Collection'; id: string } | null;
 };
 
+export type CollectionMarketQueryVariables = Exact<{
+  slug: Scalars['String'];
+  currencyAddresses?: InputMaybe<Array<Scalars['Address']> | Scalars['Address']>;
+}>;
+
+export type CollectionMarketQuery = {
+  __typename?: 'Query';
+  collection?: {
+    __typename?: 'Collection';
+    id: string;
+    seaportConduitKey: Hash;
+    contractData: { __typename?: 'ContractData'; contractAddress: Address };
+    royalties: Array<{
+      __typename?: 'Royalty';
+      beneficiary: Address;
+      percentage: number;
+      required: boolean;
+    }>;
+    statistics: {
+      __typename?: 'CollectionStatistics';
+      minAskPrice?: {
+        __typename?: 'BigIntCurrencyAmount';
+        amount: bigint;
+        currency: { __typename?: 'Currency'; address: Address };
+      } | null;
+      highestApplicableBid?:
+        | {
+            __typename: 'BuyNowPayLaterOrder';
+            id: string;
+            price: bigint;
+            steppedPrice?: bigint | null;
+            currencyAddress: Address;
+            maker: Address;
+            isAsk: boolean;
+            status: string;
+            startTime: Date;
+            expiration: Date;
+            executions: number;
+            maxExecutions: number;
+            cancelsOffChain: boolean;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+          }
+        | {
+            __typename: 'CollectionOrder';
+            collectionId: number;
+            id: string;
+            price: bigint;
+            steppedPrice?: bigint | null;
+            currencyAddress: Address;
+            maker: Address;
+            isAsk: boolean;
+            status: string;
+            startTime: Date;
+            expiration: Date;
+            executions: number;
+            maxExecutions: number;
+            cancelsOffChain: boolean;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+          }
+        | {
+            __typename: 'MultipleTraitOrder';
+            collectionId: number;
+            id: string;
+            price: bigint;
+            steppedPrice?: bigint | null;
+            currencyAddress: Address;
+            maker: Address;
+            isAsk: boolean;
+            status: string;
+            startTime: Date;
+            expiration: Date;
+            executions: number;
+            maxExecutions: number;
+            cancelsOffChain: boolean;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+          }
+        | {
+            __typename: 'SellAndRepayOrder';
+            id: string;
+            price: bigint;
+            steppedPrice?: bigint | null;
+            currencyAddress: Address;
+            maker: Address;
+            isAsk: boolean;
+            status: string;
+            startTime: Date;
+            expiration: Date;
+            executions: number;
+            maxExecutions: number;
+            cancelsOffChain: boolean;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+          }
+        | {
+            __typename: 'SetBidOrder';
+            collectionId: number;
+            id: string;
+            price: bigint;
+            steppedPrice?: bigint | null;
+            currencyAddress: Address;
+            maker: Address;
+            isAsk: boolean;
+            status: string;
+            startTime: Date;
+            expiration: Date;
+            executions: number;
+            maxExecutions: number;
+            cancelsOffChain: boolean;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+          }
+        | {
+            __typename: 'SingleNFTOrder';
+            id: string;
+            price: bigint;
+            steppedPrice?: bigint | null;
+            currencyAddress: Address;
+            maker: Address;
+            isAsk: boolean;
+            status: string;
+            startTime: Date;
+            expiration: Date;
+            executions: number;
+            maxExecutions: number;
+            cancelsOffChain: boolean;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+            nft: {
+              __typename?: 'NFT';
+              id: string;
+              tokenId: bigint;
+              collection?: { __typename?: 'Collection'; id: string } | null;
+            };
+          }
+        | {
+            __typename: 'StealthMaskedOrder';
+            id: string;
+            price: bigint;
+            steppedPrice?: bigint | null;
+            currencyAddress: Address;
+            maker: Address;
+            isAsk: boolean;
+            status: string;
+            startTime: Date;
+            expiration: Date;
+            executions: number;
+            maxExecutions: number;
+            cancelsOffChain: boolean;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+          }
+        | {
+            __typename: 'TraitOrder';
+            collectionId: number;
+            id: string;
+            price: bigint;
+            steppedPrice?: bigint | null;
+            currencyAddress: Address;
+            maker: Address;
+            isAsk: boolean;
+            status: string;
+            startTime: Date;
+            expiration: Date;
+            executions: number;
+            maxExecutions: number;
+            cancelsOffChain: boolean;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+          }
+        | null;
+    };
+  } | null;
+};
+
 export type CollectionStepsByIdQueryVariables = Exact<{
   collectionId: Scalars['Int'];
 }>;
@@ -8758,6 +9099,180 @@ export type GetSaleCalldataQueryVariables = Exact<{
 }>;
 
 export type GetSaleCalldataQuery = { __typename?: 'Query'; saleCalldata: Hex };
+
+export type ListOrdersQueryVariables = Exact<{
+  side?: InputMaybe<OrderSide>;
+  collectionIds?: InputMaybe<Array<Scalars['Int']> | Scalars['Int']>;
+  traitIds?: InputMaybe<Array<Scalars['Int']> | Scalars['Int']>;
+  nfts?: InputMaybe<Array<OrderForNft> | OrderForNft>;
+  maker?: InputMaybe<Array<Scalars['Address']> | Scalars['Address']>;
+  excludeMaker?: InputMaybe<Array<Scalars['Address']> | Scalars['Address']>;
+  currencyAddresses?: InputMaybe<Array<Scalars['Address']> | Scalars['Address']>;
+  statuses?: InputMaybe<Array<OrderStatusType> | OrderStatusType>;
+  matchMode?: OrderMatchMode;
+  orderTypes?: InputMaybe<Array<CollectionOrderType> | CollectionOrderType>;
+  sortBy?: InputMaybe<Array<OrderSortInput> | OrderSortInput>;
+  first?: InputMaybe<Scalars['Int']>;
+  after?: InputMaybe<Scalars['String']>;
+}>;
+
+export type ListOrdersQuery = {
+  __typename?: 'Query';
+  result: {
+    __typename?: 'OrderConnection';
+    pageInfo: { __typename?: 'PageInfo'; endCursor?: string | null; hasNextPage: boolean };
+    edges: Array<{
+      __typename?: 'OrderEdge';
+      node:
+        | {
+            __typename: 'BuyNowPayLaterOrder';
+            id: string;
+            price: bigint;
+            steppedPrice?: bigint | null;
+            currencyAddress: Address;
+            maker: Address;
+            isAsk: boolean;
+            status: string;
+            startTime: Date;
+            expiration: Date;
+            executions: number;
+            maxExecutions: number;
+            cancelsOffChain: boolean;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+          }
+        | {
+            __typename: 'CollectionOrder';
+            collectionId: number;
+            id: string;
+            price: bigint;
+            steppedPrice?: bigint | null;
+            currencyAddress: Address;
+            maker: Address;
+            isAsk: boolean;
+            status: string;
+            startTime: Date;
+            expiration: Date;
+            executions: number;
+            maxExecutions: number;
+            cancelsOffChain: boolean;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+          }
+        | {
+            __typename: 'MultipleTraitOrder';
+            collectionId: number;
+            id: string;
+            price: bigint;
+            steppedPrice?: bigint | null;
+            currencyAddress: Address;
+            maker: Address;
+            isAsk: boolean;
+            status: string;
+            startTime: Date;
+            expiration: Date;
+            executions: number;
+            maxExecutions: number;
+            cancelsOffChain: boolean;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+          }
+        | {
+            __typename: 'SellAndRepayOrder';
+            id: string;
+            price: bigint;
+            steppedPrice?: bigint | null;
+            currencyAddress: Address;
+            maker: Address;
+            isAsk: boolean;
+            status: string;
+            startTime: Date;
+            expiration: Date;
+            executions: number;
+            maxExecutions: number;
+            cancelsOffChain: boolean;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+          }
+        | {
+            __typename: 'SetBidOrder';
+            collectionId: number;
+            id: string;
+            price: bigint;
+            steppedPrice?: bigint | null;
+            currencyAddress: Address;
+            maker: Address;
+            isAsk: boolean;
+            status: string;
+            startTime: Date;
+            expiration: Date;
+            executions: number;
+            maxExecutions: number;
+            cancelsOffChain: boolean;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+          }
+        | {
+            __typename: 'SingleNFTOrder';
+            id: string;
+            price: bigint;
+            steppedPrice?: bigint | null;
+            currencyAddress: Address;
+            maker: Address;
+            isAsk: boolean;
+            status: string;
+            startTime: Date;
+            expiration: Date;
+            executions: number;
+            maxExecutions: number;
+            cancelsOffChain: boolean;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+            nft: {
+              __typename?: 'NFT';
+              id: string;
+              tokenId: bigint;
+              collection?: { __typename?: 'Collection'; id: string } | null;
+            };
+          }
+        | {
+            __typename: 'StealthMaskedOrder';
+            id: string;
+            price: bigint;
+            steppedPrice?: bigint | null;
+            currencyAddress: Address;
+            maker: Address;
+            isAsk: boolean;
+            status: string;
+            startTime: Date;
+            expiration: Date;
+            executions: number;
+            maxExecutions: number;
+            cancelsOffChain: boolean;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+          }
+        | {
+            __typename: 'TraitOrder';
+            collectionId: number;
+            id: string;
+            price: bigint;
+            steppedPrice?: bigint | null;
+            currencyAddress: Address;
+            maker: Address;
+            isAsk: boolean;
+            status: string;
+            startTime: Date;
+            expiration: Date;
+            executions: number;
+            maxExecutions: number;
+            cancelsOffChain: boolean;
+            marketPlace: string;
+            marketPlaceAddress: Address;
+          };
+    }>;
+  };
+};
 
 export type PreviewItemLoanOfferCompetitionQueryVariables = Exact<{
   offerInput: SingleNftOfferInput;
@@ -16800,6 +17315,46 @@ export const CurrencyAmountInfoFragmentDoc = gql`
   }
   ${CurrencyInfoFragmentDoc}
 `;
+export const MarketOrderInfoFragmentDoc = gql`
+  fragment MarketOrderInfo on Order {
+    __typename
+    id
+    price
+    steppedPrice
+    currencyAddress
+    maker
+    isAsk
+    status
+    startTime
+    expiration
+    executions
+    maxExecutions
+    cancelsOffChain
+    marketPlace
+    marketPlaceAddress
+    ... on SingleNFTOrder {
+      nft {
+        id
+        tokenId
+        collection {
+          id
+        }
+      }
+    }
+    ... on CollectionOrder {
+      collectionId
+    }
+    ... on TraitOrder {
+      collectionId
+    }
+    ... on MultipleTraitOrder {
+      collectionId
+    }
+    ... on SetBidOrder {
+      collectionId
+    }
+  }
+`;
 export const SaleOfferInfoFragmentDoc = gql`
   fragment SaleOfferInfo on SingleNFTOrder {
     id
@@ -17343,6 +17898,34 @@ export const CollectionIdBySlugDocument = gql`
     }
   }
 `;
+export const CollectionMarketDocument = gql`
+  query collectionMarket($slug: String!, $currencyAddresses: [Address!]) {
+    collection: getCollectionBySlug(slug: $slug) {
+      id
+      seaportConduitKey
+      contractData {
+        contractAddress
+      }
+      royalties {
+        beneficiary
+        percentage
+        required
+      }
+      statistics {
+        minAskPrice(currencyAddresses: $currencyAddresses) {
+          amount
+          currency {
+            address
+          }
+        }
+        highestApplicableBid {
+          ...MarketOrderInfo
+        }
+      }
+    }
+  }
+  ${MarketOrderInfoFragmentDoc}
+`;
 export const CollectionStepsByIdDocument = gql`
   query collectionStepsById($collectionId: Int!) {
     steps: getCollectionOfferSteps(collectionId: $collectionId) {
@@ -17767,6 +18350,50 @@ export const GetSaleCalldataDocument = gql`
     saleCalldata: getOrderSaleCalldata(orderIdInt64: $orderId, nftId: $nftId, taker: $taker)
   }
 `;
+export const ListOrdersDocument = gql`
+  query listOrders(
+    $side: OrderSide
+    $collectionIds: [Int!]
+    $traitIds: [Int!]
+    $nfts: [OrderForNft!]
+    $maker: [Address!]
+    $excludeMaker: [Address!]
+    $currencyAddresses: [Address!]
+    $statuses: [OrderStatusType!]
+    $matchMode: OrderMatchMode! = ALL
+    $orderTypes: [CollectionOrderType!]
+    $sortBy: [OrderSortInput!]
+    $first: Int = 20
+    $after: String
+  ) {
+    result: listOrdersV2(
+      side: $side
+      collectionIds: $collectionIds
+      traitIds: $traitIds
+      nfts: $nfts
+      maker: $maker
+      excludeMaker: $excludeMaker
+      currencyAddresses: $currencyAddresses
+      statuses: $statuses
+      matchMode: $matchMode
+      orderTypes: $orderTypes
+      sortBy: $sortBy
+      first: $first
+      after: $after
+    ) {
+      pageInfo {
+        endCursor
+        hasNextPage
+      }
+      edges {
+        node {
+          ...MarketOrderInfo
+        }
+      }
+    }
+  }
+  ${MarketOrderInfoFragmentDoc}
+`;
 export const PreviewItemLoanOfferCompetitionDocument = gql`
   query previewItemLoanOfferCompetition(
     $offerInput: SingleNFTOfferInput!
@@ -18117,6 +18744,16 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
         options,
       ) as Promise<CollectionIdBySlugQuery>;
     },
+    collectionMarket(
+      variables: CollectionMarketQueryVariables,
+      options?: C,
+    ): Promise<CollectionMarketQuery> {
+      return requester<CollectionMarketQuery, CollectionMarketQueryVariables>(
+        CollectionMarketDocument,
+        variables,
+        options,
+      ) as Promise<CollectionMarketQuery>;
+    },
     collectionStepsById(
       variables: CollectionStepsByIdQueryVariables,
       options?: C,
@@ -18220,6 +18857,13 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
         variables,
         options,
       ) as Promise<GetSaleCalldataQuery>;
+    },
+    listOrders(variables?: ListOrdersQueryVariables, options?: C): Promise<ListOrdersQuery> {
+      return requester<ListOrdersQuery, ListOrdersQueryVariables>(
+        ListOrdersDocument,
+        variables,
+        options,
+      ) as Promise<ListOrdersQuery>;
     },
     previewItemLoanOfferCompetition(
       variables: PreviewItemLoanOfferCompetitionQueryVariables,

@@ -3,12 +3,18 @@ import { Address, Hash } from 'viem';
 import { Signature } from '@/blockchain';
 import {
   CollectionOfferInput as ApiCollectionOfferInput,
+  CollectionOrderType,
   CollectionSignedOfferInput,
   LoanSortInput,
   LoanStatusType,
   MarketplaceEnum,
   OffersSortInput,
   OfferStatus,
+  OrderForNft,
+  OrderMatchMode,
+  OrderSide,
+  OrderSortInput,
+  OrderStatusType,
   RenegotiationOfferInput as ApiRenegotiationInput,
   SignedRenegotiationOfferInput,
   SingleNftOfferInput as ApiSingleNftOfferInput,
@@ -122,6 +128,28 @@ export type ListListingsProps = {
   collections?: number[];
   user?: UserFilter;
   marketPlaces?: MarketplaceEnum[];
+  limit?: number;
+  cursor?: string | null;
+};
+
+export type ListOrdersProps = {
+  side?: OrderSide;
+  collections?: number[];
+  traits?: number[];
+  nfts?: OrderForNft[];
+  makers?: Address[];
+  excludeMakers?: Address[];
+  currencies?: Address[];
+  /** Defaults to active orders only. */
+  statuses?: OrderStatusType[];
+  /**
+   * `ANY` lists every bid that can fill with an item of `collections` (or of `traits`' collection):
+   * item, trait, set and collection bids alike. Needs `side: BID`. Defaults to `ALL`.
+   */
+  matchMode?: OrderMatchMode;
+  /** Narrows `collections` (or `traits` under `ANY`) to these bid types, e.g. only collection bids. */
+  orderTypes?: CollectionOrderType[];
+  sortBy?: OrderSortInput[];
   limit?: number;
   cursor?: string | null;
 };

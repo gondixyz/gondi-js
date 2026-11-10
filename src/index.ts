@@ -1,10 +1,15 @@
 export { FlaggedNftError } from '@/errors';
 export { Gondi } from '@/gondi';
 export {
+  CollectionOrderType,
   LoanStatusType,
   OfferStatus,
   OffersSortField,
   Ordering,
+  OrderMatchMode,
+  OrderSide,
+  OrderSortField,
+  OrderStatusType,
   MarketplaceEnum,
   TokenStandardType,
 } from '@/generated/graphql';
