@@ -50,7 +50,7 @@ describe('bounded buyer funding', () => {
     expect(swap.args[0]).toBe('0x00');
   });
 
-  test('ERC20 v3.1 includes premium on the whole price with a partial WETH loan', async () => {
+  test('ERC20 v3.1 partial financing includes premium on price minus the listing-token payment', async () => {
     const quote = await quotePurchaseFunding({
       ...input,
       loanCurrency: WETH_ADDRESS,
@@ -65,7 +65,7 @@ describe('bounded buyer funding', () => {
         }),
       } as never,
     });
-    expect(quote.initialPayment).toBe(1_516_500_000n);
+    expect(quote.initialPayment).toBe(1_515_742_129n);
   });
 
   test('same-currency native partial financing rounds premium up', async () => {

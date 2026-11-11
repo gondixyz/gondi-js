@@ -108,7 +108,7 @@ describe('PurchaseBundlerV2.executeSellWithLoan', () => {
     expect(options).toEqual({ value: initialPayment });
   });
 
-  test('borrows the listing currency at full price for an ERC20 listing', async () => {
+  test('borrows the listing currency net of the initial payment for an ERC20 listing', async () => {
     const { bundler, executeSellWithLoan } = bundlerFor(USDC_ADDRESS);
     await bundler.executeSellWithLoan({
       ...sellWithLoan,
@@ -117,7 +117,7 @@ describe('PurchaseBundlerV2.executeSellWithLoan', () => {
     });
     const [[args], options] = executeSellWithLoan.mock.calls[0] as [[unknown], unknown];
     expect(args).toMatchObject({
-      borrowArgs: { pool: Aave, assets: [USDC_ADDRESS], amounts: [price] },
+      borrowArgs: { pool: Aave, assets: [USDC_ADDRESS], amounts: [price - initialPayment] },
       executeSellArgs: {
         currencies: [USDC_ADDRESS],
         currencyAmounts: [price],

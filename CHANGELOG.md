@@ -1,3 +1,21 @@
+# Bug Fixes 0.58.1
+
+## Important
+
+An ERC20 buy with a loan of a listed loan (the flash route) now pays the Aave flash-loan premium on the amount it borrows, not on the whole price. Existing calls keep working.
+
+## Table of Contents
+
+- [Flash route borrows net of the initial payment](#flash-route-borrows-net-of-the-initial-payment)
+
+## Flash route borrows net of the initial payment
+
+**Description:**
+
+- FIX: `PurchaseBundlerV2.executeSellWithLoan` flash-borrows `price - initialPayment` for an ERC20 listing, as it already did for ETH, instead of the whole price. The buyer's initial payment is collected when the sale runs. On a 100,000 USDC purchase with a 40,000 USDC initial payment, the premium is 30 USDC instead of 50, and the route needs less Aave liquidity.
+- FIX: `gondi.quoteBuyWithLoan` quotes the flash route's `initialPayment` and `approvalCaps` with the premium on the borrowed amount, so an ERC20 quote asks for slightly less.
+- `gondi.buyNowPayLater` on the flash route collects `initialPayment` in the listing currency when the sale runs, so the wallet must hold and approve that amount in the listing currency, including when `repayFlashLoanSwapParams` converts another currency. Anything the swap brings in beyond the repayment is refunded at the end, as before.
+
 # New Features 0.58.0
 
 ## Important

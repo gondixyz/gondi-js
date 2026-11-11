@@ -451,7 +451,7 @@ test('quotes a v3.1 seller loan through the flash route with the premium in the 
     marketplace,
   ]);
   expect([quote.initialPayment, quote.loanSwapData, quote.execution.callbackData]).toEqual([
-    1_001_500_000n,
+    1_000_999_501n,
     '0x',
     '0x',
   ]);

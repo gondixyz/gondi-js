@@ -166,6 +166,12 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
     };
   }
 
+  /**
+   * Buys a listed loan's NFT with a new loan through an Aave flash loan of `price - initialPayment`
+   * in the purchase currency (WETH for ETH). The buyer funds `initialPayment` as `value` for ETH; for
+   * an ERC20 the bundler collects it from the buyer when the sale runs. The flash repayment and its
+   * premium are pulled from the buyer, who has just received the new loan's principal.
+   */
   async executeSellWithLoan({
     repaymentCalldata,
     emitCalldata,
@@ -200,7 +206,7 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
           borrowArgs: {
             pool: Aave,
             assets: native ? [getCurrencies(this.wallet.chain).WETH_ADDRESS] : [purchaseCurrency],
-            amounts: native ? [price - initialPayment] : [price], // TODO: This could be improved to be price-initialPayment everytime
+            amounts: [price - initialPayment],
           },
           executeSellArgs: {
             currencies: native ? [] : [purchaseCurrency],
