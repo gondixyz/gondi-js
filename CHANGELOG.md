@@ -1,3 +1,35 @@
+# New Features 0.59.0
+
+## Important
+
+`createUserVault` now reports a deposit that fails after the vault is minted with a `CreateVaultError` that carries the new vault's id, so the caller can finish depositing into that vault instead of losing it.
+
+## Table of Contents
+
+- [createUserVault keeps the vault id when a deposit fails](#createuservault-keeps-the-vault-id-when-a-deposit-fails)
+
+## createUserVault keeps the vault id when a deposit fails
+
+**Description:**
+
+- NEW: `CreateVaultError`, exported from the package root, with `vaultId` (the minted vault), `receipts` (the deposits already mined) and `cause` (the error of the deposit that failed).
+- FIX: `gondi.createUserVault` throws a `CreateVaultError` when a deposit after the mint fails. It used to rethrow the deposit's error alone, so the caller lost the id of a vault that already existed on-chain.
+- FIX: `gondi.createUserVault` groups NFTs by collection case-insensitively, so one collection written in two cases (for example lowercase and checksummed) is deposited in one transaction instead of two.
+
+**Migration Steps:**
+
+- A caller that matched the deposit's error message now finds that error at `error.cause`. To resume after a failed deposit:
+
+```typescript
+try {
+  await gondi.createUserVault({ nfts, currencies });
+} catch (error) {
+  if (!(error instanceof CreateVaultError)) throw error;
+  // error.vaultId exists on-chain; deposit what is missing with gondi.depositUserVaultERC721s,
+  // gondi.depositUserVaultERC1155s or gondi.depositUserVaultERC20.
+}
+```
+
 # Bug Fixes 0.58.8
 
 ## Important
