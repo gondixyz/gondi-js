@@ -590,7 +590,9 @@ export class Gondi {
    * Publishes `orders` like `makeOrders` and lists each one on OpenSea too, under the same
    * signature. Public asks on Ethereum only; the owner must have approved OpenSea's conduit for
    * each collection. A refusal never touches the GONDI ask: `openSeaListings` holds one entry per
-   * ask, with its `orderHash` once OpenSea took it, or the `error` saying why it did not.
+   * ask, with its `orderHash` once OpenSea took it, or the `error` saying why it did not. An
+   * order's `openSeaPrice`, at least its `price`, prices its OpenSea listing on its own, so the
+   * seller can receive there what they do on GONDI after OpenSea's higher fees.
    */
   async makeOrdersOnOpenSea(orders: SingleNftOrderInput[]) {
     return this.publishBulkOrders({ orders, listOnOpenSea: true });
