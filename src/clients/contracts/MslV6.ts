@@ -27,6 +27,7 @@ import { multiSourceLoanAbi as multiSourceLoanAbiV6 } from '@/generated/blockcha
 import { multiSourceLoanAbi as multiSourceLoanAbiV7 } from '@/generated/blockchain/v7';
 import { multiSourceLoanAbi as multiSourceLoanAbiV8 } from '@/generated/blockchain/v8';
 import { EmitLoanArgs } from '@/gondi';
+import { waitForSucceededReceipt } from '@/utils/blockchain';
 import { millisToSeconds, SECONDS_IN_DAY, secondsToMillis } from '@/utils/dates';
 import { delegationRevocations, LoanDelegation } from '@/utils/delegation';
 import { getMslLoanId, getRemainingSeconds, LoanToMslLoanType } from '@/utils/loan';
@@ -222,9 +223,7 @@ export class MslV6 extends BaseContract<
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
 
         const events = this.parseEventLogs('OfferCancelled', receipt.logs);
         if (events.length === 0) throw new Error('Offer not cancelled');
@@ -241,7 +240,7 @@ export class MslV6 extends BaseContract<
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({ hash: txHash });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('OfferCancelled', receipt.logs);
         if (events.length !== ids.length) throw new Error('Offers not cancelled');
         return { events: events.map(({ args }) => args), ...receipt };
@@ -259,9 +258,7 @@ export class MslV6 extends BaseContract<
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('AllOffersCancelled', receipt.logs);
         if (events.length === 0) throw new Error('Offers not cancelled');
         return { ...events[0].args, ...receipt };
@@ -274,9 +271,7 @@ export class MslV6 extends BaseContract<
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('RenegotiationOfferCancelled', receipt.logs);
         if (events.length === 0) throw new Error('Renegotiation offer not cancelled');
         return { ...events[0].args, ...receipt };
@@ -367,9 +362,7 @@ export class MslV6 extends BaseContract<
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('LoanEmitted', receipt.logs);
         if (events.length === 0) throw new Error('Loan not emitted');
         return { ...this.toEmittedLoan(events[0].args, mslEmitArgs), ...receipt };
@@ -399,7 +392,7 @@ export class MslV6 extends BaseContract<
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({ hash: txHash });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('LoanEmitted', receipt.logs);
         if (events.length !== emitArgs.length) throw new Error('Loans not emitted');
 
@@ -455,9 +448,7 @@ export class MslV6 extends BaseContract<
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
 
         const revokeEvents = this.parseEventLogs('RevokeDelegate', receipt.logs);
         if (revokeEvents.length !== encodedRevokeDelegations.length)
@@ -492,9 +483,7 @@ export class MslV6 extends BaseContract<
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('LoanRepaid', receipt.logs);
         if (events.length === 0) throw new Error('Loan not repaid');
         return { ...events[0].args, ...receipt };
@@ -584,9 +573,7 @@ export class MslV6 extends BaseContract<
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('LoanRefinanced', receipt.logs);
         if (events.length !== refinancings.length) throw new Error('Loan not refinanced');
 
@@ -652,9 +639,7 @@ export class MslV6 extends BaseContract<
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('LoanRefinancedFromNewOffers', receipt.logs);
         if (events.length === 0) throw new Error('LoanRefinancedFromNewOffers not emitted');
         const args = events[0].args;
@@ -688,9 +673,7 @@ export class MslV6 extends BaseContract<
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('LoanRefinanced', receipt.logs);
         if (events.length === 0) throw new Error('Loan not refinanced');
         const args = events[0].args;
@@ -732,9 +715,7 @@ export class MslV6 extends BaseContract<
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('Delegated', receipt.logs);
         if (events.length !== delegations.length) throw new Error('Delegate multicall failed');
 
@@ -764,9 +745,7 @@ export class MslV6 extends BaseContract<
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('Delegated', receipt.logs);
         if (events.length === 0) throw new Error('Token not delegated');
         const args = events[0].args;
@@ -797,9 +776,7 @@ export class MslV6 extends BaseContract<
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('RevokeDelegate', receipt.logs);
         if (events.length === 0) throw new Error('Token delegation not revoked');
         const args = events[0].args;
@@ -813,9 +790,7 @@ export class MslV6 extends BaseContract<
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const foreclosedEvents = this.parseEventLogs('LoanForeclosed', receipt.logs);
         const sentToLiquidatorEvents = this.parseEventLogs('LoanSentToLiquidator', receipt.logs);
         if (foreclosedEvents.length === 0 && sentToLiquidatorEvents.length === 0)

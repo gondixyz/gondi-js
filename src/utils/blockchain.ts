@@ -29,11 +29,14 @@ export const assertTransactionSucceeded = (receipt: TransactionReceipt) => {
 
 type ReceiptWaiter = Pick<PublicClient, 'waitForTransactionReceipt'>;
 
+/** Waits for the transaction's receipt and returns it, or throws when the transaction reverted. */
+export const waitForSucceededReceipt = async (client: ReceiptWaiter, txHash: Hash) =>
+  assertTransactionSucceeded(await client.waitForTransactionReceipt({ hash: txHash }));
+
 /** A sent transaction whose `waitTxInBlock` resolves with its receipt once it succeeds. */
 export const minedTransaction = (client: ReceiptWaiter, txHash: Hash) => ({
   txHash,
-  waitTxInBlock: async () =>
-    assertTransactionSucceeded(await client.waitForTransactionReceipt({ hash: txHash })),
+  waitTxInBlock: () => waitForSucceededReceipt(client, txHash),
 });
 
 /**

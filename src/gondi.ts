@@ -60,7 +60,12 @@ import {
 } from '@/generated/graphql';
 import * as model from '@/model';
 import { NftStandard } from '@/model';
-import { isEmptyCalldata, minedTransaction, withRetriedReceiptWait } from '@/utils/blockchain';
+import {
+  isEmptyCalldata,
+  minedTransaction,
+  waitForSucceededReceipt,
+  withRetriedReceiptWait,
+} from '@/utils/blockchain';
 import {
   buyWithLoan,
   BuyWithLoanInput,
@@ -1825,9 +1830,7 @@ export class Gondi {
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = nft.parseEventLogs('ApprovalForAll', receipt.logs);
         if (events.length === 0) throw new Error(`${standard} approval for all not set`);
         return { ...events[0].args, ...receipt };
@@ -1860,7 +1863,7 @@ export class Gondi {
     ) => ({
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({ hash: txHash });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = getTransferEvents(receipt.logs);
         if (events.length === 0) throw new Error(`${standard} transfer failed`);
         return { ...events[0].args, ...receipt };
@@ -1925,9 +1928,7 @@ export class Gondi {
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = erc20.parseEventLogs('Approval', receipt.logs);
         if (events.length === 0) throw new Error('ERC20 approval not set');
         return { ...events[0].args, ...receipt };

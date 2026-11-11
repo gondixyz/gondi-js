@@ -96,6 +96,7 @@ const loanEmittedEvent = (loanId: bigint, tokenId: bigint) => ({
 const mslEmitting = (
   events: ReturnType<typeof loanEmittedEvent>[],
   revokeEvents: { args: object }[] = [],
+  status: 'success' | 'reverted' = 'success',
 ) => {
   const multicall = mock(async () => TX_HASH);
   const emitLoan = mock(async () => TX_HASH);
@@ -105,7 +106,9 @@ const mslEmitting = (
     wallet: { account: { address: borrower } },
     contract: { address: MSL_ADDRESS },
     safeContractWrite: { multicall, emitLoan },
-    bcClient: { waitForTransactionReceipt: async () => ({ transactionHash: TX_HASH, logs: [] }) },
+    bcClient: {
+      waitForTransactionReceipt: async () => ({ transactionHash: TX_HASH, logs: [], status }),
+    },
     parseEventLogs: (eventName: string) =>
       ({ LoanEmitted: events, RevokeDelegate: revokeEvents })[eventName] ?? [],
   }) as MslV6;
@@ -130,7 +133,16 @@ describe('emitLoan', () => {
       offerIds: [`${MSL_ADDRESS.toLowerCase()}.${LENDER}.5`],
       transactionHash: TX_HASH,
       logs: [],
+      status: 'success',
     } as unknown as Awaited<ReturnType<typeof waitTxInBlock>>);
+  });
+
+  test('throws a revert, not a missing event, when the transaction reverted', async () => {
+    const { msl } = mslEmitting([], [], 'reverted');
+
+    const { waitTxInBlock } = await msl.emitLoan(emitArgsFor(1n, 5n));
+
+    await expect(waitTxInBlock()).rejects.toThrow(`Transaction reverted: ${TX_HASH}`);
   });
 });
 

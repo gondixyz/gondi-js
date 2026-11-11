@@ -6,6 +6,7 @@ import { MslV5 } from '@/clients/contracts/MslV5';
 import { MslV6 } from '@/clients/contracts/MslV6';
 import { getContracts } from '@/deploys';
 import { positionMigratorAbi } from '@/generated/blockchain/positionMigrator';
+import { waitForSucceededReceipt } from '@/utils/blockchain';
 import { SECONDS_IN_HOUR } from '@/utils/dates';
 import { getTotalOwed } from '@/utils/loan';
 import { max } from '@/utils/number';
@@ -133,9 +134,7 @@ export class PositionMigrator extends BaseContract<typeof positionMigratorAbi> {
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('SmartMigration', receipt.logs);
         if (events.length !== 1) {
           throw new Error('Smart Renegotiation not executed');
