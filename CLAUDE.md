@@ -39,8 +39,9 @@ The protocol has multiple contract versions. The mapping between internal versio
 | `'2'`          | `MslV5` | v5  | Added auction liquidations                  |
 | `'3'`          | `MslV6` | v6  | Uses `tranche` instead of `source`          |
 | `'3.1'`        | `MslV6` | v7  | Same class as V3, version-conditional logic |
+| `'3.2'`        | `MslV6` | v8  | Same class as V3, version-conditional logic |
 
-**V3.1 shares the MslV6 class** but passes `version: '3.1'` to the constructor. The class has conditionals like `this.version === '3.1'` for fields and features only available in V3.1 (e.g., `cancelAllRenegotiations`, extra `loanId` field in `signExecutionData`).
+**V3.1 and V3.2 share the MslV6 class** but pass their version to the constructor. The class has conditionals on `this.version` for fields and features that differ between them (e.g., the extra `loanId` field in `signExecutionData`). Only V3 has `cancelAllOffers`, and no V3 version has `cancelAllRenegotiations`: those methods throw a "not supported" error rather than calling a function the ABI lacks.
 
 Version is determined at runtime from deployed contract addresses via `getVersionFromMslAddress()` in `src/deploys.ts`.
 

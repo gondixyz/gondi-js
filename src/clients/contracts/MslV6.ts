@@ -248,9 +248,10 @@ export class MslV6 extends BaseContract<
     };
   }
 
+  /** Cancels every offer below `minId`; only the V3 contract has `cancelAllOffers`. */
   async cancelAllOffers({ minId }: { minId: bigint }) {
-    if (this.version === '3.1') {
-      throw new Error('Not implemented for V3.1');
+    if (this.version !== '3') {
+      throw new Error(`cancelAllOffers is not supported on V${this.version}`);
     }
 
     const txHash = await this.safeContractWrite.cancelAllOffers([minId]);
@@ -279,8 +280,9 @@ export class MslV6 extends BaseContract<
     };
   }
 
+  /** No V3 contract has `cancelAllRenegotiations`, so this always throws. */
   async cancelAllRenegotiations(_: { minId: bigint }) {
-    throw new Error('Not implemented for V3');
+    throw new Error(`cancelAllRenegotiations is not supported on V${this.version}`);
   }
 
   /**
