@@ -28,6 +28,7 @@ import {
 import { Api, OrderInput, Props as ApiProps } from '@/clients/api';
 import { buildSiweMessage } from '@/clients/api/siwe';
 import { Contracts, GondiPublicClient, Wallet } from '@/clients/contracts';
+import { AllV8 } from '@/clients/contracts/AllV8';
 import {
   CrossCurrencyRenegotiation,
   CrossCurrencyRenegotiationInput,
@@ -1808,6 +1809,37 @@ export class Gondi {
     auction: Pick<Auction, 'startTime' | 'loanAddress'>;
   }) {
     return this.contracts.All(auction.loanAddress).getRemainingLockupSeconds({ auction });
+  }
+
+  /**
+   * The bid refund in `token` that the auction liquidator of the loan contract at `loanAddress`
+   * holds for `bidder` (the wallet by default) because returning it on an outbid failed.
+   * Only contract version 3.2 holds refunds; older versions always read 0.
+   */
+  async getAuctionPendingRefund({
+    loanAddress,
+    token,
+    bidder = this.account.address,
+  }: {
+    loanAddress: Address;
+    token: Address;
+    bidder?: Address;
+  }) {
+    const liquidator = this.contracts.All(loanAddress);
+    if (!(liquidator instanceof AllV8)) return 0n;
+    return liquidator.getPendingRefund({ bidder, token });
+  }
+
+  /**
+   * Claims the wallet's bid refund in `token` from the auction liquidator of the loan contract at
+   * `loanAddress`. Only contract version 3.2 holds refunds.
+   */
+  async claimAuctionRefund({ loanAddress, token }: { loanAddress: Address; token: Address }) {
+    const liquidator = this.contracts.All(loanAddress);
+    if (!(liquidator instanceof AllV8)) {
+      throw new Error('Auction refunds are only held by contract version 3.2');
+    }
+    return liquidator.claimRefund({ token });
   }
 
   /**
