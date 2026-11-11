@@ -102,6 +102,8 @@ const result = await gondi.emitLoan({...});
 const { loan, loanId } = await result.waitTxInBlock();
 ```
 
+Inside a `waitTxInBlock`, get the receipt with `waitForSucceededReceipt` (or return `minedTransaction`) from `src/utils/blockchain.ts`, never a bare `waitForTransactionReceipt`: viem resolves a reverted transaction's receipt like any other, so a bare wait reports a revert as a missing event.
+
 ### Event Parsing
 
 After transactions, events are parsed with `parseEventLogs`. Always validate the event array length before accessing elements — do not assume events exist.

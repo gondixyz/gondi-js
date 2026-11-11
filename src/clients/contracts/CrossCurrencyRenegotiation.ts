@@ -18,6 +18,7 @@ import { getContracts, getCurrencies } from '@/deploys';
 import { positionMigratorAbi } from '@/generated/blockchain/positionMigrator';
 import { purchaseBundlerV2ABI } from '@/generated/blockchain/v7';
 import { EmitLoanArgs } from '@/gondi';
+import { waitForSucceededReceipt } from '@/utils/blockchain';
 import {
   buildCrossCurrencySwap,
   calculateCrossCurrencyBudget,
@@ -383,7 +384,7 @@ export class CrossCurrencyRenegotiation extends BaseContract<typeof positionMigr
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({ hash: txHash });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const initiated = this.msl
           .parseEventLogs('LoanEmitted', receipt.logs)
           .filter((event) => areSameAddress(event.address, this.msl.address));

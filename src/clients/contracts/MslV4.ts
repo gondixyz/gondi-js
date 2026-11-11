@@ -4,6 +4,7 @@ import { LoanV4, OfferV4, RenegotiationV4 } from '@/blockchain';
 import { Wallet } from '@/clients/contracts';
 import { multiSourceLoanABI as multiSourceLoanABIV4 } from '@/generated/blockchain/v4';
 import { EmitLoanArgs } from '@/gondi';
+import { waitForSucceededReceipt } from '@/utils/blockchain';
 import { millisToSeconds, SECONDS_IN_MIN } from '@/utils/dates';
 import { getMslLoanId } from '@/utils/loan';
 import { sumBy } from '@/utils/number';
@@ -106,9 +107,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
 
         const events = this.parseEventLogs('OfferCancelled', receipt.logs);
         if (events.length === 0) throw new Error('Offer not cancelled');
@@ -130,9 +129,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('AllOffersCancelled', receipt.logs);
         if (events.length === 0) throw new Error('Offers not cancelled');
         return { ...events[0].args, ...receipt };
@@ -148,9 +145,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('RenegotiationOfferCancelled', receipt.logs);
         if (events.length === 0) throw new Error('Offer not cancelled');
         return { ...events[0].args, ...receipt };
@@ -166,9 +161,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('AllRenegotiationOffersCancelled', receipt.logs);
         if (events.length === 0) throw new Error('Offer not cancelled');
         return { ...events[0].args, ...receipt };
@@ -196,9 +189,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('LoanEmitted', receipt.logs);
         if (events.length === 0) throw new Error('Loan not emitted');
         const args = events[0].args;
@@ -234,9 +225,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('LoanRepaid', receipt.logs);
         if (events.length === 0) throw new Error('Loan not repaid');
         return { ...events[0].args, ...receipt };
@@ -297,9 +286,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('LoanRefinanced', receipt.logs);
         if (events.length !== refinancings.length) throw new Error('Loan not refinanced');
 
@@ -342,9 +329,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('LoanRefinanced', receipt.logs);
         if (events.length === 0) throw new Error('Loan not refinanced');
         const args = events[0].args;
@@ -393,9 +378,7 @@ export class MslV4 extends BaseContract<typeof multiSourceLoanABIV4> {
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const foreclosedEvents = this.parseEventLogs('LoanForeclosed', receipt.logs);
         const sentToLiquidatorEvents = this.parseEventLogs('LoanSentToLiquidator', receipt.logs);
         if (foreclosedEvents.length === 0 && sentToLiquidatorEvents.length === 0)

@@ -7,6 +7,7 @@ import { MslV5 } from '@/clients/contracts/MslV5';
 import { MslV6 } from '@/clients/contracts/MslV6';
 import { getContracts, getCurrencies } from '@/deploys';
 import { purchaseBundlerV2ABI } from '@/generated/blockchain/v7';
+import { waitForSucceededReceipt } from '@/utils/blockchain';
 import { areSameAddress } from '@/utils/string';
 
 import { BaseContract } from './BaseContract';
@@ -81,9 +82,7 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('BNPLLoansStarted', receipt.logs);
         if (events.length !== 1) {
           throw new Error('Buy not executed');
@@ -102,9 +101,7 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('SellAndRepayExecuted', receipt.logs);
         if (events.length !== 1) {
           throw new Error('Sell and Repay not executed');
@@ -154,9 +151,7 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('SellAndRepayExecuted', receipt.logs);
         if (events.length !== 1) {
           throw new Error('Sell and Repay not executed');
@@ -230,9 +225,7 @@ export class PurchaseBundlerV2 extends BaseContract<typeof purchaseBundlerV2ABI>
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('SellAndRepayExecuted', receipt.logs);
         if (events.length !== 1) {
           throw new Error('Sell with Loan not executed');
