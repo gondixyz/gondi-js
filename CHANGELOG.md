@@ -1,3 +1,23 @@
+# Bug Fixes 0.59.2
+
+## Important
+
+Prorated origination fees target the effective APR they are given, instead of one basis point below it for some two-decimal APRs. Existing calls keep working.
+
+## Table of Contents
+
+- [Prorated origination fees hit the whole basis point](#prorated-origination-fees-hit-the-whole-basis-point)
+
+## Prorated origination fees hit the whole basis point
+
+**Description:**
+
+- FIX: `gondi.calculateProratedOriginationFee` converted `effectiveApr` to basis points with a bare floor, which IEEE-754 products like `9.03 * 100 === 902.9999999999999` truncated one basis point low: `effectiveApr: 9.03` targeted 902 bps instead of 903, and 573 of the 10,000 two-decimal percentages up to 100% were off. The product is now rounded to 12 significant digits before the floor, so every two-decimal percentage maps to its exact basis points, and a fraction of a basis point (`10.0599` → 1005) is still dropped.
+
+**Migration Steps:**
+
+- None.
+
 # Bug Fixes 0.59.1
 
 ## Important
