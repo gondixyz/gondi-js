@@ -1,4 +1,4 @@
-import { describe, expect, it, mock } from 'bun:test';
+import { afterEach, describe, expect, it, mock, setSystemTime } from 'bun:test';
 import { zeroAddress, zeroHash } from 'viem';
 import { getContracts } from '../src/deploys';
 import {
@@ -35,7 +35,15 @@ const singleNftGondi = () => {
   return { gondi, signOffer, saveSingleNftOffer };
 };
 
+/** Seconds since the epoch at which the expiry tests sign their offers. */
+const SIGNED_AT = 1_800_000_000;
+
+/** Moves the clock to `SIGNED_AT` plus `seconds`. */
+const clockAt = (seconds: number) => setSystemTime(new Date((SIGNED_AT + seconds) * 1000));
+
 describe('loan offer publication metadata', () => {
+  afterEach(() => setSystemTime());
+
   it('forwards publication to saving, not into the signed struct', async () => {
     const { gondi, signOffer, saveSingleNftOffer } = singleNftGondi();
     const publication = { replacementIds: ['previous'] };
@@ -163,5 +171,115 @@ describe('loan offer publication metadata', () => {
     await gondi.makeRefinanceOffer(input);
     await gondi.makeRefinanceOffer(input);
     expect(signRenegotiationOffer).toHaveBeenCalledTimes(2);
+  });
+
+  it('refuses to resend a pending item offer that has expired', async () => {
+    const { gondi, signOffer, saveSingleNftOffer } = singleNftGondi();
+    const offer = { ...SINGLE_NFT_OFFER, expirationTime: BigInt(SIGNED_AT + 60) };
+    const publication = { replacementIds: [] };
+    saveSingleNftOffer.mockImplementationOnce(async () => {
+      throw new Error('save failed');
+    });
+    clockAt(0);
+    await expect(gondi._makeSingleNftOffer(offer, zeroAddress, false, publication)).rejects.toThrow(
+      'save failed',
+    );
+    clockAt(60);
+    await expect(gondi._makeSingleNftOffer(offer, zeroAddress, false, publication)).rejects.toThrow(
+      'Offer expired',
+    );
+    expect(signOffer).toHaveBeenCalledTimes(1);
+    expect(saveSingleNftOffer).toHaveBeenCalledTimes(1);
+  });
+
+  it('resends a pending item offer that has not expired yet', async () => {
+    const { gondi, signOffer, saveSingleNftOffer } = singleNftGondi();
+    const offer = { ...SINGLE_NFT_OFFER, expirationTime: BigInt(SIGNED_AT + 60) };
+    const publication = { replacementIds: [] };
+    saveSingleNftOffer.mockImplementationOnce(async () => {
+      throw new Error('save failed');
+    });
+    clockAt(0);
+    await expect(gondi._makeSingleNftOffer(offer, zeroAddress, false, publication)).rejects.toThrow(
+      'save failed',
+    );
+    clockAt(59);
+    await gondi._makeSingleNftOffer(offer, zeroAddress, false, publication);
+    expect(signOffer).toHaveBeenCalledTimes(1);
+    expect(saveSingleNftOffer.mock.calls[1]?.[0]).toBe(saveSingleNftOffer.mock.calls[0]?.[0]);
+  });
+
+  it('does not ask for a signature on an expired item offer publication', async () => {
+    const { gondi, signOffer } = singleNftGondi();
+    const offer = { ...SINGLE_NFT_OFFER, expirationTime: BigInt(SIGNED_AT) };
+    clockAt(0);
+    await expect(
+      gondi._makeSingleNftOffer(offer, zeroAddress, false, { replacementIds: [] }),
+    ).rejects.toThrow('Offer expired');
+    expect(signOffer).not.toHaveBeenCalled();
+  });
+
+  it('refuses to resend a pending collection offer that has expired', async () => {
+    const signOffer = mock(async () => '0x1234');
+    const saveCollectionOffer = mock(async (..._arguments: unknown[]) => ({ id: 'saved' }));
+    const gondi = gondiWith({
+      contracts: { Msl: () => ({ address: zeroAddress, signOffer }) },
+      apiClient: {
+        generateCollectionOfferHash: async () => ({
+          offer: {
+            offerHash: zeroHash,
+            offerId: 1n,
+            validators: [],
+            fee: 0n,
+            collateralAddress: zeroAddress,
+          },
+        }),
+        saveCollectionOffer,
+      },
+    });
+    const { nftId: _nftId, ...offerTerms } = SINGLE_NFT_OFFER;
+    const offer = { ...offerTerms, collectionId: 6, expirationTime: BigInt(SIGNED_AT + 60) };
+    const publication = { replacementIds: [] };
+    saveCollectionOffer.mockImplementationOnce(async () => {
+      throw new Error('save failed');
+    });
+    clockAt(0);
+    await expect(gondi._makeCollectionOffer(offer, zeroAddress, publication)).rejects.toThrow(
+      'save failed',
+    );
+    clockAt(60);
+    await expect(gondi._makeCollectionOffer(offer, zeroAddress, publication)).rejects.toThrow(
+      'Offer expired',
+    );
+    expect(signOffer).toHaveBeenCalledTimes(1);
+    expect(saveCollectionOffer).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses to resend a pending refinance offer that has expired', async () => {
+    const contractAddress = getContracts({ id: 1 }).MultiSourceLoan['3'];
+    const signRenegotiationOffer = mock(async () => '0x5678');
+    const saveRefinanceOffer = mock(async (..._arguments: unknown[]) => ({ id: 'saved' }));
+    const gondi = gondiWith({
+      contracts: { Msl: () => ({ address: contractAddress, signRenegotiationOffer }) },
+      apiClient: {
+        previewRenegotiationPublication: async () => ({ complete: true, qualifies: true }),
+        generateRenegotiationOfferHash: async () => RENEGOTIATION_OFFER_HASH,
+        saveRefinanceOffer,
+      },
+    });
+    const input = {
+      renegotiation: { ...RENEGOTIATION, expirationTime: BigInt(SIGNED_AT + 60) },
+      contractAddress,
+      publication: { replacementIds: [] },
+    };
+    saveRefinanceOffer.mockImplementationOnce(async () => {
+      throw new Error('save failed');
+    });
+    clockAt(0);
+    await expect(gondi.makeRefinanceOffer(input)).rejects.toThrow('save failed');
+    clockAt(60);
+    await expect(gondi.makeRefinanceOffer(input)).rejects.toThrow('Offer expired');
+    expect(signRenegotiationOffer).toHaveBeenCalledTimes(1);
+    expect(saveRefinanceOffer).toHaveBeenCalledTimes(1);
   });
 });
