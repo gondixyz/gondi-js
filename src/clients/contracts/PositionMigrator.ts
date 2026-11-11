@@ -87,11 +87,13 @@ export class PositionMigrator extends BaseContract<typeof positionMigratorAbi> {
   }
   async smartRenegotiation({
     currentBalance,
+    nonce,
     previousMsl,
     repaymentCalldata,
     emitCalldata,
   }: {
     currentBalance: bigint;
+    nonce: bigint;
     previousMsl: MslV5 | MslV6;
     repaymentCalldata: Hex;
     emitCalldata: Hex;
@@ -121,7 +123,7 @@ export class PositionMigrator extends BaseContract<typeof positionMigratorAbi> {
       borrowArgs,
       approvalContract: zeroAddress, // unused
       migrator: this.wallet.account.address,
-      nonce: await this.contract.read.getNonce([this.wallet.account.address]),
+      nonce,
     };
 
     const txHash = await this.safeContractWrite.smartMigrate([

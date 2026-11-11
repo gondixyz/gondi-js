@@ -1299,6 +1299,13 @@ export class Gondi {
     });
   }
 
+  /**
+   * Repays `loan` and emits its replacement from `executionData` in one flash-loan backed
+   * transaction. The borrower signs the expiring execution data first and the repayment data,
+   * which carries no nonce or expiry, last, so declining an earlier prompt never leaves a
+   * repayment signature behind. Every read, the migrator nonce included, finishes before the
+   * first prompt, so a failed read cannot strand a signature either.
+   */
   async efficientRefinanceFromOffers({
     contractAddress,
     loan,
@@ -1324,6 +1331,17 @@ export class Gondi {
       throw new Error('Unsupported contract address for capital efficient refinance');
     }
 
+    const positionMigrator = this.contracts.PositionMigrator(contractAddress, nextMsl);
+    const [currentBalance, nonce] = await Promise.all([
+      this.currencyBalance({ tokenAddress: loan.principalAddress }),
+      positionMigrator.contract.read.getNonce([this.wallet.account.address]),
+    ]);
+
+    const emitCalldata = await nextMsl.encodeEmitLoan({
+      emitArgs: executionData,
+      withSignature: true,
+    });
+
     const repaymentCalldata = await previousMsl.encodeRepayLoan({
       repayArgs: {
         signableRepaymentData: {
@@ -1336,15 +1354,9 @@ export class Gondi {
       withSignature: true,
     });
 
-    const emitCalldata = await nextMsl.encodeEmitLoan({
-      emitArgs: executionData,
-      withSignature: true,
-    });
-
-    const currentBalance = await this.currencyBalance({ tokenAddress: loan.principalAddress });
-
-    return this.contracts.PositionMigrator(contractAddress, nextMsl).smartRenegotiation({
+    return positionMigrator.smartRenegotiation({
       currentBalance,
+      nonce,
       previousMsl,
       repaymentCalldata,
       emitCalldata,

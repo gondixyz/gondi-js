@@ -1,3 +1,24 @@
+# Bug Fixes 0.59.1
+
+## Important
+
+`efficientRefinanceFromOffers` and `crossCurrencyRenegotiation` now ask for the repayment signature last. Existing calls keep working.
+
+## Table of Contents
+
+- [Repayment signature asked for last](#repayment-signature-asked-for-last)
+
+## Repayment signature asked for last
+
+**Description:**
+
+- FIX: `gondi.efficientRefinanceFromOffers` and `gondi.crossCurrencyRenegotiation` ask the borrower to sign the expiring execution data before the repayment data. The repayment signature carries no nonce or expiry, so a borrower who declined the second prompt used to leave a valid repayment signature behind. Now declining the first prompt ends the flow before any repayment signature exists.
+- FIX: both flows finish their reads (the borrower's balance, the migrator nonce) before the first signature prompt, so a failed read can no longer strand a signature.
+
+**Migration Steps:**
+
+- None. The wallet prompts arrive in the new order: execution data first, repayment data second.
+
 # New Features 0.59.0
 
 ## Important
