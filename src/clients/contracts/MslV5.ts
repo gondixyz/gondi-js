@@ -322,7 +322,9 @@ export class MslV5 extends BaseContract<typeof multiSourceLoanABIV5> {
   }
 
   async getRemainingLockupSeconds({ loan }: { loan: LoanV5 }) {
-    const newestSource = loan.source[0];
+    const newestSource = loan.source.reduce((newest, source) =>
+      source.startTime > newest.startTime ? source : newest,
+    );
     const loanEndDate = loan.startTime + loan.duration;
     const newestSourceDuration = loanEndDate - newestSource.startTime;
 

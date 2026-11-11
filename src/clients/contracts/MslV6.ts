@@ -494,7 +494,9 @@ export class MslV6 extends BaseContract<
   }
 
   async getRemainingLockupSeconds({ loan }: { loan: LoanV6 }) {
-    const newestSource = loan.tranche[loan.tranche.length - 1];
+    const newestSource = loan.tranche.reduce((newest, tranche) =>
+      tranche.startTime > newest.startTime ? tranche : newest,
+    );
     const loanEndDate = loan.startTime + loan.duration;
     const newestSourceDuration = loanEndDate - newestSource.startTime;
 

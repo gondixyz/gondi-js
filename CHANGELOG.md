@@ -1,3 +1,19 @@
+# Bug Fixes 0.58.6
+
+## Important
+
+`getRemainingLockupSeconds` now reads the lock of a loan's newest tranche after a partial refinance. Existing calls keep working.
+
+## Table of Contents
+
+- [Tranche lock after a partial refinance](#tranche-lock-after-a-partial-refinance)
+
+## Tranche lock after a partial refinance
+
+**Description:**
+
+- FIX: `gondi.getRemainingLockupSeconds` picks the tranche (v3 and later) or source (v2) with the latest `startTime`, which is the one the contract waits on before a full refinance. It used to read the last tranche or the first source, and after `refinancePartial` an earlier one can be newer, so it reported a loan as unlocked while a refinance would still revert with `TrancheCannotBeRefinancedError`.
+
 # Bug Fixes 0.58.5
 
 ## Important
