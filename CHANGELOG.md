@@ -1,3 +1,24 @@
+# Bug Fixes 0.58.5
+
+## Important
+
+`cancelAllOffers` and `cancelAllRenegotiations` now say which contract versions lack them instead of failing with an ABI error. Existing calls on V1, V2 and V3 contracts are unchanged.
+
+## Table of Contents
+
+- [cancelAllOffers and cancelAllRenegotiations refuse versions without them](#cancelalloffers-and-cancelallrenegotiations-refuse-versions-without-them)
+
+## cancelAllOffers and cancelAllRenegotiations refuse versions without them
+
+**Description:**
+
+- FIX: `gondi.cancelAllOffers` on a V3.2 contract now rejects with `cancelAllOffers is not supported on V3.2` before sending anything. It used to call a function the V3.2 ABI lacks and fail with an ABI error. V3.1 rejects with the same message.
+- FIX: `gondi.cancelAllRenegotiations` on any V3 contract (3, 3.1 or 3.2) rejects with `cancelAllRenegotiations is not supported on V<version>`, naming the version, since none of them has the function.
+
+**Migration Steps:**
+
+- None. To cancel offers on V3.1 or V3.2, cancel them by id with `gondi.cancelOffers({ ids, contractAddress })`.
+
 # Bug Fixes 0.58.4
 
 ## Important
