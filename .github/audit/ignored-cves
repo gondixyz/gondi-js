@@ -7,9 +7,6 @@
 #   # webpack — pinned by transitive dep, no fix available
 #   GHSA-8fgc-7cc6-rx7x
 
-# braces — 3.0.3 is latest and no version is patched; GitHub withdrew the advisory
-# on 2026-10-23 but `bun audit` still reports it. Reached only via chokidar/micromatch globbing.
-GHSA-vfj7-8cjw-p6xm
 # deepmerge — "deepmerge mergeObject() allows prototype poisoning of returned objects"; 4.3.1 is the latest release and no version is patched. Reached only via jest's jest-config, which merges its own config.
 GHSA-gcqx-w48m-w2h4
 # minimatch — "denial of service via globparts amplification"; fixed only in 11.0.1+, no 10.x patch. minimatch 11 removes matchOne(), which typedoc 0.24.8 calls, so forcing it breaks `bun run docs`. Every consumer is build-time tooling globbing our own config, never untrusted patterns.
