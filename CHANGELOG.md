@@ -1,3 +1,23 @@
+# Bug Fixes 0.58.2
+
+## Important
+
+A transaction the wallet speeds up now resolves with its result instead of timing out. Existing calls keep working.
+
+## Table of Contents
+
+- [Sped-up transactions resolve](#sped-up-transactions-resolve)
+
+## Sped-up transactions resolve
+
+**Description:**
+
+- FIX: when the wallet replaces a pending transaction with the same call at a higher fee, write methods now return the hash of the replacement that mined, so `waitTxInBlock()` finds its receipt and returns the result (for example the `loanId` of `emitLoan`). It used to wait on the dropped original hash, and could only give up after six minutes with `WaitForTransactionReceiptTimeoutError`.
+
+**Migration Steps:**
+
+- None. `txHash` on a sped-up transaction is now the replacement's hash; the `success` step of `onStepChange` still reports the original as `originalTransactionHash`.
+
 # Bug Fixes 0.58.1
 
 ## Important
