@@ -11,7 +11,10 @@ import type {
   multiSourceLoanAbi as multiSourceLoanABIV6,
 } from '@/generated/blockchain/v6';
 import type { multiSourceLoanAbi as multiSourceLoanABIV7 } from '@/generated/blockchain/v7';
-import type { multiSourceLoanAbi as multiSourceLoanABIV8 } from '@/generated/blockchain/v8';
+import type {
+  auctionWithBuyoutLoanLiquidatorAbi as auctionLoanLiquidatorABIV8,
+  multiSourceLoanAbi as multiSourceLoanABIV8,
+} from '@/generated/blockchain/v8';
 import { areSameAddress } from '@/utils/string';
 
 type RepayAbiTypeV4 = AbiParametersToPrimitiveTypes<
@@ -59,6 +62,9 @@ type PlaceBidAbiTypeV5 = AbiParametersToPrimitiveTypes<
 type PlaceBidAbiTypeV6 = AbiParametersToPrimitiveTypes<
   ExtractAbiFunction<typeof auctionLoanLiquidatorABIV6, 'placeBid'>['inputs']
 >;
+type PlaceBidAbiTypeV8 = AbiParametersToPrimitiveTypes<
+  ExtractAbiFunction<typeof auctionLoanLiquidatorABIV8, 'placeBid'>['inputs']
+>;
 
 export type LoanV4 = RepayAbiTypeV4[2] & { contractAddress: Address };
 export type LoanV5 = RepayAbiTypeV5[0]['loan'] & {
@@ -96,7 +102,9 @@ export type ExecutionDataV8 = EmitAbiTypeV8[0]['executionData'];
 
 type AuctionV5 = PlaceBidAbiTypeV5[2];
 type AuctionV6 = PlaceBidAbiTypeV6[2];
-export type Auction = AuctionV5 | AuctionV6;
+/** A contract version 3.2 auction, which also carries `loanHash` and `buyoutWindow`. */
+export type AuctionV8 = PlaceBidAbiTypeV8[2];
+export type Auction = AuctionV5 | AuctionV6 | AuctionV8;
 
 export type HexString = `0x${string}`;
 export type Signature = HexString;

@@ -1,3 +1,36 @@
+# Bug Fixes 0.58.8
+
+## Important
+
+Bids and settlements on contract version 3.2 auctions now encode the version 3.2 `Auction` struct, and the SDK can read and claim a bid refund the liquidator holds. Calls on older auctions are unchanged.
+
+## Table of Contents
+
+- [Version 3.2 auctions](#version-32-auctions)
+
+## Version 3.2 auctions
+
+**Description:**
+
+- FIX: `gondi.placeBid`, `gondi.settleAuction` and `gondi.settleAuctionWithBuyout` on a version 3.2 loan used the version 3 liquidator ABI, whose `Auction` struct lacks `loanHash` and `buyoutWindow`, so every call encoded the wrong struct and reverted. They now use the version 3.2 liquidator ABI, and reject an auction without `loanHash` before simulating it.
+- NEW: `gondi.getAuctionPendingRefund({ loanAddress, token, bidder })` reads the bid refund the version 3.2 liquidator holds for a bidder whose outbid refund transfer failed; it is `0n` on older versions.
+- NEW: `gondi.claimAuctionRefund({ loanAddress, token })` claims that refund for the wallet.
+- NEW: the `AuctionV8` type, the version 3.2 `Auction` struct, is part of `Auction`.
+- FIX: bids and settlements on a version 3.2 auction find the liquidator holding the collateral, as they do on older versions.
+
+**Migration Steps:**
+
+- For a version 3.2 auction, pass the on-chain `Auction` struct including `loanHash` and `buyoutWindow` (from the `LoanLiquidationStarted` event):
+
+```typescript
+await gondi.placeBid({
+  collectionContractAddress,
+  tokenId,
+  bid,
+  auction: { ...auction, loanHash, buyoutWindow },
+});
+```
+
 # Bug Fixes 0.58.7
 
 ## Important

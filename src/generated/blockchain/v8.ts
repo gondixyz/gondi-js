@@ -3719,3 +3719,1866 @@ export const multiSourceLoanAbi = [
     "inputs": []
   }
 ] as const;
+
+export const auctionWithBuyoutLoanLiquidatorAbi = [
+  {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "liquidationDistributor",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "currencyManager",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "collectionManager",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "loanManagerRegistry",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "triggerFee",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxExtension",
+        "type": "uint96",
+        "internalType": "uint96"
+      },
+      {
+        "name": "timeForMainLenderToBuy",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "minWaitTime",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "MAX_TIME_FOR_MAIN_LENDER_TO_BUY",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_TRIGGER_FEE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MIN_INCREMENT_BPS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MIN_WAIT_TIME",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "addLoanContract",
+    "inputs": [
+      {
+        "name": "_loanContract",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "cancelAuction",
+    "inputs": [
+      {
+        "name": "_auction",
+        "type": "tuple",
+        "internalType": "struct IAuctionLoanLiquidator.Auction",
+        "components": [
+          {
+            "name": "loanAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "loanId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "highestBid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "triggerFee",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "minBid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "highestBidder",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "duration",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "asset",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "startTime",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "originator",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "lastBidTime",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "loanHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "buyoutWindow",
+            "type": "uint96",
+            "internalType": "uint96"
+          }
+        ]
+      },
+      {
+        "name": "_loan",
+        "type": "tuple",
+        "internalType": "struct IMultiSourceLoan.Loan",
+        "components": [
+          {
+            "name": "borrower",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "nftCollateralTokenId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "nftCollateralAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "principalAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "principalAmount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "startTime",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "duration",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "tranche",
+            "type": "tuple[]",
+            "internalType": "struct IMultiSourceLoan.Tranche[]",
+            "components": [
+              {
+                "name": "loanId",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "floor",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "principalAmount",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "lender",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "accruedInterest",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "startTime",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "aprBps",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "protocolFee",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "lenderRefinanceDisabled",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "claimRefund",
+    "inputs": [
+      {
+        "name": "_token",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "getAuctionHash",
+    "inputs": [
+      {
+        "name": "_nftAddress",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getLiquidationDistributor",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getLoanManagerRegistry",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract ILoanManagerRegistry"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getMaxExtension",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint96",
+        "internalType": "uint96"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getMinBidForCurrency",
+    "inputs": [
+      {
+        "name": "_currency",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getPendingRefunds",
+    "inputs": [
+      {
+        "name": "_bidder",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_token",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getTimeForMainLenderToBuy",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getTriggerFee",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getValidLoanContracts",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "liquidateLoan",
+    "inputs": [
+      {
+        "name": "_loanId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_loan",
+        "type": "tuple",
+        "internalType": "struct IMultiSourceLoan.Loan",
+        "components": [
+          {
+            "name": "borrower",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "nftCollateralTokenId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "nftCollateralAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "principalAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "principalAmount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "startTime",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "duration",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "tranche",
+            "type": "tuple[]",
+            "internalType": "struct IMultiSourceLoan.Tranche[]",
+            "components": [
+              {
+                "name": "loanId",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "floor",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "principalAmount",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "lender",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "accruedInterest",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "startTime",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "aprBps",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "protocolFee",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "lenderRefinanceDisabled",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      },
+      {
+        "name": "_duration",
+        "type": "uint96",
+        "internalType": "uint96"
+      },
+      {
+        "name": "_minBid",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_originator",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "onERC721Received",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "owner",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "pendingOwner",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "pendingOwnerTime",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "placeBid",
+    "inputs": [
+      {
+        "name": "_nftAddress",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_auction",
+        "type": "tuple",
+        "internalType": "struct IAuctionLoanLiquidator.Auction",
+        "components": [
+          {
+            "name": "loanAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "loanId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "highestBid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "triggerFee",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "minBid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "highestBidder",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "duration",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "asset",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "startTime",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "originator",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "lastBidTime",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "loanHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "buyoutWindow",
+            "type": "uint96",
+            "internalType": "uint96"
+          }
+        ]
+      },
+      {
+        "name": "_bid",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct IAuctionLoanLiquidator.Auction",
+        "components": [
+          {
+            "name": "loanAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "loanId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "highestBid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "triggerFee",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "minBid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "highestBidder",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "duration",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "asset",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "startTime",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "originator",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "lastBidTime",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "loanHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "buyoutWindow",
+            "type": "uint96",
+            "internalType": "uint96"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "removeLoanContract",
+    "inputs": [
+      {
+        "name": "_loanContract",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "requestTransferOwner",
+    "inputs": [
+      {
+        "name": "_newOwner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setMinBidForCurrency",
+    "inputs": [
+      {
+        "name": "_currency",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_minBid",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setTimeForMainLenderToBuy",
+    "inputs": [
+      {
+        "name": "__timeForMainLenderToBuy",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "settleAuction",
+    "inputs": [
+      {
+        "name": "_auction",
+        "type": "tuple",
+        "internalType": "struct IAuctionLoanLiquidator.Auction",
+        "components": [
+          {
+            "name": "loanAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "loanId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "highestBid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "triggerFee",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "minBid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "highestBidder",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "duration",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "asset",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "startTime",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "originator",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "lastBidTime",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "loanHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "buyoutWindow",
+            "type": "uint96",
+            "internalType": "uint96"
+          }
+        ]
+      },
+      {
+        "name": "_loan",
+        "type": "tuple",
+        "internalType": "struct IMultiSourceLoan.Loan",
+        "components": [
+          {
+            "name": "borrower",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "nftCollateralTokenId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "nftCollateralAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "principalAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "principalAmount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "startTime",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "duration",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "tranche",
+            "type": "tuple[]",
+            "internalType": "struct IMultiSourceLoan.Tranche[]",
+            "components": [
+              {
+                "name": "loanId",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "floor",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "principalAmount",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "lender",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "accruedInterest",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "startTime",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "aprBps",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "protocolFee",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "lenderRefinanceDisabled",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "settleWithBuyout",
+    "inputs": [
+      {
+        "name": "_nftAddress",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_auction",
+        "type": "tuple",
+        "internalType": "struct IAuctionLoanLiquidator.Auction",
+        "components": [
+          {
+            "name": "loanAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "loanId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "highestBid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "triggerFee",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "minBid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "highestBidder",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "duration",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "asset",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "startTime",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "originator",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "lastBidTime",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "loanHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "buyoutWindow",
+            "type": "uint96",
+            "internalType": "uint96"
+          }
+        ]
+      },
+      {
+        "name": "_loan",
+        "type": "tuple",
+        "internalType": "struct IMultiSourceLoan.Loan",
+        "components": [
+          {
+            "name": "borrower",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "nftCollateralTokenId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "nftCollateralAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "principalAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "principalAmount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "startTime",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "duration",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "tranche",
+            "type": "tuple[]",
+            "internalType": "struct IMultiSourceLoan.Tranche[]",
+            "components": [
+              {
+                "name": "loanId",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "floor",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "principalAmount",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "lender",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "accruedInterest",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "startTime",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "aprBps",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "protocolFee",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "lenderRefinanceDisabled",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "transferOwnership",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "updateLiquidationDistributor",
+    "inputs": [
+      {
+        "name": "__liquidationDistributor",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "updateTriggerFee",
+    "inputs": [
+      {
+        "name": "triggerFee",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "AuctionCancelled",
+    "inputs": [
+      {
+        "name": "loanContract",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "loanId",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "collection",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "recipient",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "AuctionSettled",
+    "inputs": [
+      {
+        "name": "loanContract",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "loanId",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "collection",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "asset",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "proceeds",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "settler",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "triggerFee",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "AuctionSettledWithBuyout",
+    "inputs": [
+      {
+        "name": "loanAddress",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "loanId",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "nftAddress",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "largestTrancheIdx",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "BidPlaced",
+    "inputs": [
+      {
+        "name": "collection",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "newBidder",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "bid",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "loanAddress",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "loanId",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "BidRefundPending",
+    "inputs": [
+      {
+        "name": "bidder",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "asset",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "BidRefundWithdrawn",
+    "inputs": [
+      {
+        "name": "bidder",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "asset",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "LiquidationDistributorUpdated",
+    "inputs": [
+      {
+        "name": "liquidationDistributor",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "LoanContractAdded",
+    "inputs": [
+      {
+        "name": "loan",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "LoanContractRemoved",
+    "inputs": [
+      {
+        "name": "loan",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "LoanLiquidationStarted",
+    "inputs": [
+      {
+        "name": "collection",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "auction",
+        "type": "tuple",
+        "indexed": false,
+        "internalType": "struct IAuctionLoanLiquidator.Auction",
+        "components": [
+          {
+            "name": "loanAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "loanId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "highestBid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "triggerFee",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "minBid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "highestBidder",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "duration",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "asset",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "startTime",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "originator",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "lastBidTime",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "loanHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "buyoutWindow",
+            "type": "uint96",
+            "internalType": "uint96"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "MinBidForCurrencyUpdated",
+    "inputs": [
+      {
+        "name": "currency",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "minBid",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OwnershipTransferred",
+    "inputs": [
+      {
+        "name": "user",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TimeForMainLenderToBuyUpdated",
+    "inputs": [
+      {
+        "name": "timeForMainLenderToBuy",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TransferOwnerRequested",
+    "inputs": [
+      {
+        "name": "newOwner",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TriggerFeeUpdated",
+    "inputs": [
+      {
+        "name": "triggerFee",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "AddressZeroError",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AuctionAlreadyInProgressError",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AuctionHasBidsError",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AuctionNotExpiredError",
+    "inputs": [
+      {
+        "name": "expiration",
+        "type": "uint96",
+        "internalType": "uint96"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "AuctionNotOverError",
+    "inputs": [
+      {
+        "name": "_expiration",
+        "type": "uint96",
+        "internalType": "uint96"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "AuctionOverError",
+    "inputs": [
+      {
+        "name": "_expiration",
+        "type": "uint96",
+        "internalType": "uint96"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "CollectionNotWhitelistedError",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "CouldNotModifyValidLoansError",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "CurrencyNotWhitelistedError",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidHashAuctionError",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidInputError",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidLoanHashError",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidTriggerFee",
+    "inputs": [
+      {
+        "name": "triggerFee",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "LoanNotAcceptedError",
+    "inputs": [
+      {
+        "name": "_loan",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "MinBidError",
+    "inputs": [
+      {
+        "name": "_minBid",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "MinBidForCurrencyNotSetError",
+    "inputs": [
+      {
+        "name": "currency",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NFTNotOwnedError",
+    "inputs": [
+      {
+        "name": "_owner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NoBidsError",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotMainLenderError",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "OptionToBuyExpiredError",
+    "inputs": [
+      {
+        "name": "timeLimit",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "OptionToBuyStilValidError",
+    "inputs": [
+      {
+        "name": "timeLimit",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "TooSoonError",
+    "inputs": []
+  }
+] as const;

@@ -1,6 +1,6 @@
 import { Address, isAddress } from 'viem';
 
-import { LoanV4, LoanV5, LoanV6, zeroAddress } from '@/blockchain';
+import { LoanV4, LoanV5, LoanV6, LoanV8, zeroAddress } from '@/blockchain';
 import { getVersionFromMslAddress } from '@/deploys';
 import * as model from '@/model';
 import { millisToSeconds, SECONDS_IN_YEAR, secondsToMillis, toDate } from '@/utils/dates';
@@ -27,7 +27,8 @@ export const renegotiationToMslRenegotiation = (
 export type LoanToMslLoanType =
   | Optional<LoanV4, 'nftCollateralAddress'>
   | Optional<LoanV5, 'nftCollateralAddress'>
-  | Optional<LoanV6, 'nftCollateralAddress'>;
+  | Optional<LoanV6, 'nftCollateralAddress'>
+  | Optional<LoanV8, 'nftCollateralAddress'>;
 
 export const loanToMslLoan = (loan: LoanToMslLoanType) => {
   const nftCollateralAddress = loan.nftCollateralAddress ?? zeroAddress;

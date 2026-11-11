@@ -12,6 +12,7 @@ import {
 import { mainnet } from 'viem/chains';
 
 import { Contracts } from '@/clients/contracts';
+import { AllV8 } from '@/clients/contracts/AllV8';
 import { getContracts } from '@/deploys';
 
 const { MultiSourceLoan, AuctionLoanLiquidator } = getContracts(mainnet);
@@ -56,6 +57,16 @@ describe('Contracts.AllForCollateral', () => {
     const liquidator = await contracts.AllForCollateral(collateral);
     expect(liquidator.address).toBe(rotatedOutLiquidator);
     expect(liquidator.address).not.toBe(AuctionLoanLiquidator['3.1']);
+  });
+
+  test("targets the v3.2 liquidator holding a v3.2 loan's collateral", async () => {
+    const contracts = contractsWithCollateralHeldBy(rotatedOutLiquidator, auctionHash);
+    const liquidator = await contracts.AllForCollateral({
+      ...collateral,
+      mslContractAddress: MultiSourceLoan['3.2'],
+    });
+    expect(liquidator).toBeInstanceOf(AllV8);
+    expect(liquidator.address).toBe(rotatedOutLiquidator);
   });
 
   test('rejects collateral held by an account without code, such as a settled auction winner', async () => {
