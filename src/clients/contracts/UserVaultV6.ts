@@ -1,6 +1,7 @@
 import { Address, PublicClient } from 'viem';
 
 import { Wallet } from '@/clients/contracts';
+import { CreateVaultError } from '@/errors';
 import { userVaultAbi as userVaultABIV6 } from '@/generated/blockchain/v6';
 import {
   BurnAndWithdrawArgs,
@@ -77,36 +78,43 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
     };
   }
 
+  /**
+   * Mints a vault, then deposits `nfts` (one transaction per collection, whatever the case of its
+   * address) and `currencies` into it, one transaction after the other. A deposit that fails
+   * after the mint throws a {@link CreateVaultError} carrying the new `vaultId` and the deposits
+   * already mined, so the caller can resume into that vault.
+   */
   async createVault(nfts: CreateVaultNfts, currencies: CreateVaultCurrencies) {
     const { id: vaultId } = await this.#mintVault();
     const receipts = [];
 
-    // Regroup all elements in the same collection in case users send tokenIds as separate elements of the array
-    const groupedNfts: Record<Address, (typeof nfts)[number]> = {};
+    const groupedNfts = new Map<string, (typeof nfts)[number]>();
     for (const nft of nfts) {
-      const { collection, tokenIds, amounts } = nft;
-      if (groupedNfts[collection]) {
-        groupedNfts[collection].tokenIds.push(...tokenIds);
-        groupedNfts[collection].amounts.push(...amounts);
+      const key = nft.collection.toLowerCase();
+      const group = groupedNfts.get(key);
+      if (group) {
+        group.tokenIds.push(...nft.tokenIds);
+        group.amounts.push(...nft.amounts);
       } else {
-        groupedNfts[collection] = { ...nft, tokenIds: [...tokenIds], amounts: [...amounts] };
+        groupedNfts.set(key, { ...nft, tokenIds: [...nft.tokenIds], amounts: [...nft.amounts] });
       }
     }
 
-    for (const nft of Object.values(groupedNfts)) {
-      const deposit =
-        nft.standard === 'ERC721'
-          ? await this.depositERC721s({ vaultId, ...nft })
-          : await this.depositERC1155s({ vaultId, ...nft });
-      const receipt = await deposit.waitTxInBlock();
-      receipts.push(receipt);
-    }
+    try {
+      for (const nft of groupedNfts.values()) {
+        const deposit =
+          nft.standard === 'ERC721'
+            ? await this.depositERC721s({ vaultId, ...nft })
+            : await this.depositERC1155s({ vaultId, ...nft });
+        receipts.push(await deposit.waitTxInBlock());
+      }
 
-    for (const currencyAmount of currencies) {
-      const { address, amount } = currencyAmount;
-      const deposit = await this.depositERC20({ vaultId, tokenAddress: address, amount });
-      const receipt = await deposit.waitTxInBlock();
-      receipts.push(receipt);
+      for (const { address, amount } of currencies) {
+        const deposit = await this.depositERC20({ vaultId, tokenAddress: address, amount });
+        receipts.push(await deposit.waitTxInBlock());
+      }
+    } catch (cause) {
+      throw new CreateVaultError({ vaultId, receipts, cause });
     }
 
     return { vaultId, receipts };
