@@ -89,12 +89,40 @@ export const signIn = async ({ wallet, issuedAt }: { wallet: Wallet; issuedAt?: 
   return accessToken;
 };
 
+/** How long before its `exp` a session token is replaced, to absorb clock skew with the API. */
+const SESSION_EXPIRY_LEEWAY_SECONDS = 60 * 60;
+
 /**
- * The wallet's API session: signs in on the first request and reuses the token after it.
+ * The `exp` claim of a session token, in seconds since the epoch, or `undefined` when the token
+ * is not a JWT carrying one.
  *
- * Requests that start before the first sign-in finishes wait for that same sign-in rather than
- * starting their own: every sign-in asks the API for a fresh nonce, which replaces the previous
- * one, so concurrent sign-ins reject all but the last with `SIWE_ERROR`.
+ * IMPLEMENTATION NOTE: `signInWithEthereum` returns a JWT whose payload carries `exp`. A JWT is three base64url segments joined by
+ * dots, the second being the JSON claims (https://datatracker.ietf.org/doc/html/rfc7519#section-3),
+ * and `exp` is a NumericDate in seconds (https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.4).
+ * The signature is not checked: the API does that, and the SDK only needs to know when to renew.
+ */
+const sessionTokenExpiry = (token: string): number | undefined => {
+  try {
+    const payload = token.split('.')[1] ?? '';
+    const claims = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+    return typeof claims.exp === 'number' ? claims.exp : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+/**
+ * The wallet's API session: signs in on the first request and reuses the token until it is about
+ * to expire, then signs in again.
+ *
+ * Requests that start before a sign-in finishes wait for that same sign-in rather than starting
+ * their own: every sign-in asks the API for a fresh nonce, which replaces the previous one, so
+ * concurrent sign-ins reject all but the last with `SIWE_ERROR`.
+ *
+ * The token's own `exp` decides when it is renewed. The API answers an expired token as if no
+ * token was sent, with an `UNAUTHORIZED` GraphQL error rather than an HTTP 401, and raises that
+ * same error for calls the wallet is not allowed to make, so re-signing on it would prompt the
+ * wallet on every forbidden call.
  */
 export class SessionToken {
   token?: string;
@@ -126,8 +154,14 @@ export class SessionToken {
       headers: { ...headers, authorization: `Bearer ${this.token}` },
     };
   }
+  private hasLiveToken() {
+    if (!this.token) return false;
+    const expiry = sessionTokenExpiry(this.token);
+    return expiry === undefined || Date.now() / 1000 < expiry - SESSION_EXPIRY_LEEWAY_SECONDS;
+  }
+
   private async signIn() {
-    if (this.token) return;
+    if (this.hasLiveToken()) return;
     this.pendingSignIn ??= this.requestToken({ wallet: this.wallet }).finally(() => {
       this.pendingSignIn = undefined;
     });
