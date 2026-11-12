@@ -36,8 +36,13 @@ import { EmitLoanArgs } from '@/gondi';
 import { waitForSucceededReceipt } from '@/utils/blockchain';
 import { millisToSeconds, SECONDS_IN_DAY, secondsToMillis } from '@/utils/dates';
 import { delegationRevocations, LoanDelegation } from '@/utils/delegation';
-import { getMslLoanId, getRemainingSeconds, LoanToMslLoanType } from '@/utils/loan';
-import { bpsToPercentage, sumBy } from '@/utils/number';
+import {
+  getMslLoanId,
+  getRemainingSeconds,
+  LoanToMslLoanType,
+  remainingLockupSeconds,
+} from '@/utils/loan';
+import { bpsToPercentage, maxBy, sumBy } from '@/utils/number';
 import { areSameAddress, CONTRACT_DOMAIN_NAME } from '@/utils/string';
 import { sanitizeTypedDataMessage } from '@/utils/typedData';
 
@@ -507,21 +512,11 @@ export class MslV6 extends BaseContract<
   }
 
   async getRemainingLockupSeconds({ loan }: { loan: LoanV6 }) {
-    const newestSource = loan.tranche.reduce((newest, tranche) =>
-      tranche.startTime > newest.startTime ? tranche : newest,
-    );
-    const loanEndDate = loan.startTime + loan.duration;
-    const newestSourceDuration = loanEndDate - newestSource.startTime;
-
-    const lockPeriodBps = await this.contract.read.getMinLockPeriod();
-    const lockPercentage = bpsToPercentage(lockPeriodBps);
-
-    const lockupTimeSeconds = Math.ceil(Number(newestSourceDuration) * lockPercentage);
-
-    const ellapsedSeconds = Math.ceil(millisToSeconds(Date.now()) - Number(newestSource.startTime));
-
-    if (ellapsedSeconds >= lockupTimeSeconds) return 0;
-    return lockupTimeSeconds - ellapsedSeconds;
+    return remainingLockupSeconds({
+      loanEndTime: loan.startTime + loan.duration,
+      newestStartTime: maxBy(loan.tranche, 'startTime') ?? loan.startTime,
+      lockPeriodBps: await this.contract.read.getMinLockPeriod(),
+    });
   }
 
   async isEndLockedUp({
