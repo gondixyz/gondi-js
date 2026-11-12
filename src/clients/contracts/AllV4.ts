@@ -3,6 +3,7 @@ import { Address, encodeAbiParameters, PublicClient } from 'viem';
 import { LoanV4 } from '@/blockchain';
 import { Wallet } from '@/clients/contracts';
 import { auctionLoanLiquidatorABI as auctionLoanLiquidatorABIV4 } from '@/generated/blockchain/v4';
+import { waitForSucceededReceipt } from '@/utils/blockchain';
 
 import { AllV6 } from './AllV6';
 import { BaseContract } from './BaseContract';
@@ -89,9 +90,7 @@ export class AllV4 extends BaseContract<typeof auctionLoanLiquidatorABIV4> {
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('BidPlaced', receipt.logs);
         if (events.length === 0) throw new Error('Bid not placed');
         return { ...events[0].args, ...receipt };
@@ -129,9 +128,7 @@ export class AllV4 extends BaseContract<typeof auctionLoanLiquidatorABIV4> {
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('AuctionSettled', receipt.logs);
         if (events.length === 0) throw new Error('Auction not settled');
         return { ...events[0].args, ...receipt };

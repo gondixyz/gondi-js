@@ -10,6 +10,7 @@ import {
   DepositERC721sArgs,
   DepositERC1155sArgs,
 } from '@/gondi';
+import { waitForSucceededReceipt } from '@/utils/blockchain';
 
 import { BaseContract } from './BaseContract';
 
@@ -57,9 +58,7 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('ERC721Withdrawn', receipt.logs);
         const tokenEvents = this.parseEventLogs('ERC20Withdrawn', receipt.logs);
         const erc1155Events = this.parseEventLogs('ERC1155Withdrawn', receipt.logs);
@@ -119,9 +118,7 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('ERC721Deposited', receipt.logs);
         if (events.length === 0) throw new Error('Deposit not created');
         return { ...events[0].args, ...receipt };
@@ -140,9 +137,7 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('ERC1155Deposited', receipt.logs);
         if (events.length === 0) throw new Error('Deposit not created');
         return { ...events[0].args, ...receipt };
@@ -156,9 +151,7 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('ERC20Deposited', receipt.logs);
         if (events.length === 0) throw new Error('Deposit not created');
         return { ...events[0].args, ...receipt };
@@ -168,9 +161,7 @@ export class UserVaultV6 extends BaseContract<typeof userVaultABIV6> {
 
   async #mintVault() {
     const txHash = await this.safeContractWrite.mint(undefined);
-    const receipt = await this.bcClient.waitForTransactionReceipt({
-      hash: txHash,
-    });
+    const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
 
     const events = this.parseEventLogs('Transfer', receipt.logs);
     if (events.length === 0) throw new Error('Vault not created');

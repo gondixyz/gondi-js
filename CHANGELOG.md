@@ -1,3 +1,23 @@
+# Bug Fixes 0.58.4
+
+## Important
+
+A reverted transaction now rejects `waitTxInBlock()` with `Transaction reverted: <hash>` on every contract call, instead of a missing-event error such as `Loan not emitted`. Successful calls are unchanged.
+
+## Table of Contents
+
+- [waitTxInBlock reports reverted transactions](#waittxinblock-reports-reverted-transactions)
+
+## waitTxInBlock reports reverted transactions
+
+**Description:**
+
+- FIX: every `waitTxInBlock()` the SDK returns checks the receipt's status before reading its events, so a transaction that was mined but reverted rejects with `Transaction reverted: <hash>`. Before, most calls (loan emits, repayments, refinances, offer cancellations, auctions, vaults, purchase bundler, NFT and ERC20 approvals, NFT transfers) looked for their event in the reverted receipt and rejected with a misleading message such as `Loan not emitted`.
+
+**Migration Steps:**
+
+- None. Code that matched a missing-event message to detect a revert should match `Transaction reverted` instead.
+
 # Bug Fixes 0.58.3
 
 ## Important

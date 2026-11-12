@@ -3,6 +3,7 @@ import { Address, PublicClient, zeroHash } from 'viem';
 import { Auction, LoanV6 } from '@/blockchain';
 import { Wallet } from '@/clients/contracts';
 import { auctionWithBuyoutLoanLiquidatorAbi as auctionWithBuyoutLoanLiquidatorABIV6 } from '@/generated/blockchain/v6';
+import { waitForSucceededReceipt } from '@/utils/blockchain';
 import { millisToSeconds } from '@/utils/dates';
 
 import { BaseContract } from './BaseContract';
@@ -60,9 +61,7 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('BidPlaced', receipt.logs);
         if (events.length === 0) throw new Error('Bid not placed');
         return { ...events[0].args, ...receipt };
@@ -90,9 +89,7 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('AuctionSettledWithBuyout', receipt.logs);
         if (events.length === 0) throw new Error('Auction not settled');
         return { ...events[0].args, ...receipt };
@@ -109,9 +106,7 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
     return {
       txHash,
       waitTxInBlock: async () => {
-        const receipt = await this.bcClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
+        const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const events = this.parseEventLogs('AuctionSettled', receipt.logs);
         if (events.length === 0) throw new Error('Auction not settled');
         return { ...events[0].args, ...receipt };
