@@ -1,3 +1,23 @@
+# Bug Fixes 0.58.7
+
+## Important
+
+An offer published with `publication` is refused once its `expirationTime` has passed, instead of being resent or signed. Calls with live terms keep working.
+
+## Table of Contents
+
+- [Expired publications are refused](#expired-publications-are-refused)
+
+## Expired publications are refused
+
+**Description:**
+
+- FIX: `gondi.makeSingleNftOffer`, `gondi.makeCollectionOffer` and `gondi.makeRefinanceOffer` called with `publication` resent the signature of an earlier identical call whose save failed, even after its `expirationTime` had passed, so a retry after a long pause published an offer nobody could accept. They now throw `Offer expired` once `expirationTime` has passed, before asking for a signature, and drop the pending signature.
+
+**Migration Steps:**
+
+- None. Catch `Offer expired` and retry with a later `expirationTime`.
+
 # Bug Fixes 0.58.6
 
 ## Important

@@ -229,6 +229,23 @@ export class Gondi {
     if (publications.size > 256) publications.delete(publications.keys().next().value as string);
   }
 
+  /**
+   * Returns the signed payload still pending under `key`. Throws once
+   * `expirationTime` (seconds, part of the signed terms and so of `key`) has
+   * passed, dropping the payload: the same terms signed again would be expired
+   * too, and the API saves an expired offer that nobody can accept.
+   */
+  private pendingPublication<Value>(
+    publications: Map<string, Value>,
+    key: string | undefined,
+    expirationTime: bigint,
+  ) {
+    if (!key) return undefined;
+    if (expirationTime > BigInt(millisToSeconds(Date.now()))) return publications.get(key);
+    publications.delete(key);
+    throw new Error('Offer expired');
+  }
+
   /** Binds signed terms and contract; excludes unsigned predecessors. */
   private publicationKey(
     offer: object,
@@ -293,7 +310,8 @@ export class Gondi {
    * that signs the flag; any other offer signs for v3.1.
    * @param publication Optional unsigned admission metadata. Previews before signing
    * and throws the backend rejection reason. Identical retries after failed saves
-   * reuse the signature; a successful save clears that pending signature.
+   * reuse the signature; a successful save clears it. Throws `Offer expired` once
+   * `expirationTime` has passed, before asking for a signature.
    */
   async makeSingleNftOffer(
     offer: model.SingleNftOfferInput,
@@ -329,9 +347,11 @@ export class Gondi {
     const contractAddress = contract.address;
 
     const publicationKey = this.publicationKey(offer, contractAddress, publication);
-    const pending = publicationKey
-      ? this.pendingSingleNftPublications.get(publicationKey)
-      : undefined;
+    const pending = this.pendingPublication(
+      this.pendingSingleNftPublications,
+      publicationKey,
+      offer.expirationTime,
+    );
     if (pending && !skipSave && publicationKey) {
       const saved = await this.apiClient.saveSingleNftOffer(pending, publication);
       this.pendingSingleNftPublications.delete(publicationKey);
@@ -399,7 +419,8 @@ export class Gondi {
    * A `lenderRefinanceDisabled` offer signs for MultiSourceLoan v3.2, the only version
    * that signs the flag; any other offer signs for v3.1.
    * @param publication Optional unsigned admission metadata. Identical retries after
-   * failed saves reuse the signature; a successful save clears that pending signature.
+   * failed saves reuse the signature; a successful save clears it. Throws `Offer expired`
+   * once `expirationTime` has passed, before asking for a signature.
    * The backend evaluates collection offers independently for each item.
    */
   async makeCollectionOffer(
@@ -420,9 +441,11 @@ export class Gondi {
     ).address;
 
     const publicationKey = this.publicationKey(offer, contractAddress, publication);
-    const pending = publicationKey
-      ? this.pendingCollectionPublications.get(publicationKey)
-      : undefined;
+    const pending = this.pendingPublication(
+      this.pendingCollectionPublications,
+      publicationKey,
+      offer.expirationTime,
+    );
     if (pending && publicationKey) {
       const saved = await this.apiClient.saveCollectionOffer(pending, publication);
       this.pendingCollectionPublications.delete(publicationKey);
@@ -975,7 +998,8 @@ export class Gondi {
    * Signs and saves a refinance offer, optionally with a matching fallback.
    * @param props.publication Optional unsigned admission metadata. Previews before
    * signing and throws the backend rejection reason. Identical retries after failed
-   * saves reuse both signatures; a successful save clears the pending payloads.
+   * saves reuse both signatures; a successful save clears them. Throws `Offer expired`
+   * once `expirationTime` has passed, before asking for a signature.
    * @param props.private Shows the offer only to the loan's borrower and to the lender.
    * The API accepts it only for a principal worth at least the private minimum in USD
    * ($50k). It is not part of the signed struct. With `withFallbackOffer`, the fallback
@@ -1010,9 +1034,11 @@ export class Gondi {
       contractAddress,
       publication,
     );
-    const pending = publicationKey
-      ? this.pendingRenegotiationPublications.get(publicationKey)
-      : undefined;
+    const pending = this.pendingPublication(
+      this.pendingRenegotiationPublications,
+      publicationKey,
+      renegotiationInput.expirationTime,
+    );
     if (pending && publicationKey) {
       const saved = await this.apiClient.saveRefinanceOffer(
         pending.offer,
