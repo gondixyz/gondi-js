@@ -140,4 +140,60 @@ describe('SessionToken', () => {
 
     expect(requestToken).toHaveBeenCalledTimes(2);
   });
+
+  describe('renewal', () => {
+    const now = new Date('2026-04-30T12:00:00.000Z');
+    const nowSeconds = now.getTime() / 1000;
+    const query = gql`
+      {
+        a
+      }
+    `;
+    const jwtExpiringAt = (exp: number) =>
+      ['header', btoa(JSON.stringify({ exp })).replace(/=+$/, ''), 'signature'].join('.');
+
+    beforeAll(() => {
+      setSystemTime(now);
+    });
+
+    afterAll(() => {
+      setSystemTime();
+    });
+
+    test('signs in again once the token is within an hour of its expiry', async () => {
+      const renewed = jwtExpiringAt(nowSeconds + 60 * 24 * 3600);
+      const requestToken = mock(async () => renewed);
+      const session = new SessionToken({
+        wallet,
+        token: jwtExpiringAt(nowSeconds + 30 * 60),
+        requestToken,
+      });
+
+      const request = await session.authorizeRequest({ query });
+
+      expect(requestToken).toHaveBeenCalledTimes(1);
+      expect(request.headers).toEqual({ authorization: `Bearer ${renewed}` });
+    });
+
+    test('reuses a token that is not about to expire', async () => {
+      const token = jwtExpiringAt(nowSeconds + 2 * 3600);
+      const requestToken = mock(async () => 'renewed');
+      const session = new SessionToken({ wallet, token, requestToken });
+
+      const request = await session.authorizeRequest({ query });
+
+      expect(requestToken).not.toHaveBeenCalled();
+      expect(request.headers).toEqual({ authorization: `Bearer ${token}` });
+    });
+
+    test('reuses a token that carries no expiry', async () => {
+      const requestToken = mock(async () => 'renewed');
+      const session = new SessionToken({ wallet, token: 'opaque', requestToken });
+
+      const request = await session.authorizeRequest({ query });
+
+      expect(requestToken).not.toHaveBeenCalled();
+      expect(request.headers).toEqual({ authorization: 'Bearer opaque' });
+    });
+  });
 });

@@ -1,3 +1,23 @@
+# Bug Fixes 0.60.1
+
+## Important
+
+The SDK signs in again before its API session expires, so a long-lived `Gondi` instance keeps working. Existing calls keep working.
+
+## Table of Contents
+
+- [Expired sessions](#expired-sessions)
+
+## Expired sessions
+
+**Description:**
+
+- FIX: the SDK signs in again when its API session is within an hour of expiring. It used to keep the first session forever, so once the API expired it (60 days after sign-in) every authenticated call failed with `UNAUTHORIZED` until the `Gondi` instance was rebuilt. A `Gondi` instance that lives that long now asks the wallet for one new sign-in signature instead.
+
+**Migration Steps:**
+
+- None.
+
 # New Features 0.60.0
 
 ## Important
