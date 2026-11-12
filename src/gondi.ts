@@ -284,6 +284,8 @@ export class Gondi {
 
   /**
    * Signs and saves an item offer.
+   * A `lenderRefinanceDisabled` offer signs for MultiSourceLoan v3.2, the only version
+   * that signs the flag; any other offer signs for v3.1.
    * @param publication Optional unsigned admission metadata. Previews before signing
    * and throws the backend rejection reason. Identical retries after failed saves
    * reuse the signature; a successful save clears that pending signature.
@@ -318,7 +320,7 @@ export class Gondi {
     skipSave?: boolean,
     publication?: LoanOfferPublicationInput,
   ) {
-    const contract = this.contracts.Msl(mslContractAddress ?? this.offerContractAddress());
+    const contract = this.contracts.Msl(mslContractAddress ?? this.offerContractAddress(offer));
     const contractAddress = contract.address;
 
     const publicationKey = this.publicationKey(offer, contractAddress, publication);
@@ -389,6 +391,8 @@ export class Gondi {
 
   /**
    * Signs and saves a collection offer without an item preview.
+   * A `lenderRefinanceDisabled` offer signs for MultiSourceLoan v3.2, the only version
+   * that signs the flag; any other offer signs for v3.1.
    * @param publication Optional unsigned admission metadata. Identical retries after
    * failed saves reuse the signature; a successful save clears that pending signature.
    * The backend evaluates collection offers independently for each item.
@@ -407,7 +411,7 @@ export class Gondi {
     publication?: LoanOfferPublicationInput,
   ) {
     const contractAddress = this.contracts.Msl(
-      mslContractAddress ?? this.offerContractAddress(),
+      mslContractAddress ?? this.offerContractAddress(offer),
     ).address;
 
     const publicationKey = this.publicationKey(offer, contractAddress, publication);
@@ -434,7 +438,11 @@ export class Gondi {
     });
   }
 
-  /** A loan offer any NFT of the collection carrying every one of `offer.traitIds` can borrow against. */
+  /**
+   * A loan offer any NFT of the collection carrying every one of `offer.traitIds` can borrow against.
+   * A `lenderRefinanceDisabled` offer signs for MultiSourceLoan v3.2, the only version
+   * that signs the flag; any other offer signs for v3.1.
+   */
   async makeTraitOffer(offer: model.TraitOfferInput) {
     return await this._makeTraitOffer(offer);
   }
@@ -469,7 +477,7 @@ export class Gondi {
     ) => Promise<{ offer: Omit<GenerateCollectionOfferHashMutation['offer'], '__typename'> }>;
     saveOffer: (signedOffer: TOffer & MakeOfferSignedFields) => Promise<TSaved>;
   }) {
-    const contract = this.contracts.Msl(mslContractAddress ?? this.offerContractAddress());
+    const contract = this.contracts.Msl(mslContractAddress ?? this.offerContractAddress(offer));
 
     const baseOffer: MakeOfferInput = offer;
     const defaults: MakeOfferDefaults = {
@@ -1566,17 +1574,32 @@ export class Gondi {
 
   /**
    * The MultiSourceLoan address `makeSingleNftOffer`, `makeCollectionOffer` and
-   * `makeTraitOffer` sign for on the wallet's chain: the `to` a lender approves
-   * the principal for before publishing those offers.
+   * `makeTraitOffer` sign for on the wallet's chain when the caller names none:
+   * the `to` a lender approves the principal for before publishing those offers.
+   * v3.2 is the only version whose signed `LoanOffer` carries
+   * `lenderRefinanceDisabled`, so a flagged offer signs for it and throws on a
+   * chain without a v3.2 deployment; any other offer, or no offer, signs for the
+   * default contract.
    */
-  offerContractAddress() {
-    return this.getDefaults().Msl;
+  offerContractAddress({
+    lenderRefinanceDisabled,
+  }: {
+    lenderRefinanceDisabled?: boolean | null;
+  } = {}) {
+    if (!lenderRefinanceDisabled) return this.getDefaults().Msl;
+    const protectedMsl = getContracts(this.wallet.chain).MultiSourceLoan['3.2'];
+    if (areSameAddress(protectedMsl, zeroAddress)) {
+      throw new Error(
+        `lenderRefinanceDisabled offers need MultiSourceLoan v3.2, not deployed on chain ${this.wallet.chain.id}`,
+      );
+    }
+    return protectedMsl;
   }
 
   private getDefaults() {
     const contracts = getContracts(this.wallet.chain);
     return {
-      // Ordinary offers stay on 3.1 by design; only lenderRefinanceDisabled offers route to 3.2.
+      // Ordinary offers stay on 3.1 by design; offerContractAddress routes lenderRefinanceDisabled offers to 3.2.
       Msl: contracts.MultiSourceLoan['3.1'],
       UserVault: contracts.UserVault['3'],
     };

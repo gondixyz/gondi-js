@@ -1,3 +1,24 @@
+# Bug Fixes 0.58.3
+
+## Important
+
+Offers that set `lenderRefinanceDisabled` now sign for MultiSourceLoan v3.2 when no contract is given. Ordinary offers are unchanged.
+
+## Table of Contents
+
+- [Protected offers sign for v3.2](#protected-offers-sign-for-v32-0583)
+
+## Protected offers sign for v3.2 0.58.3
+
+**Description:**
+
+- FIX: `makeSingleNftOffer`, `makeCollectionOffer` and `makeTraitOffer` signed every offer for v3.1, the default contract, including offers with `lenderRefinanceDisabled`. v3.1 does not sign that flag, so the API refused those offers. They now sign for v3.2, the only version that signs it. On a chain without a v3.2 deployment the call throws before asking for a signature. Offers without the flag still sign for v3.1. Entry 0.31.0 said the default contract was v3.2; it has been v3.1 since, and this is the routing that entry meant.
+- `offerContractAddress(offer?)` takes the offer and returns the contract it signs for: v3.2 for a `lenderRefinanceDisabled` offer, so a lender approves the principal for the right contract. Called with no offer it still returns the default contract.
+
+**Migration Steps:**
+
+- None. Callers that pass a contract to sign for keep signing for that contract.
+
 # Bug Fixes 0.58.2
 
 ## Important
