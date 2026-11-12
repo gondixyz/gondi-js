@@ -1,4 +1,4 @@
-export { FlaggedNftError } from '@/errors';
+export { CreateVaultError, FlaggedNftError } from '@/errors';
 export { Gondi } from '@/gondi';
 export {
   CollectionOrderType,
