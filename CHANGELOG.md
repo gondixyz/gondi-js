@@ -1,3 +1,29 @@
+# Bug Fixes 0.61.1
+
+## Important
+
+The docs of the hide and cancel calls now say which ones change on-chain state. No behaviour changes.
+
+## Table of Contents
+
+- [Hiding an offer does not cancel it](#hiding-an-offer-does-not-cancel-it)
+
+## Hiding an offer does not cancel it
+
+**Description:**
+
+- FIX: the docs of `gondi.hideOffer`, `gondi.hideOffers` and `gondi.hideRenegotiationOffer` now say they only hide the offer from the GONDI API. The lender's signature stays valid, so anyone already holding it can still execute the offer; `gondi.cancelOffer`, `gondi.cancelOffers` and `gondi.cancelRefinanceOffer` cancel it on-chain.
+- FIX: the docs of `gondi.cancelOrders` now say that its default cancels every order: only the bids no one can fill without the API skip the transaction, and every other order is cancelled on-chain.
+
+**Migration Steps:**
+
+- None. To make a loan offer unexecutable rather than just hidden, cancel it on-chain:
+
+```typescript
+const { waitTxInBlock } = await gondi.cancelOffer({ id, contractAddress });
+await waitTxInBlock();
+```
+
 # Breaking Changes 0.61.0
 
 ## Important

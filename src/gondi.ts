@@ -922,7 +922,9 @@ export class Gondi {
   }
 
   /**
-   * Cancels the wallet's trade orders by id, at most 50 per call, with one API call.
+   * Cancels the wallet's trade orders by id, at most 50 per call, with one API call. Every order
+   * ends up unfillable: the default only skips the transaction for the bids no one can fill
+   * without the API, and cancels every other order on-chain.
    *
    * `cancelTradeOrders` cancels the bids that `cancelsOffChain` (restricted to the GONDI signed
    * zone, so they only fill with a signature the API issues) without a transaction, and returns
@@ -980,10 +982,19 @@ export class Gondi {
     });
   }
 
+  /**
+   * Hides a loan offer from the GONDI API's listings. Off-chain only: the lender's signature stays
+   * valid, so anyone already holding it can still start a loan with the offer. Use
+   * {@link Gondi.cancelOffer} to make it unexecutable on-chain.
+   */
   async hideOffer({ id, contractAddress }: { id: bigint; contractAddress: Address }) {
     return this.apiClient.hideOffer({ contract: contractAddress, id: id.toString() });
   }
 
+  /**
+   * Hides several loan offers from the GONDI API's listings. Off-chain only, like
+   * {@link Gondi.hideOffer}: use {@link Gondi.cancelOffers} to make them unexecutable on-chain.
+   */
   async hideOffers({ ids, contractAddress }: { ids: bigint[]; contractAddress: Address }) {
     return this.apiClient.hideOffers({
       contract: contractAddress,
@@ -991,6 +1002,7 @@ export class Gondi {
     });
   }
 
+  /** Lists a loan offer hidden with {@link Gondi.hideOffer} in the GONDI API again. */
   async unhideOffer({ id, contractAddress }: { id: bigint; contractAddress: Address }) {
     return this.apiClient.unhideOffer({
       contract: contractAddress,
@@ -1145,6 +1157,11 @@ export class Gondi {
     });
   }
 
+  /**
+   * Hides a renegotiation offer from the GONDI API's listings. Off-chain only: the lender's
+   * signature stays valid, so anyone already holding it can still refinance with the offer. Use
+   * {@link Gondi.cancelRefinanceOffer} to make it unexecutable on-chain.
+   */
   async hideRenegotiationOffer({ id, contractAddress }: { id: bigint; contractAddress: Address }) {
     return this.apiClient.hideRenegotiationOffer({
       id: id.toString(),
@@ -1152,6 +1169,7 @@ export class Gondi {
     });
   }
 
+  /** Lists a renegotiation offer hidden with {@link Gondi.hideRenegotiationOffer} again. */
   async unhideRenegotiationOffer({
     id,
     contractAddress,
