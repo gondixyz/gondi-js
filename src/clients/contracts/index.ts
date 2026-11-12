@@ -23,6 +23,7 @@ import { areSameAddress } from '@/utils/string';
 import { AllV4 } from './AllV4';
 import { AllV5 } from './AllV5';
 import { AllV6 } from './AllV6';
+import { AllV8 } from './AllV8';
 import { BaseContract } from './BaseContract';
 import { MslV4 } from './MslV4';
 import { MslV5 } from './MslV5';
@@ -65,7 +66,7 @@ export class Contracts {
     '2': AllV5,
     '3': AllV6,
     '3.1': AllV6,
-    '3.2': AllV6,
+    '3.2': AllV8,
   };
 
   _PBs = {
