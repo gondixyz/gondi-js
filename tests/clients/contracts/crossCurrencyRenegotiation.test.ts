@@ -178,6 +178,24 @@ describe('cross-currency loan quotes', () => {
       client.execute({ loan, loanId: 1n, executionData, quote: refreshed }),
     ).rejects.toThrow('exact quoted');
   });
+  test('asks for no repayment signature when the borrower declines the execution one', async () => {
+    const { client, publicClient } = setup();
+    const quote = await client.quote({ loan, loanId: 1n, executionData });
+    const originalRead = publicClient.readContract;
+    publicClient.readContract = mock(async (args: Parameters<typeof originalRead>[0]) =>
+      args.functionName === 'allowance' ? quote.maximumFlashRepayment : originalRead(args),
+    ) as typeof originalRead;
+    client.msl.signExecutionData = mock(async () => {
+      throw new Error('User rejected the request');
+    });
+    const signRepaymentData = mock(async () => '0x' as const);
+    client.previousMsl.signRepaymentData = signRepaymentData;
+    await expect(client.execute({ loan, loanId: 1n, executionData, quote })).rejects.toThrow(
+      'User rejected',
+    );
+    expect(signRepaymentData).not.toHaveBeenCalled();
+  });
+
   test('records the live replacement contract fee instead of assuming a version fee', async () => {
     const { client } = setup({ protocolFeeBps: 1750n });
     const quote = await client.quote({ loan, loanId: 1n, executionData });

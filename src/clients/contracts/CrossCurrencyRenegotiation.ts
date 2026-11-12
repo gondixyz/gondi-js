@@ -242,7 +242,12 @@ export class CrossCurrencyRenegotiation extends BaseContract<typeof positionMigr
     });
   }
 
-  /** Checks the bound quote and capped approvals, then simulates and broadcasts atomically. */
+  /**
+   * Checks the bound quote and capped approvals, then simulates and broadcasts atomically.
+   * The borrower signs the deadline-bound execution data first and the repayment data, which
+   * carries no nonce or expiry, last, so declining an earlier prompt never leaves a repayment
+   * signature behind.
+   */
   async execute({
     quote,
     ...input
@@ -324,6 +329,11 @@ export class CrossCurrencyRenegotiation extends BaseContract<typeof positionMigr
     }
     if (borrowerBalance < budget.maximumTopUp)
       throw new Error('Insufficient borrower top-up balance');
+    const nonce = await this.contract.read.getNonce([this.wallet.account.address]);
+    const emitCalldata = await this.msl.encodeEmitLoan({
+      emitArgs: executionData,
+      withSignature: true,
+    });
     const repaymentCalldata = await this.previousMsl.encodeRepayLoan({
       repayArgs: {
         loan: parsed.loan,
@@ -333,10 +343,6 @@ export class CrossCurrencyRenegotiation extends BaseContract<typeof positionMigr
           shouldDelegate: false,
         },
       },
-      withSignature: true,
-    });
-    const emitCalldata = await this.msl.encodeEmitLoan({
-      emitArgs: executionData,
       withSignature: true,
     });
     const swapData = buildCrossCurrencySwap({
@@ -376,7 +382,7 @@ export class CrossCurrencyRenegotiation extends BaseContract<typeof positionMigr
           },
           approvalContract: parsed.purchaseBundler,
           migrator: this.wallet.account.address,
-          nonce: await this.contract.read.getNonce([this.wallet.account.address]),
+          nonce,
         },
         migratorSignature: '0x',
       },
