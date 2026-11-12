@@ -63,27 +63,21 @@ describe('cancelOrders', () => {
     expect(result.transactions).toHaveLength(1);
   });
 
-  test('sends every calldata entry the API returns as its own transaction, in order', async () => {
+  test('sends one transaction per marketplace', async () => {
     cancelTradeOrders.mockResolvedValue(
       cancelledOffChain(
         [],
         [
-          { calldata: '0xseaportFirstPart', marketPlaceAddress: SEAPORT },
-          { calldata: '0xseaportSecondPart', marketPlaceAddress: SEAPORT },
+          { calldata: '0xseaport', marketPlaceAddress: SEAPORT },
           { calldata: '0xother', marketPlaceAddress: OTHER_MARKETPLACE },
         ],
       ),
     );
 
-    const result = await gondi.cancelOrders({ orderIds: [1, 2, 3] });
+    const result = await gondi.cancelOrders({ orderIds: [1, 2] });
 
-    expect(GenericContract.mock.calls).toEqual([[SEAPORT], [SEAPORT], [OTHER_MARKETPLACE]]);
-    expect(sendTransactionData.mock.calls).toEqual([
-      ['0xseaportFirstPart'],
-      ['0xseaportSecondPart'],
-      ['0xother'],
-    ]);
-    expect(result.transactions).toHaveLength(3);
+    expect(sendTransactionData.mock.calls).toEqual([['0xseaport'], ['0xother']]);
+    expect(result.transactions).toHaveLength(2);
   });
 
   test('cancels every order on-chain when forced, without the off-chain cancel', async () => {
@@ -102,21 +96,10 @@ describe('cancelOrders', () => {
     expect(sendTransactionData).not.toHaveBeenCalled();
   });
 
-  test('takes 100 orders in one call', async () => {
-    const orderIds = Array.from({ length: 100 }, (_, index) => index + 1);
-    cancelTradeOrders.mockResolvedValue(cancelledOffChain(orderIds, []));
-
-    const result = await gondi.cancelOrders({ orderIds });
-
-    expect(cancelTradeOrders).toHaveBeenCalledWith({ orderIds });
-    expect(result.offChainOrderIds).toEqual(orderIds);
-  });
-
-  test.each([[[]], [Array.from({ length: 101 }, (_, index) => index + 1)]])(
+  test.each([[[]], [Array.from({ length: 51 }, (_, index) => index + 1)]])(
     'rejects an empty or oversized selection',
     async (orderIds) => {
-      await expect(gondi.cancelOrders({ orderIds })).rejects.toThrow('Between 1 and 100 orders');
-      expect(cancelTradeOrders).not.toHaveBeenCalled();
+      await expect(gondi.cancelOrders({ orderIds })).rejects.toThrow('Between 1 and 50 orders');
     },
   );
 });

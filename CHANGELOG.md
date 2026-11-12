@@ -1,36 +1,3 @@
-# New Features 0.62.0
-
-## Important
-
-`gondi.cancelOrders` takes up to 100 orders per call, up from 50, and can send more than one transaction to the same marketplace. Existing calls keep working.
-
-## Table of Contents
-
-- [cancelOrders takes 100 orders](#cancelorders-takes-100-orders)
-
-## cancelOrders takes 100 orders
-
-**Description:**
-
-- ENHANCEMENT: `gondi.cancelOrders({ orderIds, onChain? })` accepts up to 100 order ids per call, up from 50. It still rejects an empty list, and a longer one, before calling the API.
-- ENHANCEMENT: `gondi.cancelOrders` sends every calldata entry the API returns as its own transaction, one after another. That is usually one transaction per marketplace, but the API splits a marketplace's cancel when it would be too large for one transaction, so `transactions` can hold more than one entry for the same marketplace. The docs used to say "one transaction per marketplace".
-
-**Reason:**
-
-Cancelling a large selection, such as the listings a bulk relist replaces, took one call and one wallet confirmation per 50 orders. Most selections of up to 100 orders now fit in one transaction.
-
-**Migration Steps:**
-
-- None for existing calls. A caller that chunked its ids by 50 can chunk by 100.
-- Do not assume one transaction per marketplace. Read the number of transactions from the result, and wait for each one:
-
-```typescript
-const { offChainOrderIds, transactions } = await gondi.cancelOrders({ orderIds });
-for (const { waitTxInBlock } of transactions) {
-  await waitTxInBlock();
-}
-```
-
 # Bug Fixes 0.61.1
 
 ## Important

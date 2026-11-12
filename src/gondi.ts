@@ -97,7 +97,7 @@ import { areSameAddress } from '@/utils/string';
 import { isDefined, OptionalNullable } from '@/utils/types';
 
 /** The most orders `cancelOrders` takes at once: the API's cancel calldata limit. */
-const MAX_CANCEL_ORDERS = 100;
+const MAX_CANCEL_ORDERS = 50;
 
 /** The `__typename` of every order `makeOrder` can publish. */
 const PUBLISHED_ORDER_TYPENAMES = [
@@ -922,23 +922,19 @@ export class Gondi {
   }
 
   /**
-   * Cancels the wallet's trade orders by id, at most 100 per call, with one API call. Every order
+   * Cancels the wallet's trade orders by id, at most 50 per call, with one API call. Every order
    * ends up unfillable: the default only skips the transaction for the bids no one can fill
    * without the API, and cancels every other order on-chain.
    *
    * `cancelTradeOrders` cancels the bids that `cancelsOffChain` (restricted to the GONDI signed
    * zone, so they only fill with a signature the API issues) without a transaction, and returns
-   * the Seaport cancel calldata of the rest. Each calldata entry is sent as its own transaction,
-   * one after another: usually one per marketplace, and more when the API splits a marketplace's
-   * cancel because it would not fit in one transaction. So the number of transactions is only
-   * known from the result, and a later one can fail after an earlier one was sent.
+   * the Seaport cancel calldata of the rest, sent as one transaction per marketplace.
    *
    * An off-chain cancel is final once the last fill signature already issued for the bid expires,
    * a few minutes at most. Pass `onChain: true` to cancel every order on-chain instead, final as
    * soon as the transaction is mined.
    *
-   * @returns The ids cancelled off-chain, and one `{ txHash, waitTxInBlock }` per transaction
-   * sent, in the order they were sent.
+   * @returns The ids cancelled off-chain, and one `{ txHash, waitTxInBlock }` per on-chain cancel.
    */
   async cancelOrders({ orderIds, onChain = false }: { orderIds: number[]; onChain?: boolean }) {
     if (orderIds.length === 0 || orderIds.length > MAX_CANCEL_ORDERS) {
