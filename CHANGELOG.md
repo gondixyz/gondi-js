@@ -1,3 +1,64 @@
+# Breaking Changes 0.61.0
+
+## Important
+
+Auction calls fall back to the auction on chain when the struct the caller passes is stale, `liquidateLoan` says which way the loan was liquidated, and the buyout lockup of a contract version 3.2 auction is the auction's own.
+
+## Table of Contents
+
+- [Stale auctions are read from the chain](#stale-auctions-are-read-from-the-chain)
+- [Version 3.2 buyout lockup](#version-32-buyout-lockup)
+- [liquidateLoan result](#liquidateloan-result)
+
+## Stale auctions are read from the chain
+
+**Description:**
+
+- FIX: `gondi.placeBid`, `gondi.settleAuction` and `gondi.settleAuctionWithBuyout` on contract versions 3, 3.1 and 3.2 first send the auction the caller passes. When the liquidator rejects it as stale (`InvalidHashAuctionError`), they rebuild the auction from its liquidator's `LoanLiquidationStarted` and latest `BidPlaced` events and send again.
+- FIX: a version 3.2 auction passed without `loanHash` and `buyoutWindow` is rebuilt from the chain straight away instead of throwing.
+
+**Reason:**
+
+The liquidator stores only the hash of the auction and checks every call against it. A struct read before someone else's bid no longer matched, so the next bid or settlement reverted.
+
+**Migration Steps:**
+
+- None. A fresh struct costs no extra read. The rebuild uses `eth_getLogs` from the block the auction started in, so it needs an RPC provider that serves that block range.
+
+## Version 3.2 buyout lockup
+
+**Description:**
+
+- FIX: `gondi.getAuctionRemainingLockupSeconds` on a version 3.2 auction counts down the `buyoutWindow` the auction recorded when it started. It used to read the liquidator's current `getTimeForMainLenderToBuy()`, which is two days even for an auction whose main lender is a pool, where the window is 0. The window comes from the `auction` argument when it has one, and from the chain otherwise, read once per auction.
+- BREAKING: its `auction` argument now needs `loanId` as well as `loanAddress` and `startTime`, and accepts an optional `buyoutWindow`.
+
+**Migration Steps:**
+
+```typescript
+const seconds = await gondi.getAuctionRemainingLockupSeconds({
+  auction: { loanAddress, loanId, startTime },
+});
+```
+
+## liquidateLoan result
+
+**Description:**
+
+- BREAKING: the result of `liquidateLoan(...).waitTxInBlock()` on contract versions 3, 3.1 and 3.2 has a `liquidation` field: `'foreclosed'` when the lender took the NFT, with the `LoanForeclosed` arguments, or `'auction'` when the loan went to the liquidator, with the `LoanSentToLiquidator` arguments plus `collectionContractAddress`, `tokenId` and the `auction` struct that started.
+
+**Reason:**
+
+The result used to merge the arguments of whichever event was found into one shape, so a caller could not tell a foreclosure from an auction, and had no auction struct to bid with.
+
+**Migration Steps:**
+
+```typescript
+const result = await(await gondi.liquidateLoan({ loan, loanId })).waitTxInBlock();
+if (result.liquidation === 'auction') {
+  const { auction, collectionContractAddress, tokenId } = result;
+}
+```
+
 # Bug Fixes 0.60.1
 
 ## Important

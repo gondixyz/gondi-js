@@ -6,6 +6,7 @@ import {
   TransactionReceiptNotFoundError,
   WaitForTransactionReceiptTimeoutError,
 } from 'viem';
+import { mainnet } from 'viem/chains';
 
 import { HexString } from '@/blockchain';
 
@@ -93,4 +94,37 @@ export const withRetriedReceiptWait = <TClient extends ReceiptWaiter>(
     }
   };
   return { ...client, waitForTransactionReceipt };
+};
+
+type BlockReader = Pick<PublicClient, 'chain' | 'getBlock' | 'getChainId'>;
+
+/** The shortest time between two blocks of a chain, where it is known; mainnet slots are 12 s. */
+const MINIMUM_BLOCK_MILLISECONDS: Partial<Record<number, bigint>> = { [mainnet.id]: 12_000n };
+
+/** The shortest block time assumed on any other chain: Arbitrum Nitro's 250 ms sequencer tick. */
+const DEFAULT_MINIMUM_BLOCK_MILLISECONDS = 250n;
+
+/**
+ * Returns a block number at or before the block a call that recorded `block.timestamp` as
+ * `timestamp` (seconds) was mined in, in one read of the latest block.
+ *
+ * No more blocks than the elapsed time over the chain's shortest block time can have been mined
+ * since `timestamp`, so stepping back that many blocks from the latest one never lands after it.
+ * The block is not exact: on a chain whose blocks are slower than that floor it lands earlier,
+ * which only widens the range a caller scans from it.
+ *
+ * IMPLEMENTATION NOTE: viem's `getBlock` reads the latest block when called without a block
+ * number, and its `timestamp` is the block's Unix time in seconds as a `bigint`
+ * (https://viem.sh/docs/actions/public/getBlock#returns). `client.chain` is unset on a client
+ * built without one, so the chain id then comes from `getChainId`
+ * (https://viem.sh/docs/actions/public/getChainId).
+ */
+export const getBlockNumberAtOrBefore = async (client: BlockReader, timestamp: bigint) => {
+  const chainId = client.chain?.id ?? (await client.getChainId());
+  const latest = await client.getBlock();
+  const minimumBlockMilliseconds =
+    MINIMUM_BLOCK_MILLISECONDS[chainId] ?? DEFAULT_MINIMUM_BLOCK_MILLISECONDS;
+  const elapsedMilliseconds = (latest.timestamp - timestamp) * 1_000n;
+  const blockNumber = latest.number - elapsedMilliseconds / minimumBlockMilliseconds;
+  return blockNumber > 0n ? blockNumber : 0n;
 };

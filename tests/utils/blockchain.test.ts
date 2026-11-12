@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { TransactionReceiptNotFoundError, WaitForTransactionReceiptTimeoutError } from 'viem';
 
-import { withRetriedReceiptWait } from '@/utils/blockchain';
+import { getBlockNumberAtOrBefore, withRetriedReceiptWait } from '@/utils/blockchain';
 
 const HASH = `0x${'ab'.repeat(32)}` as const;
 
@@ -69,5 +69,28 @@ describe('withRetriedReceiptWait', () => {
     const [firstTimeout, ...laterTimeouts] = timeouts;
     expect(firstTimeout).toBeLessThanOrEqual(200);
     laterTimeouts.forEach((timeout) => expect(timeout).toBeLessThan(firstTimeout ?? 0));
+  });
+});
+
+describe('getBlockNumberAtOrBefore', () => {
+  const latest = { number: 1_000n, timestamp: 50_000n };
+
+  const chain = (chainId: number) =>
+    ({
+      chain: undefined,
+      getChainId: async () => chainId,
+      getBlock: async () => latest,
+    }) as unknown as Parameters<typeof getBlockNumberAtOrBefore>[0];
+
+  test('steps back one block per 12 seconds on mainnet', async () => {
+    expect(await getBlockNumberAtOrBefore(chain(1), 50_000n - 1_200n)).toBe(900n);
+  });
+
+  test('steps back four blocks per second on any other chain', async () => {
+    expect(await getBlockNumberAtOrBefore(chain(999), 50_000n - 100n)).toBe(600n);
+  });
+
+  test('stops at the first block', async () => {
+    expect(await getBlockNumberAtOrBefore(chain(999), 0n)).toBe(0n);
   });
 });
