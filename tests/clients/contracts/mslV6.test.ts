@@ -276,3 +276,43 @@ describe('revokeDelegationsAndEmitLoan', () => {
     await expect(waitTxInBlock()).rejects.toThrow('Revoke delegations failed');
   });
 });
+
+describe('cancelAllOffers', () => {
+  const mslWith = (version: '3' | '3.1' | '3.2') => {
+    const cancelAllOffers = mock(async () => TX_HASH);
+    const msl = Object.assign(Object.create(MslV6.prototype), {
+      version,
+      safeContractWrite: { cancelAllOffers },
+    }) as MslV6;
+    return { msl, cancelAllOffers };
+  };
+
+  test('sends cancelAllOffers on version 3', async () => {
+    const { msl, cancelAllOffers } = mslWith('3');
+    await msl.cancelAllOffers({ minId: 5n });
+    expect(cancelAllOffers).toHaveBeenCalledWith([5n]);
+  });
+
+  test.each(['3.1', '3.2'] as const)(
+    'refuses version %s, whose contract has no cancelAllOffers',
+    async (version) => {
+      const { msl, cancelAllOffers } = mslWith(version);
+      await expect(msl.cancelAllOffers({ minId: 5n })).rejects.toThrow(
+        `cancelAllOffers is not supported on V${version}`,
+      );
+      expect(cancelAllOffers).not.toHaveBeenCalled();
+    },
+  );
+});
+
+describe('cancelAllRenegotiations', () => {
+  test.each(['3', '3.1', '3.2'] as const)(
+    'refuses version %s, whose contract has no cancelAllRenegotiations',
+    async (version) => {
+      const msl = Object.assign(Object.create(MslV6.prototype), { version }) as MslV6;
+      await expect(msl.cancelAllRenegotiations({ minId: 5n })).rejects.toThrow(
+        `cancelAllRenegotiations is not supported on V${version}`,
+      );
+    },
+  );
+});
