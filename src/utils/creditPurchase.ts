@@ -406,11 +406,9 @@ export const quotePurchaseFunding = async ({
   const native = isNativeCurrency(purchaseCurrency);
   const outputCurrency = native ? getCurrencies(mainnet).WETH_ADDRESS : purchaseCurrency;
   const flash = route === 'flash';
-  const flashPrincipal = native ? price - minimumInitialPayment : price;
+  const flashPrincipal = price - minimumInitialPayment;
   const needed = flash
-    ? flashPrincipal +
-      mulDivUp(flashPrincipal, premiumBps, BPS) -
-      (native ? 0n : minimumInitialPayment)
+    ? flashPrincipal + mulDivUp(flashPrincipal, premiumBps, BPS)
     : price - minimumInitialPayment;
   let funded = min(needed, netPrincipal);
   let inputAmount = funded;
@@ -444,9 +442,7 @@ export const quotePurchaseFunding = async ({
     }
   }
   const initialPayment = flash
-    ? native
-      ? price - min(flashPrincipal, (funded * BPS) / (BPS + premiumBps))
-      : price + mulDivUp(price, premiumBps, BPS) - funded
+    ? price - min(flashPrincipal, (funded * BPS) / (BPS + premiumBps))
     : price - funded;
   const loanSwapData =
     funded === 0n || (flash && areSameAddress(loanCurrency, outputCurrency))

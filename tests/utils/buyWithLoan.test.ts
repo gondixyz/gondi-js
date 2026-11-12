@@ -24,7 +24,7 @@ test('flash conversion caps buyer loan collection and listing-token contribution
 
 test('same-currency flash repayment aggregates principal and wallet payment in one cap', () => {
   expect(buyWithLoanApprovals({ ...base, loanCurrency: USDC_ADDRESS } as never)).toEqual([
-    { currency: USDC_ADDRESS, amount: 3_001_500_000n },
+    { currency: USDC_ADDRESS, amount: 3_000_750_000n },
   ]);
 });
 

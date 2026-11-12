@@ -121,13 +121,14 @@ export const buyWithLoanApprovals = (
       : [{ currency: quote.purchaseCurrency, amount: quote.initialPayment }];
   const native = isNativeCurrency(quote.purchaseCurrency);
   const currency = native ? getCurrencies(mainnet).WETH_ADDRESS : quote.purchaseCurrency;
-  const flashPrincipal = native ? quote.price - quote.initialPayment : quote.price;
+  const walletPayment = native ? 0n : quote.initialPayment;
+  const flashPrincipal = quote.price - quote.initialPayment;
   const repayment = flashPrincipal + mulDivUp(flashPrincipal, quote.premiumBps, BPS);
   return areSameAddress(currency, quote.loanCurrency)
-    ? [{ currency, amount: repayment }]
+    ? [{ currency, amount: walletPayment + repayment }]
     : [
         { currency: quote.loanCurrency, amount: quote.inputAmount },
-        { currency, amount: native ? 0n : quote.initialPayment },
+        { currency, amount: walletPayment },
       ];
 };
 
