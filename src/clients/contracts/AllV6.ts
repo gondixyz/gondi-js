@@ -63,7 +63,7 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
     auction: Auction;
   }) {
     const txHash = await writeWithCurrentAuction({
-      held: { collectionContractAddress, tokenId, auction: this.mapAuctionToAuctionArgs(auction) },
+      held: this.heldAuction({ collectionContractAddress, tokenId, auction }),
       readCurrent: () => this.getAuction({ auction }),
       write: (current) =>
         this.safeContractWrite.placeBid([
@@ -99,11 +99,11 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
 
   async settleAuctionWithBuyout({ auction, loan }: { auction: Auction; loan: LoanV6 }) {
     const txHash = await writeWithCurrentAuction({
-      held: {
+      held: this.heldAuction({
         collectionContractAddress: loan.nftCollateralAddress,
         tokenId: loan.nftCollateralTokenId,
-        auction: this.mapAuctionToAuctionArgs(auction),
-      },
+        auction,
+      }),
       readCurrent: () => this.getAuction({ auction }),
       write: (current) =>
         this.safeContractWrite.settleWithBuyout([
@@ -127,11 +127,11 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
 
   async settleAuction({ auction, loan }: { auction: Auction; loan: LoanV6 }) {
     const txHash = await writeWithCurrentAuction({
-      held: {
+      held: this.heldAuction({
         collectionContractAddress: loan.nftCollateralAddress,
         tokenId: loan.nftCollateralTokenId,
-        auction: this.mapAuctionToAuctionArgs(auction),
-      },
+        auction,
+      }),
       readCurrent: () => this.getAuction({ auction }),
       write: (current) => this.safeContractWrite.settleAuction([current.auction, loan]),
     });
@@ -145,6 +145,19 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
         return { ...events[0].args, ...receipt };
       },
     };
+  }
+
+  /** The caller's auction with its NFT; throws when the struct is not a v6 one. */
+  private heldAuction({
+    collectionContractAddress,
+    tokenId,
+    auction,
+  }: {
+    collectionContractAddress: Address;
+    tokenId: bigint;
+    auction: Auction;
+  }) {
+    return { collectionContractAddress, tokenId, auction: this.mapAuctionToAuctionArgs(auction) };
   }
 
   private mapAuctionToAuctionArgs(auction: Auction) {
