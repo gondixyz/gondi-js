@@ -1,3 +1,29 @@
+# New Features 0.60.0
+
+## Important
+
+`makeOrdersOnOpenSea` can now price each OpenSea listing on its own, so a seller can ask more on OpenSea and receive there what they receive on GONDI after OpenSea's higher fees.
+
+## Table of Contents
+
+- [Price the OpenSea listing on its own](#price-the-opensea-listing-on-its-own)
+
+## Price the OpenSea listing on its own
+
+**Description:**
+
+- NEW: `openSeaPrice` on each order passed to `gondi.makeOrdersOnOpenSea`. The OpenSea listing asks that price instead of the GONDI one, and both stay under the same signature. It must be at least the order's `price`; the API refuses a lower one, and refuses `openSeaPrice` on `makeOrder` and `makeOrders`.
+
+**Migration Steps:**
+
+- None: leave `openSeaPrice` out to list on OpenSea at the GONDI price, as before.
+
+```typescript
+await gondi.makeOrdersOnOpenSea([
+  { ...order, price: 1_000_000_000_000_000_000n, openSeaPrice: 1_010_000_000_000_000_000n },
+]);
+```
+
 # Bug Fixes 0.59.2
 
 ## Important

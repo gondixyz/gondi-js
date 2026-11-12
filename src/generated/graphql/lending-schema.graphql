@@ -909,7 +909,7 @@ input BulkNFTOrdersInput {
   counter: BigInt = null
 
   """
-  Also lists each ask on OpenSea at the same price, signed with the same signature; public asks on Ethereum only.
+  Also lists each ask on OpenSea at the same price, or at its `openSeaPrice`, signed with the same signature; public asks on Ethereum only.
   """
   listOnOpenSea: Boolean! = false
   orders: [SingleNFTOrderInput!]!
@@ -6581,6 +6581,11 @@ input SingleNFTOrderInput {
   expirationTime: BigInt!
   fees: [OrderFee!] = null
   isAsk: Boolean = null
+
+  """
+  The price of the ask's OpenSea listing when it differs from `price`, so the seller can receive as much on OpenSea after its higher fees. At least `price`. Only in a bulk order that lists on OpenSea.
+  """
+  openSeaPrice: BigInt = null
   price: BigInt = null
   signature: Signature = null
   startTime: BigInt!

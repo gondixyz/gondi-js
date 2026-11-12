@@ -778,7 +778,7 @@ export enum BlockchainEnum {
 export type BulkNftOrdersInput = {
   /** The maker's Seaport counter, which every order is built with. Optional: GONDI looks it up when it is missing. A signed order whose counter is not the maker's current one is rejected. */
   counter?: InputMaybe<Scalars['BigInt']>;
-  /** Also lists each ask on OpenSea at the same price, signed with the same signature; public asks on Ethereum only. */
+  /** Also lists each ask on OpenSea at the same price, or at its `openSeaPrice`, signed with the same signature; public asks on Ethereum only. */
   listOnOpenSea?: Scalars['Boolean'];
   orders: Array<SingleNftOrderInput>;
   signature?: InputMaybe<Scalars['Signature']>;
@@ -6545,6 +6545,8 @@ export type SingleNftOrderInput = {
   expirationTime: Scalars['BigInt'];
   fees?: InputMaybe<Array<OrderFee>>;
   isAsk?: InputMaybe<Scalars['Boolean']>;
+  /** The price of the ask's OpenSea listing when it differs from `price`, so the seller can receive as much on OpenSea after its higher fees. At least `price`. Only in a bulk order that lists on OpenSea. */
+  openSeaPrice?: InputMaybe<Scalars['BigInt']>;
   price?: InputMaybe<Scalars['BigInt']>;
   signature?: InputMaybe<Scalars['Signature']>;
   startTime: Scalars['BigInt'];
