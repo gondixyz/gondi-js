@@ -4,7 +4,7 @@ import { LoanV4, LoanV5, LoanV6, LoanV8, zeroAddress } from '@/blockchain';
 import { getVersionFromMslAddress } from '@/deploys';
 import * as model from '@/model';
 import { millisToSeconds, SECONDS_IN_YEAR, secondsToMillis, toDate } from '@/utils/dates';
-import { maxBy, mulDivUp, sumBigInt } from '@/utils/number';
+import { bpsToPercentage, maxBy, mulDivUp, sumBigInt } from '@/utils/number';
 import { areSameAddress } from '@/utils/string';
 import { Optional } from '@/utils/types';
 
@@ -86,6 +86,26 @@ export const getRemainingSeconds = (loan: Pick<LoanToMslLoanType, 'startTime' | 
   const finishDate = new Date(secondsToMillis(loan.startTime) + secondsToMillis(loan.duration));
   if (finishDate.getTime() < now.getTime()) return 0;
   return millisToSeconds(finishDate.getTime() - now.getTime());
+};
+
+/**
+ * Seconds left before a loan's newest tranche can be refinanced: the lock is `lockPeriodBps`
+ * of the time from that tranche's start to the loan's end, counted from the tranche's start.
+ */
+export const remainingLockupSeconds = ({
+  loanEndTime,
+  newestStartTime,
+  lockPeriodBps,
+}: {
+  loanEndTime: bigint;
+  newestStartTime: bigint;
+  lockPeriodBps: bigint;
+}) => {
+  const lockupSeconds = Math.ceil(
+    Number(loanEndTime - newestStartTime) * bpsToPercentage(lockPeriodBps),
+  );
+  const elapsedSeconds = Math.ceil(millisToSeconds(Date.now()) - Number(newestStartTime));
+  return Math.max(lockupSeconds - elapsedSeconds, 0);
 };
 
 export const isLoanVersion = (address: Address, chainId: number) => {

@@ -1808,8 +1808,8 @@ export class Gondi {
     bid: bigint;
     auction: Auction;
   }) {
-    const liquidator = await this.contracts.AllForCollateral({
-      mslContractAddress: auction.loanAddress,
+    const liquidator = await this.auctionLiquidator({
+      auction,
       collectionContractAddress,
       tokenId,
     });
@@ -1818,8 +1818,8 @@ export class Gondi {
 
   async settleAuction({ loan, auction }: { loan: LoanToMslLoanType; auction: Auction }) {
     const mslLoan = loanToMslLoan(loan);
-    const liquidator = await this.contracts.AllForCollateral({
-      mslContractAddress: auction.loanAddress,
+    const liquidator = await this.auctionLiquidator({
+      auction,
       collectionContractAddress: mslLoan.nftCollateralAddress,
       tokenId: mslLoan.nftCollateralTokenId,
     });
@@ -1828,12 +1828,29 @@ export class Gondi {
 
   async settleAuctionWithBuyout({ loan, auction }: { loan: LoanToMslLoanType; auction: Auction }) {
     const mslLoan = loanToMslLoan(loan);
-    const liquidator = await this.contracts.AllForCollateral({
-      mslContractAddress: auction.loanAddress,
+    const liquidator = await this.auctionLiquidator({
+      auction,
       collectionContractAddress: mslLoan.nftCollateralAddress,
       tokenId: mslLoan.nftCollateralTokenId,
     });
     return liquidator.settleAuctionWithBuyout({ auction, loan: mslLoan });
+  }
+
+  /** The liquidator contract running `auction` for the collateral `tokenId` of `collectionContractAddress`. */
+  private auctionLiquidator({
+    auction,
+    collectionContractAddress,
+    tokenId,
+  }: {
+    auction: Pick<Auction, 'loanAddress'>;
+    collectionContractAddress: Address;
+    tokenId: bigint;
+  }) {
+    return this.contracts.AllForCollateral({
+      mslContractAddress: auction.loanAddress,
+      collectionContractAddress,
+      tokenId,
+    });
   }
 
   async getAuctionRemainingLockupSeconds({
