@@ -4,7 +4,15 @@ export const toInteger = (bn: bigint | number): number => Number(bn.valueOf());
 
 export const bpsToPercentage = (bps: bigint | number) => toInteger(bps) / 10000;
 
-export const perToBps = (percent: number): number => Math.floor(percent * PERCENTAGE);
+/**
+ * A percentage in whole basis points, dropping any fraction of a basis point.
+ *
+ * The product is rounded to 12 significant digits before the floor, since IEEE-754 lands many
+ * exact products just below the integer (`9.03 * 100 === 902.9999999999999`), which a bare floor
+ * would truncate one basis point low.
+ */
+export const perToBps = (percent: number): number =>
+  Math.floor(Number((percent * PERCENTAGE).toPrecision(12)));
 
 export const bpsToPer = (bps: bigint | number): number => Number(bps) / PERCENTAGE;
 
