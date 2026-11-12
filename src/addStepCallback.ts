@@ -75,7 +75,10 @@ export const addStepCallback = (props: {
    * as waiting, broadcasted and, once its receipt mined the call, success. A
    * refused broadcast or a failed receipt is reported as error, with the hash
    * once there is one, before rethrowing; an error thrown by a callback is not a
-   * failed step and rejects as is. Returns the hash of the broadcast transaction.
+   * failed step and rejects as is. Returns the hash of the transaction that
+   * mined: the broadcast one, or its repriced replacement when the wallet sped
+   * it up, so a caller waiting on the returned hash finds a receipt instead of
+   * polling for a dropped transaction.
    */
   const trackTransaction = async (
     to: Address,
@@ -100,7 +103,7 @@ export const addStepCallback = (props: {
       originalTransactionHash: transactionHash,
       chainId,
     });
-    return transactionHash;
+    return receipt.transactionHash;
   };
 
   const writeContract: Wallet['writeContract'] = async (params) =>

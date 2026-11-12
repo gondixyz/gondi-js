@@ -107,7 +107,7 @@ describe.each([
   test('exposes transaction identity at broadcast and confirmation', async () => {
     const { wallet, onStepChange } = setup('success');
 
-    await send(wallet);
+    expect(await send(wallet)).toBe(TX_HASH);
 
     expect(onStepChange.mock.calls).toEqual([
       [expect.objectContaining({ status: 'waiting' })],
@@ -152,6 +152,12 @@ describe.each([
     },
   );
 
+  test('returns the hash that mined so the caller can wait on a repriced transaction', async () => {
+    const { wallet } = setup('success', REPLACEMENT_HASH, 'repriced');
+
+    expect(await send(wallet)).toBe(REPLACEMENT_HASH);
+  });
+
   test('reports success with both hashes for a repriced transaction', async () => {
     const { wallet, reportedStatuses, onStepChange } = setup(
       'success',
@@ -159,7 +165,7 @@ describe.each([
       'repriced',
     );
 
-    expect(await send(wallet)).toBe(TX_HASH);
+    await send(wallet);
     expect(reportedStatuses()).toEqual(['waiting', 'broadcasted', 'success']);
     expect(onStepChange.mock.calls.at(-1)).toEqual([
       expect.objectContaining({
