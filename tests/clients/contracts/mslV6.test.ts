@@ -1,8 +1,24 @@
 import { describe, expect, mock, test } from 'bun:test';
-import { decodeFunctionData, Hex, zeroHash } from 'viem';
+import {
+  Abi,
+  AbiEvent,
+  ContractEventName,
+  decodeFunctionData,
+  encodeAbiParameters,
+  encodeEventTopics,
+  getAbiItem,
+  Hex,
+  zeroAddress,
+  zeroHash,
+} from 'viem';
 
+import { LoanV6 } from '@/blockchain';
 import { MslV6 } from '@/clients/contracts/MslV6';
 import { multiSourceLoanAbi } from '@/generated/blockchain/v7';
+import {
+  auctionWithBuyoutLoanLiquidatorAbi,
+  multiSourceLoanAbi as multiSourceLoanAbiV8,
+} from '@/generated/blockchain/v8';
 import { EmitLoanArgs } from '@/gondi';
 
 const borrower = '0x0000000000000000000000000000000000000001';
@@ -274,6 +290,115 @@ describe('revokeDelegationsAndEmitLoan', () => {
     });
 
     await expect(waitTxInBlock()).rejects.toThrow('Revoke delegations failed');
+  });
+});
+
+describe('liquidateLoan', () => {
+  const LIQUIDATOR = '0x0000000000000000000000000000000000000008';
+  const LOAN_CONTRACT = '0x0000000000000000000000000000000000000009';
+  const liquidatedLoanId = 7n;
+  const auction = {
+    loanAddress: LOAN_CONTRACT as Hex,
+    loanId: liquidatedLoanId,
+    highestBid: 0n,
+    triggerFee: 0n,
+    minBid: 50n,
+    highestBidder: zeroAddress,
+    duration: 86_400n,
+    asset: zeroAddress,
+    startTime: 1_000n,
+    originator: LENDER as Hex,
+    lastBidTime: 1_000n,
+    loanHash: zeroHash,
+    buyoutWindow: 172_800n,
+  };
+
+  const logOf = <const TAbi extends Abi>(
+    address: Hex,
+    abi: TAbi,
+    eventName: ContractEventName<TAbi>,
+    args: Record<string, unknown>,
+  ) => {
+    const event = getAbiItem({ abi, name: eventName } as never) as unknown as AbiEvent;
+    return {
+      address,
+      topics: encodeEventTopics({ abi: [event], eventName: event.name } as never),
+      data: encodeAbiParameters(
+        event.inputs,
+        event.inputs.map((input) => args[input.name as string]),
+      ),
+    };
+  };
+
+  const liquidatingWith = (logs: unknown[]) =>
+    new MslV6({
+      walletClient: {
+        chain: { id: 1 },
+        account: { address: LENDER },
+        transport: { key: 'stub', name: 'stub', request: async () => null, type: 'stub' },
+        writeContract: async () => TX_HASH,
+      },
+      publicClient: {
+        simulateContract: async (parameters: unknown) => ({ request: parameters }),
+        waitForTransactionReceipt: async () => ({ transactionHash: TX_HASH, logs }),
+      },
+      address: MSL_ADDRESS,
+      version: '3.2',
+    } as unknown as ConstructorParameters<typeof MslV6>[0]);
+
+  const liquidated = async (logs: unknown[]) => {
+    const { waitTxInBlock } = await liquidatingWith(logs).liquidateLoan({
+      loan: {} as LoanV6,
+      loanId: liquidatedLoanId,
+    });
+    return waitTxInBlock();
+  };
+
+  test('reports a foreclosure with the foreclosed loan', async () => {
+    const result = await liquidated([
+      logOf(LOAN_CONTRACT, multiSourceLoanAbiV8, 'LoanForeclosed', { loanId: liquidatedLoanId }),
+    ]);
+
+    expect(result).toMatchObject({ liquidation: 'foreclosed', loanId: liquidatedLoanId });
+    expect(result).not.toHaveProperty('liquidator');
+  });
+
+  test('reports an auction with the struct the liquidator started it with', async () => {
+    const result = await liquidated([
+      logOf(LIQUIDATOR, auctionWithBuyoutLoanLiquidatorAbi, 'LoanLiquidationStarted', {
+        collection: COLLECTION,
+        tokenId: 3n,
+        auction,
+      }),
+      logOf(LOAN_CONTRACT, multiSourceLoanAbiV8, 'LoanSentToLiquidator', {
+        loanId: liquidatedLoanId,
+        liquidator: LIQUIDATOR,
+      }),
+    ]);
+
+    expect(result).toMatchObject({
+      liquidation: 'auction',
+      loanId: liquidatedLoanId,
+      liquidator: LIQUIDATOR,
+      collectionContractAddress: COLLECTION,
+      tokenId: 3n,
+      auction,
+    });
+  });
+
+  test('throws when the loan was sent to the liquidator but no auction started', async () => {
+    await expect(
+      liquidated([
+        logOf(LOAN_CONTRACT, multiSourceLoanAbiV8, 'LoanSentToLiquidator', {
+          loanId: liquidatedLoanId,
+          liquidator: LIQUIDATOR,
+        }),
+      ]),
+    ).rejects.toThrow('Auction not started');
+  });
+
+  test('throws when the loan was neither foreclosed nor sent to the liquidator', async () => {
+    await expect(liquidated([])).rejects.toThrow('Loan not liquidated');
   });
 });
 

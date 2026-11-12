@@ -18,6 +18,7 @@ import {
 import { addStepCallback } from '@/addStepCallback';
 import {
   Auction,
+  AuctionV8,
   BORROWER_SIGNATURE_LIFETIME,
   ExecutionDataV7,
   isNativeCurrency,
@@ -1820,7 +1821,8 @@ export class Gondi {
   async getAuctionRemainingLockupSeconds({
     auction,
   }: {
-    auction: Pick<Auction, 'startTime' | 'loanAddress'>;
+    auction: Pick<Auction, 'startTime' | 'loanAddress' | 'loanId'> &
+      Partial<Pick<AuctionV8, 'buyoutWindow'>>;
   }) {
     return this.contracts.All(auction.loanAddress).getRemainingLockupSeconds({ auction });
   }

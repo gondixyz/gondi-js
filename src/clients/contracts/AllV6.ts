@@ -3,6 +3,7 @@ import { Address, PublicClient, zeroHash } from 'viem';
 import { Auction, LoanV6 } from '@/blockchain';
 import { Wallet } from '@/clients/contracts';
 import { auctionWithBuyoutLoanLiquidatorAbi as auctionWithBuyoutLoanLiquidatorABIV6 } from '@/generated/blockchain/v6';
+import { AuctionIdentity, readAuction, writeWithCurrentAuction } from '@/utils/auction';
 import { waitForSucceededReceipt } from '@/utils/blockchain';
 import { millisToSeconds } from '@/utils/dates';
 
@@ -26,6 +27,11 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
     });
   }
 
+  /** Reads the auction's current struct from the chain, with the NFT it auctions (`readAuction`). */
+  async getAuction({ auction }: { auction: AuctionIdentity }) {
+    return readAuction({ client: this.bcClient, address: this.address, abi: this.abi, auction });
+  }
+
   /** Whether this liquidator records an auction on the collateral; settling clears the record. */
   async hasAuction({
     collectionContractAddress,
@@ -41,6 +47,10 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
     return auctionHash !== zeroHash;
   }
 
+  /**
+   * Bids on the auction, rebuilding it from the chain when a bid placed since the caller read it
+   * makes the liquidator reject the caller's struct.
+   */
   async placeBid({
     collectionContractAddress,
     tokenId,
@@ -52,12 +62,17 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
     bid: bigint;
     auction: Auction;
   }) {
-    const txHash = await this.safeContractWrite.placeBid([
-      collectionContractAddress,
-      tokenId,
-      this.mapAuctionToAuctionArgs(auction),
-      bid,
-    ]);
+    const txHash = await writeWithCurrentAuction({
+      held: { collectionContractAddress, tokenId, auction: this.mapAuctionToAuctionArgs(auction) },
+      readCurrent: () => this.getAuction({ auction }),
+      write: (current) =>
+        this.safeContractWrite.placeBid([
+          current.collectionContractAddress,
+          current.tokenId,
+          current.auction,
+          bid,
+        ]),
+    });
     return {
       txHash,
       waitTxInBlock: async () => {
@@ -69,6 +84,10 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
     };
   }
 
+  /**
+   * Seconds left before bids open, while the loan's main lender may still buy the other lenders
+   * out. Before v3.2 that window is the liquidator's current setting, for every auction.
+   */
   async getRemainingLockupSeconds({ auction }: { auction: Pick<Auction, 'startTime'> }) {
     const lockupTimeSeconds = await this.contract.read.getTimeForMainLenderToBuy();
     const lockupSeconds = Number(lockupTimeSeconds);
@@ -79,12 +98,21 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
   }
 
   async settleAuctionWithBuyout({ auction, loan }: { auction: Auction; loan: LoanV6 }) {
-    const txHash = await this.safeContractWrite.settleWithBuyout([
-      loan.nftCollateralAddress,
-      loan.nftCollateralTokenId,
-      this.mapAuctionToAuctionArgs(auction),
-      loan,
-    ]);
+    const txHash = await writeWithCurrentAuction({
+      held: {
+        collectionContractAddress: loan.nftCollateralAddress,
+        tokenId: loan.nftCollateralTokenId,
+        auction: this.mapAuctionToAuctionArgs(auction),
+      },
+      readCurrent: () => this.getAuction({ auction }),
+      write: (current) =>
+        this.safeContractWrite.settleWithBuyout([
+          current.collectionContractAddress,
+          current.tokenId,
+          current.auction,
+          loan,
+        ]),
+    });
 
     return {
       txHash,
@@ -98,10 +126,15 @@ export class AllV6 extends BaseContract<typeof auctionWithBuyoutLoanLiquidatorAB
   }
 
   async settleAuction({ auction, loan }: { auction: Auction; loan: LoanV6 }) {
-    const txHash = await this.safeContractWrite.settleAuction([
-      this.mapAuctionToAuctionArgs(auction),
-      loan,
-    ]);
+    const txHash = await writeWithCurrentAuction({
+      held: {
+        collectionContractAddress: loan.nftCollateralAddress,
+        tokenId: loan.nftCollateralTokenId,
+        auction: this.mapAuctionToAuctionArgs(auction),
+      },
+      readCurrent: () => this.getAuction({ auction }),
+      write: (current) => this.safeContractWrite.settleAuction([current.auction, loan]),
+    });
 
     return {
       txHash,

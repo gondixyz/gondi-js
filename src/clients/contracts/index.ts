@@ -23,7 +23,7 @@ import { areSameAddress } from '@/utils/string';
 import { AllV4 } from './AllV4';
 import { AllV5 } from './AllV5';
 import { AllV6 } from './AllV6';
-import { AllV8 } from './AllV8';
+import { AllV8, BuyoutWindows } from './AllV8';
 import { BaseContract } from './BaseContract';
 import { MslV4 } from './MslV4';
 import { MslV5 } from './MslV5';
@@ -46,6 +46,8 @@ type MslArgs = { walletClient: Wallet; address: Address; publicClient?: PublicCl
 export class Contracts {
   publicClient: GondiPublicClient;
   walletClient: Wallet;
+  /** Shared by every version 3.2 liquidator `All` builds, so a buyout window is read once. */
+  private buyoutWindows: BuyoutWindows = new Map();
 
   constructor(publicClient: GondiPublicClient, walletClient: Wallet) {
     this.walletClient = walletClient;
@@ -127,6 +129,7 @@ export class Contracts {
       walletClient: this.walletClient,
       address: address ?? contracts.AuctionLoanLiquidator[version],
       publicClient: this.publicClient,
+      buyoutWindows: this.buyoutWindows,
     });
   }
 

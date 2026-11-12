@@ -23,9 +23,15 @@ import {
   zeroHash,
 } from '@/blockchain';
 import { Wallet } from '@/clients/contracts';
-import { multiSourceLoanAbi as multiSourceLoanAbiV6 } from '@/generated/blockchain/v6';
+import {
+  auctionWithBuyoutLoanLiquidatorAbi as auctionWithBuyoutLoanLiquidatorAbiV6,
+  multiSourceLoanAbi as multiSourceLoanAbiV6,
+} from '@/generated/blockchain/v6';
 import { multiSourceLoanAbi as multiSourceLoanAbiV7 } from '@/generated/blockchain/v7';
-import { multiSourceLoanAbi as multiSourceLoanAbiV8 } from '@/generated/blockchain/v8';
+import {
+  auctionWithBuyoutLoanLiquidatorAbi as auctionWithBuyoutLoanLiquidatorAbiV8,
+  multiSourceLoanAbi as multiSourceLoanAbiV8,
+} from '@/generated/blockchain/v8';
 import { EmitLoanArgs } from '@/gondi';
 import { waitForSucceededReceipt } from '@/utils/blockchain';
 import { millisToSeconds, SECONDS_IN_DAY, secondsToMillis } from '@/utils/dates';
@@ -49,6 +55,13 @@ const MSL_V6_ABI_BY_VERSION = {
 } as const;
 
 export type MslV6Version = keyof typeof MSL_V6_ABI_BY_VERSION;
+
+/** The ABI of the auction liquidator each loan version sends its defaulted loans to. */
+const LIQUIDATOR_ABI_BY_MSL_VERSION = {
+  '3': auctionWithBuyoutLoanLiquidatorAbiV6,
+  '3.1': auctionWithBuyoutLoanLiquidatorAbiV6,
+  '3.2': auctionWithBuyoutLoanLiquidatorAbiV8,
+} as const satisfies Record<MslV6Version, unknown>;
 
 type LoanEmittedArgs = ReturnType<
   typeof parseEventLogs<(typeof MSL_V6_ABI_BY_VERSION)[MslV6Version], true, 'LoanEmitted'>
@@ -789,6 +802,13 @@ export class MslV6 extends BaseContract<
     };
   }
 
+  /**
+   * Liquidates a defaulted loan. A loan with a single tranche whose lender is not a pool is
+   * foreclosed: the lender takes the NFT, and the result's `liquidation` is `'foreclosed'`.
+   * Any other loan is sent to the liquidator, which starts an auction: the result's
+   * `liquidation` is `'auction'`, and it carries the auctioned NFT and the auction struct from
+   * the liquidator's `LoanLiquidationStarted` event.
+   */
   async liquidateLoan({ loan, loanId }: { loan: LoanV6; loanId: bigint }) {
     const txHash = await this.safeContractWrite.liquidateLoan([loanId, loan]);
     return {
@@ -796,12 +816,25 @@ export class MslV6 extends BaseContract<
       waitTxInBlock: async () => {
         const receipt = await waitForSucceededReceipt(this.bcClient, txHash);
         const foreclosedEvents = this.parseEventLogs('LoanForeclosed', receipt.logs);
+        if (foreclosedEvents.length > 0) {
+          return { ...receipt, ...foreclosedEvents[0].args, liquidation: 'foreclosed' as const };
+        }
         const sentToLiquidatorEvents = this.parseEventLogs('LoanSentToLiquidator', receipt.logs);
-        if (foreclosedEvents.length === 0 && sentToLiquidatorEvents.length === 0)
-          throw new Error('Loan not liquidated');
+        if (sentToLiquidatorEvents.length === 0) throw new Error('Loan not liquidated');
+        const auctionStartedEvents = parseEventLogs({
+          abi: LIQUIDATOR_ABI_BY_MSL_VERSION[this.version],
+          eventName: 'LoanLiquidationStarted',
+          logs: receipt.logs,
+        });
+        if (auctionStartedEvents.length === 0) throw new Error('Auction not started');
+        const { collection, tokenId, auction } = auctionStartedEvents[0].args;
         return {
-          ...(foreclosedEvents?.[0]?.args ?? sentToLiquidatorEvents?.[0]?.args),
           ...receipt,
+          ...sentToLiquidatorEvents[0].args,
+          collectionContractAddress: collection,
+          tokenId,
+          auction,
+          liquidation: 'auction' as const,
         };
       },
     };
