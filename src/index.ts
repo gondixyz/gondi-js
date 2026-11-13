@@ -1,10 +1,13 @@
-export { CreateVaultError, FlaggedNftError } from '@/errors';
+export { CreateVaultError, FlaggedNftError, RelistOnOpenSeaError } from '@/errors';
+export type { RelistOnOpenSeaErrorReason } from '@/errors';
 export { Gondi } from '@/gondi';
 export {
   CollectionOrderType,
   LoanStatusType,
   OfferStatus,
   OffersSortField,
+  OpenSeaListingFailureReason,
+  OpenSeaListingStatus,
   Ordering,
   OrderMatchMode,
   OrderSide,

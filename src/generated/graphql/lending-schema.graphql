@@ -3638,6 +3638,13 @@ type Mutation {
   Register a browser's push subscription under the wallet you are signed in with, so your account's alerts can be pushed to it. A subscription registered before moves to the wallet that registers it last, and a wallet keeps the 10 it registered last. Returns true once it is stored.
   """
   registerPushSubscription(subscription: PushSubscriptionInput!): Boolean!
+
+  """
+  Signs again the OpenSea listings of the caller's asks that failed (listOpenSeaListingResults: FAILED), on OpenSea's current terms and at the OpenSea price they were first signed at; the GONDI asks are not touched. First call (no signature) returns a SignatureRequest for one Seaport bulk order holding only those listings. Sign the typedData and call again with the signature: it returns RelistOpenSeaListingsResult, each listing PENDING until listOpenSeaListingResults says what became of it. A listing that cannot be signed again (its ask ended, or OpenSea no longer lists the collection) is left out of the typedData and reported as FAILED; when none can be, the first call returns the result at once. Refused as a whole for an order that is not the caller's or has no failed listing, and for a signature that does not match the typedData, which changes with OpenSea's terms: ask for it again.
+  """
+  relistOpenSeaListings(
+    relistInput: RelistOpenSeaListingsInput!
+  ): RelistOpenSeaListingsResultSignatureRequest!
   removeLinkedWallets(linkedWalletsId: String!): Void
 
   """
@@ -6076,6 +6083,27 @@ input RefinanceTermsFilter {
   profitLeft: Interval = null
   remainingTime: Interval = null
 }
+
+input RelistOpenSeaListingsInput {
+  """
+  The caller's GONDI asks whose OpenSea listing failed, 1 to 50. The same ids on both calls.
+  """
+  orderIds: [Int64!]!
+
+  """
+  The caller's signature of the typedData the call without it returned.
+  """
+  signature: Signature = null
+}
+
+type RelistOpenSeaListingsResult {
+  """
+  One entry per order: PENDING once its newly signed listing waits to be posted to OpenSea, FAILED with the error when it could not be signed again.
+  """
+  openSeaListings: [OpenSeaListingResult!]!
+}
+
+union RelistOpenSeaListingsResultSignatureRequest = RelistOpenSeaListingsResult | SignatureRequest
 
 """
 A renegotiation when the loan terms change and the borrower accepted. The difference with refinance is that renegotiation does not mean better terms for the borrower, because of that the borrower needs to accept the renegotiation. Also the renegotiation can be made by the same previous lender.Renegotiation can be top ups. A top up is when someone adds more principal to the loan.

@@ -1,0 +1,23 @@
+mutation relistOpenSeaListings($relistInput: RelistOpenSeaListingsInput!) {
+  result: relistOpenSeaListings(relistInput: $relistInput) {
+    ... on SignatureRequest {
+      key
+      typedData {
+        types
+        primaryType
+        domain
+        message
+      }
+    }
+    ... on RelistOpenSeaListingsResult {
+      openSeaListings {
+        contractAddress
+        tokenId
+        orderHash
+        error
+        failureReason
+        status
+      }
+    }
+  }
+}

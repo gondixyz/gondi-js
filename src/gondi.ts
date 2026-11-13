@@ -39,7 +39,7 @@ import { MslV6 } from '@/clients/contracts/MslV6';
 import { PurchaseBundlerV1 } from '@/clients/contracts/PurchaseBundlerV1';
 import { PurchaseBundlerV2 } from '@/clients/contracts/PurchaseBundlerV2';
 import { getContracts } from '@/deploys';
-import { FlaggedNftError } from '@/errors';
+import { FlaggedNftError, RelistOnOpenSeaError } from '@/errors';
 import { seaportABI } from '@/generated/blockchain/seaport';
 import { multiSourceLoanAbi } from '@/generated/blockchain/v7';
 import {
@@ -592,12 +592,65 @@ export class Gondi {
    * Publishes `orders` like `makeOrders` and lists each one on OpenSea too, under the same
    * signature. Public asks on Ethereum only; the owner must have approved OpenSea's conduit for
    * each collection. A refusal never touches the GONDI ask: `openSeaListings` holds one entry per
-   * ask, with its `orderHash` once OpenSea took it, or the `error` saying why it did not. An
-   * order's `openSeaPrice`, at least its `price`, prices its OpenSea listing on its own, so the
-   * seller can receive there what they do on GONDI after OpenSea's higher fees.
+   * ask with its `status`. `PENDING` means the listing waits to be posted to OpenSea: follow it
+   * with `openSeaListingResults`. `POSTED` carries its `orderHash`, and `FAILED` the `error`
+   * saying why OpenSea did not take it, with a `failureReason` when the caller can act on it:
+   * `relistOrdersOnOpenSea` signs a failed listing again. An order's `openSeaPrice`, at least its
+   * `price`, prices its OpenSea listing on its own, so the seller can receive there what they do
+   * on GONDI after OpenSea's higher fees.
    */
   async makeOrdersOnOpenSea(orders: SingleNftOrderInput[]) {
     return this.publishBulkOrders({ orders, listOnOpenSea: true });
+  }
+
+  /**
+   * Signs again the OpenSea listings of the wallet's asks `orderIds` that failed, for example
+   * because OpenSea's fees for the collection changed after `makeOrdersOnOpenSea` signed them
+   * (`failureReason: TERMS_CHANGED`). The GONDI asks are not touched: same orders, same ids. Each
+   * listing is rebuilt on OpenSea's current terms at the OpenSea price it was first signed at,
+   * and one signature covers them all.
+   *
+   * A listing that cannot be signed again, because its ask ended or OpenSea no longer lists the
+   * collection, is left out of the signature and returned as `FAILED` with its `error`; when none
+   * can be, the wallet is not asked to sign.
+   *
+   * @param orderIds The ids of the GONDI asks whose OpenSea listing is `FAILED`, 1 to 50.
+   * @returns One entry per order: `PENDING` once its newly signed listing waits to be posted to
+   * OpenSea, or `FAILED` with the `error`. Follow the pending ones with `openSeaListingResults`.
+   * @throws {RelistOnOpenSeaError} When the API refuses the whole call: an order has no failed
+   * OpenSea listing (`NOT_FAILED`), or the signature did not match the current listings, usually
+   * because the terms changed again while signing (`STALE_SIGNATURE`: call the method again, a
+   * bounded number of times). Any other failure, such as the wallet rejecting the signature, is
+   * thrown as it is.
+   */
+  async relistOrdersOnOpenSea(orderIds: number[]): Promise<model.OpenSeaListingResult[]> {
+    try {
+      let response = await this.apiClient.relistOpenSeaListings({ orderIds });
+
+      if (response.__typename === 'SignatureRequest') {
+        const signature = await this.wallet.signTypedData(
+          response.typedData as TypedDataDefinition,
+        );
+        response = await this.apiClient.relistOpenSeaListings({ orderIds, signature });
+      }
+
+      if (response.__typename !== 'RelistOpenSeaListingsResult')
+        throw new Error('This should never happen');
+
+      return response.openSeaListings;
+    } catch (error) {
+      throw RelistOnOpenSeaError.from(error);
+    }
+  }
+
+  /**
+   * What became of the OpenSea listing of each of the wallet's asks among `orderIds`, as signed
+   * by `makeOrdersOnOpenSea` or `relistOrdersOnOpenSea`: `PENDING` until it is `POSTED` to
+   * OpenSea or `FAILED`, then with its `error` and, when the caller can act on it, its
+   * `failureReason`. An order with no OpenSea listing has no entry.
+   */
+  async openSeaListingResults(orderIds: number[]): Promise<model.OpenSeaListingResult[]> {
+    return this.apiClient.listOpenSeaListingResults({ orderIds });
   }
 
   /** Publishes the batch, signing the typed data the API answers with when it asks for it. */

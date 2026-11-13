@@ -14,11 +14,13 @@ import {
   ListListingsQueryVariables,
   ListLoansQueryVariables,
   ListOffersQueryVariables,
+  ListOpenSeaListingResultsQueryVariables,
   ListOrdersQueryVariables,
   LoanOfferPublicationInput,
   NftOrderInput,
   NftSetOrderInput,
   PreviewItemLoanOfferCompetitionQuery,
+  RelistOpenSeaListingsInput,
   RenegotiationOfferInput,
   SingleNftOfferInput,
   SingleNftOrderInput,
@@ -209,6 +211,16 @@ export class Api {
 
   async publishBulkOrders(bulkInput: BulkNftOrdersInput) {
     const response = await this.api.publishBulkOrders({ bulkInput });
+    return response.result;
+  }
+
+  async relistOpenSeaListings(relistInput: RelistOpenSeaListingsInput) {
+    const response = await this.api.relistOpenSeaListings({ relistInput });
+    return response.result;
+  }
+
+  async listOpenSeaListingResults(variables: ListOpenSeaListingResultsQueryVariables) {
+    const response = await this.api.listOpenSeaListingResults(variables);
     return response.result;
   }
 

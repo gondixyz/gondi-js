@@ -18,14 +18,20 @@ export type Scalars = {
   Float: number;
   Address: Address;
   BigInt: bigint;
+  /** Date (isoformat) */
   Date: any;
+  /** Date with time (isoformat) */
   DateTime: Date;
   Hash: Hash;
   Hex: Hex;
+  /** 64-bit integer as a JSON number. */
   Int64: any;
+  /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf). */
   JSON: object;
   Signature: Hex;
+  /** Represents a file upload. */
   Upload: any;
+  /** Represents NULL values */
   Void: any;
 };
 
@@ -3014,7 +3020,7 @@ export type LoansData = {
   minRemainingTime: Scalars['BigInt'];
 };
 
-/** This is the definition of a lost source. Lost sources are the lender/s that have lost a loan because of renegotiation or refinance.  */
+/** This is the definition of a lost source. Lost sources are the lender/s that have lost a loan because of renegotiation or refinance. */
 export type LostSource = Node & {
   __typename?: 'LostSource';
   accruedInterest: Scalars['BigInt'];
@@ -3323,7 +3329,7 @@ export type Mutation = {
   generateSingleNftOfferToBeSigned: SingleNftOffer;
   /** This is the first step of the trait loan offer flow: an offer any NFT carrying every one of the traits can borrow against. This step populates some fields of the offer, among them the validator holding the token ids that carry them now. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 3, 5, 7, 10, 15, 20 or 45 days, and at most 3650 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details. */
   generateTraitOfferToBeSigned: TraitOffer;
-  /** Hides all loan offers from a user for a given contract address.  */
+  /** Hides all loan offers from a user for a given contract address. */
   hideAllOffers: Array<Offer>;
   /** Hides a loan offer. */
   hideOffer: Offer;
@@ -3331,7 +3337,7 @@ export type Mutation = {
   hideOffers: Array<Offer>;
   /** Hides a trade bid. Listings can no longer be hidden: cancelling them on-chain is the only supported way to take one down, so an ask is rejected. */
   hideOrder: Order;
-  /** Hides a loan renegotiation offer.  */
+  /** Hides a loan renegotiation offer. */
   hideRenegotiation: Renegotiation;
   linkWalletAddress: LinkedWallets;
   markNotificationIdsAsRead?: Maybe<Scalars['Void']>;
@@ -3361,6 +3367,8 @@ export type Mutation = {
   refreshNftMetadata: Nft;
   /** Register a browser's push subscription under the wallet you are signed in with, so your account's alerts can be pushed to it. A subscription registered before moves to the wallet that registers it last, and a wallet keeps the 10 it registered last. Returns true once it is stored. */
   registerPushSubscription: Scalars['Boolean'];
+  /** Signs again the OpenSea listings of the caller's asks that failed (listOpenSeaListingResults: FAILED), on OpenSea's current terms and at the OpenSea price they were first signed at; the GONDI asks are not touched. First call (no signature) returns a SignatureRequest for one Seaport bulk order holding only those listings. Sign the typedData and call again with the signature: it returns RelistOpenSeaListingsResult, each listing PENDING until listOpenSeaListingResults says what became of it. A listing that cannot be signed again (its ask ended, or OpenSea no longer lists the collection) is left out of the typedData and reported as FAILED; when none can be, the first call returns the result at once. Refused as a whole for an order that is not the caller's or has no failed listing, and for a signature that does not match the typedData, which changes with OpenSea's terms: ask for it again. */
+  relistOpenSeaListings: RelistOpenSeaListingsResultSignatureRequest;
   removeLinkedWallets?: Maybe<Scalars['Void']>;
   /** Removes a loan listing from a user. */
   removeListing: Listing;
@@ -3394,7 +3402,7 @@ export type Mutation = {
   showOffer: Offer;
   /** Unhides a trade bid. Listings can no longer be hidden, so an ask is rejected: one hidden before that change stays hidden and is cancelled on-chain rather than brought back. */
   showOrder: Order;
-  /** Unhides a loan renegotiation offer.  */
+  /** Unhides a loan renegotiation offer. */
   showRenegotiation: Renegotiation;
   signInWithEthereum: Scalars['String'];
   /** Starts proving the caller's X account: returns the x.com page to send them to. X sends them back to the configured redirect URI with `code` and `state` for completeTwitterVerification. */
@@ -3614,6 +3622,10 @@ export type MutationRefreshNftMetadataArgs = {
 
 export type MutationRegisterPushSubscriptionArgs = {
   subscription: PushSubscriptionInput;
+};
+
+export type MutationRelistOpenSeaListingsArgs = {
+  relistInput: RelistOpenSeaListingsInput;
 };
 
 export type MutationRemoveLinkedWalletsArgs = {
@@ -4801,7 +4813,7 @@ export type Query = {
   getCancelOrdersCalldata: Array<CancelAllOrdersCalldata>;
   /** Get some general loan stats about the activities for a collection. */
   getCollectionActivitiesCount: CollectionEventsCountByDayAndCurrency;
-  /** Get a collection by its slug. Slugs are unique identifiers for collections.  */
+  /** Get a collection by its slug. Slugs are unique identifiers for collections. */
   getCollectionBySlug?: Maybe<Collection>;
   /** Highest active bid targeting a single collection whose trait constraint is satisfied by the supplied trait IDs. Considers single-trait bids whose trait is in the input, multi-trait bids whose trait set is contained in the input, collection-level bids, and native set bids covering every NFT that carries all the input traits. Returns null when traitIds is empty or no matching bid exists. */
   getCollectionHighestBidMatchingTraits?: Maybe<Order>;
@@ -6038,6 +6050,23 @@ export type RefinanceTermsFilter = {
   profitLeft?: InputMaybe<Interval>;
   remainingTime?: InputMaybe<Interval>;
 };
+
+export type RelistOpenSeaListingsInput = {
+  /** The caller's GONDI asks whose OpenSea listing failed, 1 to 50. The same ids on both calls. */
+  orderIds: Array<Scalars['Int64']>;
+  /** The caller's signature of the typedData the call without it returned. */
+  signature?: InputMaybe<Scalars['Signature']>;
+};
+
+export type RelistOpenSeaListingsResult = {
+  __typename?: 'RelistOpenSeaListingsResult';
+  /** One entry per order: PENDING once its newly signed listing waits to be posted to OpenSea, FAILED with the error when it could not be signed again. */
+  openSeaListings: Array<OpenSeaListingResult>;
+};
+
+export type RelistOpenSeaListingsResultSignatureRequest =
+  | RelistOpenSeaListingsResult
+  | SignatureRequest;
 
 /** A renegotiation when the loan terms change and the borrower accepted. The difference with refinance is that renegotiation does not mean better terms for the borrower, because of that the borrower needs to accept the renegotiation. Also the renegotiation can be made by the same previous lender.Renegotiation can be top ups. A top up is when someone adds more principal to the loan. */
 export type Renegotiation = Event &
@@ -8181,6 +8210,8 @@ export type PublishBulkOrdersMutation = {
           tokenId: bigint;
           orderHash?: Hash | null;
           error?: string | null;
+          failureReason?: OpenSeaListingFailureReason | null;
+          status: OpenSeaListingStatus;
         }>;
       }
     | {
@@ -8378,6 +8409,38 @@ export type PublishSellAndRepayOrderMutation = {
         signature: Hex;
         repaymentCalldata: Hex;
         marketPlaceAddress: Address;
+      }
+    | {
+        __typename?: 'SignatureRequest';
+        key: string;
+        typedData: {
+          __typename?: 'TypedData';
+          types: object;
+          primaryType: string;
+          domain: object;
+          message: object;
+        };
+      };
+};
+
+export type RelistOpenSeaListingsMutationVariables = Exact<{
+  relistInput: RelistOpenSeaListingsInput;
+}>;
+
+export type RelistOpenSeaListingsMutation = {
+  __typename?: 'Mutation';
+  result:
+    | {
+        __typename?: 'RelistOpenSeaListingsResult';
+        openSeaListings: Array<{
+          __typename?: 'OpenSeaListingResult';
+          contractAddress: Address;
+          tokenId: bigint;
+          orderHash?: Hash | null;
+          error?: string | null;
+          failureReason?: OpenSeaListingFailureReason | null;
+          status: OpenSeaListingStatus;
+        }>;
       }
     | {
         __typename?: 'SignatureRequest';
@@ -9398,6 +9461,23 @@ export type GetSaleCalldataQueryVariables = Exact<{
 }>;
 
 export type GetSaleCalldataQuery = { __typename?: 'Query'; saleCalldata: Hex };
+
+export type ListOpenSeaListingResultsQueryVariables = Exact<{
+  orderIds: Array<Scalars['Int64']> | Scalars['Int64'];
+}>;
+
+export type ListOpenSeaListingResultsQuery = {
+  __typename?: 'Query';
+  result: Array<{
+    __typename?: 'OpenSeaListingResult';
+    contractAddress: Address;
+    tokenId: bigint;
+    orderHash?: Hash | null;
+    error?: string | null;
+    failureReason?: OpenSeaListingFailureReason | null;
+    status: OpenSeaListingStatus;
+  }>;
+};
 
 export type ListOrdersQueryVariables = Exact<{
   side?: InputMaybe<OrderSide>;
@@ -13098,6 +13178,7 @@ export type MutationKeySpecifier = (
   | 'recordItemVisit'
   | 'refreshNftMetadata'
   | 'registerPushSubscription'
+  | 'relistOpenSeaListings'
   | 'removeLinkedWallets'
   | 'removeListing'
   | 'removeListingsOfNftsFromUser'
@@ -13179,6 +13260,7 @@ export type MutationFieldPolicy = {
   recordItemVisit?: FieldPolicy<any> | FieldReadFunction<any>;
   refreshNftMetadata?: FieldPolicy<any> | FieldReadFunction<any>;
   registerPushSubscription?: FieldPolicy<any> | FieldReadFunction<any>;
+  relistOpenSeaListings?: FieldPolicy<any> | FieldReadFunction<any>;
   removeLinkedWallets?: FieldPolicy<any> | FieldReadFunction<any>;
   removeListing?: FieldPolicy<any> | FieldReadFunction<any>;
   removeListingsOfNftsFromUser?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -14299,6 +14381,13 @@ export type RealizedProfitDayFieldPolicy = {
   day?: FieldPolicy<any> | FieldReadFunction<any>;
   netProfit?: FieldPolicy<any> | FieldReadFunction<any>;
   profit?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type RelistOpenSeaListingsResultKeySpecifier = (
+  | 'openSeaListings'
+  | RelistOpenSeaListingsResultKeySpecifier
+)[];
+export type RelistOpenSeaListingsResultFieldPolicy = {
+  openSeaListings?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type RenegotiationKeySpecifier = (
   | 'aprBps'
@@ -17372,6 +17461,13 @@ export type StrictTypedTypePolicies = {
       | (() => undefined | RealizedProfitDayKeySpecifier);
     fields?: RealizedProfitDayFieldPolicy;
   };
+  RelistOpenSeaListingsResult?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | RelistOpenSeaListingsResultKeySpecifier
+      | (() => undefined | RelistOpenSeaListingsResultKeySpecifier);
+    fields?: RelistOpenSeaListingsResultFieldPolicy;
+  };
   Renegotiation?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | RenegotiationKeySpecifier | (() => undefined | RenegotiationKeySpecifier);
     fields?: RenegotiationFieldPolicy;
@@ -18082,6 +18178,8 @@ export const PublishBulkOrdersDocument = gql`
           tokenId
           orderHash
           error
+          failureReason
+          status
         }
       }
     }
@@ -18245,6 +18343,31 @@ export const PublishSellAndRepayOrderDocument = gql`
           primaryType
           domain
           message
+        }
+      }
+    }
+  }
+`;
+export const RelistOpenSeaListingsDocument = gql`
+  mutation relistOpenSeaListings($relistInput: RelistOpenSeaListingsInput!) {
+    result: relistOpenSeaListings(relistInput: $relistInput) {
+      ... on SignatureRequest {
+        key
+        typedData {
+          types
+          primaryType
+          domain
+          message
+        }
+      }
+      ... on RelistOpenSeaListingsResult {
+        openSeaListings {
+          contractAddress
+          tokenId
+          orderHash
+          error
+          failureReason
+          status
         }
       }
     }
@@ -18856,6 +18979,18 @@ export const GetSaleCalldataDocument = gql`
     saleCalldata: getOrderSaleCalldata(orderIdInt64: $orderId, nftId: $nftId, taker: $taker)
   }
 `;
+export const ListOpenSeaListingResultsDocument = gql`
+  query listOpenSeaListingResults($orderIds: [Int64!]!) {
+    result: listOpenSeaListingResults(orderIds: $orderIds) {
+      contractAddress
+      tokenId
+      orderHash
+      error
+      failureReason
+      status
+    }
+  }
+`;
 export const ListOrdersDocument = gql`
   query listOrders(
     $side: OrderSide
@@ -19160,6 +19295,16 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
         options,
       ) as Promise<PublishSellAndRepayOrderMutation>;
     },
+    relistOpenSeaListings(
+      variables: RelistOpenSeaListingsMutationVariables,
+      options?: C,
+    ): Promise<RelistOpenSeaListingsMutation> {
+      return requester<RelistOpenSeaListingsMutation, RelistOpenSeaListingsMutationVariables>(
+        RelistOpenSeaListingsDocument,
+        variables,
+        options,
+      ) as Promise<RelistOpenSeaListingsMutation>;
+    },
     showOrder(variables: ShowOrderMutationVariables, options?: C): Promise<ShowOrderMutation> {
       return requester<ShowOrderMutation, ShowOrderMutationVariables>(
         ShowOrderDocument,
@@ -19363,6 +19508,16 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
         variables,
         options,
       ) as Promise<GetSaleCalldataQuery>;
+    },
+    listOpenSeaListingResults(
+      variables: ListOpenSeaListingResultsQueryVariables,
+      options?: C,
+    ): Promise<ListOpenSeaListingResultsQuery> {
+      return requester<ListOpenSeaListingResultsQuery, ListOpenSeaListingResultsQueryVariables>(
+        ListOpenSeaListingResultsDocument,
+        variables,
+        options,
+      ) as Promise<ListOpenSeaListingResultsQuery>;
     },
     listOrders(variables?: ListOrdersQueryVariables, options?: C): Promise<ListOrdersQuery> {
       return requester<ListOrdersQuery, ListOrdersQueryVariables>(

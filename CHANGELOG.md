@@ -1,3 +1,87 @@
+# New Features 0.63.0
+
+## Important
+
+The GONDI API can post an OpenSea listing signed by `gondi.makeOrdersOnOpenSea` after the call returns, so its result can be `PENDING`. This release exposes that status, a call to follow it, and a call to sign a failed OpenSea listing again without touching its GONDI ask. Existing calls keep working.
+
+`gondi.relistOrdersOnOpenSea` needs a GONDI API that serves the `relistOpenSeaListings` mutation. Against an API that does not serve it yet, that call alone fails with a GraphQL validation error; every other call is unaffected.
+
+## Table of Contents
+
+- [OpenSea listing status](#opensea-listing-status)
+- [Follow an OpenSea listing](#follow-an-opensea-listing)
+- [Sign a failed OpenSea listing again](#sign-a-failed-opensea-listing-again)
+
+## OpenSea listing status
+
+**Description:**
+
+- NEW: each entry of `openSeaListings` returned by `gondi.makeOrdersOnOpenSea` carries `status` (`PENDING`, `POSTED` or `FAILED`) and `failureReason` (`TERMS_CHANGED` when OpenSea refused the listing because the collection's fees changed after it was signed, else `null`).
+- NEW: the `OpenSeaListingStatus` and `OpenSeaListingFailureReason` enums, and the `Types.OpenSeaListingResult` type, are exported.
+
+**Reason:**
+
+An entry with neither an `orderHash` nor an `error` could not be told apart from one OpenSea already took. A `PENDING` entry has no `orderHash` yet.
+
+**Migration Steps:**
+
+- None for existing calls. Read `status` instead of inferring it from `orderHash` and `error`:
+
+```typescript
+import { OpenSeaListingStatus } from 'gondi';
+
+const { orders, openSeaListings } = await gondi.makeOrdersOnOpenSea(asks);
+const pending = openSeaListings.filter(({ status }) => status === OpenSeaListingStatus.Pending);
+```
+
+## Follow an OpenSea listing
+
+**Description:**
+
+- NEW: `gondi.openSeaListingResults(orderIds)` returns what became of the OpenSea listing of each of the wallet's asks among `orderIds`: `PENDING` until it is `POSTED` or `FAILED`. An order with no OpenSea listing has no entry. Each entry names its NFT by `contractAddress` and `tokenId`.
+
+**Migration Steps:**
+
+- None.
+
+```typescript
+const orderIds = orders.map(({ id }) => Number(id));
+const listings = await gondi.openSeaListingResults(orderIds);
+```
+
+## Sign a failed OpenSea listing again
+
+**Description:**
+
+- NEW: `gondi.relistOrdersOnOpenSea(orderIds)` signs again the OpenSea listings of the wallet's asks whose listing is `FAILED`, 1 to 50 per call, with one signature. Each listing is rebuilt on OpenSea's current terms at the OpenSea price it was first signed at. The GONDI asks are not touched. It returns one `Types.OpenSeaListingResult` per order: `PENDING` once the new listing waits to be posted, or `FAILED` with its `error` when it could not be signed again (its ask ended, or OpenSea no longer lists the collection). When no listing can be signed again, the wallet is not asked to sign.
+- NEW: `RelistOnOpenSeaError`, thrown by `gondi.relistOrdersOnOpenSea` when the API refuses the whole call. Its `reason` is `NOT_FAILED` when some orders have no failed OpenSea listing (`orderIds` names them), or `STALE_SIGNATURE` when the signature did not match the current listings, usually because OpenSea's terms changed again between the signature request and the signature. Any other failure is thrown as it is.
+
+**Migration Steps:**
+
+- None.
+
+```typescript
+import { OpenSeaListingFailureReason, RelistOnOpenSeaError } from 'gondi';
+
+const failed = listings.filter(
+  ({ failureReason }) => failureReason === OpenSeaListingFailureReason.TermsChanged,
+);
+// A result names its NFT, not its order: `orderIdByNft` is the caller's own record of the
+// order id it published for each `contractAddress:tokenId`.
+const failedOrderIds = failed.map(
+  ({ contractAddress, tokenId }) => orderIdByNft[`${contractAddress}:${tokenId}`],
+);
+
+try {
+  const relisted = await gondi.relistOrdersOnOpenSea(failedOrderIds);
+} catch (error) {
+  if (error instanceof RelistOnOpenSeaError && error.reason === 'STALE_SIGNATURE') {
+    // The terms changed again while signing: call relistOrdersOnOpenSea once more.
+  }
+  throw error;
+}
+```
+
 # Bug Fixes 0.62.1
 
 ## Important
