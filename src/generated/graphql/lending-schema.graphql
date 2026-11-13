@@ -1388,6 +1388,11 @@ enum CollectionSortField {
   OUTSTANDING_PRINCIPAL
   OWNERS_TOTAL_VALUE
   SALE_LISTING_COUNT
+
+  """
+  The listings SALE_LISTING_COUNT counts, as a share of the collection's supply (Collection.nftsCount); collections without a sampled supply go last.
+  """
+  SALE_LISTING_SHARE
   SUPPLY
   TOTAL_LOAN_VOLUME
   TOTAL_OUTSTANDING_PRINCIPAL
@@ -3628,6 +3633,11 @@ type Mutation {
   Refreshes NFT metadata and image
   """
   refreshNftMetadata(nftId: Int!): NFT!
+
+  """
+  Register a browser's push subscription under the wallet you are signed in with, so your account's alerts can be pushed to it. A subscription registered before moves to the wallet that registers it last, and a wallet keeps the 10 it registered last. Returns true once it is stored.
+  """
+  registerPushSubscription(subscription: PushSubscriptionInput!): Boolean!
   removeLinkedWallets(linkedWalletsId: String!): Void
 
   """
@@ -3763,6 +3773,11 @@ type Mutation {
   Take a gallery back to a draft only its account can see.
   """
   unpublishGallery(galleryId: Int!): Gallery!
+
+  """
+  Stop pushing your account's alerts to a browser, by the endpoint of its push subscription. Returns whether your account had it registered.
+  """
+  unregisterPushSubscription(endpoint: String!): Boolean!
 
   """
   Replace a gallery's name, description, style and works. A draft's slug follows its new name; a published gallery keeps its slug. The publication state stays as it is.
@@ -4465,11 +4480,34 @@ input OffersSortInput {
   principalOfInterest: BigInt = null
 }
 
+enum OpenSeaListingFailureReason {
+  """
+  OpenSea refused the listing for its fees or zone: the collection's terms changed after it was signed. listOpenSeaListingTerms answers the new ones.
+  """
+  TERMS_CHANGED
+}
+
 type OpenSeaListingResult {
   contractAddress: Address!
   error: String
+
+  """
+  Set for a failure the client can act on; error is the text to show for any failure.
+  """
+  failureReason: OpenSeaListingFailureReason
   orderHash: Hash
+
+  """
+  PENDING while the listing waits to be posted to OpenSea; listOpenSeaListingResults then says what became of it.
+  """
+  status: OpenSeaListingStatus!
   tokenId: BigInt!
+}
+
+enum OpenSeaListingStatus {
+  FAILED
+  PENDING
+  POSTED
 }
 
 type OpenSeaListingTerms {
@@ -4814,6 +4852,26 @@ type PortfolioValuation {
   """
   value: Float!
   valuedNfts: Int!
+}
+
+"""
+A browser's push subscription, as `PushSubscription.toJSON()` gives it, with the two entries of `keys` beside the endpoint.
+"""
+input PushSubscriptionInput {
+  """
+  The browser's authentication secret, `keys.auth`, in base64url.
+  """
+  auth: String!
+
+  """
+  The push service URL of the subscription. Only the push services of Chrome, Safari, Firefox and Edge are accepted.
+  """
+  endpoint: String!
+
+  """
+  The browser's public key, `keys.p256dh`, in base64url.
+  """
+  p256dh: String!
 }
 
 """
@@ -5754,6 +5812,11 @@ type Query {
     terms: TermsFilter = null
     worseOffers: Boolean = true
   ): OfferConnection!
+
+  """
+  What became of the OpenSea listing of each of the caller's orders among orderIds, as published with listOnOpenSea: PENDING until it is posted to OpenSea or fails. An order with no OpenSea listing waiting or settled has no entry.
+  """
+  listOpenSeaListingResults(orderIds: [Int64!]!): [OpenSeaListingResult!]!
   listOpenSeaListingTerms(collectionIds: [Int!]!): [OpenSeaListingTerms!]!
 
   """
@@ -5975,6 +6038,11 @@ type Query {
   The Telegram chat the viewer's account gets its notifications in, or null when no wallet of the account linked one.
   """
   telegramConnection: TelegramConnection
+
+  """
+  The key a browser subscribes to this server's push messages with, as the `applicationServerKey` of `PushManager.subscribe()`. Null when the server has none configured.
+  """
+  webPushPublicKey: String
 }
 
 input RangeInput {
@@ -6519,6 +6587,11 @@ type SingleNFTOrder implements Event & Node & Order {
   createdDate: DateTime!
   currency: Currency!
   currencyAddress: Address!
+
+  """
+  What a descending listing asks at `expiration`, its price falling linearly from `price` at `startTime`; null for a fixed price.
+  """
+  endPrice: BigInt
   evmOrder(integerStrings: Boolean! = false): JSON
   executions: Int!
   expiration: DateTime!
@@ -6578,6 +6651,11 @@ input SingleNFTOrderInput {
   """
   counter: BigInt = null
   currencyAddress: Address!
+
+  """
+  Makes a listing's price fall linearly from `price` at `startTime` to this, below `price`, at `expirationTime`. Listings only, not stealth ones.
+  """
+  endPrice: BigInt = null
   expirationTime: BigInt!
   fees: [OrderFee!] = null
   isAsk: Boolean = null
@@ -6972,6 +7050,11 @@ type TopUpRequestedNotification implements Node & Notification {
 type Trait implements Node {
   collectionId: String!
   id: String!
+
+  """
+  Whether GONDI computed the trait instead of reading it from the metadata: the `None` of a type the NFT lacks, or its `Trait count`.
+  """
+  isDerived: Boolean!
   isSynthetic: Boolean!
   key: String!
   sampleAsset: Asset
@@ -7242,6 +7325,11 @@ type TraitTypeEdge {
 type TraitValue implements Node {
   collectionId: Int!
   id: String!
+
+  """
+  Whether GONDI computed the value instead of reading it from the metadata: the `None` of a type an NFT lacks, or its `Trait count`.
+  """
+  isDerived: Boolean!
   isSynthetic: Boolean!
   key: String!
   rarity: Int!

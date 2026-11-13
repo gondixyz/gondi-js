@@ -56,6 +56,7 @@ import {
   Ordering,
   OrderSortField,
   OrderStatusType,
+  OwnedNftsQueryVariables,
   SingleNftOrderInput,
   SingleNftSignedOfferInput,
   TokenStandardType,
@@ -1619,8 +1620,31 @@ export class Gondi {
     return result.steps;
   }
 
-  async ownedNfts(args: Parameters<Api['ownedNfts']>[0]) {
-    const result = await this.apiClient.ownedNfts(args);
+  /**
+   * Lists the NFTs the wallet holds, one page at a time.
+   *
+   * @param args.after - The `pageInfo.endCursor` of the previous page; omit it for the first page.
+   * @param args.includeInLoans - Also list the NFTs the wallet borrowed against in an active loan. Defaults to false.
+   * @param args.includeInStash - Also list the NFTs the wallet holds in an old ERC721 wrapper stash. Defaults to false.
+   * @param args.standards - The token standards to list. Defaults to ERC721 only.
+   * @returns The page's NFTs, newest NFT id first, and its `pageInfo`.
+   */
+  async ownedNfts({
+    after,
+    includeInLoans,
+    includeInStash,
+    standards,
+  }: OptionalNullable<
+    Omit<OwnedNftsQueryVariables, 'owner'>,
+    'includeInLoans' | 'includeInStash' | 'standards'
+  > = {}) {
+    const result = await this.apiClient.ownedNfts({
+      owner: this.account.address,
+      after,
+      includeInLoans: includeInLoans ?? false,
+      includeInStash: includeInStash ?? false,
+      standards: standards ?? [TokenStandardType.Erc721],
+    });
     const { edges: ownedNfts, pageInfo } = result.ownedNfts;
     return { ownedNfts: ownedNfts.map((edge) => edge.node), pageInfo };
   }

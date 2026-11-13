@@ -1278,6 +1278,8 @@ export enum CollectionSortField {
   OutstandingPrincipal = 'OUTSTANDING_PRINCIPAL',
   OwnersTotalValue = 'OWNERS_TOTAL_VALUE',
   SaleListingCount = 'SALE_LISTING_COUNT',
+  /** The listings SALE_LISTING_COUNT counts, as a share of the collection's supply (Collection.nftsCount); collections without a sampled supply go last. */
+  SaleListingShare = 'SALE_LISTING_SHARE',
   Supply = 'SUPPLY',
   TotalLoanVolume = 'TOTAL_LOAN_VOLUME',
   TotalOutstandingPrincipal = 'TOTAL_OUTSTANDING_PRINCIPAL',
@@ -3357,6 +3359,8 @@ export type Mutation = {
   recordItemVisit: Scalars['Boolean'];
   /** Refreshes NFT metadata and image */
   refreshNftMetadata: Nft;
+  /** Register a browser's push subscription under the wallet you are signed in with, so your account's alerts can be pushed to it. A subscription registered before moves to the wallet that registers it last, and a wallet keeps the 10 it registered last. Returns true once it is stored. */
+  registerPushSubscription: Scalars['Boolean'];
   removeLinkedWallets?: Maybe<Scalars['Void']>;
   /** Removes a loan listing from a user. */
   removeListing: Listing;
@@ -3407,6 +3411,8 @@ export type Mutation = {
   unfollowWallet?: Maybe<Scalars['Void']>;
   /** Take a gallery back to a draft only its account can see. */
   unpublishGallery: Gallery;
+  /** Stop pushing your account's alerts to a browser, by the endpoint of its push subscription. Returns whether your account had it registered. */
+  unregisterPushSubscription: Scalars['Boolean'];
   /** Replace a gallery's name, description, style and works. A draft's slug follows its new name; a published gallery keeps its slug. The publication state stays as it is. */
   updateGallery: Gallery;
   uploadProfilePicture: User;
@@ -3606,6 +3612,10 @@ export type MutationRefreshNftMetadataArgs = {
   nftId: Scalars['Int'];
 };
 
+export type MutationRegisterPushSubscriptionArgs = {
+  subscription: PushSubscriptionInput;
+};
+
 export type MutationRemoveLinkedWalletsArgs = {
   linkedWalletsId: Scalars['String'];
 };
@@ -3718,6 +3728,10 @@ export type MutationUnfollowWalletArgs = {
 
 export type MutationUnpublishGalleryArgs = {
   galleryId: Scalars['Int'];
+};
+
+export type MutationUnregisterPushSubscriptionArgs = {
+  endpoint: Scalars['String'];
 };
 
 export type MutationUpdateGalleryArgs = {
@@ -4425,13 +4439,28 @@ export type OffersSortInput = {
   principalOfInterest?: InputMaybe<Scalars['BigInt']>;
 };
 
+export enum OpenSeaListingFailureReason {
+  /** OpenSea refused the listing for its fees or zone: the collection's terms changed after it was signed. listOpenSeaListingTerms answers the new ones. */
+  TermsChanged = 'TERMS_CHANGED',
+}
+
 export type OpenSeaListingResult = {
   __typename?: 'OpenSeaListingResult';
   contractAddress: Scalars['Address'];
   error?: Maybe<Scalars['String']>;
+  /** Set for a failure the client can act on; error is the text to show for any failure. */
+  failureReason?: Maybe<OpenSeaListingFailureReason>;
   orderHash?: Maybe<Scalars['Hash']>;
+  /** PENDING while the listing waits to be posted to OpenSea; listOpenSeaListingResults then says what became of it. */
+  status: OpenSeaListingStatus;
   tokenId: Scalars['BigInt'];
 };
+
+export enum OpenSeaListingStatus {
+  Failed = 'FAILED',
+  Pending = 'PENDING',
+  Posted = 'POSTED',
+}
 
 export type OpenSeaListingTerms = {
   __typename?: 'OpenSeaListingTerms';
@@ -4735,6 +4764,16 @@ export type PortfolioValuation = {
   valuedNfts: Scalars['Int'];
 };
 
+/** A browser's push subscription, as `PushSubscription.toJSON()` gives it, with the two entries of `keys` beside the endpoint. */
+export type PushSubscriptionInput = {
+  /** The browser's authentication secret, `keys.auth`, in base64url. */
+  auth: Scalars['String'];
+  /** The push service URL of the subscription. Only the push services of Chrome, Safari, Firefox and Edge are accepted. */
+  endpoint: Scalars['String'];
+  /** The browser's public key, `keys.p256dh`, in base64url. */
+  p256dh: Scalars['String'];
+};
+
 /** Query for the lending module */
 export type Query = {
   __typename?: 'Query';
@@ -4900,6 +4939,8 @@ export type Query = {
   listNftsFromUser: NftConnection;
   listNotifications: NotificationConnection;
   listOffers: OfferConnection;
+  /** What became of the OpenSea listing of each of the caller's orders among orderIds, as published with listOnOpenSea: PENDING until it is posted to OpenSea or fails. An order with no OpenSea listing waiting or settled has no entry. */
+  listOpenSeaListingResults: Array<OpenSeaListingResult>;
   listOpenSeaListingTerms: Array<OpenSeaListingTerms>;
   /** This field is deprecated. Use list_orders_v2 instead. This field will be removed in the next major version. */
   listOrders: OrderConnection;
@@ -4938,6 +4979,8 @@ export type Query = {
   previewRenegotiationCompetition: LoanOfferCompetitionPreview;
   /** The Telegram chat the viewer's account gets its notifications in, or null when no wallet of the account linked one. */
   telegramConnection?: Maybe<TelegramConnection>;
+  /** The key a browser subscribes to this server's push messages with, as the `applicationServerKey` of `PushManager.subscribe()`. Null when the server has none configured. */
+  webPushPublicKey?: Maybe<Scalars['String']>;
 };
 
 /** Query for the lending module */
@@ -5771,6 +5814,11 @@ export type QueryListOffersArgs = {
 };
 
 /** Query for the lending module */
+export type QueryListOpenSeaListingResultsArgs = {
+  orderIds: Array<Scalars['Int64']>;
+};
+
+/** Query for the lending module */
 export type QueryListOpenSeaListingTermsArgs = {
   collectionIds: Array<Scalars['Int']>;
 };
@@ -6487,6 +6535,8 @@ export type SingleNftOrder = Event &
     createdDate: Scalars['DateTime'];
     currency: Currency;
     currencyAddress: Scalars['Address'];
+    /** What a descending listing asks at `expiration`, its price falling linearly from `price` at `startTime`; null for a fixed price. */
+    endPrice?: Maybe<Scalars['BigInt']>;
     evmOrder?: Maybe<Scalars['JSON']>;
     executions: Scalars['Int'];
     expiration: Scalars['DateTime'];
@@ -6542,6 +6592,8 @@ export type SingleNftOrderInput = {
   /** The maker's Seaport counter, which the order is built with. Optional: GONDI looks it up when it is missing. A signed order whose counter is not the maker's current one is rejected. */
   counter?: InputMaybe<Scalars['BigInt']>;
   currencyAddress: Scalars['Address'];
+  /** Makes a listing's price fall linearly from `price` at `startTime` to this, below `price`, at `expirationTime`. Listings only, not stealth ones. */
+  endPrice?: InputMaybe<Scalars['BigInt']>;
   expirationTime: Scalars['BigInt'];
   fees?: InputMaybe<Array<OrderFee>>;
   isAsk?: InputMaybe<Scalars['Boolean']>;
@@ -6936,6 +6988,8 @@ export type Trait = Node & {
   __typename?: 'Trait';
   collectionId: Scalars['String'];
   id: Scalars['String'];
+  /** Whether GONDI computed the trait instead of reading it from the metadata: the `None` of a type the NFT lacks, or its `Trait count`. */
+  isDerived: Scalars['Boolean'];
   isSynthetic: Scalars['Boolean'];
   key: Scalars['String'];
   sampleAsset?: Maybe<Asset>;
@@ -7217,6 +7271,8 @@ export type TraitValue = Node & {
   __typename?: 'TraitValue';
   collectionId: Scalars['Int'];
   id: Scalars['String'];
+  /** Whether GONDI computed the value instead of reading it from the metadata: the `None` of a type an NFT lacks, or its `Trait count`. */
+  isDerived: Scalars['Boolean'];
   isSynthetic: Scalars['Boolean'];
   key: Scalars['String'];
   rarity: Scalars['Int'];
@@ -8870,10 +8926,11 @@ export type NftIdBySlugTokenIdQuery = {
 };
 
 export type OwnedNftsQueryVariables = Exact<{
+  owner: Scalars['Address'];
   after?: InputMaybe<Scalars['String']>;
-  includeInLoans?: InputMaybe<Scalars['Boolean']>;
-  includeInStash?: InputMaybe<Scalars['Boolean']>;
-  standards?: InputMaybe<Array<TokenStandardType> | TokenStandardType>;
+  includeInLoans: Scalars['Boolean'];
+  includeInStash: Scalars['Boolean'];
+  standards: Array<TokenStandardType> | TokenStandardType;
 }>;
 
 export type OwnedNftsQuery = {
@@ -13040,6 +13097,7 @@ export type MutationKeySpecifier = (
   | 'recordGalleryVisit'
   | 'recordItemVisit'
   | 'refreshNftMetadata'
+  | 'registerPushSubscription'
   | 'removeLinkedWallets'
   | 'removeListing'
   | 'removeListingsOfNftsFromUser'
@@ -13067,6 +13125,7 @@ export type MutationKeySpecifier = (
   | 'unfollowNft'
   | 'unfollowWallet'
   | 'unpublishGallery'
+  | 'unregisterPushSubscription'
   | 'updateGallery'
   | 'uploadProfilePicture'
   | 'verifyMailValidationCode'
@@ -13119,6 +13178,7 @@ export type MutationFieldPolicy = {
   recordGalleryVisit?: FieldPolicy<any> | FieldReadFunction<any>;
   recordItemVisit?: FieldPolicy<any> | FieldReadFunction<any>;
   refreshNftMetadata?: FieldPolicy<any> | FieldReadFunction<any>;
+  registerPushSubscription?: FieldPolicy<any> | FieldReadFunction<any>;
   removeLinkedWallets?: FieldPolicy<any> | FieldReadFunction<any>;
   removeListing?: FieldPolicy<any> | FieldReadFunction<any>;
   removeListingsOfNftsFromUser?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -13146,6 +13206,7 @@ export type MutationFieldPolicy = {
   unfollowNft?: FieldPolicy<any> | FieldReadFunction<any>;
   unfollowWallet?: FieldPolicy<any> | FieldReadFunction<any>;
   unpublishGallery?: FieldPolicy<any> | FieldReadFunction<any>;
+  unregisterPushSubscription?: FieldPolicy<any> | FieldReadFunction<any>;
   updateGallery?: FieldPolicy<any> | FieldReadFunction<any>;
   uploadProfilePicture?: FieldPolicy<any> | FieldReadFunction<any>;
   verifyMailValidationCode?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -13672,14 +13733,18 @@ export type OfferValidatorFieldPolicy = {
 export type OpenSeaListingResultKeySpecifier = (
   | 'contractAddress'
   | 'error'
+  | 'failureReason'
   | 'orderHash'
+  | 'status'
   | 'tokenId'
   | OpenSeaListingResultKeySpecifier
 )[];
 export type OpenSeaListingResultFieldPolicy = {
   contractAddress?: FieldPolicy<any> | FieldReadFunction<any>;
   error?: FieldPolicy<any> | FieldReadFunction<any>;
+  failureReason?: FieldPolicy<any> | FieldReadFunction<any>;
   orderHash?: FieldPolicy<any> | FieldReadFunction<any>;
+  status?: FieldPolicy<any> | FieldReadFunction<any>;
   tokenId?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type OpenSeaListingTermsKeySpecifier = (
@@ -14065,6 +14130,7 @@ export type QueryKeySpecifier = (
   | 'listNftsFromUser'
   | 'listNotifications'
   | 'listOffers'
+  | 'listOpenSeaListingResults'
   | 'listOpenSeaListingTerms'
   | 'listOrders'
   | 'listOrdersV2'
@@ -14089,6 +14155,7 @@ export type QueryKeySpecifier = (
   | 'previewNftSetCondition'
   | 'previewRenegotiationCompetition'
   | 'telegramConnection'
+  | 'webPushPublicKey'
   | QueryKeySpecifier
 )[];
 export type QueryFieldPolicy = {
@@ -14193,6 +14260,7 @@ export type QueryFieldPolicy = {
   listNftsFromUser?: FieldPolicy<any> | FieldReadFunction<any>;
   listNotifications?: FieldPolicy<any> | FieldReadFunction<any>;
   listOffers?: FieldPolicy<any> | FieldReadFunction<any>;
+  listOpenSeaListingResults?: FieldPolicy<any> | FieldReadFunction<any>;
   listOpenSeaListingTerms?: FieldPolicy<any> | FieldReadFunction<any>;
   listOrders?: FieldPolicy<any> | FieldReadFunction<any>;
   listOrdersV2?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -14217,6 +14285,7 @@ export type QueryFieldPolicy = {
   previewNftSetCondition?: FieldPolicy<any> | FieldReadFunction<any>;
   previewRenegotiationCompetition?: FieldPolicy<any> | FieldReadFunction<any>;
   telegramConnection?: FieldPolicy<any> | FieldReadFunction<any>;
+  webPushPublicKey?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type RealizedProfitDayKeySpecifier = (
   | 'currencyAddress'
@@ -14856,6 +14925,7 @@ export type SingleNFTOrderKeySpecifier = (
   | 'createdDate'
   | 'currency'
   | 'currencyAddress'
+  | 'endPrice'
   | 'evmOrder'
   | 'executions'
   | 'expiration'
@@ -14898,6 +14968,7 @@ export type SingleNFTOrderFieldPolicy = {
   createdDate?: FieldPolicy<any> | FieldReadFunction<any>;
   currency?: FieldPolicy<any> | FieldReadFunction<any>;
   currencyAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  endPrice?: FieldPolicy<any> | FieldReadFunction<any>;
   evmOrder?: FieldPolicy<any> | FieldReadFunction<any>;
   executions?: FieldPolicy<any> | FieldReadFunction<any>;
   expiration?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -15367,6 +15438,7 @@ export type TopUpRequestedNotificationFieldPolicy = {
 export type TraitKeySpecifier = (
   | 'collectionId'
   | 'id'
+  | 'isDerived'
   | 'isSynthetic'
   | 'key'
   | 'sampleAsset'
@@ -15379,6 +15451,7 @@ export type TraitKeySpecifier = (
 export type TraitFieldPolicy = {
   collectionId?: FieldPolicy<any> | FieldReadFunction<any>;
   id?: FieldPolicy<any> | FieldReadFunction<any>;
+  isDerived?: FieldPolicy<any> | FieldReadFunction<any>;
   isSynthetic?: FieldPolicy<any> | FieldReadFunction<any>;
   key?: FieldPolicy<any> | FieldReadFunction<any>;
   sampleAsset?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -15659,6 +15732,7 @@ export type TraitTypeEdgeFieldPolicy = {
 export type TraitValueKeySpecifier = (
   | 'collectionId'
   | 'id'
+  | 'isDerived'
   | 'isSynthetic'
   | 'key'
   | 'rarity'
@@ -15671,6 +15745,7 @@ export type TraitValueKeySpecifier = (
 export type TraitValueFieldPolicy = {
   collectionId?: FieldPolicy<any> | FieldReadFunction<any>;
   id?: FieldPolicy<any> | FieldReadFunction<any>;
+  isDerived?: FieldPolicy<any> | FieldReadFunction<any>;
   isSynthetic?: FieldPolicy<any> | FieldReadFunction<any>;
   key?: FieldPolicy<any> | FieldReadFunction<any>;
   rarity?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -18538,16 +18613,16 @@ export const NftIdBySlugTokenIdDocument = gql`
 `;
 export const OwnedNftsDocument = gql`
   query ownedNfts(
+    $owner: Address!
     $after: String
-    $includeInLoans: Boolean
-    $includeInStash: Boolean
-    $standards: [TokenStandardType!]
+    $includeInLoans: Boolean!
+    $includeInStash: Boolean!
+    $standards: [TokenStandardType!]!
   ) {
-    ownedNfts: listNftsFromUser(
-      after: $after
-      withLoans: $includeInLoans
-      includeInStash: $includeInStash
+    ownedNfts: listNfts(
+      ownersFilter: { owners: [$owner], withInLoan: $includeInLoans, withInStash: $includeInStash }
       standards: $standards
+      after: $after
     ) {
       pageInfo {
         endCursor
@@ -19245,7 +19320,7 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
         options,
       ) as Promise<NftIdBySlugTokenIdQuery>;
     },
-    ownedNfts(variables?: OwnedNftsQueryVariables, options?: C): Promise<OwnedNftsQuery> {
+    ownedNfts(variables: OwnedNftsQueryVariables, options?: C): Promise<OwnedNftsQuery> {
       return requester<OwnedNftsQuery, OwnedNftsQueryVariables>(
         OwnedNftsDocument,
         variables,
