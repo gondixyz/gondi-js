@@ -1,0 +1,10 @@
+query listOpenSeaListingResults($orderIds: [Int64!]!) {
+  result: listOpenSeaListingResults(orderIds: $orderIds) {
+    contractAddress
+    tokenId
+    orderHash
+    error
+    failureReason
+    status
+  }
+}

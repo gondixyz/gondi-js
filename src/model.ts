@@ -5,6 +5,7 @@ import {
   CollectionOfferInput as ApiCollectionOfferInput,
   CollectionOrderType,
   CollectionSignedOfferInput,
+  ListOpenSeaListingResultsQuery,
   LoanSortInput,
   LoanStatusType,
   MarketplaceEnum,
@@ -153,6 +154,18 @@ export type ListOrdersProps = {
   limit?: number;
   cursor?: string | null;
 };
+
+/**
+ * What became of the OpenSea listing of one ask signed by `makeOrdersOnOpenSea` or
+ * `relistOrdersOnOpenSea`, identified by its NFT (`contractAddress` and `tokenId`).
+ *
+ * `status` is `PENDING` while the listing waits to be posted to OpenSea, `POSTED` once OpenSea
+ * took it (`orderHash` is then its OpenSea order hash), and `FAILED` when it did not, with the
+ * text to show in `error`. `failureReason` is set for a failure the caller can act on:
+ * `TERMS_CHANGED` when OpenSea refused the listing because the collection's fees changed after
+ * it was signed, which `relistOrdersOnOpenSea` signs again.
+ */
+export type OpenSeaListingResult = ListOpenSeaListingResultsQuery['result'][number];
 
 export type NftStandard = 'ERC721' | 'ERC1155';
 

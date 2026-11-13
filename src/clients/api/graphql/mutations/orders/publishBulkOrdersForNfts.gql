@@ -35,6 +35,8 @@ mutation publishBulkOrders($bulkInput: BulkNFTOrdersInput!) {
         tokenId
         orderHash
         error
+        failureReason
+        status
       }
     }
   }
