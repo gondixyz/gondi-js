@@ -1,14 +1,14 @@
 query ownedNfts(
+  $owner: Address!
   $after: String
-  $includeInLoans: Boolean
-  $includeInStash: Boolean
-  $standards: [TokenStandardType!]
+  $includeInLoans: Boolean!
+  $includeInStash: Boolean!
+  $standards: [TokenStandardType!]!
 ) {
-  ownedNfts: listNftsFromUser(
-    after: $after
-    withLoans: $includeInLoans
-    includeInStash: $includeInStash
+  ownedNfts: listNfts(
+    ownersFilter: { owners: [$owner], withInLoan: $includeInLoans, withInStash: $includeInStash }
     standards: $standards
+    after: $after
   ) {
     pageInfo {
       endCursor

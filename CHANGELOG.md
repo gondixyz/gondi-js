@@ -1,3 +1,37 @@
+# Bug Fixes 0.62.1
+
+## Important
+
+`gondi.ownedNfts` reads the API's `listNfts` query instead of `listNftsFromUser`, which the API is removing. Calls to `gondi.ownedNfts` keep working; upgrade before the API drops the old query, or `ownedNfts` will fail.
+
+## Table of Contents
+
+- [ownedNfts reads listNfts](#ownednfts-reads-listnfts)
+
+## ownedNfts reads listNfts
+
+**Description:**
+
+- FIX: `gondi.ownedNfts({ after?, includeInLoans?, includeInStash?, standards? })` lists the wallet's NFTs through `listNfts`, filtered by the wallet's address, rather than through the deprecated `listNftsFromUser`, which read the wallet from the signed-in session. The arguments, their defaults (no loans, no stash, ERC721 only) and the `{ ownedNfts, pageInfo }` result are unchanged.
+- FIX: the NFTs come newest NFT id first, so paging with `after` is stable. `listNftsFromUser` returned them in no set order, so one NFT could show up on two pages and another on none.
+- FIX: `includeInStash: true` adds only the NFTs in the wallet's own stashes. It used to add the NFTs in every stash, whoever owned it.
+- CHANGE: `includeInLoans: true` adds the NFTs of the wallet's active loans only. It used to add those of loans already sent to auction too.
+- CHANGE: `gondi.apiClient.ownedNfts`, the raw GraphQL call under it, now takes `owner` and requires `includeInLoans`, `includeInStash` and `standards`. `gondi.ownedNfts` fills them in.
+
+**Migration Steps:**
+
+- None for `gondi.ownedNfts`.
+- A caller of `gondi.apiClient.ownedNfts` passes the wallet and every filter:
+
+```typescript
+await gondi.apiClient.ownedNfts({
+  owner: gondi.account.address,
+  includeInLoans: false,
+  includeInStash: false,
+  standards: [TokenStandardType.Erc721],
+});
+```
+
 # New Features 0.62.0
 
 ## Important
