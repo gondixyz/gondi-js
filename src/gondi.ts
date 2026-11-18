@@ -100,6 +100,40 @@ import { isDefined, OptionalNullable } from '@/utils/types';
 /** The most orders `cancelOrders` takes at once: the API's cancel calldata limit. */
 const MAX_CANCEL_ORDERS = 100;
 
+/**
+ * Tracks the steps one API negotiation has answered: each signature key, and
+ * the marketplace data refresh. The API asks for each step once, so a step it
+ * asks for again throws instead of prompting the wallet or publishing forever,
+ * however many steps a flow has.
+ */
+const negotiationSteps = () => {
+  const answered = new Set<string>();
+  return (step: string) => {
+    if (answered.has(step)) throw new Error(`The API asked again for ${step}`);
+    answered.add(step);
+  };
+};
+
+/** The error a negotiation throws for a response it has no step for, instead of publishing again. */
+const unexpectedNegotiationResponse = (response: { __typename?: string }) =>
+  new Error(`Unexpected API response ${response.__typename}`);
+
+/** The members of the API response union `Response` whose `__typename` is one of `Typename`. */
+type WithTypename<Response, Typename extends string> = Extract<Response, { __typename?: Typename }>;
+
+/** Whether the API response's `__typename` is one of `typenames`. */
+const hasTypename = <Response extends { __typename?: string }, Typename extends string>(
+  response: Response,
+  typenames: readonly Typename[],
+): response is WithTypename<Response, Typename> =>
+  typenames.some((typename) => typename === response.__typename);
+
+/** A negotiation response asking the wallet to sign `typedData` into the input field `key`. */
+type SignatureRequest<Response> = WithTypename<Response, 'SignatureRequest'> & {
+  key: string;
+  typedData: object;
+};
+
 /** The `__typename` of every order `makeOrder` can publish. */
 const PUBLISHED_ORDER_TYPENAMES = [
   'SingleNFTOrder',
@@ -108,12 +142,6 @@ const PUBLISHED_ORDER_TYPENAMES = [
   'MultipleTraitOrder',
   'SetBidOrder',
 ] as const;
-
-/** Whether `response` is an order `makeOrder` can publish, not a request for more input. */
-const isPublishedOrder = <Response extends { __typename?: string }>(
-  response: Response,
-): response is Extract<Response, { __typename?: (typeof PUBLISHED_ORDER_TYPENAMES)[number] }> =>
-  PUBLISHED_ORDER_TYPENAMES.some((publishedTypename) => publishedTypename === response.__typename);
 
 /** An offer any NFT of a set, a collection or the NFTs carrying some traits, can borrow against. */
 type MakeOfferInput = model.CollectionOfferInput | model.TraitOfferInput;
@@ -571,15 +599,11 @@ export class Gondi {
    * A trait, set or collection bid fills up to `maxExecutions` times.
    */
   async makeOrder(orderInput: OrderInput) {
-    let response = await this.apiClient.publishOrder(orderInput);
-    while (response.__typename === 'SignatureRequest') {
-      const key = response.key as 'signature';
-      orderInput[key] = await this.wallet.signTypedData(response.typedData as TypedDataDefinition);
-      response = await this.apiClient.publishOrder(orderInput);
-    }
-
-    if (!isPublishedOrder(response)) throw new Error('This should never happen');
-
+    const response = await this.negotiate({
+      publish: (input) => this.apiClient.publishOrder(input),
+      input: orderInput,
+      settled: PUBLISHED_ORDER_TYPENAMES,
+    });
     return { ...response, ...orderInput };
   }
 
@@ -667,16 +691,55 @@ export class Gondi {
     return response;
   }
 
-  async makeDeal(dealInput: DealInput) {
-    let response = await this.apiClient.publishDeal(dealInput);
-    while (response.__typename === 'SignatureRequest') {
-      const key = response.key as 'signature';
-      dealInput[key] = await this.wallet.signTypedData(response.typedData as TypedDataDefinition);
-      response = await this.apiClient.publishDeal(dealInput);
+  /**
+   * Publishes `input` until the API answers with one of the `settled` types, answering each step
+   * it asks for in between: `onExtraSeaportData` copies refreshed marketplace data into the input,
+   * and `sign` answers a signature request, by default writing the wallet's signature of the typed
+   * data into the input field the request names. A step asked for twice, or a response that is
+   * neither settled nor a step the caller answers, throws instead of publishing again.
+   */
+  private async negotiate<
+    Input extends object,
+    Response extends { __typename?: string },
+    Settled extends NonNullable<Response['__typename']>,
+  >({
+    publish,
+    input,
+    settled,
+    onExtraSeaportData,
+    sign = async (request) => {
+      const signature = await this.wallet.signTypedData(request.typedData as TypedDataDefinition);
+      Object.assign(input, { [request.key]: signature });
+    },
+  }: {
+    publish: (input: Input) => Promise<Response>;
+    input: Input;
+    settled: readonly Settled[];
+    onExtraSeaportData?: (response: WithTypename<Response, 'ExtraSeaportData'>) => void;
+    sign?: (request: SignatureRequest<Response>) => Promise<void>;
+  }): Promise<WithTypename<Response, Settled>> {
+    const answer = negotiationSteps();
+    let response = await publish(input);
+    while (!hasTypename(response, settled)) {
+      if (onExtraSeaportData && hasTypename(response, ['ExtraSeaportData'])) {
+        answer('extraSeaportData');
+        onExtraSeaportData(response);
+      } else if (hasTypename(response, ['SignatureRequest'])) {
+        const request = response as SignatureRequest<Response>;
+        answer(request.key);
+        await sign(request);
+      } else throw unexpectedNegotiationResponse(response);
+      response = await publish(input);
     }
+    return response;
+  }
 
-    if (response.__typename !== 'Deal') throw new Error('This should never happen');
-
+  async makeDeal(dealInput: DealInput) {
+    const response = await this.negotiate({
+      publish: (input) => this.apiClient.publishDeal(input),
+      input: dealInput,
+      settled: ['Deal'],
+    });
     return { ...response, ...dealInput };
   }
 
@@ -687,22 +750,15 @@ export class Gondi {
       sellAndRepayOrderInput.replaceOrderIdInt64 ?? sellAndRepayOrderInput.replaceOrderId;
     sellAndRepayOrderInput.orderToFill = undefined;
     sellAndRepayOrderInput.replaceOrderId = undefined;
-    let response = await this.apiClient.publishSellAndRepayOrder(sellAndRepayOrderInput);
-    while (response.__typename !== 'SellAndRepayOrder') {
-      if (response.__typename === 'ExtraSeaportData') {
-        sellAndRepayOrderInput.extraSeaportData = response.extraData;
-        sellAndRepayOrderInput.criteriaProof = response.criteriaProof;
-      } else if (response.__typename === 'SignatureRequest') {
-        const key = response.key as 'signature' | 'repaymentSignature';
-        sellAndRepayOrderInput[key] = await this.wallet.signTypedData(
-          response.typedData as TypedDataDefinition,
-        );
-      }
-      response = await this.apiClient.publishSellAndRepayOrder(sellAndRepayOrderInput);
-    }
-
-    if (response.__typename !== 'SellAndRepayOrder') throw new Error('This should never happen');
-
+    const response = await this.negotiate({
+      publish: (input) => this.apiClient.publishSellAndRepayOrder(input),
+      input: sellAndRepayOrderInput,
+      settled: ['SellAndRepayOrder'],
+      onExtraSeaportData: ({ extraData, criteriaProof }) => {
+        sellAndRepayOrderInput.extraSeaportData = extraData;
+        sellAndRepayOrderInput.criteriaProof = criteriaProof;
+      },
+    });
     return { ...response, ...sellAndRepayOrderInput };
   }
 
@@ -770,20 +826,14 @@ export class Gondi {
       return acc + amount - fee;
     }, 0n);
 
-    let response = await this.apiClient.publishBuyNowPayLaterOrder(orderInput);
-    while (response.__typename !== 'BuyNowPayLaterOrder') {
-      if (response.__typename === 'ExtraSeaportData') {
-        orderInput.extraSeaportData = response.extraData;
-      } else if (response.__typename === 'SignatureRequest') {
-        const key = response.key as 'signature' | 'emitSignature';
-        orderInput[key] = await this.wallet.signTypedData(
-          response.typedData as TypedDataDefinition,
-        );
-      }
-      response = await this.apiClient.publishBuyNowPayLaterOrder(orderInput);
-    }
-
-    if (response.__typename !== 'BuyNowPayLaterOrder') throw new Error('This should never happen');
+    const response = await this.negotiate({
+      publish: (input) => this.apiClient.publishBuyNowPayLaterOrder(input),
+      input: orderInput,
+      settled: ['BuyNowPayLaterOrder'],
+      onExtraSeaportData: ({ extraData }) => {
+        orderInput.extraSeaportData = extraData;
+      },
+    });
 
     if (isDefined(repaymentCalldata)) {
       const pb = this.contracts.PurchaseBundler(purchaseBundlerAddress, offers[0].contractAddress);
@@ -912,14 +962,17 @@ export class Gondi {
       principalReceiver: quote.buyerBundler,
       callbackData: quote.callbackData,
     };
-    let response = await this.apiClient.publishBuyNowPayLaterOrder(orderInput);
-    while (response.__typename !== 'BuyNowPayLaterOrder') {
-      if (response.__typename === 'ExtraSeaportData') {
-        orderInput.extraSeaportData = response.extraData;
-      } else if (response.__typename === 'SignatureRequest') {
-        if (response.key !== 'emitSignature')
+    const response = await this.negotiate({
+      publish: (input) => this.apiClient.publishBuyNowPayLaterOrder(input),
+      input: orderInput,
+      settled: ['BuyNowPayLaterOrder'],
+      onExtraSeaportData: ({ extraData }) => {
+        orderInput.extraSeaportData = extraData;
+      },
+      sign: async (request) => {
+        if (request.key !== 'emitSignature')
           throw new Error('API execution differs from the confirmed purchase quote');
-        const typed = response.typedData as TypedDataDefinition;
+        const typed = request.typedData as TypedDataDefinition;
         assertCreditPurchaseExecution(confirmedExecution, typed.message);
         await assertCreditPurchaseRoute(this.bcClient, creditPurchaseQuote);
         const buyerMsl = this.contracts.Msl(offers[0].contractAddress);
@@ -927,9 +980,8 @@ export class Gondi {
         orderInput.emitSignature = await buyerMsl.signExecutionData({
           structToSign: confirmedExecution,
         });
-      }
-      response = await this.apiClient.publishBuyNowPayLaterOrder(orderInput);
-    }
+      },
+    });
     const decoded = decodeFunctionData({ abi: multiSourceLoanAbi, data: response.emitCalldata });
     if (decoded.functionName !== 'emitLoan') throw new Error('Unexpected buyer execution');
     const execution = decoded.args[0];
@@ -1608,6 +1660,9 @@ export class Gondi {
    * Lists trade orders — bids and listings — across the marketplaces GONDI indexes, newest first
    * unless `sortBy` says otherwise. Only active orders unless `statuses` is given.
    *
+   * The API answers this read without a session, but like every call on `Gondi` it signs the
+   * wallet in first. The GONDI market maker reads the same data through its own sign-in-free client.
+   *
    * @returns One page of orders, with the cursor of the next one.
    */
   async orders({
@@ -1649,6 +1704,9 @@ export class Gondi {
    * bid that any item can fill, and its royalties (`required` ones must be paid as listing fees).
    *
    * Looks the collection up by slug, the lookup the API answers fastest.
+   *
+   * The API answers this read without a session, but like every call on `Gondi` it signs the
+   * wallet in first. The GONDI market maker reads the same data through its own sign-in-free client.
    *
    * @throws Error when no collection has `slug`.
    */
