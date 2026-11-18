@@ -1,3 +1,24 @@
+# Bug Fixes 0.63.1
+
+## Important
+
+Publishing an order, deal, sell-and-repay order or buy-now-pay-later order now gives up when the API asks for a step it already got, instead of looping. A flow can still ask for any number of different signatures. Existing calls keep working.
+
+## Table of Contents
+
+- [Bounded API negotiation](#bounded-api-negotiation)
+
+## Bounded API negotiation
+
+**Description:**
+
+- FIX: `gondi.makeOrder`, `gondi.makeDeal`, `gondi.makeSellAndRepayOrder` and `gondi.buyNowPayLater` reject with `The API asked again for <step>` when the API asks a second time for a signature key they already signed, or for marketplace data they already sent, instead of prompting the wallet and calling the API forever. Each step is answered once, so there is no cap on how many different signatures a flow asks for.
+- FIX: `gondi.makeSellAndRepayOrder` and `gondi.buyNowPayLater` reject with `Unexpected API response <typename>` when the API answers with a type they have no step for, instead of publishing the same input again forever. `gondi.makeOrder` and `gondi.makeDeal` reject with the same error, instead of `This should never happen`.
+
+**Migration Steps:**
+
+- None.
+
 # New Features 0.63.0
 
 ## Important

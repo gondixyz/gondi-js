@@ -233,3 +233,11 @@ test('signs the legacy route with an emit deadline minutes away', async () => {
   const [orderInput] = publish.mock.calls[0] as unknown as [{ emitExpirationTime: bigint }];
   expect(Number(orderInput.emitExpirationTime - now)).toBeWithin(300, 302);
 });
+test('stops publishing a credit purchase when the API keeps refreshing marketplace data', async () => {
+  publish.mockResolvedValue({ __typename: 'ExtraSeaportData', extraData: '0x' } as never);
+  await expect(gondi.buyNowPayLater({ ...args, creditPurchaseQuote: quote })).rejects.toThrow(
+    'The API asked again for extraSeaportData',
+  );
+  expect(publish).toHaveBeenCalledTimes(2);
+  expect(buy).not.toHaveBeenCalled();
+});
