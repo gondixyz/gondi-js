@@ -7,6 +7,7 @@ import {
   createTransport,
   decodeFunctionData,
   erc20Abi,
+  formatUnits,
   Hash,
   Hex,
   keccak256,
@@ -1613,6 +1614,15 @@ export class Gondi {
     return Number(result.nft.id);
   }
 
+  /**
+   * Lists collections, one page at a time, with their statistics; loan volumes are in
+   * `statsCurrency` (native ETH when omitted).
+   *
+   * `statistics.bestOffer` is the collection's highest bid, its net amount in whole units of its
+   * currency, or `null` when it has no active bid.
+   *
+   * @returns The page's collections and its `pageInfo`.
+   */
   async collections(props: {
     statsCurrency?: Address;
     standards?: TokenStandardType[];
@@ -1623,7 +1633,19 @@ export class Gondi {
     const {
       collections: { edges, pageInfo },
     } = await this.apiClient.collections({ currency, collections, standards, after: cursor });
-    return { collections: edges.map((edge) => edge.node), pageInfo };
+    return {
+      collections: edges.map(({ node }) => {
+        const { highestBid, ...statistics } = node.statistics;
+        const bestOffer = highestBid
+          ? {
+              amount: Number(formatUnits(highestBid.netAmount, highestBid.currency.decimals)),
+              currency: highestBid.currency,
+            }
+          : null;
+        return { ...node, statistics: { ...statistics, bestOffer } };
+      }),
+      pageInfo,
+    };
   }
 
   async collectionId(props: { slug: string; contractAddress?: never }): Promise<number>;

@@ -40,10 +40,7 @@ query listLoans(
         startTime
         duration
         status
-        offer {
-          offerId
-          signerAddress
-        }
+        offerIds
         currency {
           symbol
           decimals

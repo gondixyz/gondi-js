@@ -44,12 +44,13 @@ query collections(
           }
           floorPrice7d
           floorPrice30d
-          bestOffer {
-            ...CurrencyAmountInfo
+          highestBid {
+            netAmount
+            currency {
+              ...CurrencyInfo
+            }
           }
           totalVolume
-          totalVolume1y
-          totalVolume3m
           totalVolume1m
           totalVolume1w
 
