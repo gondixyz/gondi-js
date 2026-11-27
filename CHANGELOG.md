@@ -1,3 +1,84 @@
+# Breaking Changes 0.64.0
+
+## Important
+
+The SDK no longer selects GraphQL fields the GONDI API deprecated. Loans carry `offerIds` instead of `offer`, collections drop their one-year and three-month volumes, owned NFTs drop `topTraitFloorPrice`, and orders drop `steppedPrice`. `collections` keeps `statistics.bestOffer`, now read from the collection's highest bid.
+
+## Table of Contents
+
+- [Loan offer ids](#loan-offer-ids)
+- [Collection statistics](#collection-statistics)
+- [Owned NFT statistics](#owned-nft-statistics)
+- [Order stepped price](#order-stepped-price)
+
+## Loan offer ids
+
+**Description:**
+
+- BREAKING: each loan returned by `gondi.loans` has `offerIds` instead of `offer` (`offerId` and `signerAddress` of its first offer). Each entry is the GONDI API id of a loan offer the loan was originated from, a string of the form `<contract address>.<lender address>.<offerId>`, not the on-chain `offerId`.
+
+**Reason:**
+
+The API deprecated `MultiSourceLoan.offer` in favour of `offerIds`, and loaded one offer per loan to answer it.
+
+**Migration Steps:**
+
+- The on-chain `offerId` is the last segment of an entry:
+
+```typescript
+const { loans } = await gondi.loans({});
+const [firstOfferNodeId] = loans[0].offerIds;
+const offerId = BigInt(firstOfferNodeId.slice(firstOfferNodeId.lastIndexOf('.') + 1));
+```
+
+- The offer's `signerAddress` is no longer available from `gondi.loans`.
+
+## Collection statistics
+
+**Description:**
+
+- ENHANCEMENT: `statistics.bestOffer` of each collection returned by `gondi.collections` is read from the collection's highest bid: its net amount in whole units of its currency, with that currency's `address` and `decimals`, or `null` when the collection has no active bid. The value is the same one the API answered before.
+- BREAKING: `statistics.totalVolume1y` and `statistics.totalVolume3m` are gone.
+
+**Reason:**
+
+The API deprecated `bestOffer` in favour of `highestBid`, and deprecated the one-year and three-month volumes with no replacement.
+
+**Migration Steps:**
+
+- Use `totalVolume`, `totalVolume1m` or `totalVolume1w`, or the loan volumes (`totalLoanVolume3m`, `totalLoanVolume1y`) where a lending volume fits.
+
+## Owned NFT statistics
+
+**Description:**
+
+- BREAKING: `statistics.topTraitFloorPrice` of each NFT returned by `gondi.ownedNfts` is gone.
+
+**Reason:**
+
+The API deprecated it and always answered `null`.
+
+**Migration Steps:**
+
+- Drop any read of it; it never held a value.
+
+## Order stepped price
+
+**Description:**
+
+- BREAKING: orders returned by `gondi.orders`, and the `highestBid` of `gondi.collectionMarket`, no longer carry `steppedPrice`.
+
+**Reason:**
+
+The API ranks bids on their raw price and deprecated `steppedPrice`.
+
+**Migration Steps:**
+
+```typescript
+const { orders } = await gondi.orders({ side: OrderSide.Bid });
+const prices = orders.map((order) => order.price);
+```
+
 # Bug Fixes 0.63.1
 
 ## Important

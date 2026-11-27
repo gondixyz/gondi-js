@@ -18,20 +18,14 @@ export type Scalars = {
   Float: number;
   Address: Address;
   BigInt: bigint;
-  /** Date (isoformat) */
   Date: any;
-  /** Date with time (isoformat) */
   DateTime: Date;
   Hash: Hash;
   Hex: Hex;
-  /** 64-bit integer as a JSON number. */
   Int64: any;
-  /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf). */
   JSON: object;
   Signature: Hex;
-  /** Represents a file upload. */
   Upload: any;
-  /** Represents NULL values */
   Void: any;
 };
 
@@ -58,6 +52,8 @@ export type ActivityUpdate = {
   __typename?: 'ActivityUpdate';
   changedAt: Scalars['DateTime'];
   event: Event;
+  /** Whether the event left the feed rather than joined it: a public loan offer its lender cancelled or hid. Only streams opened with `offerCancellations` receive these. */
+  removed: Scalars['Boolean'];
 };
 
 export type AddressProfile = {
@@ -609,6 +605,19 @@ export enum AuctionStatus {
   Upcoming = 'UPCOMING',
 }
 
+/** A liquidation auction the viewer won that nobody has settled yet: settling it hands the viewer the NFT. */
+export type AuctionToSettle = NeedsActionItem & {
+  __typename?: 'AuctionToSettle';
+  auction: Auction;
+  /** When the action lapses. Null for one that never does (an auction to settle, a defaulted loan to liquidate, a wallet link request), which `needsAction` lists after every dated item, the longest waiting first. */
+  deadline?: Maybe<Scalars['DateTime']>;
+  /** What kind of item it is; dismissNeedsAction takes it. */
+  kind: NeedsActionKind;
+  /** The id of what the item is about (its loan, listing, trade, auction, wallet link or loan offer), which dismissNeedsAction takes with kind. */
+  subjectId: Scalars['String'];
+  winningBid: Bid;
+};
+
 export type AuctionWonNotification = Node &
   Notification & {
     __typename?: 'AuctionWonNotification';
@@ -649,6 +658,23 @@ export type BestOffer = {
   /** Net principal discounted by the horizon's cost, floored; in ETH base units when no currency was asked, else in the offer's. */
   score: Scalars['BigInt'];
 };
+
+/** The best collection offer on a collection your account holds rose. `netAmount` is what a seller receives from the new best offer and `previousNetAmount` the highest best offer of the day before it, both in `currency`. */
+export type BestOfferImprovedNotification = Node &
+  Notification & {
+    __typename?: 'BestOfferImprovedNotification';
+    /** The collection the offer was placed on. */
+    collection: Collection;
+    createdOn: Scalars['DateTime'];
+    /** Never null; nullable as `WatchedNftNotification.currency` is, so one query can select both. */
+    currency?: Maybe<Currency>;
+    id: Scalars['String'];
+    netAmount: Scalars['BigInt'];
+    notificationType: Scalars['String'];
+    previousNetAmount: Scalars['BigInt'];
+    readOn?: Maybe<Scalars['DateTime']>;
+    user: User;
+  };
 
 /** BEST is the headline pick; MOST_FUNDING and LOWEST_COST mark a pick that also leads its duration on net principal or on effective APR; LONGEST_DURATION marks the pick of the longest duration on offer. */
 export enum BestOfferRole {
@@ -781,6 +807,22 @@ export enum BlockchainEnum {
   Robinhood = 'ROBINHOOD',
 }
 
+/** A borrower's request to renegotiate or top up a loan the viewer lends, which the viewer has not answered with a renegotiation offer since it was made. Exactly one of renegotiationRequest and topUpRequest is set. */
+export type BorrowerRequest = NeedsActionItem & {
+  __typename?: 'BorrowerRequest';
+  /** When the request expires. */
+  deadline: Scalars['DateTime'];
+  /** What kind of item it is; dismissNeedsAction takes it. */
+  kind: NeedsActionKind;
+  loan: MultiSourceLoan;
+  /** The terms the borrower asks for, on a renegotiation request. */
+  renegotiationRequest?: Maybe<RenegotiationRequest>;
+  /** The id of what the item is about (its loan, listing, trade, auction, wallet link or loan offer), which dismissNeedsAction takes with kind. */
+  subjectId: Scalars['String'];
+  /** The amount and rate the borrower asks for, on a top-up request. */
+  topUpRequest?: Maybe<TopUpRequest>;
+};
+
 export type BulkNftOrdersInput = {
   /** The maker's Seaport counter, which every order is built with. Optional: GONDI looks it up when it is missing. A signed order whose counter is not the maker's current one is rejected. */
   counter?: InputMaybe<Scalars['BigInt']>;
@@ -803,7 +845,7 @@ export type BuyNowPayLaterOrder = Event &
   Node &
   Order & {
     __typename?: 'BuyNowPayLaterOrder';
-    /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone. */
+    /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone, placed at least 5 minutes ago. */
     cancelsOffChain: Scalars['Boolean'];
     createdDate: Scalars['DateTime'];
     currency: Currency;
@@ -860,6 +902,11 @@ export type BuyNowPayLaterOrderSignatureRequestExtraSeaportData =
   | ExtraSeaportData
   | SignatureRequest;
 
+export enum BuyOfferStanding {
+  Outbid = 'OUTBID',
+  Top = 'TOP',
+}
+
 export type CancelAllOrdersCalldata = {
   __typename?: 'CancelAllOrdersCalldata';
   calldata: Scalars['Hex'];
@@ -906,6 +953,8 @@ export type Collection = Node & {
   id: Scalars['String'];
   image?: Maybe<Asset>;
   imageId?: Maybe<Scalars['String']>;
+  /** Whether the collection is one of the liquidity program's. */
+  inLiquidityProgram: Scalars['Boolean'];
   /** Whether the authenticated user follows this collection. */
   isFollowed: Scalars['Boolean'];
   itemType?: Maybe<ItemType>;
@@ -1013,9 +1062,16 @@ export type CollectionEventsCountByDayAndCurrency = {
 
 /** The orders listCollectionFollows takes. */
 export enum CollectionFollowSortField {
+  /** The floor price in ETH terms; collections without one go last. */
+  FloorPrice = 'FLOOR_PRICE',
   /** When the wallet followed the collection. */
   FollowedAt = 'FOLLOWED_AT',
+  /** The floor price in ETH terms times the supply; shared contracts and collections without either go last. */
+  MarketCap = 'MARKET_CAP',
   Name = 'NAME',
+  TotalVolume_1D = 'TOTAL_VOLUME_1D',
+  TotalVolume_7D = 'TOTAL_VOLUME_7D',
+  TotalVolume_30D = 'TOTAL_VOLUME_30D',
 }
 
 export type CollectionFollowSortInput = {
@@ -1157,7 +1213,7 @@ export type CollectionOrder = Event &
   Node &
   Order & {
     __typename?: 'CollectionOrder';
-    /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone. */
+    /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone, placed at least 5 minutes ago. */
     cancelsOffChain: Scalars['Boolean'];
     collection: Collection;
     collectionId: Scalars['Int'];
@@ -1474,15 +1530,18 @@ export type CollectionValuation = {
   valuedNfts: Scalars['Int'];
 };
 
-/** A collection the recent buyers of another collection also bought. */
-export type CollectorsAlsoBought = {
-  __typename?: 'CollectorsAlsoBought';
-  collection: Collection;
-  /** A few of those buyers' purchases in this collection, most recent first, one per buyer. */
-  examplePurchases: Array<Sale>;
-  /** Distinct recent buyers of the other collection who also bought this one in the same window. */
-  sharedBuyers: Scalars['Int'];
+/** Keeps the collections whose traded volume over a period, in ETH terms, falls inside an interval. A collection without a sample counts as 0. */
+export type CollectionVolumeFilterInput = {
+  interval: Interval;
+  period: CollectionVolumePeriod;
 };
+
+/** The periods a collection's traded volume is sampled over. */
+export enum CollectionVolumePeriod {
+  OneDay = 'ONE_DAY',
+  SevenDays = 'SEVEN_DAYS',
+  ThirtyDays = 'THIRTY_DAYS',
+}
 
 export type ContractData = Node & {
   __typename?: 'ContractData';
@@ -1554,6 +1613,23 @@ export type CurrencyEdge = {
   cursor: Scalars['String'];
   node: Currency;
 };
+
+/** A message the GONDI team wrote for you: a title, a body and an optional link to open. */
+export type CustomMessageNotification = Node &
+  Notification & {
+    __typename?: 'CustomMessageNotification';
+    /** The message, as plain text. */
+    body: Scalars['String'];
+    createdOn: Scalars['DateTime'];
+    id: Scalars['String'];
+    /** The https URL the notification opens, if any. */
+    link?: Maybe<Scalars['String']>;
+    notificationType: Scalars['String'];
+    readOn?: Maybe<Scalars['DateTime']>;
+    /** One line that says what it is about. */
+    title: Scalars['String'];
+    user: User;
+  };
 
 export type Deal = Event &
   Node & {
@@ -1696,6 +1772,20 @@ export type DealSortInput = {
   order: Ordering;
 };
 
+/** A loan the viewer lends that defaulted and nobody has liquidated yet. Liquidating it either hands the NFT to its only lender (Claim) or starts an auction among its lenders. */
+export type DefaultedLoan = NeedsActionItem & {
+  __typename?: 'DefaultedLoan';
+  /** Whether liquidating hands the viewer the NFT: the loan has one tranche, the viewer's. With more, even all of them the viewer's, liquidating starts an auction. */
+  canClaim: Scalars['Boolean'];
+  /** When the action lapses. Null for one that never does (an auction to settle, a defaulted loan to liquidate, a wallet link request), which `needsAction` lists after every dated item, the longest waiting first. */
+  deadline?: Maybe<Scalars['DateTime']>;
+  /** What kind of item it is; dismissNeedsAction takes it. */
+  kind: NeedsActionKind;
+  loan: MultiSourceLoan;
+  /** The id of what the item is about (its loan, listing, trade, auction, wallet link or loan offer), which dismissNeedsAction takes with kind. */
+  subjectId: Scalars['String'];
+};
+
 export type Delegation = Node & {
   __typename?: 'Delegation';
   contractAddress: Scalars['String'];
@@ -1718,6 +1808,18 @@ export type DelegationEdge = {
   __typename?: 'DelegationEdge';
   cursor: Scalars['String'];
   node: Delegation;
+};
+
+/** A loan the viewer borrowed, due within 48 hours: repaid by then, or it defaults. */
+export type DueLoan = NeedsActionItem & {
+  __typename?: 'DueLoan';
+  /** When the loan is due. */
+  deadline: Scalars['DateTime'];
+  /** What kind of item it is; dismissNeedsAction takes it. */
+  kind: NeedsActionKind;
+  loan: MultiSourceLoan;
+  /** The id of what the item is about (its loan, listing, trade, auction, wallet link or loan offer), which dismissNeedsAction takes with kind. */
+  subjectId: Scalars['String'];
 };
 
 export type EditUserInput = {
@@ -1866,6 +1968,7 @@ export enum EventType {
   LoanTraitOffer = 'LOAN_TRAIT_OFFER',
   LoanTrancheRefinanced = 'LOAN_TRANCHE_REFINANCED',
   LoanTrancheRefinancedTransfer = 'LOAN_TRANCHE_REFINANCED_TRANSFER',
+  Mint = 'MINT',
   OffChainSale = 'OFF_CHAIN_SALE',
   Sale = 'SALE',
   SaleListing = 'SALE_LISTING',
@@ -1999,11 +2102,12 @@ export enum GalleryPalette {
   Slate = 'SLATE',
 }
 
-/** What the galleries directory orders by: when a gallery was published, when it was last edited, how many works it shows, or its name. */
+/** What the galleries directory orders by: when a gallery was published, when it was last edited, how many works it shows, its name, or how many visits its page had over the last 30 days, counted as `mostViewedGalleries` counts them. */
 export enum GallerySortField {
   Name = 'NAME',
   PublishedAt = 'PUBLISHED_AT',
   UpdatedAt = 'UPDATED_AT',
+  Visits = 'VISITS',
   WorkCount = 'WORK_COUNT',
 }
 
@@ -2227,6 +2331,24 @@ export type HolderEdge = {
   node: Holder;
 };
 
+/** A gallery curated on another site, as a new gallery here can take it: the works GONDI indexes, in the source's order. Nothing is saved. */
+export type ImportableGallery = {
+  __typename?: 'ImportableGallery';
+  description: Scalars['String'];
+  name: Scalars['String'];
+  /** How many works the source lists, before the ones GONDI does not index are left out. */
+  sourceWorkCount: Scalars['Int'];
+  works: Array<ImportableGalleryWork>;
+};
+
+/** One work of a gallery read from another site. */
+export type ImportableGalleryWork = {
+  __typename?: 'ImportableGalleryWork';
+  /** The title of a chapter that opens at this work, from the source's sections; empty when the work continues the chapter before it. */
+  chapter: Scalars['String'];
+  nft: Nft;
+};
+
 export type Interval = {
   max?: InputMaybe<Scalars['Float']>;
   min?: InputMaybe<Scalars['Float']>;
@@ -2430,6 +2552,31 @@ export type LinkedWallets = Node & {
   shouldAccept: Scalars['Boolean'];
   walletAddress: Scalars['String'];
 };
+
+/** A liquidity program collection with its recent sales volume. */
+export type LiquidityProgramCollection = {
+  __typename?: 'LiquidityProgramCollection';
+  collection: Collection;
+  /** Sales on GONDI and OpenSea over the last 30 days, wrapped versions included, in ETH; a Seaport sale of an order GONDI does not know counts as OpenSea. Null when a sale's currency has no ETH rate. */
+  volume1m?: Maybe<Scalars['Float']>;
+};
+
+/** The liquidity program paid one of your wallets its reward: an ETH transfer out of the GONDI fees wallet. */
+export type LiquidityRewardNotification = Node &
+  Notification & {
+    __typename?: 'LiquidityRewardNotification';
+    createdOn: Scalars['DateTime'];
+    id: Scalars['String'];
+    notificationType: Scalars['String'];
+    readOn?: Maybe<Scalars['DateTime']>;
+    /** The ETH received, in wei. */
+    rewardAmount: Scalars['BigInt'];
+    /** The transaction that paid it. */
+    txHash: Scalars['Hash'];
+    user: User;
+    /** The wallet paid. */
+    walletAddress: Scalars['Address'];
+  };
 
 export type Listing = Node & {
   __typename?: 'Listing';
@@ -3020,7 +3167,7 @@ export type LoansData = {
   minRemainingTime: Scalars['BigInt'];
 };
 
-/** This is the definition of a lost source. Lost sources are the lender/s that have lost a loan because of renegotiation or refinance. */
+/** This is the definition of a lost source. Lost sources are the lender/s that have lost a loan because of renegotiation or refinance.  */
 export type LostSource = Node & {
   __typename?: 'LostSource';
   accruedInterest: Scalars['BigInt'];
@@ -3138,6 +3285,21 @@ export enum MarketplaceEnum {
   Nftfi = 'NFTFI',
 }
 
+/** A token minted to `receiver`: an ERC-721 token, or one token of an ERC-1155 mint with the `amount` minted. */
+export type Mint = Activity &
+  Event &
+  Node & {
+    __typename?: 'Mint';
+    amount: Scalars['BigInt'];
+    id: Scalars['String'];
+    nft: Nft;
+    receiver: Scalars['Address'];
+    receiverName?: Maybe<Scalars['String']>;
+    receiverProfilePictureUrl?: Maybe<Scalars['String']>;
+    timestamp: Scalars['DateTime'];
+    txHash: Scalars['Hash'];
+  };
+
 /** This is the definition of a loan. In sources you can find the tranches of the loan.Take into account that the loan fields can change if renegotiation or refinance happens.You can use listLoanEvents to get the history of the loan. */
 export type MultiSourceLoan = Loan &
   Node & {
@@ -3227,7 +3389,7 @@ export type MultipleTraitOrder = Event &
   Node &
   Order & {
     __typename?: 'MultipleTraitOrder';
-    /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone. */
+    /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone, placed at least 5 minutes ago. */
     cancelsOffChain: Scalars['Boolean'];
     collection: Collection;
     collectionId: Scalars['Int'];
@@ -3307,6 +3469,8 @@ export type Mutation = {
   disconnectTelegram: Scalars['Boolean'];
   /** Removes the caller's proven X account from their profile. */
   disconnectTwitter: User;
+  /** Hide a needsAction item from the viewer's wallets for good, on every device: the item's kind and subjectId name it. It hides the card and nothing else, so a dismissed wallet link request stays pending. Dismissing it again does nothing. Without walletAddresses, for the signed-in wallet. */
+  dismissNeedsAction?: Maybe<Scalars['Void']>;
   editUser: User;
   /** Follow an artist from the wallet you are signed in with. Every wallet linked to yours then reads it as followed. Following it again is a no-op, and an unknown artist id fails with NOT_FOUND. */
   followArtist?: Maybe<Scalars['Void']>;
@@ -3329,7 +3493,7 @@ export type Mutation = {
   generateSingleNftOfferToBeSigned: SingleNftOffer;
   /** This is the first step of the trait loan offer flow: an offer any NFT carrying every one of the traits can borrow against. This step populates some fields of the offer, among them the validator holding the token ids that carry them now. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 3, 5, 7, 10, 15, 20 or 45 days, and at most 3650 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details. */
   generateTraitOfferToBeSigned: TraitOffer;
-  /** Hides all loan offers from a user for a given contract address. */
+  /** Hides all loan offers from a user for a given contract address.  */
   hideAllOffers: Array<Offer>;
   /** Hides a loan offer. */
   hideOffer: Offer;
@@ -3337,7 +3501,7 @@ export type Mutation = {
   hideOffers: Array<Offer>;
   /** Hides a trade bid. Listings can no longer be hidden: cancelling them on-chain is the only supported way to take one down, so an ask is rejected. */
   hideOrder: Order;
-  /** Hides a loan renegotiation offer. */
+  /** Hides a loan renegotiation offer.  */
   hideRenegotiation: Renegotiation;
   linkWalletAddress: LinkedWallets;
   markNotificationIdsAsRead?: Maybe<Scalars['Void']>;
@@ -3402,7 +3566,7 @@ export type Mutation = {
   showOffer: Offer;
   /** Unhides a trade bid. Listings can no longer be hidden, so an ask is rejected: one hidden before that change stays hidden and is cancelled on-chain rather than brought back. */
   showOrder: Order;
-  /** Unhides a loan renegotiation offer. */
+  /** Unhides a loan renegotiation offer.  */
   showRenegotiation: Renegotiation;
   signInWithEthereum: Scalars['String'];
   /** Starts proving the caller's X account: returns the x.com page to send them to. X sends them back to the configured redirect URI with `code` and `state` for completeTwitterVerification. */
@@ -3482,6 +3646,12 @@ export type MutationDeleteGalleryArgs = {
 
 export type MutationDeleteProfilePictureArgs = {
   userId: Scalars['Int'];
+};
+
+export type MutationDismissNeedsActionArgs = {
+  kind: NeedsActionKind;
+  subjectId: Scalars['String'];
+  walletAddresses?: InputMaybe<Array<Scalars['Address']>>;
 };
 
 export type MutationEditUserArgs = {
@@ -3786,6 +3956,8 @@ export type Nft = Node & {
   erc1155Balance: Scalars['BigInt'];
   /** Units of an ERC1155 NFT summed over the holder balances the indexer tracks. The tracked holder set can be partial, so this may undercount. Null when no holder balance is tracked, including for other token standards. */
   erc1155Supply?: Maybe<Scalars['BigInt']>;
+  /** The sum of erc1155Balance over addresses: the copies they hold together, 0 when none of them holds the token. */
+  erc1155TotalBalance: Scalars['BigInt'];
   id: Scalars['String'];
   image?: Maybe<Asset>;
   isExcluded?: Maybe<Scalars['Boolean']>;
@@ -3880,6 +4052,10 @@ export type NftErc1155BalanceArgs = {
   address: Scalars['Address'];
 };
 
+export type NftErc1155TotalBalanceArgs = {
+  addresses: Array<Scalars['Address']>;
+};
+
 export type NftMaxNetPrincipalOfferArgs = {
   currencyAddress?: InputMaybe<Scalars['Address']>;
 };
@@ -3898,6 +4074,8 @@ export type NftConnection = {
   edges: Array<NftEdge>;
   pageInfo: PageInfo;
   totalCount: Scalars['Int'];
+  /** Units the ownersFilter.owners wallets hold across the filtered NFTs: a vault counts the units it wraps, an ERC-1155 the copies they hold outside vaults, another NFT inside one of their vaults none, and any other NFT one. Null without ownersFilter.owners. */
+  totalUnits?: Maybe<Scalars['BigInt']>;
 };
 
 export type NftEdge = {
@@ -3940,6 +4118,30 @@ export type NftPriceSample = Node & {
   timestamp: Scalars['Int'];
   value: Scalars['BigInt'];
 };
+
+/** Something the viewer has to act on, pinned in the notification panel until it is done or lapses. Read from live state, not from notifications, so marking notifications read leaves it in place. */
+export type NeedsActionItem = {
+  /** When the action lapses. Null for one that never does (an auction to settle, a defaulted loan to liquidate, a wallet link request), which `needsAction` lists after every dated item, the longest waiting first. */
+  deadline?: Maybe<Scalars['DateTime']>;
+  /** What kind of item it is; dismissNeedsAction takes it. */
+  kind: NeedsActionKind;
+  /** The id of what the item is about (its loan, listing, trade, auction, wallet link or loan offer), which dismissNeedsAction takes with kind. */
+  subjectId: Scalars['String'];
+};
+
+/** What a needsAction item is about: one per item type, except that a BorrowerRequest is a RENEGOTIATION_REQUEST or a TOP_UP_REQUEST after the request it carries. With the item's subjectId, what dismissNeedsAction takes. */
+export enum NeedsActionKind {
+  AuctionToSettle = 'AUCTION_TO_SETTLE',
+  DefaultedLoan = 'DEFAULTED_LOAN',
+  DueLoan = 'DUE_LOAN',
+  Outbid = 'OUTBID',
+  RenegotiationRequest = 'RENEGOTIATION_REQUEST',
+  ReservedListing = 'RESERVED_LISTING',
+  TopUpRequest = 'TOP_UP_REQUEST',
+  TradeAwaitingAnswer = 'TRADE_AWAITING_ANSWER',
+  UnderfundedOffer = 'UNDERFUNDED_OFFER',
+  WalletLinkRequest = 'WALLET_LINK_REQUEST',
+}
 
 export type NewCollectionUnlistedOfferNotification = Node &
   Notification & {
@@ -3988,6 +4190,23 @@ export type NewRenegotiationOfferNotification = Node &
     user: User;
   };
 
+/** The orders listNftFollows takes. */
+export enum NftFollowSortField {
+  /** When the account followed the NFT. */
+  FollowedAt = 'FOLLOWED_AT',
+  /** The newest sale's price in ETH terms; NFTs never sold go last. */
+  LastSalePrice = 'LAST_SALE_PRICE',
+  /** The best public ask in ETH terms, in any currency; NFTs without one go last. */
+  Price = 'PRICE',
+  /** The valuation snapshot; NFTs without one go last. */
+  Valuation = 'VALUATION',
+}
+
+export type NftFollowSortInput = {
+  field: NftFollowSortField;
+  order: Ordering;
+};
+
 export type NftLoansFilterInput = {
   borrowers?: InputMaybe<Array<Scalars['Address']>>;
   contracts?: InputMaybe<Array<Scalars['Address']>>;
@@ -4013,6 +4232,23 @@ export type NftOwnersFilterInput = {
   withInVault?: InputMaybe<Scalars['Boolean']>;
   withInWallet?: InputMaybe<Scalars['Boolean']>;
 };
+
+/** An NFT that reached one of your wallets by a transfer from a wallet outside your account. Sales, mints, loan escrow moves and unwraps are not notified. */
+export type NftReceivedNotification = Node &
+  Notification & {
+    __typename?: 'NftReceivedNotification';
+    createdOn: Scalars['DateTime'];
+    id: Scalars['String'];
+    nft: Nft;
+    notificationType: Scalars['String'];
+    readOn?: Maybe<Scalars['DateTime']>;
+    /** The wallet the NFT came from; never null, typed as WatchedNftNotification.sender is so one query can select both. */
+    sender?: Maybe<Scalars['Address']>;
+    senderName?: Maybe<Scalars['String']>;
+    /** When the transfer's block was mined. */
+    transferredAt: Scalars['DateTime'];
+    user: User;
+  };
 
 export enum NftSearchField {
   CollectionName = 'COLLECTION_NAME',
@@ -4210,6 +4446,7 @@ export type Notification = {
 export enum NotificationChannel {
   Email = 'EMAIL',
   InApp = 'IN_APP',
+  Push = 'PUSH',
 }
 
 export type NotificationConnection = {
@@ -4230,15 +4467,18 @@ export enum NotificationEvent {
   AuctionEnded = 'AUCTION_ENDED',
   AuctionSettled = 'AUCTION_SETTLED',
   AuctionStarted = 'AUCTION_STARTED',
+  BestOfferImproved = 'BEST_OFFER_IMPROVED',
   BidNearListing = 'BID_NEAR_LISTING',
   BuyOffer = 'BUY_OFFER',
   CollectionOfferFilled = 'COLLECTION_OFFER_FILLED',
+  LiquidityReward = 'LIQUIDITY_REWARD',
   LoanDefaulted = 'LOAN_DEFAULTED',
   LoanExtended = 'LOAN_EXTENDED',
   LoanOffer = 'LOAN_OFFER',
   LoanRefinanced = 'LOAN_REFINANCED',
   LoanRepaid = 'LOAN_REPAID',
   NewFollower = 'NEW_FOLLOWER',
+  NftReceived = 'NFT_RECEIVED',
   OfferAccepted = 'OFFER_ACCEPTED',
   OfferFunding = 'OFFER_FUNDING',
   Outbid = 'OUTBID',
@@ -4268,25 +4508,41 @@ export type NotificationPreferenceInput = {
 };
 
 export enum NotificationType {
+  ActiveOfferNotification = 'ACTIVE_OFFER_NOTIFICATION',
   AskCancelledNotification = 'ASK_CANCELLED_NOTIFICATION',
   AskCreatedNotification = 'ASK_CREATED_NOTIFICATION',
+  AuctionBidConfirmationNotification = 'AUCTION_BID_CONFIRMATION_NOTIFICATION',
+  AuctionEndedNotification = 'AUCTION_ENDED_NOTIFICATION',
+  AuctionStartedNotification = 'AUCTION_STARTED_NOTIFICATION',
   AuctionWonNotification = 'AUCTION_WON_NOTIFICATION',
+  BestOfferImprovedNotification = 'BEST_OFFER_IMPROVED_NOTIFICATION',
   BidNearListingNotification = 'BID_NEAR_LISTING_NOTIFICATION',
+  CustomMessageNotification = 'CUSTOM_MESSAGE_NOTIFICATION',
   DealExpirationReminderNotification = 'DEAL_EXPIRATION_REMINDER_NOTIFICATION',
   DealNotification = 'DEAL_NOTIFICATION',
   LinkWalletAcceptedNotification = 'LINK_WALLET_ACCEPTED_NOTIFICATION',
   LinkWalletRequestedNotification = 'LINK_WALLET_REQUESTED_NOTIFICATION',
+  LiquidityRewardNotification = 'LIQUIDITY_REWARD_NOTIFICATION',
+  LoanAuctionedNotification = 'LOAN_AUCTIONED_NOTIFICATION',
   LoanDefaultedNotification = 'LOAN_DEFAULTED_NOTIFICATION',
   LoanDefaultReminderNotification = 'LOAN_DEFAULT_REMINDER_NOTIFICATION',
+  LoanExtendedNotification = 'LOAN_EXTENDED_NOTIFICATION',
   LoanInitiatedNotification = 'LOAN_INITIATED_NOTIFICATION',
+  LoanRefinancedNotification = 'LOAN_REFINANCED_NOTIFICATION',
   LoanRepaidNotification = 'LOAN_REPAID_NOTIFICATION',
   LostSourceNotification = 'LOST_SOURCE_NOTIFICATION',
+  NewCollectionUnlistedOfferNotification = 'NEW_COLLECTION_UNLISTED_OFFER_NOTIFICATION',
   NewFollowerNotification = 'NEW_FOLLOWER_NOTIFICATION',
   NewOfferNotification = 'NEW_OFFER_NOTIFICATION',
   NewRenegotiationOfferNotification = 'NEW_RENEGOTIATION_OFFER_NOTIFICATION',
+  NftReceivedNotification = 'NFT_RECEIVED_NOTIFICATION',
   OfferAcceptedNotification = 'OFFER_ACCEPTED_NOTIFICATION',
   OutbidNotification = 'OUTBID_NOTIFICATION',
+  RenegotiationRequestedNotification = 'RENEGOTIATION_REQUESTED_NOTIFICATION',
+  SaleNotification = 'SALE_NOTIFICATION',
   SetNftNotification = 'SET_NFT_NOTIFICATION',
+  TopUpRequestedNotification = 'TOP_UP_REQUESTED_NOTIFICATION',
+  UnderfundedOfferNotification = 'UNDERFUNDED_OFFER_NOTIFICATION',
   WatchedNftNotification = 'WATCHED_NFT_NOTIFICATION',
 }
 
@@ -4459,10 +4715,18 @@ export enum OpenSeaListingFailureReason {
 export type OpenSeaListingResult = {
   __typename?: 'OpenSeaListingResult';
   contractAddress: Scalars['Address'];
+  /** When the listing was published, or signed again. Null, like settledDate, for one relistOpenSeaListings did not sign again. */
+  createdDate?: Maybe<Scalars['DateTime']>;
   error?: Maybe<Scalars['String']>;
   /** Set for a failure the client can act on; error is the text to show for any failure. */
   failureReason?: Maybe<OpenSeaListingFailureReason>;
+  /** The listed item; null when GONDI has no such NFT. */
+  nft?: Maybe<Nft>;
   orderHash?: Maybe<Scalars['Hash']>;
+  /** The GONDI order the listing twins. Null, like nft, createdDate and settledDate, for a listing the publish did not store. */
+  orderId?: Maybe<Scalars['Int64']>;
+  /** When the listing was posted or failed; null while PENDING. */
+  settledDate?: Maybe<Scalars['DateTime']>;
   /** PENDING while the listing waits to be posted to OpenSea; listOpenSeaListingResults then says what became of it. */
   status: OpenSeaListingStatus;
   tokenId: Scalars['BigInt'];
@@ -4493,7 +4757,7 @@ export enum OperatorKind {
 }
 
 export type Order = {
-  /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone. */
+  /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone, placed at least 5 minutes ago. */
   cancelsOffChain: Scalars['Boolean'];
   createdDate: Scalars['DateTime'];
   currency: Currency;
@@ -4628,15 +4892,25 @@ export type OrderTermsFilter = {
   netAmount?: InputMaybe<BigIntInterval>;
 };
 
-export enum OrderType {
-  Ask = 'ASK',
-  Bid = 'BID',
-}
-
 export enum Ordering {
   Asc = 'ASC',
   Desc = 'DESC',
 }
+
+/** A live liquidation auction the viewer bid on, where another wallet now bids highest. */
+export type Outbid = NeedsActionItem & {
+  __typename?: 'Outbid';
+  auction: Auction;
+  /** The viewer's highest bid. */
+  bid: Bid;
+  /** When the auction ends. */
+  deadline: Scalars['DateTime'];
+  highestBid: Bid;
+  /** What kind of item it is; dismissNeedsAction takes it. */
+  kind: NeedsActionKind;
+  /** The id of what the item is about (its loan, listing, trade, auction, wallet link or loan offer), which dismissNeedsAction takes with kind. */
+  subjectId: Scalars['String'];
+};
 
 export type OutbidNotification = Node &
   Notification & {
@@ -4778,11 +5052,11 @@ export type PortfolioValuation = {
 
 /** A browser's push subscription, as `PushSubscription.toJSON()` gives it, with the two entries of `keys` beside the endpoint. */
 export type PushSubscriptionInput = {
-  /** The browser's authentication secret, `keys.auth`, in base64url. */
+  /** The browser's authentication secret, `keys.auth`, in base64url: 16 bytes. Anything else is refused. */
   auth: Scalars['String'];
   /** The push service URL of the subscription. Only the push services of Chrome, Safari, Firefox and Edge are accepted. */
   endpoint: Scalars['String'];
-  /** The browser's public key, `keys.p256dh`, in base64url. */
+  /** The browser's public key, `keys.p256dh`, in base64url: an uncompressed P-256 point of 65 bytes. Anything else is refused. */
   p256dh: Scalars['String'];
 };
 
@@ -4790,10 +5064,8 @@ export type PushSubscriptionInput = {
 export type Query = {
   __typename?: 'Query';
   collectionMarketDepth: CollectionMarketDepth;
-  /** Collections the collection's recent buyers also bought, most shared buyers first: the most recent receivers of its sales, contracts left out, and the other collections they bought in the same window, from each buyer's most recent purchases. Its own wrap family and hidden collections are left out, a collection needs a minimum of shared buyers, and the ranking is cached for a while. */
-  collectorsAlsoBought: Array<CollectorsAlsoBought>;
   dealReadiness: DealReadinessResult;
-  /** Featured listings in curated order: pinned NFTs, or the cheapest qualifying listing per approved collection when automatic selection is enabled. Each carries the open offer that lends the most on it among those of at least 30 days at an effective APR of at most 25%. A pick shows only while it has a public ask in ETH or WETH on a supported marketplace and such an offer. `first` is capped at 6. */
+  /** Featured listings in curated order: the cheapest qualifying listing per approved collection. Each carries the open offer that lends the most on it among those of at least 30 days at an effective APR of at most 25%. A pick shows only while it has a public ask in ETH or WETH on a supported marketplace and such an offer. `first` is capped at 6. */
   featuredListings: Array<LoanDeal>;
   /** The galleries listed under a profile wallet, most recently edited first. Visitors get the published ones; the account that owns the wallet gets its drafts too. */
   galleries: Array<Gallery>;
@@ -4813,7 +5085,7 @@ export type Query = {
   getCancelOrdersCalldata: Array<CancelAllOrdersCalldata>;
   /** Get some general loan stats about the activities for a collection. */
   getCollectionActivitiesCount: CollectionEventsCountByDayAndCurrency;
-  /** Get a collection by its slug. Slugs are unique identifiers for collections. */
+  /** Get a collection by its slug. Slugs are unique identifiers for collections.  */
   getCollectionBySlug?: Maybe<Collection>;
   /** Highest active bid targeting a single collection whose trait constraint is satisfied by the supplied trait IDs. Considers single-trait bids whose trait is in the input, multi-trait bids whose trait set is contained in the input, collection-level bids, and native set bids covering every NFT that carries all the input traits. Returns null when traitIds is empty or no matching bid exists. */
   getCollectionHighestBidMatchingTraits?: Maybe<Order>;
@@ -4828,6 +5100,8 @@ export type Query = {
   getFulfillManyOrdersCalldata: Array<FulfillManyOrdersCalldata>;
   /** Current lending principal and lender interest snapshot. */
   getLendingMarketPulse: LendingMarketPulse;
+  /** The liquidity program's collections by 30-day GONDI and OpenSea sales volume, highest first. */
+  getLiquidityProgramCollections: Array<LiquidityProgramCollection>;
   getListingById?: Maybe<Listing>;
   getLoanActivitiesStatisticsByMonth: LoanActivitiesStatisticsByMonth;
   /** Get a loan by the contract address and loan id used in the contract on-chain.Unless specified as in this case, loan id is the internal gondi id of the loan and not the id used inside the contract.Internal gondi id is unique between all loans.Note that contract loan id is only unique within a contract version and that Gondi has multiple versions of the MSL (MultiSourceLoan) contract. */
@@ -4854,15 +5128,12 @@ export type Query = {
   getSourcesStatistics: SourcesStatistics;
   getSourcesStatisticsByCollection: Array<SourceStatisticsFromCollection>;
   getSwapQuote: SwapQuote;
-  /**
-   * Deprecated.
-   * @deprecated Use get_swap_quote instead.
-   */
-  getSwapRate: Scalars['Float'];
   /** Rank lenders across all currencies or a selected currency group. */
   getTopLenders: TopLenders;
   getUserPointActivities: PointActivityConnection;
   getUserPoints: Scalars['Int'];
+  /** Where the wallets' live GONDI buy offers stand: how many there are, how many lead their item, trait or collection and how many are outbid, how many expire within 24 hours, and their total per currency, with one row per offer to filter a listing by. Hidden offers are left out, and stealth offers unless the viewer made them. At most 10 wallets and 500 offers, soonest expiration first; truncated says when offers were left out. */
+  getWalletBuyOffersSummary: WalletBuyOffersSummary;
   /** Follow counts and viewer follow state for a wallet. */
   getWalletFollowStats: WalletFollowStats;
   getWalletHoldingsSummary: WalletHoldingsSummary;
@@ -4871,6 +5142,8 @@ export type Query = {
   getWalletTradingSummary: WalletTradingSummary;
   globalSearch: Array<GlobalSearchResult>;
   globalSearchV2: GlobalSearchV2Results;
+  /** The galleries behind a link to a gallery.so profile or gallery, each ready to open as a new gallery: its name, description and the works GONDI indexes, in the source's order, with the source's sections as chapters. Nothing is saved. At most 20 galleries of 200 works. */
+  importableGalleries: Array<ImportableGallery>;
   isUsernameAvailable: Scalars['Boolean'];
   /** The compact item browse list saved under `key` by `saveItemBrowseList`, or null when none is. */
   itemBrowseList?: Maybe<Scalars['String']>;
@@ -4916,7 +5189,7 @@ export type Query = {
   listEditions: EditionConnection;
   /** List editions, and with includeErc1155 the ERC1155 NFTs no edition groups, filtered by collection, IDs, artists, tiers, or search term. An ERC1155 token is an edition of its own: its copies are units of one NFT rather than one NFT each, so it has no edition row to be listed as. Supersedes listEditions, which cannot return them: a union node would invalidate every selection on that field. */
   listEditionsV2: EditionNftConnection;
-  /** List all activities. Includes loan activities, loan offers, loan renegotiations, trade orders, nft transfers. priceUsd bounds are USD amounts converted with current rates; events without a priced amount (transfers, loan listings, executed trades) are excluded while a price filter is set. */
+  /** List all activities. Includes loan activities, loan offers, loan renegotiations, trade orders, nft transfers, and ERC-721 mints whose NFT is indexed when eventTypes asks for MINT, which leaving eventTypes out does not; activityUpdates does not stream mints. priceUsd bounds are USD amounts converted with current rates; events without a priced amount (transfers, mints, loan listings, executed trades) are excluded while a price filter is set. */
   listEvents: EventConnection;
   /** The galleries directory: every profile's published galleries that show at least one work. Most recently published first unless `sortBy` says otherwise; ties go to the most recently published. */
   listGalleries: GalleryConnection;
@@ -4931,8 +5204,6 @@ export type Query = {
   listLoanEvents: LoanEventConnection;
   /** Lists all loans from gondi. */
   listLoans: MultiSourceLoanConnection;
-  /** @deprecated Use listProfiles. */
-  listNames: Array<Maybe<Scalars['String']>>;
   listNftDelegations: DelegationConnection;
   /** NFTs any wallet of your account follows, most recently followed first. An NFT followed from two of your wallets appears once. */
   listNftFollows: NftConnection;
@@ -4944,22 +5215,17 @@ export type Query = {
    * @deprecated Use list_nfts instead.
    */
   listNftsFromCollections: NftConnection;
-  /**
-   * Deprecated field: use list_nfts instead.
-   * @deprecated Use list_nfts instead.
-   */
-  listNftsFromUser: NftConnection;
   listNotifications: NotificationConnection;
   listOffers: OfferConnection;
   /** What became of the OpenSea listing of each of the caller's orders among orderIds, as published with listOnOpenSea: PENDING until it is posted to OpenSea or fails. An order with no OpenSea listing waiting or settled has no entry. */
   listOpenSeaListingResults: Array<OpenSeaListingResult>;
   listOpenSeaListingTerms: Array<OpenSeaListingTerms>;
-  /** This field is deprecated. Use list_orders_v2 instead. This field will be removed in the next major version. */
-  listOrders: OrderConnection;
   listOrdersV2: OrderConnection;
   listPlatformFees: Array<PlatformFee>;
   listPopularSearches: Array<GlobalSearchV2ResultNftGlobalSearchV2ResultCollectionGlobalSearchV2ResultArtistGlobalSearchV2ResultAccount>;
   listProfiles: Array<AddressProfile>;
+  /** What became of the OpenSea listings the caller published last with listOnOpenSea, newest first: those in one of statuses (any, when unset or empty) and published at or after since. A listing is kept for 7 days after it is posted or fails. first defaults to 20 and is capped at 50. */
+  listRecentOpenSeaListingResults: Array<OpenSeaListingResult>;
   listRenegotiations: RenegotiationConnection;
   listSales: SaleConnection;
   /** The 1/1 and edition NFTs the www sitemap lists: not flagged, excluded, burned or in a hidden collection, oldest first. Each row is two columns, so a page holds up to 2,000. */
@@ -4971,8 +5237,6 @@ export type Query = {
   listWalletFollowers: Array<WalletFollowEntry>;
   /** Wallets this wallet follows, newest follow first. The wallet's owner gets the follows of every wallet linked to it; everyone else gets this address alone, since which wallets are linked is private. `first` is capped at 100. */
   listWalletFollowing: Array<WalletFollowEntry>;
-  /** Collections with at least one loan deal, by name. */
-  loanDealCollections: Array<Collection>;
   /** Listings a GONDI loan can buy, each with the open offer that lends the most on it, ranked by the largest loan or the highest loan-to-value. Highest LTV includes at most three per collection or wrap family, depending on grouping; Largest Loan has no collection cap. `first` is capped at 50. */
   loanDeals: Array<LoanDeal>;
   me?: Maybe<User>;
@@ -4980,6 +5244,8 @@ export type Query = {
   minimumOfferAmount?: Maybe<Scalars['Float']>;
   /** The published galleries whose pages were visited most over the last 30 days, most visited first; a visitor counts once a day, and a gallery's own account not at all. At most 20. */
   mostViewedGalleries: Array<Gallery>;
+  /** What the viewer's wallets have to act on, soonest deadline first: the notification panel's pinned cards. Read from live state, so an item leaves once it is done or lapses, not when notifications are marked read. Without walletAddresses, the signed-in wallet's. */
+  needsAction: Array<NeedsActionItem>;
   /** The published galleries that show an NFT, most recently edited first; at most 50, since anyone's gallery can list any work. */
   nftGalleries: Array<Gallery>;
   /** Every notification event on every channel it reaches, as the viewer's account has it. The most recent choice any of its linked wallets made is the one in force. */
@@ -4998,12 +5264,6 @@ export type Query = {
 /** Query for the lending module */
 export type QueryCollectionMarketDepthArgs = {
   collectionIds: Array<Scalars['Int']>;
-};
-
-/** Query for the lending module */
-export type QueryCollectorsAlsoBoughtArgs = {
-  collectionId: Scalars['Int'];
-  first?: Scalars['Int'];
 };
 
 /** Query for the lending module */
@@ -5235,12 +5495,6 @@ export type QueryGetSwapQuoteArgs = {
 };
 
 /** Query for the lending module */
-export type QueryGetSwapRateArgs = {
-  fromCurrency: Scalars['Address'];
-  toCurrency: Scalars['Address'];
-};
-
-/** Query for the lending module */
 export type QueryGetTopLendersArgs = {
   after?: InputMaybe<Scalars['String']>;
   currencyAddresses?: InputMaybe<Array<Scalars['Address']>>;
@@ -5256,6 +5510,11 @@ export type QueryGetTopLendersArgs = {
 export type QueryGetUserPointActivitiesArgs = {
   after?: InputMaybe<Scalars['String']>;
   first?: InputMaybe<Scalars['Int']>;
+};
+
+/** Query for the lending module */
+export type QueryGetWalletBuyOffersSummaryArgs = {
+  addresses: Array<Scalars['Address']>;
 };
 
 /** Query for the lending module */
@@ -5288,6 +5547,11 @@ export type QueryGlobalSearchArgs = {
 /** Query for the lending module */
 export type QueryGlobalSearchV2Args = {
   searchTerm: Scalars['String'];
+};
+
+/** Query for the lending module */
+export type QueryImportableGalleriesArgs = {
+  url: Scalars['String'];
 };
 
 /** Query for the lending module */
@@ -5434,7 +5698,10 @@ export type QueryListCollectionFollowsArgs = {
   after?: InputMaybe<Scalars['String']>;
   feedId?: InputMaybe<Scalars['String']>;
   first?: Scalars['Int'];
+  floorPrice?: InputMaybe<Interval>;
+  marketCap?: InputMaybe<Interval>;
   sortBy?: InputMaybe<Array<CollectionFollowSortInput>>;
+  volume?: InputMaybe<CollectionVolumeFilterInput>;
 };
 
 /** Query for the lending module */
@@ -5498,9 +5765,11 @@ export type QueryListCollectionsArgs = {
   floorPrice?: InputMaybe<Interval>;
   forWallets?: InputMaybe<ForWalletsInput>;
   itemTypes?: InputMaybe<Array<ItemType>>;
+  marketCap?: InputMaybe<Interval>;
   searchTerm?: InputMaybe<Scalars['String']>;
   sortBy?: InputMaybe<Array<CollectionSortInput>>;
   standards?: InputMaybe<Array<TokenStandardType>>;
+  volume?: InputMaybe<CollectionVolumeFilterInput>;
   withAsks?: InputMaybe<WithAsksInput>;
   withListings?: InputMaybe<Scalars['Boolean']>;
   withLoans?: InputMaybe<Scalars['Boolean']>;
@@ -5579,12 +5848,10 @@ export type QueryListEventsArgs = {
   currencyAddresses?: InputMaybe<Array<Scalars['Address']>>;
   eventTypes?: InputMaybe<Array<EventType>>;
   first?: Scalars['Int'];
-  following?: InputMaybe<Scalars['Boolean']>;
   fromTimestamp?: InputMaybe<Scalars['Int']>;
   nfts?: InputMaybe<Array<Scalars['Int']>>;
   priceUsd?: InputMaybe<Interval>;
   toTimestamp?: InputMaybe<Scalars['Int']>;
-  topEvents?: InputMaybe<Scalars['Boolean']>;
   traits?: InputMaybe<Array<Scalars['Int']>>;
   users?: InputMaybe<Array<Scalars['Address']>>;
   usersSide?: EventSide;
@@ -5684,11 +5951,6 @@ export type QueryListLoansArgs = {
 };
 
 /** Query for the lending module */
-export type QueryListNamesArgs = {
-  walletAddresses: Array<Scalars['Address']>;
-};
-
-/** Query for the lending module */
 export type QueryListNftDelegationsArgs = {
   after?: InputMaybe<Scalars['String']>;
   contractAddress?: InputMaybe<Scalars['Address']>;
@@ -5700,6 +5962,8 @@ export type QueryListNftDelegationsArgs = {
 export type QueryListNftFollowsArgs = {
   after?: InputMaybe<Scalars['String']>;
   first?: Scalars['Int'];
+  listed?: InputMaybe<Scalars['Boolean']>;
+  sortBy?: InputMaybe<Array<NftFollowSortInput>>;
 };
 
 /** Query for the lending module */
@@ -5779,19 +6043,6 @@ export type QueryListNftsFromCollectionsArgs = {
 };
 
 /** Query for the lending module */
-export type QueryListNftsFromUserArgs = {
-  after?: InputMaybe<Scalars['String']>;
-  collectionAddresses?: InputMaybe<Array<Scalars['Address']>>;
-  first?: InputMaybe<Scalars['Int']>;
-  includeInStash?: Scalars['Boolean'];
-  searchTerm?: InputMaybe<Scalars['String']>;
-  sortBy?: InputMaybe<Array<NftSortInput>>;
-  standards?: InputMaybe<Array<TokenStandardType>>;
-  withLoans?: InputMaybe<Scalars['Boolean']>;
-  withNoWraps?: InputMaybe<Scalars['Boolean']>;
-};
-
-/** Query for the lending module */
 export type QueryListNotificationsArgs = {
   after?: InputMaybe<Scalars['String']>;
   first?: InputMaybe<Scalars['Int']>;
@@ -5833,27 +6084,6 @@ export type QueryListOpenSeaListingResultsArgs = {
 /** Query for the lending module */
 export type QueryListOpenSeaListingTermsArgs = {
   collectionIds: Array<Scalars['Int']>;
-};
-
-/** Query for the lending module */
-export type QueryListOrdersArgs = {
-  after?: InputMaybe<Scalars['String']>;
-  collectionId?: InputMaybe<Scalars['Int']>;
-  currencyAddresses?: InputMaybe<Array<Scalars['Address']>>;
-  first?: InputMaybe<Scalars['Int']>;
-  hidden?: InputMaybe<Scalars['Boolean']>;
-  ids?: InputMaybe<Array<Scalars['Int']>>;
-  maker?: InputMaybe<Array<Scalars['Address']>>;
-  marketplaceIds?: InputMaybe<Array<Scalars['String']>>;
-  marketplaces?: InputMaybe<Array<MarketPlaceType>>;
-  nftId?: InputMaybe<Scalars['Int']>;
-  onlyInvalid?: InputMaybe<Scalars['Boolean']>;
-  orderType?: InputMaybe<OrderType>;
-  sortBy?: InputMaybe<Array<OrderSortInput>>;
-  statuses?: InputMaybe<Array<OrderStatusType>>;
-  stealth?: InputMaybe<Scalars['Boolean']>;
-  taker?: InputMaybe<Scalars['Address']>;
-  terms?: InputMaybe<OrderTermsFilter>;
 };
 
 /** Query for the lending module */
@@ -5903,6 +6133,13 @@ export type QueryListPopularSearchesArgs = {
 /** Query for the lending module */
 export type QueryListProfilesArgs = {
   walletAddresses: Array<Scalars['Address']>;
+};
+
+/** Query for the lending module */
+export type QueryListRecentOpenSeaListingResultsArgs = {
+  first?: Scalars['Int'];
+  since?: InputMaybe<Scalars['DateTime']>;
+  statuses?: InputMaybe<Array<OpenSeaListingStatus>>;
 };
 
 /** Query for the lending module */
@@ -5982,11 +6219,6 @@ export type QueryListWalletFollowingArgs = {
 };
 
 /** Query for the lending module */
-export type QueryLoanDealCollectionsArgs = {
-  grouping?: LoanDealGrouping;
-};
-
-/** Query for the lending module */
 export type QueryLoanDealsArgs = {
   collectionId?: InputMaybe<Scalars['Int']>;
   first?: Scalars['Int'];
@@ -5997,6 +6229,12 @@ export type QueryLoanDealsArgs = {
 /** Query for the lending module */
 export type QueryMostViewedGalleriesArgs = {
   first?: InputMaybe<Scalars['Int']>;
+};
+
+/** Query for the lending module */
+export type QueryNeedsActionArgs = {
+  first?: InputMaybe<Scalars['Int']>;
+  walletAddresses?: InputMaybe<Array<Scalars['Address']>>;
 };
 
 /** Query for the lending module */
@@ -6160,6 +6398,18 @@ export type RenegotiationRequestedNotification = Node &
     user: User;
   };
 
+/** A live listing reserved for the viewer to buy. */
+export type ReservedListing = NeedsActionItem & {
+  __typename?: 'ReservedListing';
+  /** When the listing expires. */
+  deadline: Scalars['DateTime'];
+  /** What kind of item it is; dismissNeedsAction takes it. */
+  kind: NeedsActionKind;
+  order: Order;
+  /** The id of what the item is about (its loan, listing, trade, auction, wallet link or loan offer), which dismissNeedsAction takes with kind. */
+  subjectId: Scalars['String'];
+};
+
 export type Royalty = Node & {
   __typename?: 'Royalty';
   beneficiary: Scalars['Address'];
@@ -6231,6 +6481,28 @@ export type SaleListingUpdate = {
   nftId: Scalars['Int'];
 };
 
+/** Your order filled: as SELLER your listing sold, as BUYER your offer was accepted. Only the side whose order filled is notified, never the taker. */
+export type SaleNotification = Node &
+  Notification & {
+    __typename?: 'SaleNotification';
+    createdOn: Scalars['DateTime'];
+    id: Scalars['String'];
+    /** What a sell-and-repay listing repaid of its loan out of the price, in the sale's currency. Null for any other sale. */
+    loanRepaid?: Maybe<Scalars['BigInt']>;
+    /** What reached the seller's wallet from a GONDI listing: the price less royalties, fees and any loan it repaid, in the sale's currency. Null for a buyer and for a listing on another marketplace. */
+    netProceeds?: Maybe<Scalars['BigInt']>;
+    notificationType: Scalars['String'];
+    readOn?: Maybe<Scalars['DateTime']>;
+    role: SaleNotificationRole;
+    sale: Sale;
+    user: User;
+  };
+
+export enum SaleNotificationRole {
+  Buyer = 'BUYER',
+  Seller = 'SELLER',
+}
+
 export enum SalesSortField {
   Price = 'PRICE',
   PriceUsd = 'PRICE_USD',
@@ -6252,7 +6524,7 @@ export type SellAndRepayOrder = Event &
   Node &
   Order & {
     __typename?: 'SellAndRepayOrder';
-    /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone. */
+    /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone, placed at least 5 minutes ago. */
     cancelsOffChain: Scalars['Boolean'];
     createdDate: Scalars['DateTime'];
     currency: Currency;
@@ -6329,7 +6601,7 @@ export type SetBidOrder = Event &
   Node &
   Order & {
     __typename?: 'SetBidOrder';
-    /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone. */
+    /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone, placed at least 5 minutes ago. */
     cancelsOffChain: Scalars['Boolean'];
     collectionId: Scalars['Int'];
     /** The trait condition the set was resolved from when the bid was signed; null for a handpicked set. */
@@ -6559,7 +6831,7 @@ export type SingleNftOrder = Event &
   Node &
   Order & {
     __typename?: 'SingleNFTOrder';
-    /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone. */
+    /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone, placed at least 5 minutes ago. */
     cancelsOffChain: Scalars['Boolean'];
     createdDate: Scalars['DateTime'];
     currency: Currency;
@@ -6789,7 +7061,7 @@ export type SourcesStatistics = {
   count: Scalars['Int'];
   earnedInterest: Scalars['BigInt'];
   expectedInterestLeft: Scalars['BigInt'];
-  /** Yearly rate `earnedInterest` grows at: principal times APR, summed over the sources of open (`LOAN_INITIATED`) loans, including loans past expiry, whose interest keeps accruing; loans in any other status add nothing. Raw units of the currency. */
+  /** Yearly rate `earnedInterest` grows at: principal times APR, summed over the sources of open (`LOAN_INITIATED`) loans not yet past expiry; a loan past expiry stops accruing, and loans in any other status add nothing. Raw units of the currency. */
   interestAccrualPerYear: Scalars['BigInt'];
   netEarnedInterest: Scalars['BigInt'];
   netExpectedInterestLeft: Scalars['BigInt'];
@@ -6820,7 +7092,7 @@ export type StealthMaskedOrder = Event &
   Order & {
     __typename?: 'StealthMaskedOrder';
     artist?: Maybe<Artist>;
-    /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone. */
+    /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone, placed at least 5 minutes ago. */
     cancelsOffChain: Scalars['Boolean'];
     collection?: Maybe<Collection>;
     createdDate: Scalars['DateTime'];
@@ -6882,7 +7154,7 @@ export type StealthRevealedGroup = {
 
 export type Subscription = {
   __typename?: 'Subscription';
-  /** Stream new activity-feed events. Filters are optional and additive; unset or empty values mean the unfiltered stream. Most argument names match `listEvents` so clients can pass their existing query variables (`traits` and `currencyAddresses` are not supported yet). `artists`, `blockchains` and `priceUsd` keep what `listEvents` would list with them; the `priceUsd` bound is converted at the USDC rate of when the stream starts. `marketplaces` follows the marketplace shown in the activity feed: sales and orders use their stored marketplace, transfers match none, and GONDI lending and trade events match `NATIVE`. The `nfts` filter also matches collection-scoped events (collection loan offers and collection/trait bids) through the NFTs' collections; trait bids therefore match at collection granularity, not per trait. Set and trait loan offers match when their signed NFT set includes one of the NFTs. `topEvents` keeps what `listEvents(topEvents: true)` lists and drops the event types it does not cover. `following` matches what `listEvents(following: true)` lists, read from the account's follows when the stream starts: a follow made while it runs applies once the client subscribes again. With nothing followed, or no signed-in account, the stream stays open and emits nothing. */
+  /** Stream new activity-feed events. Filters are optional and additive; unset or empty values mean the unfiltered stream. Most argument names match `listEvents` so clients can pass their existing query variables (`traits` and `currencyAddresses` are not supported yet). `artists`, `blockchains` and `priceUsd` keep what `listEvents` would list with them; the `priceUsd` bound is converted at the USDC rate of when the stream starts. `marketplaces` follows the marketplace shown in the activity feed: sales and orders use their stored marketplace, transfers match none, and GONDI lending and trade events match `NATIVE`. The `nfts` filter also matches collection-scoped events (collection loan offers and collection/trait bids) through the NFTs' collections; trait bids therefore match at collection granularity, not per trait. Set and trait loan offers match when their signed NFT set includes one of the NFTs. */
   activityUpdates: ActivityUpdate;
   /** Stream statistics of the active loans in `currencyAddresses`: one snapshot on subscribe, then a fresh one whenever a loan in those currencies is created, changes or is removed. Amounts are summed in raw units, so pass currencies that share decimals (for example WETH and RWETH). */
   lendingMarketStatisticsUpdates: LendingMarketStatistics;
@@ -6894,11 +7166,10 @@ export type SubscriptionActivityUpdatesArgs = {
   blockchains?: InputMaybe<Array<BlockchainEnum>>;
   collections?: InputMaybe<Array<Scalars['Int']>>;
   eventTypes?: InputMaybe<Array<EventType>>;
-  following?: InputMaybe<Scalars['Boolean']>;
   marketplaces?: InputMaybe<Array<MarketPlaceType>>;
   nfts?: InputMaybe<Array<Scalars['Int']>>;
+  offerCancellations?: InputMaybe<Scalars['Boolean']>;
   priceUsd?: InputMaybe<Interval>;
-  topEvents?: InputMaybe<Scalars['Boolean']>;
   users?: InputMaybe<Array<Scalars['Address']>>;
   usersSide?: EventSide;
 };
@@ -7013,12 +7284,26 @@ export type TopUpRequestedNotification = Node &
     user: User;
   };
 
+/** A trade sent to the viewer, not answered yet, that expires within 24 hours. */
+export type TradeAwaitingAnswer = NeedsActionItem & {
+  __typename?: 'TradeAwaitingAnswer';
+  /** When the trade expires. */
+  deadline: Scalars['DateTime'];
+  deal: Deal;
+  /** What kind of item it is; dismissNeedsAction takes it. */
+  kind: NeedsActionKind;
+  /** The id of what the item is about (its loan, listing, trade, auction, wallet link or loan offer), which dismissNeedsAction takes with kind. */
+  subjectId: Scalars['String'];
+};
+
 export type Trait = Node & {
   __typename?: 'Trait';
   collectionId: Scalars['String'];
   id: Scalars['String'];
   /** Whether GONDI computed the trait instead of reading it from the metadata: the `None` of a type the NFT lacks, or its `Trait count`. */
   isDerived: Scalars['Boolean'];
+  /** Whether the trait is a filter and a count only, with no price and no trait bid: a punk's skin tone, or an ape's unclaimed Mudwater packs, which its holder can claim on chain at any moment. */
+  isFilterOnly: Scalars['Boolean'];
   isSynthetic: Scalars['Boolean'];
   key: Scalars['String'];
   sampleAsset?: Maybe<Asset>;
@@ -7154,7 +7439,7 @@ export type TraitOrder = Event &
   Node &
   Order & {
     __typename?: 'TraitOrder';
-    /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone. */
+    /** Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone, placed at least 5 minutes ago. */
     cancelsOffChain: Scalars['Boolean'];
     collection: Collection;
     collectionId: Scalars['Int'];
@@ -7276,6 +7561,8 @@ export type TraitType = Node & {
   collectionId: Scalars['Int'];
   count: Scalars['Int'];
   id: Scalars['String'];
+  /** Whether every value of the type is filter-only (`isFilterOnly` of a trait), so a trait bid has nothing to pick in it. */
+  isFilterOnly: Scalars['Boolean'];
   isSynthetic: Scalars['Boolean'];
   key: Scalars['String'];
   max?: Maybe<Scalars['Float']>;
@@ -7302,6 +7589,8 @@ export type TraitValue = Node & {
   id: Scalars['String'];
   /** Whether GONDI computed the value instead of reading it from the metadata: the `None` of a type an NFT lacks, or its `Trait count`. */
   isDerived: Scalars['Boolean'];
+  /** Whether the value is a filter and a count only, with no price and no trait bid: a punk's skin tone, or an ape's unclaimed Mudwater packs, which its holder can claim on chain at any moment. */
+  isFilterOnly: Scalars['Boolean'];
   isSynthetic: Scalars['Boolean'];
   key: Scalars['String'];
   rarity: Scalars['Int'];
@@ -7340,6 +7629,8 @@ export enum TraitValueSortField {
   LastSale = 'LAST_SALE',
   Rarity = 'RARITY',
   TopOffer = 'TOP_OFFER',
+  /** By trait type, a type's blank value after its named ones (before them when descending). Follow it with another field to order the values inside each type. */
+  Type = 'TYPE',
 }
 
 export type TraitValueSortInput = {
@@ -7356,6 +7647,7 @@ export type Transfer = Activity &
   Event &
   Node & {
     __typename?: 'Transfer';
+    amount: Scalars['BigInt'];
     id: Scalars['String'];
     nft: Nft;
     receiver: Scalars['Address'];
@@ -7374,6 +7666,18 @@ export type TypedData = {
   message: Scalars['JSON'];
   primaryType: Scalars['String'];
   types: Scalars['JSON'];
+};
+
+/** A loan offer of the viewer's that is not live because its lender has no allowance left for the offer's loan contract in the offer's currency: approving the contract again puts it back. */
+export type UnderfundedOffer = NeedsActionItem & {
+  __typename?: 'UnderfundedOffer';
+  /** When the offer expires. */
+  deadline: Scalars['DateTime'];
+  /** What kind of item it is; dismissNeedsAction takes it. */
+  kind: NeedsActionKind;
+  offer: Offer;
+  /** The id of what the item is about (its loan, listing, trade, auction, wallet link or loan offer), which dismissNeedsAction takes with kind. */
+  subjectId: Scalars['String'];
 };
 
 export type UnderfundedOfferNotification = Node &
@@ -7638,6 +7942,37 @@ export type WalletActivityDay = {
   sales: Scalars['Int'];
 };
 
+export type WalletBuyOfferStanding = {
+  __typename?: 'WalletBuyOfferStanding';
+  currencyAddress: Scalars['Address'];
+  expiringSoon: Scalars['Boolean'];
+  maker: Scalars['Address'];
+  marketPlaceAddress: Scalars['Address'];
+  orderId: Scalars['Int64'];
+  price: Scalars['BigInt'];
+  /** Whether the offer leads its item, trait or collection or is outbid there. Null for a multiple-trait or set bid, and when its target has no best bid to compare against. */
+  standing?: Maybe<BuyOfferStanding>;
+};
+
+export type WalletBuyOffersCommitted = {
+  __typename?: 'WalletBuyOffersCommitted';
+  amount: Scalars['BigInt'];
+  currencyAddress: Scalars['Address'];
+  offerCount: Scalars['Int'];
+};
+
+export type WalletBuyOffersSummary = {
+  __typename?: 'WalletBuyOffersSummary';
+  activeCount: Scalars['Int'];
+  committed: Array<WalletBuyOffersCommitted>;
+  expiringSoonCount: Scalars['Int'];
+  offers: Array<WalletBuyOfferStanding>;
+  outbidCount: Scalars['Int'];
+  topCount: Scalars['Int'];
+  /** Whether the wallets have more than 500 live offers. The summary then covers the ones that expire soonest. */
+  truncated: Scalars['Boolean'];
+};
+
 /** One wallet in a follow list, with the listed wallets on the other end of the follow. */
 export type WalletFollowEntry = {
   __typename?: 'WalletFollowEntry';
@@ -7682,6 +8017,23 @@ export type WalletLendingSummary = {
   loanCount: Scalars['Int'];
   principalUsd?: Maybe<Scalars['Float']>;
   topCollections: Array<WalletLendingCollection>;
+};
+
+/** A request to link another wallet to one of the viewer's. Only that wallet can accept it, so the viewer has to be signed in with it. */
+export type WalletLinkRequest = NeedsActionItem & {
+  __typename?: 'WalletLinkRequest';
+  createdDate: Scalars['DateTime'];
+  /** When the action lapses. Null for one that never does (an auction to settle, a defaulted loan to liquidate, a wallet link request), which `needsAction` lists after every dated item, the longest waiting first. */
+  deadline?: Maybe<Scalars['DateTime']>;
+  /** What kind of item it is; dismissNeedsAction takes it. */
+  kind: NeedsActionKind;
+  /** What acceptLinkedWallets and removeLinkedWallets take. */
+  linkedWalletsId: Scalars['String'];
+  requesterAddress: Scalars['Address'];
+  /** The id of what the item is about (its loan, listing, trade, auction, wallet link or loan offer), which dismissNeedsAction takes with kind. */
+  subjectId: Scalars['String'];
+  /** The viewer's wallet the request asks to link. */
+  walletAddress: Scalars['Address'];
 };
 
 export type WalletTradingSummary = {
@@ -7765,7 +8117,6 @@ type MarketOrderInfo_BuyNowPayLaterOrder_Fragment = {
   __typename: 'BuyNowPayLaterOrder';
   id: string;
   price: bigint;
-  steppedPrice?: bigint | null;
   currencyAddress: Address;
   maker: Address;
   isAsk: boolean;
@@ -7784,7 +8135,6 @@ type MarketOrderInfo_CollectionOrder_Fragment = {
   collectionId: number;
   id: string;
   price: bigint;
-  steppedPrice?: bigint | null;
   currencyAddress: Address;
   maker: Address;
   isAsk: boolean;
@@ -7803,7 +8153,6 @@ type MarketOrderInfo_MultipleTraitOrder_Fragment = {
   collectionId: number;
   id: string;
   price: bigint;
-  steppedPrice?: bigint | null;
   currencyAddress: Address;
   maker: Address;
   isAsk: boolean;
@@ -7821,7 +8170,6 @@ type MarketOrderInfo_SellAndRepayOrder_Fragment = {
   __typename: 'SellAndRepayOrder';
   id: string;
   price: bigint;
-  steppedPrice?: bigint | null;
   currencyAddress: Address;
   maker: Address;
   isAsk: boolean;
@@ -7840,7 +8188,6 @@ type MarketOrderInfo_SetBidOrder_Fragment = {
   collectionId: number;
   id: string;
   price: bigint;
-  steppedPrice?: bigint | null;
   currencyAddress: Address;
   maker: Address;
   isAsk: boolean;
@@ -7858,7 +8205,6 @@ type MarketOrderInfo_SingleNftOrder_Fragment = {
   __typename: 'SingleNFTOrder';
   id: string;
   price: bigint;
-  steppedPrice?: bigint | null;
   currencyAddress: Address;
   maker: Address;
   isAsk: boolean;
@@ -7882,7 +8228,6 @@ type MarketOrderInfo_StealthMaskedOrder_Fragment = {
   __typename: 'StealthMaskedOrder';
   id: string;
   price: bigint;
-  steppedPrice?: bigint | null;
   currencyAddress: Address;
   maker: Address;
   isAsk: boolean;
@@ -7901,7 +8246,6 @@ type MarketOrderInfo_TraitOrder_Fragment = {
   collectionId: number;
   id: string;
   price: bigint;
-  steppedPrice?: bigint | null;
   currencyAddress: Address;
   maker: Address;
   isAsk: boolean;
@@ -8570,8 +8914,6 @@ export type CollectionsQuery = {
           floorPrice7d?: number | null;
           floorPrice30d?: number | null;
           totalVolume?: number | null;
-          totalVolume1y?: number | null;
-          totalVolume3m?: number | null;
           totalVolume1m?: number | null;
           totalVolume1w?: number | null;
           totalLoanVolume: bigint;
@@ -8588,11 +8930,48 @@ export type CollectionsQuery = {
             amount: number;
             currency: { __typename?: 'Currency'; address: Address; decimals: number };
           } | null;
-          bestOffer?: {
-            __typename?: 'CurrencyAmount';
-            amount: number;
-            currency: { __typename?: 'Currency'; address: Address; decimals: number };
-          } | null;
+          highestBid?:
+            | {
+                __typename?: 'BuyNowPayLaterOrder';
+                netAmount: bigint;
+                currency: { __typename?: 'Currency'; address: Address; decimals: number };
+              }
+            | {
+                __typename?: 'CollectionOrder';
+                netAmount: bigint;
+                currency: { __typename?: 'Currency'; address: Address; decimals: number };
+              }
+            | {
+                __typename?: 'MultipleTraitOrder';
+                netAmount: bigint;
+                currency: { __typename?: 'Currency'; address: Address; decimals: number };
+              }
+            | {
+                __typename?: 'SellAndRepayOrder';
+                netAmount: bigint;
+                currency: { __typename?: 'Currency'; address: Address; decimals: number };
+              }
+            | {
+                __typename?: 'SetBidOrder';
+                netAmount: bigint;
+                currency: { __typename?: 'Currency'; address: Address; decimals: number };
+              }
+            | {
+                __typename?: 'SingleNFTOrder';
+                netAmount: bigint;
+                currency: { __typename?: 'Currency'; address: Address; decimals: number };
+              }
+            | {
+                __typename?: 'StealthMaskedOrder';
+                netAmount: bigint;
+                currency: { __typename?: 'Currency'; address: Address; decimals: number };
+              }
+            | {
+                __typename?: 'TraitOrder';
+                netAmount: bigint;
+                currency: { __typename?: 'Currency'; address: Address; decimals: number };
+              }
+            | null;
         };
       };
     }>;
@@ -8663,7 +9042,6 @@ export type CollectionMarketQuery = {
             __typename: 'BuyNowPayLaterOrder';
             id: string;
             price: bigint;
-            steppedPrice?: bigint | null;
             currencyAddress: Address;
             maker: Address;
             isAsk: boolean;
@@ -8681,7 +9059,6 @@ export type CollectionMarketQuery = {
             collectionId: number;
             id: string;
             price: bigint;
-            steppedPrice?: bigint | null;
             currencyAddress: Address;
             maker: Address;
             isAsk: boolean;
@@ -8699,7 +9076,6 @@ export type CollectionMarketQuery = {
             collectionId: number;
             id: string;
             price: bigint;
-            steppedPrice?: bigint | null;
             currencyAddress: Address;
             maker: Address;
             isAsk: boolean;
@@ -8716,7 +9092,6 @@ export type CollectionMarketQuery = {
             __typename: 'SellAndRepayOrder';
             id: string;
             price: bigint;
-            steppedPrice?: bigint | null;
             currencyAddress: Address;
             maker: Address;
             isAsk: boolean;
@@ -8734,7 +9109,6 @@ export type CollectionMarketQuery = {
             collectionId: number;
             id: string;
             price: bigint;
-            steppedPrice?: bigint | null;
             currencyAddress: Address;
             maker: Address;
             isAsk: boolean;
@@ -8751,7 +9125,6 @@ export type CollectionMarketQuery = {
             __typename: 'SingleNFTOrder';
             id: string;
             price: bigint;
-            steppedPrice?: bigint | null;
             currencyAddress: Address;
             maker: Address;
             isAsk: boolean;
@@ -8774,7 +9147,6 @@ export type CollectionMarketQuery = {
             __typename: 'StealthMaskedOrder';
             id: string;
             price: bigint;
-            steppedPrice?: bigint | null;
             currencyAddress: Address;
             maker: Address;
             isAsk: boolean;
@@ -8792,7 +9164,6 @@ export type CollectionMarketQuery = {
             collectionId: number;
             id: string;
             price: bigint;
-            steppedPrice?: bigint | null;
             currencyAddress: Address;
             maker: Address;
             isAsk: boolean;
@@ -8898,16 +9269,12 @@ export type ListLoansQuery = {
         startTime: Date;
         duration: bigint;
         status: string;
+        offerIds: Array<string>;
         principalAmount: bigint;
         blendedAprBps: number;
         totalOriginationFee: bigint;
         protocolFee: bigint;
         lenderRefinanceDisabled: boolean;
-        offer:
-          | { __typename?: 'CollectionOffer'; offerId: bigint; signerAddress?: Address | null }
-          | { __typename?: 'SetOffer'; offerId: bigint; signerAddress?: Address | null }
-          | { __typename?: 'SingleNFTOffer'; offerId: bigint; signerAddress?: Address | null }
-          | { __typename?: 'TraitOffer'; offerId: bigint; signerAddress?: Address | null };
         currency: { __typename?: 'Currency'; symbol: string; decimals: number; address: Address };
         repaidActivity?: {
           __typename?: 'LoanRepaid';
@@ -9063,11 +9430,6 @@ export type OwnedNftsQuery = {
                   currency: { __typename?: 'Currency'; address: Address; decimals: number };
                 }
               | null;
-          } | null;
-          topTraitFloorPrice?: {
-            __typename?: 'CurrencyAmount';
-            amount: number;
-            currency: { __typename?: 'Currency'; address: Address; decimals: number };
           } | null;
         };
       };
@@ -9507,7 +9869,6 @@ export type ListOrdersQuery = {
             __typename: 'BuyNowPayLaterOrder';
             id: string;
             price: bigint;
-            steppedPrice?: bigint | null;
             currencyAddress: Address;
             maker: Address;
             isAsk: boolean;
@@ -9525,7 +9886,6 @@ export type ListOrdersQuery = {
             collectionId: number;
             id: string;
             price: bigint;
-            steppedPrice?: bigint | null;
             currencyAddress: Address;
             maker: Address;
             isAsk: boolean;
@@ -9543,7 +9903,6 @@ export type ListOrdersQuery = {
             collectionId: number;
             id: string;
             price: bigint;
-            steppedPrice?: bigint | null;
             currencyAddress: Address;
             maker: Address;
             isAsk: boolean;
@@ -9560,7 +9919,6 @@ export type ListOrdersQuery = {
             __typename: 'SellAndRepayOrder';
             id: string;
             price: bigint;
-            steppedPrice?: bigint | null;
             currencyAddress: Address;
             maker: Address;
             isAsk: boolean;
@@ -9578,7 +9936,6 @@ export type ListOrdersQuery = {
             collectionId: number;
             id: string;
             price: bigint;
-            steppedPrice?: bigint | null;
             currencyAddress: Address;
             maker: Address;
             isAsk: boolean;
@@ -9595,7 +9952,6 @@ export type ListOrdersQuery = {
             __typename: 'SingleNFTOrder';
             id: string;
             price: bigint;
-            steppedPrice?: bigint | null;
             currencyAddress: Address;
             maker: Address;
             isAsk: boolean;
@@ -9618,7 +9974,6 @@ export type ListOrdersQuery = {
             __typename: 'StealthMaskedOrder';
             id: string;
             price: bigint;
-            steppedPrice?: bigint | null;
             currencyAddress: Address;
             maker: Address;
             isAsk: boolean;
@@ -9636,7 +9991,6 @@ export type ListOrdersQuery = {
             collectionId: number;
             id: string;
             price: bigint;
-            steppedPrice?: bigint | null;
             currencyAddress: Address;
             maker: Address;
             isAsk: boolean;
@@ -9726,10 +10080,16 @@ export type ActivityFieldPolicy = {
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   txHash?: FieldPolicy<any> | FieldReadFunction<any>;
 };
-export type ActivityUpdateKeySpecifier = ('changedAt' | 'event' | ActivityUpdateKeySpecifier)[];
+export type ActivityUpdateKeySpecifier = (
+  | 'changedAt'
+  | 'event'
+  | 'removed'
+  | ActivityUpdateKeySpecifier
+)[];
 export type ActivityUpdateFieldPolicy = {
   changedAt?: FieldPolicy<any> | FieldReadFunction<any>;
   event?: FieldPolicy<any> | FieldReadFunction<any>;
+  removed?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type AddressProfileKeySpecifier = (
   | 'name'
@@ -10314,6 +10674,21 @@ export type AuctionStartedNotificationFieldPolicy = {
   readOn?: FieldPolicy<any> | FieldReadFunction<any>;
   user?: FieldPolicy<any> | FieldReadFunction<any>;
 };
+export type AuctionToSettleKeySpecifier = (
+  | 'auction'
+  | 'deadline'
+  | 'kind'
+  | 'subjectId'
+  | 'winningBid'
+  | AuctionToSettleKeySpecifier
+)[];
+export type AuctionToSettleFieldPolicy = {
+  auction?: FieldPolicy<any> | FieldReadFunction<any>;
+  deadline?: FieldPolicy<any> | FieldReadFunction<any>;
+  kind?: FieldPolicy<any> | FieldReadFunction<any>;
+  subjectId?: FieldPolicy<any> | FieldReadFunction<any>;
+  winningBid?: FieldPolicy<any> | FieldReadFunction<any>;
+};
 export type AuctionWonNotificationKeySpecifier = (
   | 'auction'
   | 'auctionId'
@@ -10353,6 +10728,29 @@ export type BestOfferFieldPolicy = {
   offer?: FieldPolicy<any> | FieldReadFunction<any>;
   roles?: FieldPolicy<any> | FieldReadFunction<any>;
   score?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type BestOfferImprovedNotificationKeySpecifier = (
+  | 'collection'
+  | 'createdOn'
+  | 'currency'
+  | 'id'
+  | 'netAmount'
+  | 'notificationType'
+  | 'previousNetAmount'
+  | 'readOn'
+  | 'user'
+  | BestOfferImprovedNotificationKeySpecifier
+)[];
+export type BestOfferImprovedNotificationFieldPolicy = {
+  collection?: FieldPolicy<any> | FieldReadFunction<any>;
+  createdOn?: FieldPolicy<any> | FieldReadFunction<any>;
+  currency?: FieldPolicy<any> | FieldReadFunction<any>;
+  id?: FieldPolicy<any> | FieldReadFunction<any>;
+  netAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  notificationType?: FieldPolicy<any> | FieldReadFunction<any>;
+  previousNetAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  readOn?: FieldPolicy<any> | FieldReadFunction<any>;
+  user?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type BidKeySpecifier = (
   | 'amount'
@@ -10484,6 +10882,23 @@ export type BlendLienFieldPolicy = {
   rate?: FieldPolicy<any> | FieldReadFunction<any>;
   startTime?: FieldPolicy<any> | FieldReadFunction<any>;
   tokenId?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type BorrowerRequestKeySpecifier = (
+  | 'deadline'
+  | 'kind'
+  | 'loan'
+  | 'renegotiationRequest'
+  | 'subjectId'
+  | 'topUpRequest'
+  | BorrowerRequestKeySpecifier
+)[];
+export type BorrowerRequestFieldPolicy = {
+  deadline?: FieldPolicy<any> | FieldReadFunction<any>;
+  kind?: FieldPolicy<any> | FieldReadFunction<any>;
+  loan?: FieldPolicy<any> | FieldReadFunction<any>;
+  renegotiationRequest?: FieldPolicy<any> | FieldReadFunction<any>;
+  subjectId?: FieldPolicy<any> | FieldReadFunction<any>;
+  topUpRequest?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type BulkNFTOrdersResultKeySpecifier = (
   | 'openSeaListings'
@@ -10621,6 +11036,7 @@ export type CollectionKeySpecifier = (
   | 'id'
   | 'image'
   | 'imageId'
+  | 'inLiquidityProgram'
   | 'isFollowed'
   | 'itemType'
   | 'loansEnabled'
@@ -10669,6 +11085,7 @@ export type CollectionFieldPolicy = {
   id?: FieldPolicy<any> | FieldReadFunction<any>;
   image?: FieldPolicy<any> | FieldReadFunction<any>;
   imageId?: FieldPolicy<any> | FieldReadFunction<any>;
+  inLiquidityProgram?: FieldPolicy<any> | FieldReadFunction<any>;
   isFollowed?: FieldPolicy<any> | FieldReadFunction<any>;
   itemType?: FieldPolicy<any> | FieldReadFunction<any>;
   loansEnabled?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -11095,17 +11512,6 @@ export type CollectionValuationFieldPolicy = {
   value?: FieldPolicy<any> | FieldReadFunction<any>;
   valuedNfts?: FieldPolicy<any> | FieldReadFunction<any>;
 };
-export type CollectorsAlsoBoughtKeySpecifier = (
-  | 'collection'
-  | 'examplePurchases'
-  | 'sharedBuyers'
-  | CollectorsAlsoBoughtKeySpecifier
-)[];
-export type CollectorsAlsoBoughtFieldPolicy = {
-  collection?: FieldPolicy<any> | FieldReadFunction<any>;
-  examplePurchases?: FieldPolicy<any> | FieldReadFunction<any>;
-  sharedBuyers?: FieldPolicy<any> | FieldReadFunction<any>;
-};
 export type ContractDataKeySpecifier = (
   | 'blockchain'
   | 'contractAddress'
@@ -11168,6 +11574,27 @@ export type CurrencyEdgeKeySpecifier = ('cursor' | 'node' | CurrencyEdgeKeySpeci
 export type CurrencyEdgeFieldPolicy = {
   cursor?: FieldPolicy<any> | FieldReadFunction<any>;
   node?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type CustomMessageNotificationKeySpecifier = (
+  | 'body'
+  | 'createdOn'
+  | 'id'
+  | 'link'
+  | 'notificationType'
+  | 'readOn'
+  | 'title'
+  | 'user'
+  | CustomMessageNotificationKeySpecifier
+)[];
+export type CustomMessageNotificationFieldPolicy = {
+  body?: FieldPolicy<any> | FieldReadFunction<any>;
+  createdOn?: FieldPolicy<any> | FieldReadFunction<any>;
+  id?: FieldPolicy<any> | FieldReadFunction<any>;
+  link?: FieldPolicy<any> | FieldReadFunction<any>;
+  notificationType?: FieldPolicy<any> | FieldReadFunction<any>;
+  readOn?: FieldPolicy<any> | FieldReadFunction<any>;
+  title?: FieldPolicy<any> | FieldReadFunction<any>;
+  user?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type DealKeySpecifier = (
   | 'blockchain'
@@ -11320,6 +11747,21 @@ export type DealReadinessResultFieldPolicy = {
   canExecute?: FieldPolicy<any> | FieldReadFunction<any>;
   canStartAcceptance?: FieldPolicy<any> | FieldReadFunction<any>;
 };
+export type DefaultedLoanKeySpecifier = (
+  | 'canClaim'
+  | 'deadline'
+  | 'kind'
+  | 'loan'
+  | 'subjectId'
+  | DefaultedLoanKeySpecifier
+)[];
+export type DefaultedLoanFieldPolicy = {
+  canClaim?: FieldPolicy<any> | FieldReadFunction<any>;
+  deadline?: FieldPolicy<any> | FieldReadFunction<any>;
+  kind?: FieldPolicy<any> | FieldReadFunction<any>;
+  loan?: FieldPolicy<any> | FieldReadFunction<any>;
+  subjectId?: FieldPolicy<any> | FieldReadFunction<any>;
+};
 export type DelegationKeySpecifier = (
   | 'contractAddress'
   | 'delegateTo'
@@ -11352,6 +11794,19 @@ export type DelegationEdgeKeySpecifier = ('cursor' | 'node' | DelegationEdgeKeyS
 export type DelegationEdgeFieldPolicy = {
   cursor?: FieldPolicy<any> | FieldReadFunction<any>;
   node?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type DueLoanKeySpecifier = (
+  | 'deadline'
+  | 'kind'
+  | 'loan'
+  | 'subjectId'
+  | DueLoanKeySpecifier
+)[];
+export type DueLoanFieldPolicy = {
+  deadline?: FieldPolicy<any> | FieldReadFunction<any>;
+  kind?: FieldPolicy<any> | FieldReadFunction<any>;
+  loan?: FieldPolicy<any> | FieldReadFunction<any>;
+  subjectId?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type EditionKeySpecifier = (
   | 'collection'
@@ -11823,6 +12278,28 @@ export type HolderEdgeFieldPolicy = {
   cursor?: FieldPolicy<any> | FieldReadFunction<any>;
   node?: FieldPolicy<any> | FieldReadFunction<any>;
 };
+export type ImportableGalleryKeySpecifier = (
+  | 'description'
+  | 'name'
+  | 'sourceWorkCount'
+  | 'works'
+  | ImportableGalleryKeySpecifier
+)[];
+export type ImportableGalleryFieldPolicy = {
+  description?: FieldPolicy<any> | FieldReadFunction<any>;
+  name?: FieldPolicy<any> | FieldReadFunction<any>;
+  sourceWorkCount?: FieldPolicy<any> | FieldReadFunction<any>;
+  works?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type ImportableGalleryWorkKeySpecifier = (
+  | 'chapter'
+  | 'nft'
+  | ImportableGalleryWorkKeySpecifier
+)[];
+export type ImportableGalleryWorkFieldPolicy = {
+  chapter?: FieldPolicy<any> | FieldReadFunction<any>;
+  nft?: FieldPolicy<any> | FieldReadFunction<any>;
+};
 export type ItemLoanOfferBookKeySpecifier = (
   | 'complete'
   | 'currency'
@@ -12020,6 +12497,36 @@ export type LinkedWalletsFieldPolicy = {
   id?: FieldPolicy<any> | FieldReadFunction<any>;
   pending?: FieldPolicy<any> | FieldReadFunction<any>;
   shouldAccept?: FieldPolicy<any> | FieldReadFunction<any>;
+  walletAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type LiquidityProgramCollectionKeySpecifier = (
+  | 'collection'
+  | 'volume1m'
+  | LiquidityProgramCollectionKeySpecifier
+)[];
+export type LiquidityProgramCollectionFieldPolicy = {
+  collection?: FieldPolicy<any> | FieldReadFunction<any>;
+  volume1m?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type LiquidityRewardNotificationKeySpecifier = (
+  | 'createdOn'
+  | 'id'
+  | 'notificationType'
+  | 'readOn'
+  | 'rewardAmount'
+  | 'txHash'
+  | 'user'
+  | 'walletAddress'
+  | LiquidityRewardNotificationKeySpecifier
+)[];
+export type LiquidityRewardNotificationFieldPolicy = {
+  createdOn?: FieldPolicy<any> | FieldReadFunction<any>;
+  id?: FieldPolicy<any> | FieldReadFunction<any>;
+  notificationType?: FieldPolicy<any> | FieldReadFunction<any>;
+  readOn?: FieldPolicy<any> | FieldReadFunction<any>;
+  rewardAmount?: FieldPolicy<any> | FieldReadFunction<any>;
+  txHash?: FieldPolicy<any> | FieldReadFunction<any>;
+  user?: FieldPolicy<any> | FieldReadFunction<any>;
   walletAddress?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type ListingKeySpecifier = (
@@ -12903,6 +13410,27 @@ export type MarketOverviewWalletFieldPolicy = {
   name?: FieldPolicy<any> | FieldReadFunction<any>;
   profilePictureUrl?: FieldPolicy<any> | FieldReadFunction<any>;
 };
+export type MintKeySpecifier = (
+  | 'amount'
+  | 'id'
+  | 'nft'
+  | 'receiver'
+  | 'receiverName'
+  | 'receiverProfilePictureUrl'
+  | 'timestamp'
+  | 'txHash'
+  | MintKeySpecifier
+)[];
+export type MintFieldPolicy = {
+  amount?: FieldPolicy<any> | FieldReadFunction<any>;
+  id?: FieldPolicy<any> | FieldReadFunction<any>;
+  nft?: FieldPolicy<any> | FieldReadFunction<any>;
+  receiver?: FieldPolicy<any> | FieldReadFunction<any>;
+  receiverName?: FieldPolicy<any> | FieldReadFunction<any>;
+  receiverProfilePictureUrl?: FieldPolicy<any> | FieldReadFunction<any>;
+  timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
+  txHash?: FieldPolicy<any> | FieldReadFunction<any>;
+};
 export type MultiSourceLoanKeySpecifier = (
   | 'activities'
   | 'address'
@@ -13145,6 +13673,7 @@ export type MutationKeySpecifier = (
   | 'deleteProfilePicture'
   | 'disconnectTelegram'
   | 'disconnectTwitter'
+  | 'dismissNeedsAction'
   | 'editUser'
   | 'followArtist'
   | 'followCollection'
@@ -13227,6 +13756,7 @@ export type MutationFieldPolicy = {
   deleteProfilePicture?: FieldPolicy<any> | FieldReadFunction<any>;
   disconnectTelegram?: FieldPolicy<any> | FieldReadFunction<any>;
   disconnectTwitter?: FieldPolicy<any> | FieldReadFunction<any>;
+  dismissNeedsAction?: FieldPolicy<any> | FieldReadFunction<any>;
   editUser?: FieldPolicy<any> | FieldReadFunction<any>;
   followArtist?: FieldPolicy<any> | FieldReadFunction<any>;
   followCollection?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -13310,6 +13840,7 @@ export type NFTKeySpecifier = (
   | 'erc20Balances'
   | 'erc1155Balance'
   | 'erc1155Supply'
+  | 'erc1155TotalBalance'
   | 'id'
   | 'image'
   | 'isExcluded'
@@ -13362,6 +13893,7 @@ export type NFTFieldPolicy = {
   erc20Balances?: FieldPolicy<any> | FieldReadFunction<any>;
   erc1155Balance?: FieldPolicy<any> | FieldReadFunction<any>;
   erc1155Supply?: FieldPolicy<any> | FieldReadFunction<any>;
+  erc1155TotalBalance?: FieldPolicy<any> | FieldReadFunction<any>;
   id?: FieldPolicy<any> | FieldReadFunction<any>;
   image?: FieldPolicy<any> | FieldReadFunction<any>;
   isExcluded?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -13400,12 +13932,14 @@ export type NFTConnectionKeySpecifier = (
   | 'edges'
   | 'pageInfo'
   | 'totalCount'
+  | 'totalUnits'
   | NFTConnectionKeySpecifier
 )[];
 export type NFTConnectionFieldPolicy = {
   edges?: FieldPolicy<any> | FieldReadFunction<any>;
   pageInfo?: FieldPolicy<any> | FieldReadFunction<any>;
   totalCount?: FieldPolicy<any> | FieldReadFunction<any>;
+  totalUnits?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type NFTEdgeKeySpecifier = ('cursor' | 'node' | NFTEdgeKeySpecifier)[];
 export type NFTEdgeFieldPolicy = {
@@ -13434,6 +13968,17 @@ export type NFTPriceSampleFieldPolicy = {
   taker?: FieldPolicy<any> | FieldReadFunction<any>;
   timestamp?: FieldPolicy<any> | FieldReadFunction<any>;
   value?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type NeedsActionItemKeySpecifier = (
+  | 'deadline'
+  | 'kind'
+  | 'subjectId'
+  | NeedsActionItemKeySpecifier
+)[];
+export type NeedsActionItemFieldPolicy = {
+  deadline?: FieldPolicy<any> | FieldReadFunction<any>;
+  kind?: FieldPolicy<any> | FieldReadFunction<any>;
+  subjectId?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type NewCollectionUnlistedOfferNotificationKeySpecifier = (
   | 'createdOn'
@@ -13507,6 +14052,29 @@ export type NewRenegotiationOfferNotificationFieldPolicy = {
   readOn?: FieldPolicy<any> | FieldReadFunction<any>;
   renegotiation?: FieldPolicy<any> | FieldReadFunction<any>;
   renegotiationId?: FieldPolicy<any> | FieldReadFunction<any>;
+  user?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type NftReceivedNotificationKeySpecifier = (
+  | 'createdOn'
+  | 'id'
+  | 'nft'
+  | 'notificationType'
+  | 'readOn'
+  | 'sender'
+  | 'senderName'
+  | 'transferredAt'
+  | 'user'
+  | NftReceivedNotificationKeySpecifier
+)[];
+export type NftReceivedNotificationFieldPolicy = {
+  createdOn?: FieldPolicy<any> | FieldReadFunction<any>;
+  id?: FieldPolicy<any> | FieldReadFunction<any>;
+  nft?: FieldPolicy<any> | FieldReadFunction<any>;
+  notificationType?: FieldPolicy<any> | FieldReadFunction<any>;
+  readOn?: FieldPolicy<any> | FieldReadFunction<any>;
+  sender?: FieldPolicy<any> | FieldReadFunction<any>;
+  senderName?: FieldPolicy<any> | FieldReadFunction<any>;
+  transferredAt?: FieldPolicy<any> | FieldReadFunction<any>;
   user?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type NftSetConditionPreviewKeySpecifier = (
@@ -13814,18 +14382,26 @@ export type OfferValidatorFieldPolicy = {
 };
 export type OpenSeaListingResultKeySpecifier = (
   | 'contractAddress'
+  | 'createdDate'
   | 'error'
   | 'failureReason'
+  | 'nft'
   | 'orderHash'
+  | 'orderId'
+  | 'settledDate'
   | 'status'
   | 'tokenId'
   | OpenSeaListingResultKeySpecifier
 )[];
 export type OpenSeaListingResultFieldPolicy = {
   contractAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  createdDate?: FieldPolicy<any> | FieldReadFunction<any>;
   error?: FieldPolicy<any> | FieldReadFunction<any>;
   failureReason?: FieldPolicy<any> | FieldReadFunction<any>;
+  nft?: FieldPolicy<any> | FieldReadFunction<any>;
   orderHash?: FieldPolicy<any> | FieldReadFunction<any>;
+  orderId?: FieldPolicy<any> | FieldReadFunction<any>;
+  settledDate?: FieldPolicy<any> | FieldReadFunction<any>;
   status?: FieldPolicy<any> | FieldReadFunction<any>;
   tokenId?: FieldPolicy<any> | FieldReadFunction<any>;
 };
@@ -13947,6 +14523,23 @@ export type OrderFeeMetadataFieldPolicy = {
   executionFeeConcept?: FieldPolicy<any> | FieldReadFunction<any>;
   publicationFee?: FieldPolicy<any> | FieldReadFunction<any>;
   publicationFeeConcept?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type OutbidKeySpecifier = (
+  | 'auction'
+  | 'bid'
+  | 'deadline'
+  | 'highestBid'
+  | 'kind'
+  | 'subjectId'
+  | OutbidKeySpecifier
+)[];
+export type OutbidFieldPolicy = {
+  auction?: FieldPolicy<any> | FieldReadFunction<any>;
+  bid?: FieldPolicy<any> | FieldReadFunction<any>;
+  deadline?: FieldPolicy<any> | FieldReadFunction<any>;
+  highestBid?: FieldPolicy<any> | FieldReadFunction<any>;
+  kind?: FieldPolicy<any> | FieldReadFunction<any>;
+  subjectId?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type OutbidNotificationKeySpecifier = (
   | 'auction'
@@ -14112,7 +14705,6 @@ export type PortfolioValuationFieldPolicy = {
 };
 export type QueryKeySpecifier = (
   | 'collectionMarketDepth'
-  | 'collectorsAlsoBought'
   | 'dealReadiness'
   | 'featuredListings'
   | 'galleries'
@@ -14136,6 +14728,7 @@ export type QueryKeySpecifier = (
   | 'getFeedId'
   | 'getFulfillManyOrdersCalldata'
   | 'getLendingMarketPulse'
+  | 'getLiquidityProgramCollections'
   | 'getListingById'
   | 'getLoanActivitiesStatisticsByMonth'
   | 'getLoanById'
@@ -14157,16 +14750,17 @@ export type QueryKeySpecifier = (
   | 'getSourcesStatistics'
   | 'getSourcesStatisticsByCollection'
   | 'getSwapQuote'
-  | 'getSwapRate'
   | 'getTopLenders'
   | 'getUserPointActivities'
   | 'getUserPoints'
+  | 'getWalletBuyOffersSummary'
   | 'getWalletFollowStats'
   | 'getWalletHoldingsSummary'
   | 'getWalletLendingSummary'
   | 'getWalletTradingSummary'
   | 'globalSearch'
   | 'globalSearchV2'
+  | 'importableGalleries'
   | 'isUsernameAvailable'
   | 'itemBrowseList'
   | 'itemLoanOfferBook'
@@ -14202,23 +14796,21 @@ export type QueryKeySpecifier = (
   | 'listLoanActivities'
   | 'listLoanEvents'
   | 'listLoans'
-  | 'listNames'
   | 'listNftDelegations'
   | 'listNftFollows'
   | 'listNftOffersAndRenegotiations'
   | 'listNftStrategyDeployments'
   | 'listNfts'
   | 'listNftsFromCollections'
-  | 'listNftsFromUser'
   | 'listNotifications'
   | 'listOffers'
   | 'listOpenSeaListingResults'
   | 'listOpenSeaListingTerms'
-  | 'listOrders'
   | 'listOrdersV2'
   | 'listPlatformFees'
   | 'listPopularSearches'
   | 'listProfiles'
+  | 'listRecentOpenSeaListingResults'
   | 'listRenegotiations'
   | 'listSales'
   | 'listSitemapNfts'
@@ -14226,11 +14818,11 @@ export type QueryKeySpecifier = (
   | 'listUsers'
   | 'listWalletFollowers'
   | 'listWalletFollowing'
-  | 'loanDealCollections'
   | 'loanDeals'
   | 'me'
   | 'minimumOfferAmount'
   | 'mostViewedGalleries'
+  | 'needsAction'
   | 'nftGalleries'
   | 'notificationPreferences'
   | 'previewItemLoanOfferCompetition'
@@ -14242,7 +14834,6 @@ export type QueryKeySpecifier = (
 )[];
 export type QueryFieldPolicy = {
   collectionMarketDepth?: FieldPolicy<any> | FieldReadFunction<any>;
-  collectorsAlsoBought?: FieldPolicy<any> | FieldReadFunction<any>;
   dealReadiness?: FieldPolicy<any> | FieldReadFunction<any>;
   featuredListings?: FieldPolicy<any> | FieldReadFunction<any>;
   galleries?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -14266,6 +14857,7 @@ export type QueryFieldPolicy = {
   getFeedId?: FieldPolicy<any> | FieldReadFunction<any>;
   getFulfillManyOrdersCalldata?: FieldPolicy<any> | FieldReadFunction<any>;
   getLendingMarketPulse?: FieldPolicy<any> | FieldReadFunction<any>;
+  getLiquidityProgramCollections?: FieldPolicy<any> | FieldReadFunction<any>;
   getListingById?: FieldPolicy<any> | FieldReadFunction<any>;
   getLoanActivitiesStatisticsByMonth?: FieldPolicy<any> | FieldReadFunction<any>;
   getLoanById?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -14287,16 +14879,17 @@ export type QueryFieldPolicy = {
   getSourcesStatistics?: FieldPolicy<any> | FieldReadFunction<any>;
   getSourcesStatisticsByCollection?: FieldPolicy<any> | FieldReadFunction<any>;
   getSwapQuote?: FieldPolicy<any> | FieldReadFunction<any>;
-  getSwapRate?: FieldPolicy<any> | FieldReadFunction<any>;
   getTopLenders?: FieldPolicy<any> | FieldReadFunction<any>;
   getUserPointActivities?: FieldPolicy<any> | FieldReadFunction<any>;
   getUserPoints?: FieldPolicy<any> | FieldReadFunction<any>;
+  getWalletBuyOffersSummary?: FieldPolicy<any> | FieldReadFunction<any>;
   getWalletFollowStats?: FieldPolicy<any> | FieldReadFunction<any>;
   getWalletHoldingsSummary?: FieldPolicy<any> | FieldReadFunction<any>;
   getWalletLendingSummary?: FieldPolicy<any> | FieldReadFunction<any>;
   getWalletTradingSummary?: FieldPolicy<any> | FieldReadFunction<any>;
   globalSearch?: FieldPolicy<any> | FieldReadFunction<any>;
   globalSearchV2?: FieldPolicy<any> | FieldReadFunction<any>;
+  importableGalleries?: FieldPolicy<any> | FieldReadFunction<any>;
   isUsernameAvailable?: FieldPolicy<any> | FieldReadFunction<any>;
   itemBrowseList?: FieldPolicy<any> | FieldReadFunction<any>;
   itemLoanOfferBook?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -14332,23 +14925,21 @@ export type QueryFieldPolicy = {
   listLoanActivities?: FieldPolicy<any> | FieldReadFunction<any>;
   listLoanEvents?: FieldPolicy<any> | FieldReadFunction<any>;
   listLoans?: FieldPolicy<any> | FieldReadFunction<any>;
-  listNames?: FieldPolicy<any> | FieldReadFunction<any>;
   listNftDelegations?: FieldPolicy<any> | FieldReadFunction<any>;
   listNftFollows?: FieldPolicy<any> | FieldReadFunction<any>;
   listNftOffersAndRenegotiations?: FieldPolicy<any> | FieldReadFunction<any>;
   listNftStrategyDeployments?: FieldPolicy<any> | FieldReadFunction<any>;
   listNfts?: FieldPolicy<any> | FieldReadFunction<any>;
   listNftsFromCollections?: FieldPolicy<any> | FieldReadFunction<any>;
-  listNftsFromUser?: FieldPolicy<any> | FieldReadFunction<any>;
   listNotifications?: FieldPolicy<any> | FieldReadFunction<any>;
   listOffers?: FieldPolicy<any> | FieldReadFunction<any>;
   listOpenSeaListingResults?: FieldPolicy<any> | FieldReadFunction<any>;
   listOpenSeaListingTerms?: FieldPolicy<any> | FieldReadFunction<any>;
-  listOrders?: FieldPolicy<any> | FieldReadFunction<any>;
   listOrdersV2?: FieldPolicy<any> | FieldReadFunction<any>;
   listPlatformFees?: FieldPolicy<any> | FieldReadFunction<any>;
   listPopularSearches?: FieldPolicy<any> | FieldReadFunction<any>;
   listProfiles?: FieldPolicy<any> | FieldReadFunction<any>;
+  listRecentOpenSeaListingResults?: FieldPolicy<any> | FieldReadFunction<any>;
   listRenegotiations?: FieldPolicy<any> | FieldReadFunction<any>;
   listSales?: FieldPolicy<any> | FieldReadFunction<any>;
   listSitemapNfts?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -14356,11 +14947,11 @@ export type QueryFieldPolicy = {
   listUsers?: FieldPolicy<any> | FieldReadFunction<any>;
   listWalletFollowers?: FieldPolicy<any> | FieldReadFunction<any>;
   listWalletFollowing?: FieldPolicy<any> | FieldReadFunction<any>;
-  loanDealCollections?: FieldPolicy<any> | FieldReadFunction<any>;
   loanDeals?: FieldPolicy<any> | FieldReadFunction<any>;
   me?: FieldPolicy<any> | FieldReadFunction<any>;
   minimumOfferAmount?: FieldPolicy<any> | FieldReadFunction<any>;
   mostViewedGalleries?: FieldPolicy<any> | FieldReadFunction<any>;
+  needsAction?: FieldPolicy<any> | FieldReadFunction<any>;
   nftGalleries?: FieldPolicy<any> | FieldReadFunction<any>;
   notificationPreferences?: FieldPolicy<any> | FieldReadFunction<any>;
   previewItemLoanOfferCompetition?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -14512,6 +15103,19 @@ export type RenegotiationRequestedNotificationFieldPolicy = {
   readOn?: FieldPolicy<any> | FieldReadFunction<any>;
   user?: FieldPolicy<any> | FieldReadFunction<any>;
 };
+export type ReservedListingKeySpecifier = (
+  | 'deadline'
+  | 'kind'
+  | 'order'
+  | 'subjectId'
+  | ReservedListingKeySpecifier
+)[];
+export type ReservedListingFieldPolicy = {
+  deadline?: FieldPolicy<any> | FieldReadFunction<any>;
+  kind?: FieldPolicy<any> | FieldReadFunction<any>;
+  order?: FieldPolicy<any> | FieldReadFunction<any>;
+  subjectId?: FieldPolicy<any> | FieldReadFunction<any>;
+};
 export type RoyaltyKeySpecifier = (
   | 'beneficiary'
   | 'id'
@@ -14613,6 +15217,29 @@ export type SaleListingUpdateFieldPolicy = {
   collectionId?: FieldPolicy<any> | FieldReadFunction<any>;
   nft?: FieldPolicy<any> | FieldReadFunction<any>;
   nftId?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type SaleNotificationKeySpecifier = (
+  | 'createdOn'
+  | 'id'
+  | 'loanRepaid'
+  | 'netProceeds'
+  | 'notificationType'
+  | 'readOn'
+  | 'role'
+  | 'sale'
+  | 'user'
+  | SaleNotificationKeySpecifier
+)[];
+export type SaleNotificationFieldPolicy = {
+  createdOn?: FieldPolicy<any> | FieldReadFunction<any>;
+  id?: FieldPolicy<any> | FieldReadFunction<any>;
+  loanRepaid?: FieldPolicy<any> | FieldReadFunction<any>;
+  netProceeds?: FieldPolicy<any> | FieldReadFunction<any>;
+  notificationType?: FieldPolicy<any> | FieldReadFunction<any>;
+  readOn?: FieldPolicy<any> | FieldReadFunction<any>;
+  role?: FieldPolicy<any> | FieldReadFunction<any>;
+  sale?: FieldPolicy<any> | FieldReadFunction<any>;
+  user?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type SearchERC20BalanceKeySpecifier = (
   | 'address'
@@ -15524,10 +16151,24 @@ export type TopUpRequestedNotificationFieldPolicy = {
   topUp?: FieldPolicy<any> | FieldReadFunction<any>;
   user?: FieldPolicy<any> | FieldReadFunction<any>;
 };
+export type TradeAwaitingAnswerKeySpecifier = (
+  | 'deadline'
+  | 'deal'
+  | 'kind'
+  | 'subjectId'
+  | TradeAwaitingAnswerKeySpecifier
+)[];
+export type TradeAwaitingAnswerFieldPolicy = {
+  deadline?: FieldPolicy<any> | FieldReadFunction<any>;
+  deal?: FieldPolicy<any> | FieldReadFunction<any>;
+  kind?: FieldPolicy<any> | FieldReadFunction<any>;
+  subjectId?: FieldPolicy<any> | FieldReadFunction<any>;
+};
 export type TraitKeySpecifier = (
   | 'collectionId'
   | 'id'
   | 'isDerived'
+  | 'isFilterOnly'
   | 'isSynthetic'
   | 'key'
   | 'sampleAsset'
@@ -15541,6 +16182,7 @@ export type TraitFieldPolicy = {
   collectionId?: FieldPolicy<any> | FieldReadFunction<any>;
   id?: FieldPolicy<any> | FieldReadFunction<any>;
   isDerived?: FieldPolicy<any> | FieldReadFunction<any>;
+  isFilterOnly?: FieldPolicy<any> | FieldReadFunction<any>;
   isSynthetic?: FieldPolicy<any> | FieldReadFunction<any>;
   key?: FieldPolicy<any> | FieldReadFunction<any>;
   sampleAsset?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -15785,6 +16427,7 @@ export type TraitTypeKeySpecifier = (
   | 'collectionId'
   | 'count'
   | 'id'
+  | 'isFilterOnly'
   | 'isSynthetic'
   | 'key'
   | 'max'
@@ -15796,6 +16439,7 @@ export type TraitTypeFieldPolicy = {
   collectionId?: FieldPolicy<any> | FieldReadFunction<any>;
   count?: FieldPolicy<any> | FieldReadFunction<any>;
   id?: FieldPolicy<any> | FieldReadFunction<any>;
+  isFilterOnly?: FieldPolicy<any> | FieldReadFunction<any>;
   isSynthetic?: FieldPolicy<any> | FieldReadFunction<any>;
   key?: FieldPolicy<any> | FieldReadFunction<any>;
   max?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -15822,6 +16466,7 @@ export type TraitValueKeySpecifier = (
   | 'collectionId'
   | 'id'
   | 'isDerived'
+  | 'isFilterOnly'
   | 'isSynthetic'
   | 'key'
   | 'rarity'
@@ -15835,6 +16480,7 @@ export type TraitValueFieldPolicy = {
   collectionId?: FieldPolicy<any> | FieldReadFunction<any>;
   id?: FieldPolicy<any> | FieldReadFunction<any>;
   isDerived?: FieldPolicy<any> | FieldReadFunction<any>;
+  isFilterOnly?: FieldPolicy<any> | FieldReadFunction<any>;
   isSynthetic?: FieldPolicy<any> | FieldReadFunction<any>;
   key?: FieldPolicy<any> | FieldReadFunction<any>;
   rarity?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -15865,6 +16511,7 @@ export type TraitValueOptionsFieldPolicy = {
   value?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type TransferKeySpecifier = (
+  | 'amount'
   | 'id'
   | 'nft'
   | 'receiver'
@@ -15878,6 +16525,7 @@ export type TransferKeySpecifier = (
   | TransferKeySpecifier
 )[];
 export type TransferFieldPolicy = {
+  amount?: FieldPolicy<any> | FieldReadFunction<any>;
   id?: FieldPolicy<any> | FieldReadFunction<any>;
   nft?: FieldPolicy<any> | FieldReadFunction<any>;
   receiver?: FieldPolicy<any> | FieldReadFunction<any>;
@@ -15901,6 +16549,19 @@ export type TypedDataFieldPolicy = {
   message?: FieldPolicy<any> | FieldReadFunction<any>;
   primaryType?: FieldPolicy<any> | FieldReadFunction<any>;
   types?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type UnderfundedOfferKeySpecifier = (
+  | 'deadline'
+  | 'kind'
+  | 'offer'
+  | 'subjectId'
+  | UnderfundedOfferKeySpecifier
+)[];
+export type UnderfundedOfferFieldPolicy = {
+  deadline?: FieldPolicy<any> | FieldReadFunction<any>;
+  kind?: FieldPolicy<any> | FieldReadFunction<any>;
+  offer?: FieldPolicy<any> | FieldReadFunction<any>;
+  subjectId?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type UnderfundedOfferNotificationKeySpecifier = (
   | 'createdOn'
@@ -16052,6 +16713,55 @@ export type WalletActivityDayFieldPolicy = {
   purchases?: FieldPolicy<any> | FieldReadFunction<any>;
   sales?: FieldPolicy<any> | FieldReadFunction<any>;
 };
+export type WalletBuyOfferStandingKeySpecifier = (
+  | 'currencyAddress'
+  | 'expiringSoon'
+  | 'maker'
+  | 'marketPlaceAddress'
+  | 'orderId'
+  | 'price'
+  | 'standing'
+  | WalletBuyOfferStandingKeySpecifier
+)[];
+export type WalletBuyOfferStandingFieldPolicy = {
+  currencyAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  expiringSoon?: FieldPolicy<any> | FieldReadFunction<any>;
+  maker?: FieldPolicy<any> | FieldReadFunction<any>;
+  marketPlaceAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  orderId?: FieldPolicy<any> | FieldReadFunction<any>;
+  price?: FieldPolicy<any> | FieldReadFunction<any>;
+  standing?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type WalletBuyOffersCommittedKeySpecifier = (
+  | 'amount'
+  | 'currencyAddress'
+  | 'offerCount'
+  | WalletBuyOffersCommittedKeySpecifier
+)[];
+export type WalletBuyOffersCommittedFieldPolicy = {
+  amount?: FieldPolicy<any> | FieldReadFunction<any>;
+  currencyAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  offerCount?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type WalletBuyOffersSummaryKeySpecifier = (
+  | 'activeCount'
+  | 'committed'
+  | 'expiringSoonCount'
+  | 'offers'
+  | 'outbidCount'
+  | 'topCount'
+  | 'truncated'
+  | WalletBuyOffersSummaryKeySpecifier
+)[];
+export type WalletBuyOffersSummaryFieldPolicy = {
+  activeCount?: FieldPolicy<any> | FieldReadFunction<any>;
+  committed?: FieldPolicy<any> | FieldReadFunction<any>;
+  expiringSoonCount?: FieldPolicy<any> | FieldReadFunction<any>;
+  offers?: FieldPolicy<any> | FieldReadFunction<any>;
+  outbidCount?: FieldPolicy<any> | FieldReadFunction<any>;
+  topCount?: FieldPolicy<any> | FieldReadFunction<any>;
+  truncated?: FieldPolicy<any> | FieldReadFunction<any>;
+};
 export type WalletFollowEntryKeySpecifier = (
   | 'viaWalletAddresses'
   | 'walletAddress'
@@ -16109,6 +16819,25 @@ export type WalletLendingSummaryFieldPolicy = {
   loanCount?: FieldPolicy<any> | FieldReadFunction<any>;
   principalUsd?: FieldPolicy<any> | FieldReadFunction<any>;
   topCollections?: FieldPolicy<any> | FieldReadFunction<any>;
+};
+export type WalletLinkRequestKeySpecifier = (
+  | 'createdDate'
+  | 'deadline'
+  | 'kind'
+  | 'linkedWalletsId'
+  | 'requesterAddress'
+  | 'subjectId'
+  | 'walletAddress'
+  | WalletLinkRequestKeySpecifier
+)[];
+export type WalletLinkRequestFieldPolicy = {
+  createdDate?: FieldPolicy<any> | FieldReadFunction<any>;
+  deadline?: FieldPolicy<any> | FieldReadFunction<any>;
+  kind?: FieldPolicy<any> | FieldReadFunction<any>;
+  linkedWalletsId?: FieldPolicy<any> | FieldReadFunction<any>;
+  requesterAddress?: FieldPolicy<any> | FieldReadFunction<any>;
+  subjectId?: FieldPolicy<any> | FieldReadFunction<any>;
+  walletAddress?: FieldPolicy<any> | FieldReadFunction<any>;
 };
 export type WalletTradingSummaryKeySpecifier = (
   | 'borrowCount'
@@ -16411,6 +17140,13 @@ export type StrictTypedTypePolicies = {
       | (() => undefined | AuctionStartedNotificationKeySpecifier);
     fields?: AuctionStartedNotificationFieldPolicy;
   };
+  AuctionToSettle?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | AuctionToSettleKeySpecifier
+      | (() => undefined | AuctionToSettleKeySpecifier);
+    fields?: AuctionToSettleFieldPolicy;
+  };
   AuctionWonNotification?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?:
       | false
@@ -16421,6 +17157,13 @@ export type StrictTypedTypePolicies = {
   BestOffer?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | BestOfferKeySpecifier | (() => undefined | BestOfferKeySpecifier);
     fields?: BestOfferFieldPolicy;
+  };
+  BestOfferImprovedNotification?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | BestOfferImprovedNotificationKeySpecifier
+      | (() => undefined | BestOfferImprovedNotificationKeySpecifier);
+    fields?: BestOfferImprovedNotificationFieldPolicy;
   };
   Bid?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | BidKeySpecifier | (() => undefined | BidKeySpecifier);
@@ -16459,6 +17202,13 @@ export type StrictTypedTypePolicies = {
   BlendLien?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | BlendLienKeySpecifier | (() => undefined | BlendLienKeySpecifier);
     fields?: BlendLienFieldPolicy;
+  };
+  BorrowerRequest?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | BorrowerRequestKeySpecifier
+      | (() => undefined | BorrowerRequestKeySpecifier);
+    fields?: BorrowerRequestFieldPolicy;
   };
   BulkNFTOrdersResult?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?:
@@ -16566,13 +17316,6 @@ export type StrictTypedTypePolicies = {
       | (() => undefined | CollectionValuationKeySpecifier);
     fields?: CollectionValuationFieldPolicy;
   };
-  CollectorsAlsoBought?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
-    keyFields?:
-      | false
-      | CollectorsAlsoBoughtKeySpecifier
-      | (() => undefined | CollectorsAlsoBoughtKeySpecifier);
-    fields?: CollectorsAlsoBoughtFieldPolicy;
-  };
   ContractData?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | ContractDataKeySpecifier | (() => undefined | ContractDataKeySpecifier);
     fields?: ContractDataFieldPolicy;
@@ -16595,6 +17338,13 @@ export type StrictTypedTypePolicies = {
   CurrencyEdge?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | CurrencyEdgeKeySpecifier | (() => undefined | CurrencyEdgeKeySpecifier);
     fields?: CurrencyEdgeFieldPolicy;
+  };
+  CustomMessageNotification?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | CustomMessageNotificationKeySpecifier
+      | (() => undefined | CustomMessageNotificationKeySpecifier);
+    fields?: CustomMessageNotificationFieldPolicy;
   };
   Deal?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | DealKeySpecifier | (() => undefined | DealKeySpecifier);
@@ -16636,6 +17386,10 @@ export type StrictTypedTypePolicies = {
       | (() => undefined | DealReadinessResultKeySpecifier);
     fields?: DealReadinessResultFieldPolicy;
   };
+  DefaultedLoan?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?: false | DefaultedLoanKeySpecifier | (() => undefined | DefaultedLoanKeySpecifier);
+    fields?: DefaultedLoanFieldPolicy;
+  };
   Delegation?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | DelegationKeySpecifier | (() => undefined | DelegationKeySpecifier);
     fields?: DelegationFieldPolicy;
@@ -16650,6 +17404,10 @@ export type StrictTypedTypePolicies = {
   DelegationEdge?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | DelegationEdgeKeySpecifier | (() => undefined | DelegationEdgeKeySpecifier);
     fields?: DelegationEdgeFieldPolicy;
+  };
+  DueLoan?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?: false | DueLoanKeySpecifier | (() => undefined | DueLoanKeySpecifier);
+    fields?: DueLoanFieldPolicy;
   };
   Edition?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | EditionKeySpecifier | (() => undefined | EditionKeySpecifier);
@@ -16846,6 +17604,20 @@ export type StrictTypedTypePolicies = {
     keyFields?: false | HolderEdgeKeySpecifier | (() => undefined | HolderEdgeKeySpecifier);
     fields?: HolderEdgeFieldPolicy;
   };
+  ImportableGallery?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | ImportableGalleryKeySpecifier
+      | (() => undefined | ImportableGalleryKeySpecifier);
+    fields?: ImportableGalleryFieldPolicy;
+  };
+  ImportableGalleryWork?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | ImportableGalleryWorkKeySpecifier
+      | (() => undefined | ImportableGalleryWorkKeySpecifier);
+    fields?: ImportableGalleryWorkFieldPolicy;
+  };
   ItemLoanOfferBook?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?:
       | false
@@ -16916,6 +17688,20 @@ export type StrictTypedTypePolicies = {
   LinkedWallets?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | LinkedWalletsKeySpecifier | (() => undefined | LinkedWalletsKeySpecifier);
     fields?: LinkedWalletsFieldPolicy;
+  };
+  LiquidityProgramCollection?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | LiquidityProgramCollectionKeySpecifier
+      | (() => undefined | LiquidityProgramCollectionKeySpecifier);
+    fields?: LiquidityProgramCollectionFieldPolicy;
+  };
+  LiquidityRewardNotification?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | LiquidityRewardNotificationKeySpecifier
+      | (() => undefined | LiquidityRewardNotificationKeySpecifier);
+    fields?: LiquidityRewardNotificationFieldPolicy;
   };
   Listing?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | ListingKeySpecifier | (() => undefined | ListingKeySpecifier);
@@ -17164,6 +17950,10 @@ export type StrictTypedTypePolicies = {
       | (() => undefined | MarketOverviewWalletKeySpecifier);
     fields?: MarketOverviewWalletFieldPolicy;
   };
+  Mint?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?: false | MintKeySpecifier | (() => undefined | MintKeySpecifier);
+    fields?: MintFieldPolicy;
+  };
   MultiSourceLoan?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?:
       | false
@@ -17219,6 +18009,13 @@ export type StrictTypedTypePolicies = {
     keyFields?: false | NFTPriceSampleKeySpecifier | (() => undefined | NFTPriceSampleKeySpecifier);
     fields?: NFTPriceSampleFieldPolicy;
   };
+  NeedsActionItem?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | NeedsActionItemKeySpecifier
+      | (() => undefined | NeedsActionItemKeySpecifier);
+    fields?: NeedsActionItemFieldPolicy;
+  };
   NewCollectionUnlistedOfferNotification?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?:
       | false
@@ -17246,6 +18043,13 @@ export type StrictTypedTypePolicies = {
       | NewRenegotiationOfferNotificationKeySpecifier
       | (() => undefined | NewRenegotiationOfferNotificationKeySpecifier);
     fields?: NewRenegotiationOfferNotificationFieldPolicy;
+  };
+  NftReceivedNotification?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | NftReceivedNotificationKeySpecifier
+      | (() => undefined | NftReceivedNotificationKeySpecifier);
+    fields?: NftReceivedNotificationFieldPolicy;
   };
   NftSetConditionPreview?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?:
@@ -17389,6 +18193,10 @@ export type StrictTypedTypePolicies = {
       | (() => undefined | OrderFeeMetadataKeySpecifier);
     fields?: OrderFeeMetadataFieldPolicy;
   };
+  Outbid?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?: false | OutbidKeySpecifier | (() => undefined | OutbidKeySpecifier);
+    fields?: OutbidFieldPolicy;
+  };
   OutbidNotification?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?:
       | false
@@ -17500,6 +18308,13 @@ export type StrictTypedTypePolicies = {
       | (() => undefined | RenegotiationRequestedNotificationKeySpecifier);
     fields?: RenegotiationRequestedNotificationFieldPolicy;
   };
+  ReservedListing?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | ReservedListingKeySpecifier
+      | (() => undefined | ReservedListingKeySpecifier);
+    fields?: ReservedListingFieldPolicy;
+  };
   Royalty?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | RoyaltyKeySpecifier | (() => undefined | RoyaltyKeySpecifier);
     fields?: RoyaltyFieldPolicy;
@@ -17529,6 +18344,13 @@ export type StrictTypedTypePolicies = {
       | SaleListingUpdateKeySpecifier
       | (() => undefined | SaleListingUpdateKeySpecifier);
     fields?: SaleListingUpdateFieldPolicy;
+  };
+  SaleNotification?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | SaleNotificationKeySpecifier
+      | (() => undefined | SaleNotificationKeySpecifier);
+    fields?: SaleNotificationFieldPolicy;
   };
   SearchERC20Balance?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?:
@@ -17708,6 +18530,13 @@ export type StrictTypedTypePolicies = {
       | (() => undefined | TopUpRequestedNotificationKeySpecifier);
     fields?: TopUpRequestedNotificationFieldPolicy;
   };
+  TradeAwaitingAnswer?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | TradeAwaitingAnswerKeySpecifier
+      | (() => undefined | TradeAwaitingAnswerKeySpecifier);
+    fields?: TradeAwaitingAnswerFieldPolicy;
+  };
   Trait?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?: false | TraitKeySpecifier | (() => undefined | TraitKeySpecifier);
     fields?: TraitFieldPolicy;
@@ -17804,6 +18633,13 @@ export type StrictTypedTypePolicies = {
     keyFields?: false | TypedDataKeySpecifier | (() => undefined | TypedDataKeySpecifier);
     fields?: TypedDataFieldPolicy;
   };
+  UnderfundedOffer?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | UnderfundedOfferKeySpecifier
+      | (() => undefined | UnderfundedOfferKeySpecifier);
+    fields?: UnderfundedOfferFieldPolicy;
+  };
   UnderfundedOfferNotification?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?:
       | false
@@ -17833,6 +18669,27 @@ export type StrictTypedTypePolicies = {
       | WalletActivityDayKeySpecifier
       | (() => undefined | WalletActivityDayKeySpecifier);
     fields?: WalletActivityDayFieldPolicy;
+  };
+  WalletBuyOfferStanding?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | WalletBuyOfferStandingKeySpecifier
+      | (() => undefined | WalletBuyOfferStandingKeySpecifier);
+    fields?: WalletBuyOfferStandingFieldPolicy;
+  };
+  WalletBuyOffersCommitted?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | WalletBuyOffersCommittedKeySpecifier
+      | (() => undefined | WalletBuyOffersCommittedKeySpecifier);
+    fields?: WalletBuyOffersCommittedFieldPolicy;
+  };
+  WalletBuyOffersSummary?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | WalletBuyOffersSummaryKeySpecifier
+      | (() => undefined | WalletBuyOffersSummaryKeySpecifier);
+    fields?: WalletBuyOffersSummaryFieldPolicy;
   };
   WalletFollowEntry?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?:
@@ -17876,6 +18733,13 @@ export type StrictTypedTypePolicies = {
       | (() => undefined | WalletLendingSummaryKeySpecifier);
     fields?: WalletLendingSummaryFieldPolicy;
   };
+  WalletLinkRequest?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
+    keyFields?:
+      | false
+      | WalletLinkRequestKeySpecifier
+      | (() => undefined | WalletLinkRequestKeySpecifier);
+    fields?: WalletLinkRequestFieldPolicy;
+  };
   WalletTradingSummary?: Omit<TypePolicy, 'fields' | 'keyFields'> & {
     keyFields?:
       | false
@@ -17916,7 +18780,6 @@ export const MarketOrderInfoFragmentDoc = gql`
     __typename
     id
     price
-    steppedPrice
     currencyAddress
     maker
     isAsk
@@ -18475,12 +19338,13 @@ export const CollectionsDocument = gql`
             }
             floorPrice7d
             floorPrice30d
-            bestOffer {
-              ...CurrencyAmountInfo
+            highestBid {
+              netAmount
+              currency {
+                ...CurrencyInfo
+              }
             }
             totalVolume
-            totalVolume1y
-            totalVolume3m
             totalVolume1m
             totalVolume1w
             totalLoanVolume(currencyAddress: $currency)
@@ -18498,6 +19362,7 @@ export const CollectionsDocument = gql`
     }
   }
   ${CurrencyAmountInfoFragmentDoc}
+  ${CurrencyInfoFragmentDoc}
 `;
 export const CollectionByContractAddressDocument = gql`
   query collectionByContractAddress($contractAddress: Address!) {
@@ -18653,10 +19518,7 @@ export const ListLoansDocument = gql`
           startTime
           duration
           status
-          offer {
-            offerId
-            signerAddress
-          }
+          offerIds
           currency {
             symbol
             decimals
@@ -18781,16 +19643,12 @@ export const OwnedNftsDocument = gql`
                 }
               }
             }
-            topTraitFloorPrice {
-              ...CurrencyAmountInfo
-            }
           }
         }
       }
     }
   }
   ${CurrencyInfoFragmentDoc}
-  ${CurrencyAmountInfoFragmentDoc}
 `;
 export const ListOffersDocument = gql`
   query listOffers(

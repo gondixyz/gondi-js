@@ -519,6 +519,13 @@ export class MslV6 extends BaseContract<
     });
   }
 
+  /**
+   * Whether the loan is inside its end lockup, sized from the API's
+   * `durationFromRenegotiationOrStart` rather than the contract's start time.
+   * On v3/v3.1 this deliberately locks longer than the contract, whose start
+   * time lender refinances also reset, so lenders aren't refinanced out at the
+   * last moment; it matches the API's `isEndLockedUp`.
+   */
   async isEndLockedUp({
     loan,
   }: {

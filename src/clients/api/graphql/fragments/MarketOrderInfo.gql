@@ -2,7 +2,6 @@ fragment MarketOrderInfo on Order {
   __typename
   id
   price
-  steppedPrice
   currencyAddress
   maker
   isAsk

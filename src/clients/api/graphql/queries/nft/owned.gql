@@ -44,9 +44,6 @@ query ownedNfts(
               }
             }
           }
-          topTraitFloorPrice {
-            ...CurrencyAmountInfo
-          }
         }
       }
     }

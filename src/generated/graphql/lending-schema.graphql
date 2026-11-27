@@ -20,6 +20,11 @@ A live activity-feed update: the re-fetched event row plus the time it was emitt
 type ActivityUpdate {
   changedAt: DateTime!
   event: Event!
+
+  """
+  Whether the event left the feed rather than joined it: a public loan offer its lender cancelled or hid. Only streams opened with `offerCancellations` receive these.
+  """
+  removed: Boolean!
 }
 
 scalar Address
@@ -705,6 +710,29 @@ enum AuctionStatus {
   UPCOMING
 }
 
+"""
+A liquidation auction the viewer won that nobody has settled yet: settling it hands the viewer the NFT.
+"""
+type AuctionToSettle implements NeedsActionItem {
+  auction: Auction!
+
+  """
+  When the action lapses. Null for one that never does (an auction to settle, a defaulted loan to liquidate, a wallet link request), which `needsAction` lists after every dated item, the longest waiting first.
+  """
+  deadline: DateTime
+
+  """
+  What kind of item it is; dismissNeedsAction takes it.
+  """
+  kind: NeedsActionKind!
+
+  """
+  The id of what the item is about (its loan, listing, trade, auction, wallet link or loan offer), which dismissNeedsAction takes with kind.
+  """
+  subjectId: String!
+  winningBid: Bid!
+}
+
 type AuctionWonNotification implements Node & Notification {
   auction: Auction!
   auctionId: String!
@@ -752,6 +780,28 @@ type BestOffer {
   Net principal discounted by the horizon's cost, floored; in ETH base units when no currency was asked, else in the offer's.
   """
   score: BigInt!
+}
+
+"""
+The best collection offer on a collection your account holds rose. `netAmount` is what a seller receives from the new best offer and `previousNetAmount` the highest best offer of the day before it, both in `currency`.
+"""
+type BestOfferImprovedNotification implements Node & Notification {
+  """
+  The collection the offer was placed on.
+  """
+  collection: Collection!
+  createdOn: DateTime!
+
+  """
+  Never null; nullable as `WatchedNftNotification.currency` is, so one query can select both.
+  """
+  currency: Currency
+  id: String!
+  netAmount: BigInt!
+  notificationType: String!
+  previousNetAmount: BigInt!
+  readOn: DateTime
+  user: User!
 }
 
 """
@@ -902,6 +952,37 @@ enum BlockchainEnum {
   ROBINHOOD
 }
 
+"""
+A borrower's request to renegotiate or top up a loan the viewer lends, which the viewer has not answered with a renegotiation offer since it was made. Exactly one of renegotiationRequest and topUpRequest is set.
+"""
+type BorrowerRequest implements NeedsActionItem {
+  """
+  When the request expires.
+  """
+  deadline: DateTime!
+
+  """
+  What kind of item it is; dismissNeedsAction takes it.
+  """
+  kind: NeedsActionKind!
+  loan: MultiSourceLoan!
+
+  """
+  The terms the borrower asks for, on a renegotiation request.
+  """
+  renegotiationRequest: RenegotiationRequest
+
+  """
+  The id of what the item is about (its loan, listing, trade, auction, wallet link or loan offer), which dismissNeedsAction takes with kind.
+  """
+  subjectId: String!
+
+  """
+  The amount and rate the borrower asks for, on a top-up request.
+  """
+  topUpRequest: TopUpRequest
+}
+
 input BulkNFTOrdersInput {
   """
   The maker's Seaport counter, which every order is built with. Optional: GONDI looks it up when it is missing. A signed order whose counter is not the maker's current one is rejected.
@@ -928,7 +1009,7 @@ union BulkNFTOrdersResultSignatureRequest = BulkNFTOrdersResult | SignatureReque
 
 type BuyNowPayLaterOrder implements Event & Node & Order {
   """
-  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone.
+  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone, placed at least 5 minutes ago.
   """
   cancelsOffChain: Boolean!
   createdDate: DateTime!
@@ -983,6 +1064,11 @@ union BuyNowPayLaterOrderSignatureRequestExtraSeaportData =
   | BuyNowPayLaterOrder
   | ExtraSeaportData
   | SignatureRequest
+
+enum BuyOfferStanding {
+  OUTBID
+  TOP
+}
 
 type CancelAllOrdersCalldata {
   calldata: Hex!
@@ -1051,6 +1137,11 @@ type Collection implements Node {
   imageId: String
 
   """
+  Whether the collection is one of the liquidity program's.
+  """
+  inLiquidityProgram: Boolean!
+
+  """
   Whether the authenticated user follows this collection.
   """
   isFollowed: Boolean!
@@ -1112,10 +1203,23 @@ The orders listCollectionFollows takes.
 """
 enum CollectionFollowSortField {
   """
+  The floor price in ETH terms; collections without one go last.
+  """
+  FLOOR_PRICE
+
+  """
   When the wallet followed the collection.
   """
   FOLLOWED_AT
+
+  """
+  The floor price in ETH terms times the supply; shared contracts and collections without either go last.
+  """
+  MARKET_CAP
   NAME
+  TOTAL_VOLUME_1D
+  TOTAL_VOLUME_7D
+  TOTAL_VOLUME_30D
 }
 
 input CollectionFollowSortInput {
@@ -1256,7 +1360,7 @@ type CollectionOfferStatistics {
 
 type CollectionOrder implements Event & Node & Order {
   """
-  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone.
+  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone, placed at least 5 minutes ago.
   """
   cancelsOffChain: Boolean!
   collection: Collection!
@@ -1509,20 +1613,20 @@ type CollectionValuation {
 }
 
 """
-A collection the recent buyers of another collection also bought.
+Keeps the collections whose traded volume over a period, in ETH terms, falls inside an interval. A collection without a sample counts as 0.
 """
-type CollectorsAlsoBought {
-  collection: Collection!
+input CollectionVolumeFilterInput {
+  interval: Interval!
+  period: CollectionVolumePeriod!
+}
 
-  """
-  A few of those buyers' purchases in this collection, most recent first, one per buyer.
-  """
-  examplePurchases: [Sale!]!
-
-  """
-  Distinct recent buyers of the other collection who also bought this one in the same window.
-  """
-  sharedBuyers: Int!
+"""
+The periods a collection's traded volume is sampled over.
+"""
+enum CollectionVolumePeriod {
+  ONE_DAY
+  SEVEN_DAYS
+  THIRTY_DAYS
 }
 
 type ContractData implements Node {
@@ -1572,6 +1676,31 @@ type CurrencyConnection {
 type CurrencyEdge {
   cursor: String!
   node: Currency!
+}
+
+"""
+A message the GONDI team wrote for you: a title, a body and an optional link to open.
+"""
+type CustomMessageNotification implements Node & Notification {
+  """
+  The message, as plain text.
+  """
+  body: String!
+  createdOn: DateTime!
+  id: String!
+
+  """
+  The https URL the notification opens, if any.
+  """
+  link: String
+  notificationType: String!
+  readOn: DateTime
+
+  """
+  One line that says what it is about.
+  """
+  title: String!
+  user: User!
 }
 
 """
@@ -1715,6 +1844,32 @@ input DealSortInput {
   order: Ordering!
 }
 
+"""
+A loan the viewer lends that defaulted and nobody has liquidated yet. Liquidating it either hands the NFT to its only lender (Claim) or starts an auction among its lenders.
+"""
+type DefaultedLoan implements NeedsActionItem {
+  """
+  Whether liquidating hands the viewer the NFT: the loan has one tranche, the viewer's. With more, even all of them the viewer's, liquidating starts an auction.
+  """
+  canClaim: Boolean!
+
+  """
+  When the action lapses. Null for one that never does (an auction to settle, a defaulted loan to liquidate, a wallet link request), which `needsAction` lists after every dated item, the longest waiting first.
+  """
+  deadline: DateTime
+
+  """
+  What kind of item it is; dismissNeedsAction takes it.
+  """
+  kind: NeedsActionKind!
+  loan: MultiSourceLoan!
+
+  """
+  The id of what the item is about (its loan, listing, trade, auction, wallet link or loan offer), which dismissNeedsAction takes with kind.
+  """
+  subjectId: String!
+}
+
 type Delegation implements Node {
   contractAddress: String!
   delegateTo: Address!
@@ -1737,6 +1892,27 @@ type DelegationConnection {
 type DelegationEdge {
   cursor: String!
   node: Delegation!
+}
+
+"""
+A loan the viewer borrowed, due within 48 hours: repaid by then, or it defaults.
+"""
+type DueLoan implements NeedsActionItem {
+  """
+  When the loan is due.
+  """
+  deadline: DateTime!
+
+  """
+  What kind of item it is; dismissNeedsAction takes it.
+  """
+  kind: NeedsActionKind!
+  loan: MultiSourceLoan!
+
+  """
+  The id of what the item is about (its loan, listing, trade, auction, wallet link or loan offer), which dismissNeedsAction takes with kind.
+  """
+  subjectId: String!
 }
 
 input EditUserInput {
@@ -1884,6 +2060,7 @@ enum EventType {
   LOAN_TRAIT_OFFER
   LOAN_TRANCHE_REFINANCED
   LOAN_TRANCHE_REFINANCED_TRANSFER
+  MINT
   OFF_CHAIN_SALE
   SALE
   SALE_LISTING
@@ -2044,12 +2221,13 @@ enum GalleryPalette {
 }
 
 """
-What the galleries directory orders by: when a gallery was published, when it was last edited, how many works it shows, or its name.
+What the galleries directory orders by: when a gallery was published, when it was last edited, how many works it shows, its name, or how many visits its page had over the last 30 days, counted as `mostViewedGalleries` counts them.
 """
 enum GallerySortField {
   NAME
   PUBLISHED_AT
   UPDATED_AT
+  VISITS
   WORK_COUNT
 }
 
@@ -2276,6 +2454,31 @@ type HolderConnection {
 type HolderEdge {
   cursor: String!
   node: Holder!
+}
+
+"""
+A gallery curated on another site, as a new gallery here can take it: the works GONDI indexes, in the source's order. Nothing is saved.
+"""
+type ImportableGallery {
+  description: String!
+  name: String!
+
+  """
+  How many works the source lists, before the ones GONDI does not index are left out.
+  """
+  sourceWorkCount: Int!
+  works: [ImportableGalleryWork!]!
+}
+
+"""
+One work of a gallery read from another site.
+"""
+type ImportableGalleryWork {
+  """
+  The title of a chapter that opens at this work, from the source's sections; empty when the work continues the chapter before it.
+  """
+  chapter: String!
+  nft: NFT!
 }
 
 """
@@ -2561,6 +2764,44 @@ type LinkedWallets implements Node {
   pending: Boolean!
   shouldAccept: Boolean!
   walletAddress: String!
+}
+
+"""
+A liquidity program collection with its recent sales volume.
+"""
+type LiquidityProgramCollection {
+  collection: Collection!
+
+  """
+  Sales on GONDI and OpenSea over the last 30 days, wrapped versions included, in ETH; a Seaport sale of an order GONDI does not know counts as OpenSea. Null when a sale's currency has no ETH rate.
+  """
+  volume1m: Float
+}
+
+"""
+The liquidity program paid one of your wallets its reward: an ETH transfer out of the GONDI fees wallet.
+"""
+type LiquidityRewardNotification implements Node & Notification {
+  createdOn: DateTime!
+  id: String!
+  notificationType: String!
+  readOn: DateTime
+
+  """
+  The ETH received, in wei.
+  """
+  rewardAmount: BigInt!
+
+  """
+  The transaction that paid it.
+  """
+  txHash: Hash!
+  user: User!
+
+  """
+  The wallet paid.
+  """
+  walletAddress: Address!
 }
 
 type Listing implements Node {
@@ -3275,6 +3516,20 @@ enum MarketplaceEnum {
 }
 
 """
+A token minted to `receiver`: an ERC-721 token, or one token of an ERC-1155 mint with the `amount` minted.
+"""
+type Mint implements Activity & Event & Node {
+  amount: BigInt!
+  id: String!
+  nft: NFT!
+  receiver: Address!
+  receiverName: String
+  receiverProfilePictureUrl: String
+  timestamp: DateTime!
+  txHash: Hash!
+}
+
+"""
 This is the definition of a loan. In sources you can find the tranches of the loan.Take into account that the loan fields can change if renegotiation or refinance happens.You can use listLoanEvents to get the history of the loan.
 """
 type MultiSourceLoan implements Loan & Node {
@@ -3360,7 +3615,7 @@ type MultiSourceLoanHistory implements Node {
 
 type MultipleTraitOrder implements Event & Node & Order {
   """
-  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone.
+  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone, placed at least 5 minutes ago.
   """
   cancelsOffChain: Boolean!
   collection: Collection!
@@ -3493,6 +3748,15 @@ type Mutation {
   Removes the caller's proven X account from their profile.
   """
   disconnectTwitter: User!
+
+  """
+  Hide a needsAction item from the viewer's wallets for good, on every device: the item's kind and subjectId name it. It hides the card and nothing else, so a dismissed wallet link request stays pending. Dismissing it again does nothing. Without walletAddresses, for the signed-in wallet.
+  """
+  dismissNeedsAction(
+    kind: NeedsActionKind!
+    subjectId: String!
+    walletAddresses: [Address!] = null
+  ): Void
   editUser(user: EditUserInput!): User!
 
   """
@@ -3834,6 +4098,11 @@ type NFT implements Node {
   Units of an ERC1155 NFT summed over the holder balances the indexer tracks. The tracked holder set can be partial, so this may undercount. Null when no holder balance is tracked, including for other token standards.
   """
   erc1155Supply: BigInt
+
+  """
+  The sum of erc1155Balance over addresses: the copies they hold together, 0 when none of them holds the token.
+  """
+  erc1155TotalBalance(addresses: [Address!]!): BigInt!
   id: String!
   image: Asset
   isExcluded: Boolean
@@ -3918,6 +4187,11 @@ type NFTConnection {
   edges: [NFTEdge!]!
   pageInfo: PageInfo!
   totalCount: Int!
+
+  """
+  Units the ownersFilter.owners wallets hold across the filtered NFTs: a vault counts the units it wraps, an ERC-1155 the copies they hold outside vaults, another NFT inside one of their vaults none, and any other NFT one. Null without ownersFilter.owners.
+  """
+  totalUnits: BigInt
 }
 
 type NFTEdge {
@@ -3959,6 +4233,42 @@ type NFTPriceSample implements Node {
   value: BigInt!
 }
 
+"""
+Something the viewer has to act on, pinned in the notification panel until it is done or lapses. Read from live state, not from notifications, so marking notifications read leaves it in place.
+"""
+interface NeedsActionItem {
+  """
+  When the action lapses. Null for one that never does (an auction to settle, a defaulted loan to liquidate, a wallet link request), which `needsAction` lists after every dated item, the longest waiting first.
+  """
+  deadline: DateTime
+
+  """
+  What kind of item it is; dismissNeedsAction takes it.
+  """
+  kind: NeedsActionKind!
+
+  """
+  The id of what the item is about (its loan, listing, trade, auction, wallet link or loan offer), which dismissNeedsAction takes with kind.
+  """
+  subjectId: String!
+}
+
+"""
+What a needsAction item is about: one per item type, except that a BorrowerRequest is a RENEGOTIATION_REQUEST or a TOP_UP_REQUEST after the request it carries. With the item's subjectId, what dismissNeedsAction takes.
+"""
+enum NeedsActionKind {
+  AUCTION_TO_SETTLE
+  DEFAULTED_LOAN
+  DUE_LOAN
+  OUTBID
+  RENEGOTIATION_REQUEST
+  RESERVED_LISTING
+  TOP_UP_REQUEST
+  TRADE_AWAITING_ANSWER
+  UNDERFUNDED_OFFER
+  WALLET_LINK_REQUEST
+}
+
 type NewCollectionUnlistedOfferNotification implements Node & Notification {
   createdOn: DateTime!
   id: String!
@@ -3998,6 +4308,36 @@ type NewRenegotiationOfferNotification implements Node & Notification {
   user: User!
 }
 
+"""
+The orders listNftFollows takes.
+"""
+enum NftFollowSortField {
+  """
+  When the account followed the NFT.
+  """
+  FOLLOWED_AT
+
+  """
+  The newest sale's price in ETH terms; NFTs never sold go last.
+  """
+  LAST_SALE_PRICE
+
+  """
+  The best public ask in ETH terms, in any currency; NFTs without one go last.
+  """
+  PRICE
+
+  """
+  The valuation snapshot; NFTs without one go last.
+  """
+  VALUATION
+}
+
+input NftFollowSortInput {
+  field: NftFollowSortField!
+  order: Ordering!
+}
+
 input NftLoansFilterInput {
   borrowers: [Address!] = null
   contracts: [Address!] = null
@@ -4024,6 +4364,29 @@ input NftOwnersFilterInput {
   withInStash: Boolean = null
   withInVault: Boolean = null
   withInWallet: Boolean = null
+}
+
+"""
+An NFT that reached one of your wallets by a transfer from a wallet outside your account. Sales, mints, loan escrow moves and unwraps are not notified.
+"""
+type NftReceivedNotification implements Node & Notification {
+  createdOn: DateTime!
+  id: String!
+  nft: NFT!
+  notificationType: String!
+  readOn: DateTime
+
+  """
+  The wallet the NFT came from; never null, typed as WatchedNftNotification.sender is so one query can select both.
+  """
+  sender: Address
+  senderName: String
+
+  """
+  When the transfer's block was mined.
+  """
+  transferredAt: DateTime!
+  user: User!
 }
 
 enum NftSearchField {
@@ -4250,6 +4613,7 @@ Where a notification reaches its user.
 enum NotificationChannel {
   EMAIL
   IN_APP
+  PUSH
 }
 
 type NotificationConnection {
@@ -4270,15 +4634,18 @@ enum NotificationEvent {
   AUCTION_ENDED
   AUCTION_SETTLED
   AUCTION_STARTED
+  BEST_OFFER_IMPROVED
   BID_NEAR_LISTING
   BUY_OFFER
   COLLECTION_OFFER_FILLED
+  LIQUIDITY_REWARD
   LOAN_DEFAULTED
   LOAN_EXTENDED
   LOAN_OFFER
   LOAN_REFINANCED
   LOAN_REPAID
   NEW_FOLLOWER
+  NFT_RECEIVED
   OFFER_ACCEPTED
   OFFER_FUNDING
   OUTBID
@@ -4311,25 +4678,41 @@ input NotificationPreferenceInput {
 }
 
 enum NotificationType {
+  ACTIVE_OFFER_NOTIFICATION
   ASK_CANCELLED_NOTIFICATION
   ASK_CREATED_NOTIFICATION
+  AUCTION_BID_CONFIRMATION_NOTIFICATION
+  AUCTION_ENDED_NOTIFICATION
+  AUCTION_STARTED_NOTIFICATION
   AUCTION_WON_NOTIFICATION
+  BEST_OFFER_IMPROVED_NOTIFICATION
   BID_NEAR_LISTING_NOTIFICATION
+  CUSTOM_MESSAGE_NOTIFICATION
   DEAL_EXPIRATION_REMINDER_NOTIFICATION
   DEAL_NOTIFICATION
   LINK_WALLET_ACCEPTED_NOTIFICATION
   LINK_WALLET_REQUESTED_NOTIFICATION
+  LIQUIDITY_REWARD_NOTIFICATION
+  LOAN_AUCTIONED_NOTIFICATION
   LOAN_DEFAULTED_NOTIFICATION
   LOAN_DEFAULT_REMINDER_NOTIFICATION
+  LOAN_EXTENDED_NOTIFICATION
   LOAN_INITIATED_NOTIFICATION
+  LOAN_REFINANCED_NOTIFICATION
   LOAN_REPAID_NOTIFICATION
   LOST_SOURCE_NOTIFICATION
+  NEW_COLLECTION_UNLISTED_OFFER_NOTIFICATION
   NEW_FOLLOWER_NOTIFICATION
   NEW_OFFER_NOTIFICATION
   NEW_RENEGOTIATION_OFFER_NOTIFICATION
+  NFT_RECEIVED_NOTIFICATION
   OFFER_ACCEPTED_NOTIFICATION
   OUTBID_NOTIFICATION
+  RENEGOTIATION_REQUESTED_NOTIFICATION
+  SALE_NOTIFICATION
   SET_NFT_NOTIFICATION
+  TOP_UP_REQUESTED_NOTIFICATION
+  UNDERFUNDED_OFFER_NOTIFICATION
   WATCHED_NFT_NOTIFICATION
 }
 
@@ -4496,13 +4879,33 @@ enum OpenSeaListingFailureReason {
 
 type OpenSeaListingResult {
   contractAddress: Address!
+
+  """
+  When the listing was published, or signed again. Null, like settledDate, for one relistOpenSeaListings did not sign again.
+  """
+  createdDate: DateTime
   error: String
 
   """
   Set for a failure the client can act on; error is the text to show for any failure.
   """
   failureReason: OpenSeaListingFailureReason
+
+  """
+  The listed item; null when GONDI has no such NFT.
+  """
+  nft: NFT
   orderHash: Hash
+
+  """
+  The GONDI order the listing twins. Null, like nft, createdDate and settledDate, for a listing the publish did not store.
+  """
+  orderId: Int64
+
+  """
+  When the listing was posted or failed; null while PENDING.
+  """
+  settledDate: DateTime
 
   """
   PENDING while the listing waits to be posted to OpenSea; listOpenSeaListingResults then says what became of it.
@@ -4546,7 +4949,7 @@ enum OperatorKind {
 
 interface Order implements Event & Node {
   """
-  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone.
+  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone, placed at least 5 minutes ago.
   """
   cancelsOffChain: Boolean!
   createdDate: DateTime!
@@ -4681,14 +5084,37 @@ input OrderTermsFilter {
   netAmount: BigIntInterval = null
 }
 
-enum OrderType {
-  ASK
-  BID
-}
-
 enum Ordering {
   ASC
   DESC
+}
+
+"""
+A live liquidation auction the viewer bid on, where another wallet now bids highest.
+"""
+type Outbid implements NeedsActionItem {
+  auction: Auction!
+
+  """
+  The viewer's highest bid.
+  """
+  bid: Bid!
+
+  """
+  When the auction ends.
+  """
+  deadline: DateTime!
+  highestBid: Bid!
+
+  """
+  What kind of item it is; dismissNeedsAction takes it.
+  """
+  kind: NeedsActionKind!
+
+  """
+  The id of what the item is about (its loan, listing, trade, auction, wallet link or loan offer), which dismissNeedsAction takes with kind.
+  """
+  subjectId: String!
 }
 
 type OutbidNotification implements Node & Notification {
@@ -4866,7 +5292,7 @@ A browser's push subscription, as `PushSubscription.toJSON()` gives it, with the
 """
 input PushSubscriptionInput {
   """
-  The browser's authentication secret, `keys.auth`, in base64url.
+  The browser's authentication secret, `keys.auth`, in base64url: 16 bytes. Anything else is refused.
   """
   auth: String!
 
@@ -4876,7 +5302,7 @@ input PushSubscriptionInput {
   endpoint: String!
 
   """
-  The browser's public key, `keys.p256dh`, in base64url.
+  The browser's public key, `keys.p256dh`, in base64url: an uncompressed P-256 point of 65 bytes. Anything else is refused.
   """
   p256dh: String!
 }
@@ -4886,22 +5312,10 @@ Query for the lending module
 """
 type Query {
   collectionMarketDepth(collectionIds: [Int!]!): CollectionMarketDepth!
-
-  """
-  Collections the collection's recent buyers also bought, most shared buyers first: the most recent receivers of its sales, contracts left out, and the other collections they bought in the same window, from each buyer's most recent purchases. Its own wrap family and hidden collections are left out, a collection needs a minimum of shared buyers, and the ranking is cached for a while.
-  """
-  collectorsAlsoBought(
-    collectionId: Int!
-
-    """
-    Maximum collections; larger values are clamped.
-    """
-    first: Int! = 8
-  ): [CollectorsAlsoBought!]!
   dealReadiness(dealId: Int64!): DealReadinessResult!
 
   """
-  Featured listings in curated order: pinned NFTs, or the cheapest qualifying listing per approved collection when automatic selection is enabled. Each carries the open offer that lends the most on it among those of at least 30 days at an effective APR of at most 25%. A pick shows only while it has a public ask in ETH or WETH on a supported marketplace and such an offer. `first` is capped at 6.
+  Featured listings in curated order: the cheapest qualifying listing per approved collection. Each carries the open offer that lends the most on it among those of at least 30 days at an effective APR of at most 25%. A pick shows only while it has a public ask in ETH or WETH on a supported marketplace and such an offer. `first` is capped at 6.
   """
   featuredListings(
     """
@@ -4992,6 +5406,11 @@ type Query {
   Current lending principal and lender interest snapshot.
   """
   getLendingMarketPulse: LendingMarketPulse!
+
+  """
+  The liquidity program's collections by 30-day GONDI and OpenSea sales volume, highest first.
+  """
+  getLiquidityProgramCollections: [LiquidityProgramCollection!]!
   getListingById(listingId: Int!): Listing
   getLoanActivitiesStatisticsByMonth(
     activities: [LoanActivityType!]!
@@ -5085,12 +5504,6 @@ type Query {
   ): SwapQuote!
 
   """
-  Deprecated.
-  """
-  getSwapRate(fromCurrency: Address!, toCurrency: Address!): Float!
-    @deprecated(reason: "Use get_swap_quote instead.")
-
-  """
   Rank lenders across all currencies or a selected currency group.
   """
   getTopLenders(
@@ -5107,6 +5520,11 @@ type Query {
   getUserPoints: Int!
 
   """
+  Where the wallets' live GONDI buy offers stand: how many there are, how many lead their item, trait or collection and how many are outbid, how many expire within 24 hours, and their total per currency, with one row per offer to filter a listing by. Hidden offers are left out, and stealth offers unless the viewer made them. At most 10 wallets and 500 offers, soonest expiration first; truncated says when offers were left out.
+  """
+  getWalletBuyOffersSummary(addresses: [Address!]!): WalletBuyOffersSummary!
+
+  """
   Follow counts and viewer follow state for a wallet.
   """
   getWalletFollowStats(walletAddress: Address!): WalletFollowStats!
@@ -5119,6 +5537,11 @@ type Query {
   getWalletTradingSummary(addresses: [Address!]!, fromTimestamp: Int = null): WalletTradingSummary!
   globalSearch(searchTerm: String!): [GlobalSearchResult!]!
   globalSearchV2(searchTerm: String!): GlobalSearchV2Results!
+
+  """
+  The galleries behind a link to a gallery.so profile or gallery, each ready to open as a new gallery: its name, description and the works GONDI indexes, in the source's order, with the source's sections as chapters. Nothing is saved. At most 20 galleries of 200 works.
+  """
+  importableGalleries(url: String!): [ImportableGallery!]!
   isUsernameAvailable(username: String!): Boolean!
 
   """
@@ -5300,9 +5723,24 @@ type Query {
     first: Int! = 20
 
     """
-    Orders the followed collections by name or by when they were followed. By collection id when omitted.
+    Keeps the collections whose floor price, in ETH terms, is inside the interval.
+    """
+    floorPrice: Interval = null
+
+    """
+    Keeps the collections whose market cap, the floor price in ETH terms times the supply, is inside the interval. Shared contracts have none and never match.
+    """
+    marketCap: Interval = null
+
+    """
+    Orders the followed collections. By collection id when omitted.
     """
     sortBy: [CollectionFollowSortInput!] = null
+
+    """
+    Keeps the collections whose traded volume over the given period, in ETH terms, is inside the interval.
+    """
+    volume: CollectionVolumeFilterInput = null
   ): CollectionConnection!
   listCollectionHolders(
     """
@@ -5375,9 +5813,19 @@ type Query {
     Only return collections holding an NFT of one of these item types; with `artists`, only the artists' own NFTs count.
     """
     itemTypes: [ItemType!] = null
+
+    """
+    Keeps the collections whose market cap, the floor price in ETH terms times the supply, is inside the interval. Shared contracts have none and never match.
+    """
+    marketCap: Interval = null
     searchTerm: String = null
     sortBy: [CollectionSortInput!] = null
     standards: [TokenStandardType!] = null
+
+    """
+    Keeps the collections whose traded volume over the given period, in ETH terms, is inside the interval.
+    """
+    volume: CollectionVolumeFilterInput = null
     withAsks: WithAsksInput = null
     withListings: Boolean = false
     withLoans: Boolean = false
@@ -5460,7 +5908,7 @@ type Query {
   ): EditionNFTConnection!
 
   """
-  List all activities. Includes loan activities, loan offers, loan renegotiations, trade orders, nft transfers. priceUsd bounds are USD amounts converted with current rates; events without a priced amount (transfers, loan listings, executed trades) are excluded while a price filter is set.
+  List all activities. Includes loan activities, loan offers, loan renegotiations, trade orders, nft transfers, and ERC-721 mints whose NFT is indexed when eventTypes asks for MINT, which leaving eventTypes out does not; activityUpdates does not stream mints. priceUsd bounds are USD amounts converted with current rates; events without a priced amount (transfers, mints, loan listings, executed trades) are excluded while a price filter is set.
   """
   listEvents(
     after: String
@@ -5474,20 +5922,10 @@ type Query {
     currencyAddresses: [Address!] = null
     eventTypes: [EventType!] = null
     first: Int! = 10
-
-    """
-    Only what the signed-in account follows, from any of its wallets: the events of the followed wallets (as `users` matches them), every event in the followed collections, and every event on the followed artists' work (as `artists` matches it). An event matching several appears once. Each kind reads its 100 most recent follows. The other filters still apply; `users`, `collections` and `artists` keep only the followed wallets, collections and artists they list too. Without a signed-in account the list is empty.
-    """
-    following: Boolean = null
     fromTimestamp: Int = null
     nfts: [Int!] = null
     priceUsd: Interval = null
     toTimestamp: Int = null
-
-    """
-    Only Top Events: sales and loan events (initiated, refinanced, renegotiated, topped up, repaid, defaulted) worth at least the configured USD minimum at current rates, plus, in a collection whose wrap family has a current floor at or above the configured ETH minimum, the family's first event of the requested types in each fixed window of the configured length, counted from the Unix epoch. Any other event type raises, listings included.
-    """
-    topEvents: Boolean = null
     traits: [Int!] = null
     users: [Address!] = null
 
@@ -5625,7 +6063,6 @@ type Query {
     terms: TermsFilter = null
     traits: [Int!] = null
   ): MultiSourceLoanConnection!
-  listNames(walletAddresses: [Address!]!): [String]! @deprecated(reason: "Use listProfiles.")
   listNftDelegations(
     after: String
     contractAddress: Address = null
@@ -5636,7 +6073,20 @@ type Query {
   """
   NFTs any wallet of your account follows, most recently followed first. An NFT followed from two of your wallets appears once.
   """
-  listNftFollows(after: String, first: Int! = 20): NFTConnection!
+  listNftFollows(
+    after: String
+    first: Int! = 20
+
+    """
+    If true, keeps the NFTs with an active public ask.
+    """
+    listed: Boolean = null
+
+    """
+    Orders the followed NFTs. Most recently followed first when omitted.
+    """
+    sortBy: [NftFollowSortInput!] = null
+  ): NFTConnection!
   listNftOffersAndRenegotiations(
     after: String
     blockchains: [BlockchainEnum!] = null
@@ -5717,7 +6167,7 @@ type Query {
     nftIds: [Int!] = null
 
     """
-    Filter by the owners of the NFTs. You can provide owners and exclude_owners to control the owners of the NFTs. with_in_wallet will include NFTS of the owners. with_in_loan will include NFTS on loan to the owners (as borrowers). with_in_stash will include NFTS in stashes of the owners. with_in_vault will include NFTS in vaults of the owners.
+    Filter by the owners of the NFTs. You can provide owners and exclude_owners to control the owners of the NFTs. with_in_wallet will include NFTS of the owners. with_in_loan will include NFTS on loan to the owners (as borrowers). with_in_stash will include NFTS in stashes of the owners. with_in_vault will include NFTS in vaults of the owners, except ERC1155 copies, which belong to the vault; the owners' own ERC1155 copies come from their balances.
     """
     ownersFilter: NftOwnersFilterInput = null
 
@@ -5770,21 +6220,6 @@ type Query {
     traitRanges: [TraitRangeOptionsInput!] = null
     traits: [TraitKeyValueOptionsInput!] = null
   ): NFTConnection! @deprecated(reason: "Use list_nfts instead.")
-
-  """
-  Deprecated field: use list_nfts instead.
-  """
-  listNftsFromUser(
-    after: String
-    collectionAddresses: [Address!] = null
-    first: Int = null
-    includeInStash: Boolean! = false
-    searchTerm: String = null
-    sortBy: [NftSortInput!] = null
-    standards: [TokenStandardType!] = null
-    withLoans: Boolean = false
-    withNoWraps: Boolean = false
-  ): NFTConnection! @deprecated(reason: "Use list_nfts instead.")
   listNotifications(
     after: String
     first: Int = null
@@ -5825,29 +6260,6 @@ type Query {
   """
   listOpenSeaListingResults(orderIds: [Int64!]!): [OpenSeaListingResult!]!
   listOpenSeaListingTerms(collectionIds: [Int!]!): [OpenSeaListingTerms!]!
-
-  """
-  This field is deprecated. Use list_orders_v2 instead. This field will be removed in the next major version.
-  """
-  listOrders(
-    after: String
-    collectionId: Int = null
-    currencyAddresses: [Address!] = null
-    first: Int = null
-    hidden: Boolean = null
-    ids: [Int!] = null
-    maker: [Address!] = null
-    marketplaceIds: [String!] = null
-    marketplaces: [MarketPlaceType!] = null
-    nftId: Int = null
-    onlyInvalid: Boolean = null
-    orderType: OrderType = null
-    sortBy: [OrderSortInput!] = null
-    statuses: [OrderStatusType!] = null
-    stealth: Boolean = null
-    taker: Address = null
-    terms: OrderTermsFilter = null
-  ): OrderConnection!
   listOrdersV2(
     after: String
     collectionIds: [Int!] = null
@@ -5873,11 +6285,15 @@ type Query {
     onlyInvalid: Boolean = null
 
     """
-    Used together with collectionIds, or traitIds under matchMode ANY, to return orders of the given types scoped to them. Ignored otherwise.
+    Used together with collectionIds, or traitIds under matchMode ANY, to return orders of the given types scoped to them, or with maker alone to return that maker's orders of the given types. Ignored otherwise.
     """
     orderTypes: [CollectionOrderType!] = null
     side: OrderSide = null
     sortBy: [OrderSortInput!] = null
+
+    """
+    Orders of any status when omitted, except orders filtered by collectionIds without onlyInvalid, which default to [ACTIVE].
+    """
     statuses: [OrderStatusType!] = null
     stealth: Boolean = null
     taker: Address = null
@@ -5895,6 +6311,15 @@ type Query {
     first: Int! = 10
   ): [GlobalSearchV2ResultNFTGlobalSearchV2ResultCollectionGlobalSearchV2ResultArtistGlobalSearchV2ResultAccount!]!
   listProfiles(walletAddresses: [Address!]!): [AddressProfile!]!
+
+  """
+  What became of the OpenSea listings the caller published last with listOnOpenSea, newest first: those in one of statuses (any, when unset or empty) and published at or after since. A listing is kept for 7 days after it is posted or fails. first defaults to 20 and is capped at 50.
+  """
+  listRecentOpenSeaListingResults(
+    first: Int! = 20
+    since: DateTime = null
+    statuses: [OpenSeaListingStatus!] = null
+  ): [OpenSeaListingResult!]!
   listRenegotiations(
     after: String
     blockchains: [BlockchainEnum!] = null
@@ -5974,11 +6399,6 @@ type Query {
   listWalletFollowing(first: Int! = 100, walletAddress: Address!): [WalletFollowEntry!]!
 
   """
-  Collections with at least one loan deal, by name.
-  """
-  loanDealCollections(grouping: LoanDealGrouping! = COLLECTION): [Collection!]!
-
-  """
   Listings a GONDI loan can buy, each with the open offer that lends the most on it, ranked by the largest loan or the highest loan-to-value. Highest LTV includes at most three per collection or wrap family, depending on grouping; Largest Loan has no collection cap. `first` is capped at 50.
   """
   loanDeals(
@@ -6009,6 +6429,11 @@ type Query {
   The published galleries whose pages were visited most over the last 30 days, most visited first; a visitor counts once a day, and a gallery's own account not at all. At most 20.
   """
   mostViewedGalleries(first: Int = null): [Gallery!]!
+
+  """
+  What the viewer's wallets have to act on, soonest deadline first: the notification panel's pinned cards. Read from live state, so an item leaves once it is done or lapses, not when notifications are marked read. Without walletAddresses, the signed-in wallet's.
+  """
+  needsAction(first: Int = null, walletAddresses: [Address!] = null): [NeedsActionItem!]!
 
   """
   The published galleries that show an NFT, most recently edited first; at most 50, since anyone's gallery can list any work.
@@ -6198,6 +6623,27 @@ type RenegotiationRequestedNotification implements Node & Notification {
   user: User!
 }
 
+"""
+A live listing reserved for the viewer to buy.
+"""
+type ReservedListing implements NeedsActionItem {
+  """
+  When the listing expires.
+  """
+  deadline: DateTime!
+
+  """
+  What kind of item it is; dismissNeedsAction takes it.
+  """
+  kind: NeedsActionKind!
+  order: Order!
+
+  """
+  The id of what the item is about (its loan, listing, trade, auction, wallet link or loan offer), which dismissNeedsAction takes with kind.
+  """
+  subjectId: String!
+}
+
 type Royalty implements Node {
   beneficiary: Address!
   id: String!
@@ -6276,6 +6722,34 @@ type SaleListingUpdate {
   nftId: Int!
 }
 
+"""
+Your order filled: as SELLER your listing sold, as BUYER your offer was accepted. Only the side whose order filled is notified, never the taker.
+"""
+type SaleNotification implements Node & Notification {
+  createdOn: DateTime!
+  id: String!
+
+  """
+  What a sell-and-repay listing repaid of its loan out of the price, in the sale's currency. Null for any other sale.
+  """
+  loanRepaid: BigInt
+
+  """
+  What reached the seller's wallet from a GONDI listing: the price less royalties, fees and any loan it repaid, in the sale's currency. Null for a buyer and for a listing on another marketplace.
+  """
+  netProceeds: BigInt
+  notificationType: String!
+  readOn: DateTime
+  role: SaleNotificationRole!
+  sale: Sale!
+  user: User!
+}
+
+enum SaleNotificationRole {
+  BUYER
+  SELLER
+}
+
 enum SalesSortField {
   PRICE
   PRICE_USD
@@ -6294,7 +6768,7 @@ type SearchERC20Balance {
 
 type SellAndRepayOrder implements Event & Node & Order {
   """
-  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone.
+  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone, placed at least 5 minutes ago.
   """
   cancelsOffChain: Boolean!
   createdDate: DateTime!
@@ -6380,7 +6854,7 @@ type SetBidCondition {
 
 type SetBidOrder implements Event & Node & Order {
   """
-  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone.
+  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone, placed at least 5 minutes ago.
   """
   cancelsOffChain: Boolean!
   collectionId: Int!
@@ -6609,7 +7083,7 @@ input SingleNFTOfferInput {
 
 type SingleNFTOrder implements Event & Node & Order {
   """
-  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone.
+  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone, placed at least 5 minutes ago.
   """
   cancelsOffChain: Boolean!
   createdDate: DateTime!
@@ -6850,7 +7324,7 @@ type SourcesStatistics {
   expectedInterestLeft: BigInt!
 
   """
-  Yearly rate `earnedInterest` grows at: principal times APR, summed over the sources of open (`LOAN_INITIATED`) loans, including loans past expiry, whose interest keeps accruing; loans in any other status add nothing. Raw units of the currency.
+  Yearly rate `earnedInterest` grows at: principal times APR, summed over the sources of open (`LOAN_INITIATED`) loans not yet past expiry; a loan past expiry stops accruing, and loans in any other status add nothing. Raw units of the currency.
   """
   interestAccrualPerYear: BigInt!
   netEarnedInterest: BigInt!
@@ -6883,7 +7357,7 @@ type StealthMaskedOrder implements Event & Node & Order {
   artist: Artist
 
   """
-  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone.
+  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone, placed at least 5 minutes ago.
   """
   cancelsOffChain: Boolean!
   collection: Collection
@@ -6943,18 +7417,21 @@ type StealthRevealedGroup {
 
 type Subscription {
   """
-  Stream new activity-feed events. Filters are optional and additive; unset or empty values mean the unfiltered stream. Most argument names match `listEvents` so clients can pass their existing query variables (`traits` and `currencyAddresses` are not supported yet). `artists`, `blockchains` and `priceUsd` keep what `listEvents` would list with them; the `priceUsd` bound is converted at the USDC rate of when the stream starts. `marketplaces` follows the marketplace shown in the activity feed: sales and orders use their stored marketplace, transfers match none, and GONDI lending and trade events match `NATIVE`. The `nfts` filter also matches collection-scoped events (collection loan offers and collection/trait bids) through the NFTs' collections; trait bids therefore match at collection granularity, not per trait. Set and trait loan offers match when their signed NFT set includes one of the NFTs. `topEvents` keeps what `listEvents(topEvents: true)` lists and drops the event types it does not cover. `following` matches what `listEvents(following: true)` lists, read from the account's follows when the stream starts: a follow made while it runs applies once the client subscribes again. With nothing followed, or no signed-in account, the stream stays open and emits nothing.
+  Stream new activity-feed events. Filters are optional and additive; unset or empty values mean the unfiltered stream. Most argument names match `listEvents` so clients can pass their existing query variables (`traits` and `currencyAddresses` are not supported yet). `artists`, `blockchains` and `priceUsd` keep what `listEvents` would list with them; the `priceUsd` bound is converted at the USDC rate of when the stream starts. `marketplaces` follows the marketplace shown in the activity feed: sales and orders use their stored marketplace, transfers match none, and GONDI lending and trade events match `NATIVE`. The `nfts` filter also matches collection-scoped events (collection loan offers and collection/trait bids) through the NFTs' collections; trait bids therefore match at collection granularity, not per trait. Set and trait loan offers match when their signed NFT set includes one of the NFTs.
   """
   activityUpdates(
     artists: [Int!] = null
     blockchains: [BlockchainEnum!] = null
     collections: [Int!] = null
     eventTypes: [EventType!] = null
-    following: Boolean = null
     marketplaces: [MarketPlaceType!] = null
     nfts: [Int!] = null
+
+    """
+    Also emit a public loan offer of a requested type when its lender cancels or hides it, with `removed` set. `listEvents` keeps listing such an offer, so this is a refresh signal for views that show live offers, not a feed row.
+    """
+    offerCancellations: Boolean = null
     priceUsd: Interval = null
-    topEvents: Boolean = null
     users: [Address!] = null
 
     """
@@ -7075,6 +7552,27 @@ type TopUpRequestedNotification implements Node & Notification {
   user: User!
 }
 
+"""
+A trade sent to the viewer, not answered yet, that expires within 24 hours.
+"""
+type TradeAwaitingAnswer implements NeedsActionItem {
+  """
+  When the trade expires.
+  """
+  deadline: DateTime!
+  deal: Deal!
+
+  """
+  What kind of item it is; dismissNeedsAction takes it.
+  """
+  kind: NeedsActionKind!
+
+  """
+  The id of what the item is about (its loan, listing, trade, auction, wallet link or loan offer), which dismissNeedsAction takes with kind.
+  """
+  subjectId: String!
+}
+
 type Trait implements Node {
   collectionId: String!
   id: String!
@@ -7083,6 +7581,11 @@ type Trait implements Node {
   Whether GONDI computed the trait instead of reading it from the metadata: the `None` of a type the NFT lacks, or its `Trait count`.
   """
   isDerived: Boolean!
+
+  """
+  Whether the trait is a filter and a count only, with no price and no trait bid: a punk's skin tone, or an ape's unclaimed Mudwater packs, which its holder can claim on chain at any moment.
+  """
+  isFilterOnly: Boolean!
   isSynthetic: Boolean!
   key: String!
   sampleAsset: Asset
@@ -7204,7 +7707,7 @@ input TraitOfferInput {
 
 type TraitOrder implements Event & Node & Order {
   """
-  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone.
+  Whether `cancelTradeOrders` can cancel this order without a transaction: a native bid restricted to our signed zone, placed at least 5 minutes ago.
   """
   cancelsOffChain: Boolean!
   collection: Collection!
@@ -7332,6 +7835,11 @@ type TraitType implements Node {
   collectionId: Int!
   count: Int!
   id: String!
+
+  """
+  Whether every value of the type is filter-only (`isFilterOnly` of a trait), so a trait bid has nothing to pick in it.
+  """
+  isFilterOnly: Boolean!
   isSynthetic: Boolean!
   key: String!
   max: Float
@@ -7358,6 +7866,11 @@ type TraitValue implements Node {
   Whether GONDI computed the value instead of reading it from the metadata: the `None` of a type an NFT lacks, or its `Trait count`.
   """
   isDerived: Boolean!
+
+  """
+  Whether the value is a filter and a count only, with no price and no trait bid: a punk's skin tone, or an ape's unclaimed Mudwater packs, which its holder can claim on chain at any moment.
+  """
+  isFilterOnly: Boolean!
   isSynthetic: Boolean!
   key: String!
   rarity: Int!
@@ -7389,6 +7902,11 @@ enum TraitValueSortField {
   LAST_SALE
   RARITY
   TOP_OFFER
+
+  """
+  By trait type, a type's blank value after its named ones (before them when descending). Follow it with another field to order the values inside each type.
+  """
+  TYPE
 }
 
 input TraitValueSortInput {
@@ -7402,6 +7920,7 @@ enum TraitValueType {
 }
 
 type Transfer implements Activity & Event & Node {
+  amount: BigInt!
   id: String!
   nft: NFT!
   receiver: Address!
@@ -7419,6 +7938,27 @@ type TypedData {
   message: JSON!
   primaryType: String!
   types: JSON!
+}
+
+"""
+A loan offer of the viewer's that is not live because its lender has no allowance left for the offer's loan contract in the offer's currency: approving the contract again puts it back.
+"""
+type UnderfundedOffer implements NeedsActionItem {
+  """
+  When the offer expires.
+  """
+  deadline: DateTime!
+
+  """
+  What kind of item it is; dismissNeedsAction takes it.
+  """
+  kind: NeedsActionKind!
+  offer: Offer!
+
+  """
+  The id of what the item is about (its loan, listing, trade, auction, wallet link or loan offer), which dismissNeedsAction takes with kind.
+  """
+  subjectId: String!
 }
 
 type UnderfundedOfferNotification implements Node & Notification {
@@ -7631,6 +8171,40 @@ type WalletActivityDay {
   sales: Int!
 }
 
+type WalletBuyOfferStanding {
+  currencyAddress: Address!
+  expiringSoon: Boolean!
+  maker: Address!
+  marketPlaceAddress: Address!
+  orderId: Int64!
+  price: BigInt!
+
+  """
+  Whether the offer leads its item, trait or collection or is outbid there. Null for a multiple-trait or set bid, and when its target has no best bid to compare against.
+  """
+  standing: BuyOfferStanding
+}
+
+type WalletBuyOffersCommitted {
+  amount: BigInt!
+  currencyAddress: Address!
+  offerCount: Int!
+}
+
+type WalletBuyOffersSummary {
+  activeCount: Int!
+  committed: [WalletBuyOffersCommitted!]!
+  expiringSoonCount: Int!
+  offers: [WalletBuyOfferStanding!]!
+  outbidCount: Int!
+  topCount: Int!
+
+  """
+  Whether the wallets have more than 500 live offers. The summary then covers the ones that expire soonest.
+  """
+  truncated: Boolean!
+}
+
 """
 One wallet in a follow list, with the listed wallets on the other end of the follow.
 """
@@ -7675,6 +8249,39 @@ type WalletLendingSummary {
   loanCount: Int!
   principalUsd: Float
   topCollections: [WalletLendingCollection!]!
+}
+
+"""
+A request to link another wallet to one of the viewer's. Only that wallet can accept it, so the viewer has to be signed in with it.
+"""
+type WalletLinkRequest implements NeedsActionItem {
+  createdDate: DateTime!
+
+  """
+  When the action lapses. Null for one that never does (an auction to settle, a defaulted loan to liquidate, a wallet link request), which `needsAction` lists after every dated item, the longest waiting first.
+  """
+  deadline: DateTime
+
+  """
+  What kind of item it is; dismissNeedsAction takes it.
+  """
+  kind: NeedsActionKind!
+
+  """
+  What acceptLinkedWallets and removeLinkedWallets take.
+  """
+  linkedWalletsId: String!
+  requesterAddress: Address!
+
+  """
+  The id of what the item is about (its loan, listing, trade, auction, wallet link or loan offer), which dismissNeedsAction takes with kind.
+  """
+  subjectId: String!
+
+  """
+  The viewer's wallet the request asks to link.
+  """
+  walletAddress: Address!
 }
 
 type WalletTradingSummary {
