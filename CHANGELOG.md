@@ -1,3 +1,24 @@
+# New Features 0.65.0
+
+## Important
+
+`makeOrdersOnOpenSea` now also bids on OpenSea for an item bid. Existing calls keep working.
+
+## Table of Contents
+
+- [Item bids on OpenSea](#item-bids-on-opensea)
+
+## Item bids on OpenSea
+
+**Description:**
+
+- NEW: `gondi.makeOrdersOnOpenSea` with a single public WETH bid on one ERC-721 item on Ethereum also bids on OpenSea, at the order's `openSeaPrice` (a multiple of 0.01 WETH). The wallet signs the batch and then the cancel of the OpenSea bid; GONDI sends that cancel once the NFT reaches the bidder or the GONDI bid is cancelled, and stops co-signing the GONDI bid once the OpenSea one fills.
+- ENHANCEMENT: `gondi.makeOrders` and `gondi.makeOrdersOnOpenSea` answer every signature the API asks for, each once, instead of exactly one.
+
+**Migration Steps:**
+
+- None. The bidder approves WETH to OpenSea's conduit before bidding there.
+
 # Breaking Changes 0.64.0
 
 ## Important

@@ -745,6 +745,127 @@ type AuctionWonNotification implements Node & Notification {
   user: User!
 }
 
+enum AutoBidMode {
+  MARGIN
+  OUTBID
+}
+
+enum AutoBidParkedReason {
+  BELOW_MIN
+  UNKNOWN_FLOOR
+}
+
+type AutoBidRule implements Node {
+  """
+  The rung the market calls for now; null when parked.
+  """
+  activeRung: AutoBidRung
+  capacity: Int!
+  collection: Collection!
+  collectionId: Int!
+  createdDate: DateTime!
+  currencyAddress: Address!
+  expiration: DateTime!
+
+  """
+  NFTs the rule has bought so far.
+  """
+  fills: Int!
+  floorCap: BigInt
+  id: String!
+  maker: Address!
+  marginBps: Int
+  maxPrice: BigInt!
+  minPrice: BigInt!
+  mode: AutoBidMode!
+
+  """
+  The best competing bid is at or over maxPrice, so the rule sits at its top rung and cannot outbid it.
+  """
+  outbidBeyondMax: Boolean!
+  outbidIncrement: BigInt
+
+  """
+  Why an ACTIVE rule has no visible bid; null while one is visible.
+  """
+  parkedReason: AutoBidParkedReason
+
+  """
+  The ladder, lowest rung first.
+  """
+  rungs: [AutoBidRung!]!
+
+  """
+  What those fills cost in total, fees included.
+  """
+  spent: BigInt!
+  status: AutoBidRuleStatus!
+  stoppedReason: AutoBidStopReason
+  updatedDate: DateTime!
+}
+
+type AutoBidRuleConnection {
+  edges: [AutoBidRuleEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type AutoBidRuleEdge {
+  cursor: String!
+  node: AutoBidRule!
+}
+
+input AutoBidRuleInput {
+  """
+  How many NFTs the rule may buy in total.
+  """
+  capacity: Int!
+  collectionId: Int!
+  currencyAddress: Address!
+  expirationTime: BigInt!
+
+  """
+  Stops the rule, hiding its bids, once the floor falls under it.
+  """
+  floorCap: BigInt = null
+
+  """
+  MARGIN: the discount on the floor, in basis points.
+  """
+  marginBps: Int = null
+  maxPrice: BigInt!
+  minPrice: BigInt!
+  mode: AutoBidMode!
+
+  """
+  OUTBID: how much over the best competing bid to go.
+  """
+  outbidIncrement: BigInt = null
+  signature: Signature = null
+  startTime: BigInt!
+}
+
+union AutoBidRuleSignatureRequest = AutoBidRule | SignatureRequest
+
+enum AutoBidRuleStatus {
+  ACTIVE
+  CANCELLED
+  COMPLETED
+  EXPIRED
+  PAUSED
+  STOPPED
+}
+
+type AutoBidRung {
+  order: Order!
+  position: Int!
+  price: BigInt!
+}
+
+enum AutoBidStopReason {
+  FLOOR_CAP
+}
+
 input BNPLOrderInput {
   amounts: [BigInt!]!
   contractAddress: Address!
@@ -913,6 +1034,14 @@ input BidSortInput {
   order: Ordering!
 }
 
+"""
+The bids that changed since the last update, or `resync` (with no bids) when the client should reload its bids instead: too many changed, a bid it cannot show turned active, or the stream missed some.
+"""
+type BidUpdates {
+  bids: [LiveBid!]!
+  resync: Boolean!
+}
+
 scalar BigInt
 
 type BigIntCurrencyAmount {
@@ -990,9 +1119,14 @@ input BulkNFTOrdersInput {
   counter: BigInt = null
 
   """
-  Also lists each ask on OpenSea at the same price, or at its `openSeaPrice`, signed with the same signature; public asks on Ethereum only.
+  Also lists each ask on OpenSea at the same price, or at its `openSeaPrice`, signed with the same signature; public asks on Ethereum only. With a single public WETH bid on one ERC-721 item on Ethereum instead, also bids on OpenSea, at `openSeaPrice` on OpenSea's 0.01 WETH steps; that bid's cancel is signed on a further call (`openSeaCancelSignature`), and GONDI sends it once the NFT reaches the bidder or the GONDI bid is cancelled.
   """
   listOnOpenSea: Boolean! = false
+
+  """
+  The maker's signature of the cancel of the OpenSea bid that twins the batch's item bid, asked for by the SignatureRequest with key `openSeaCancelSignature` that follows the bulk signature. Needs listOnOpenSea.
+  """
+  openSeaCancelSignature: Signature = null
   orders: [SingleNFTOrderInput!]!
   signature: Signature = null
 }
@@ -1638,6 +1772,18 @@ type ContractData implements Node {
   standard: String!
 }
 
+"""
+A new sale auction. `withRoyalties` adds every active royalty of the collection to the listing; enforced royalties are added regardless. `startTime` is the listing's start, in seconds: optional when asking for the listing to sign, required with `signature`, where it echoes the `startTime` of the typed data that was signed.
+"""
+input CreateSaleAuctionInput {
+  contractAddress: Address!
+  signature: Signature = null
+  startTime: BigInt = null
+  startingPrice: BigInt!
+  tokenId: BigInt!
+  withRoyalties: Boolean!
+}
+
 input CreditPurchaseExecutionInput {
   expirationTime: BigInt!
   initialPayment: BigInt!
@@ -1918,6 +2064,7 @@ type DueLoan implements NeedsActionItem {
 input EditUserInput {
   about: String
   mail: String
+  twitterHandle: String @deprecated(reason: "Ignored: an X handle is set by signing in to X.")
   url: String
   userId: Int!
   username: String
@@ -2545,6 +2692,9 @@ enum ItemVisitType {
 The `JSON` scalar type represents JSON values as specified by [ECMA-404](https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf).
 """
 scalar JSON
+  @specifiedBy(
+    url: "https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf"
+  )
 
 """
 How far back the portfolio leaderboard compares ranks; ALL compares with its first day.
@@ -2824,6 +2974,31 @@ type ListingConnection {
 type ListingEdge {
   cursor: String!
   node: Listing!
+}
+
+"""
+A changed OpenSea bid, as `bidUpdates` streams it. A bid saved whole carries every field; a status change (a cancel, a sale or an invalidation) carries only `id`, `status`, `nftId` and `traitId`, and a row whose status is no longer `Active` leaves the table. A bid with neither `nftId` nor `traitId` is a collection bid. No `evmOrder` or `signature`: load the order by `id` to fill it.
+"""
+type LiveBid {
+  collectionId: Int!
+  currencyAddress: Address
+  expiration: DateTime
+
+  """
+  The order's id, as `Order.id` gives it.
+  """
+  id: String!
+  maker: Address
+  makerName: String
+  makerProfilePictureUrl: String
+  marketPlace: MarketPlaceType
+  maxExecutions: Int
+  netAmount: BigInt
+  nftId: Int
+  price: BigInt
+  startTime: DateTime
+  status: OrderStatusType!
+  traitId: Int
 }
 
 interface Loan implements Node {
@@ -3709,6 +3884,11 @@ type Mutation {
   ): TopUpRequest!
 
   """
+  Withdraws the viewer's auction while it has no bids.
+  """
+  cancelSaleAuction(auctionId: Int!): SaleAuction!
+
+  """
   Cancels the caller's trade orders that have `cancelsOffChain` without a transaction, and returns the ids of the rest with the calldata of their Seaport on-chain cancel.
   """
   cancelTradeOrders(orderIds: [Int64!]!): CancelTradeOrdersResult!
@@ -3719,6 +3899,11 @@ type Mutation {
   completeTwitterVerification(code: String!, state: String!): User!
 
   """
+  Creates an auto-bid rule from a ladder of collection bids the caller signs once. Called without a signature it returns a SignatureRequest whose typedData is Seaport's BulkOrder over every rung: sign it and call again with the same input plus the signature. The rule starts ACTIVE with the rung the market calls for visible.
+  """
+  createAutoBidRule(rule: AutoBidRuleInput!): AutoBidRuleSignatureRequest!
+
+  """
   Creates a budget the caller's next bids can join through `budgetId`, capping what they may buy in total. No transaction: the limits reach the chain inside each bid's signed `zoneHash`.
   """
   createBidBudget(budget: BidBudgetInput!): BidBudget!
@@ -3727,6 +3912,11 @@ type Mutation {
   Create a draft gallery under a profile wallet you sign for, directly or through a confirmed link. Its slug comes from the name.
   """
   createGallery(address: Address!, gallery: GalleryInput!): Gallery!
+
+  """
+  Lists the viewer's NFT for a sale auction at a starting price. Called without a signature it returns a SignatureRequest: sign its typedData and call again with the signature and the typedData's startTime set to get the auction.
+  """
+  createSaleAuction(auctionInput: CreateSaleAuctionInput!): SaleAuctionSignatureRequest!
 
   """
   A link that opens the account bot in Telegram and, once started, links that chat to your account, replacing the chat it had. It works once, for ten minutes.
@@ -3790,23 +3980,23 @@ type Mutation {
   followWallet(walletAddress: Address!): Void
 
   """
-  This is the first step of the collection loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_signed_collection_offer. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 3, 5, 7, 10, 15, 20 or 45 days, and at most 3650 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details.
+  This is the first step of the collection loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_signed_collection_offer. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 5, 15 or 45 days, and at most 3650 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details.
   """
   generateCollectionOfferToBeSigned(offerInput: CollectionOfferInput!): CollectionOffer!
 
   """
-  This is the first step of the renegotiation loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_renegotiation_signed_offer. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 3, 5, 7, 10, 15, 20 or 45 days, and at most 3650 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details.
+  This is the first step of the renegotiation loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_renegotiation_signed_offer. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 5, 15 or 45 days, and at most 3650 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details.
   """
   generateRenegotiationOfferToBeSigned(renegotiationInput: RenegotiationOfferInput!): Renegotiation!
   generateSignInNonce(nonceInput: NonceInput!): String!
 
   """
-  This is the first step of the single NFT loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_signed_single_nft_offer. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 3, 5, 7, 10, 15, 20 or 45 days, and at most 3650 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details.
+  This is the first step of the single NFT loan offer flow. This step populates some fields of the offer. You then have to sign the offer and save it using the method save_signed_single_nft_offer. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 5, 15 or 45 days, and at most 3650 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details.
   """
   generateSingleNftOfferToBeSigned(offerInput: SingleNFTOfferInput!): SingleNFTOffer!
 
   """
-  This is the first step of the trait loan offer flow: an offer any NFT carrying every one of the traits can borrow against. This step populates some fields of the offer, among them the validator holding the token ids that carry them now. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 3, 5, 7, 10, 15, 20 or 45 days, and at most 3650 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details.
+  This is the first step of the trait loan offer flow: an offer any NFT carrying every one of the traits can borrow against. This step populates some fields of the offer, among them the validator holding the token ids that carry them now. `duration` must be a positive whole number of seconds that represents either a multiple of 30 days or one of the special values of 5, 15 or 45 days, and at most 3650 days; otherwise the call fails with INVALID_OFFER_DURATION_ERROR. Refer to gondi-js examples for more details.
   """
   generateTraitOfferToBeSigned(offerInput: TraitOfferInput!): TraitOffer!
 
@@ -3828,7 +4018,10 @@ type Mutation {
   """
   Hides a trade bid. Listings can no longer be hidden: cancelling them on-chain is the only supported way to take one down, so an ask is rejected.
   """
-  hideOrder(orderIdInt64: Int64 = null): Order!
+  hideOrder(
+    orderId: Int = null @deprecated(reason: "Use orderIdInt64 instead.")
+    orderIdInt64: Int64 = null
+  ): Order!
 
   """
   Hides a loan renegotiation offer.
@@ -3837,6 +4030,11 @@ type Mutation {
   linkWalletAddress(walletAddress: Address!): LinkedWallets!
   markNotificationIdsAsRead(ids: [Int!] = null, walletAddresses: [Address!] = null): Void
   markNotificationsAsRead(walletAddresses: [Address!] = null): Void
+
+  """
+  Bids the viewer's silent maximum on a sale auction. Called without a signature it returns a SignatureRequest: sign its typedData and call again with the signature and the typedData's startTime set. The result carries the auction as it stands and the ledger rows the bid added.
+  """
+  placeSaleAuctionBid(bidInput: PlaceSaleAuctionBidInput!): SaleAuctionBidResultSignatureRequest!
 
   """
   Creates multiple NFT trade orders with a single signature. First call (no signature in bulk_input) returns a SignatureRequest. Sign the typedData and call again with signature set. Returns BulkNFTOrdersResult on success.
@@ -3942,7 +4140,7 @@ type Mutation {
   saveItemBrowseList(encodedList: String!, key: String!): Void
 
   """
-  This is the second step of the renegotiation loan offer flow after generate_renegotiation_offer_to_be_signed. It saves the signed offer. `duration` is re-validated against the allowed values (multiples of 30 days, or 3, 5, 7, 10, 15, 20 or 45 days, and at most 3650 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active single-NFT offers and renegotiations for the same (NFT, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveOffersLimitReachedError. The optional `fallback_offer_input` is subject to the same checks. Refer to gondi-js examples for more details.
+  This is the second step of the renegotiation loan offer flow after generate_renegotiation_offer_to_be_signed. It saves the signed offer. `duration` is re-validated against the allowed values (multiples of 30 days, or 5, 15 or 45 days, and at most 3650 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active single-NFT offers and renegotiations for the same (NFT, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveOffersLimitReachedError. The optional `fallback_offer_input` is subject to the same checks. Refer to gondi-js examples for more details.
   """
   saveRenegotiationSignedOffer(
     fallbackOfferInput: SingleNFTSignedOfferInput = null
@@ -3951,7 +4149,7 @@ type Mutation {
   ): Renegotiation!
 
   """
-  This is the second step of the collection loan offer flow after generate_collection_offer_to_be_signed. It saves the signed offer. `duration` is re-validated against the allowed values (multiples of 30 days, or 3, 5, 7, 10, 15, 20 or 45 days, and at most 3650 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active collection offers for the same (collection, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveCollectionOffersLimitReachedError. Refer to gondi-js examples for more details.
+  This is the second step of the collection loan offer flow after generate_collection_offer_to_be_signed. It saves the signed offer. `duration` is re-validated against the allowed values (multiples of 30 days, or 5, 15 or 45 days, and at most 3650 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active collection offers for the same (collection, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveCollectionOffersLimitReachedError. Refer to gondi-js examples for more details.
   """
   saveSignedCollectionOffer(
     publication: LoanOfferPublicationInput = null
@@ -3959,7 +4157,7 @@ type Mutation {
   ): CollectionOffer!
 
   """
-  This is the second step of the single NFT loan offer flow after generate_single_nft_offer_to_be_signed. It saves the signed offer. `duration` is re-validated against the allowed values (multiples of 30 days, or 3, 5, 7, 10, 15, 20 or 45 days, and at most 3650 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active single-NFT offers and renegotiations for the same (NFT, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveOffersLimitReachedError. Refer to gondi-js examples for more details.
+  This is the second step of the single NFT loan offer flow after generate_single_nft_offer_to_be_signed. It saves the signed offer. `duration` is re-validated against the allowed values (multiples of 30 days, or 5, 15 or 45 days, and at most 3650 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active single-NFT offers and renegotiations for the same (NFT, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveOffersLimitReachedError. Refer to gondi-js examples for more details.
   """
   saveSignedSingleNftOffer(
     publication: LoanOfferPublicationInput = null
@@ -3967,7 +4165,7 @@ type Mutation {
   ): SingleNFTOffer!
 
   """
-  This is the second step of the trait loan offer flow after generate_trait_offer_to_be_signed. It saves the signed offer, as long as its validator is still the one the traits produce: if the NFTs carrying them changed since the first step, it fails with INVALID_OFFER_VALIDATORS_ERROR and the offer has to be generated again. `duration` is re-validated against the allowed values (multiples of 30 days, or 3, 5, 7, 10, 15, 20 or 45 days, and at most 3650 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active offers for the same (traits, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveTraitOffersLimitReachedError. Refer to gondi-js examples for more details.
+  This is the second step of the trait loan offer flow after generate_trait_offer_to_be_signed. It saves the signed offer, as long as its validator is still the one the traits produce: if the NFTs carrying them changed since the first step, it fails with INVALID_OFFER_VALIDATORS_ERROR and the offer has to be generated again. `duration` is re-validated against the allowed values (multiples of 30 days, or 5, 15 or 45 days, and at most 3650 days) and the call fails with INVALID_OFFER_DURATION_ERROR otherwise. A lender may have at most 2 active offers for the same (traits, loan contract version, duration, principal currency) bucket; saving another one fails with ActiveTraitOffersLimitReachedError. Refer to gondi-js examples for more details.
   """
   saveSignedTraitOffer(signedOfferInput: TraitSignedOfferInput!): TraitOffer!
 
@@ -3990,6 +4188,11 @@ type Mutation {
   setReferral(referrerId: Int!): Void
 
   """
+  Renames the viewer's paddle on an auction they bid on.
+  """
+  setSaleAuctionPaddleName(auctionId: Int!, name: String!): SaleAuctionPaddle!
+
+  """
   Turn notifications about every watched NFT on or off, for every wallet of your account. An NFT's own override still wins.
   """
   setWatchNotifications(enabled: Boolean!): Void
@@ -4002,7 +4205,10 @@ type Mutation {
   """
   Unhides a trade bid. Listings can no longer be hidden, so an ask is rejected: one hidden before that change stays hidden and is cancelled on-chain rather than brought back.
   """
-  showOrder(orderIdInt64: Int64 = null): Order!
+  showOrder(
+    orderId: Int = null @deprecated(reason: "Use orderIdInt64 instead.")
+    orderIdInt64: Int64 = null
+  ): Order!
 
   """
   Unhides a loan renegotiation offer.
@@ -4154,6 +4360,11 @@ type NFT implements Node {
   priceCurrencyAddress: Address @deprecated(reason: "Get it from nftPriceSample")
   rarityRank: Int
   rarityScore: Float
+
+  """
+  The NFT's auction in progress, if any.
+  """
+  saleAuction: SaleAuction
   statistics: NftStatistics!
   tokenId: BigInt!
   traits: [Trait!]!
@@ -4395,7 +4606,7 @@ enum NftSearchField {
   TOKEN_ID
 }
 
-input NftSetConditionInput {
+input NftSetConditionInput @oneOf {
   """
   Traits of one key in the collection: the bid fills with any NFT carrying one of them. At least 2, at most 10.
   """
@@ -5148,6 +5359,16 @@ type PageInfo {
   startCursor: String
 }
 
+"""
+A bid on a sale auction at the bidder's silent maximum, in WETH. The auction bids for them one increment at a time up to it. `startTime` is the offer's start in seconds: optional when asking for the offer to sign, required with `signature`, where it echoes the typed data's.
+"""
+input PlaceSaleAuctionBidInput {
+  auctionId: Int!
+  maxAmount: BigInt!
+  signature: Signature = null
+  startTime: BigInt = null
+}
+
 type PlatformFee {
   beneficiary: Address!
   bps: BigInt!
@@ -5181,6 +5402,460 @@ type PointActivityConnection {
 type PointActivityEdge {
   cursor: String!
   node: PointActivity!
+}
+
+type Pool implements Node {
+  activeLoanCount: Int!
+  activeLoanWeightedAprBps: Int!
+  address: Address!
+  asset: Currency!
+
+  """
+  Assets one whole share (10**shareDecimals) redeems for, in asset units.
+  """
+  assetsPerShare: BigInt!
+
+  """
+  Repaid cash owed to closed batches but not yet pushed to them (claim runs queueClaimAll first when > 0).
+  """
+  availableToWithdraw: BigInt!
+  blockchain: BlockchainEnum!
+  collateralCollection: Collection!
+  earnings(days: Int! = 30): PoolEarnings!
+
+  """
+  Daily points (last snapshot of each UTC day). days = null returns all history; otherwise 1 to 3660.
+  """
+  history(days: Int = null): [PoolHistoryPoint!]!
+
+  """
+  `<blockchain>:<address>`
+  """
+  id: String!
+  idleAssets: BigInt!
+  isActive: Boolean!
+
+  """
+  Principal lost to liquidations since inception (>= 0).
+  """
+  liquidationLosses: BigInt!
+  loanedAssets: BigInt!
+  netApy: PoolReturn!
+  offerTermFacets: PoolOfferTermFacets!
+  offerTermSummary: PoolOfferTermSummary!
+
+  """
+  Latest current-floor value from the pool's oracle, in asset units.
+  """
+  oracleFloor: PoolOracleValue
+  parameters: PoolParameters!
+  pendingWithdrawalQueue: PoolWithdrawalQueue!
+  shareDecimals: Int!
+  shareName: String!
+
+  """
+  e.g. punkUSDC
+  """
+  shareSymbol: String!
+  slug: String!
+  totalAssets: BigInt!
+
+  """
+  Timestamp of the latest snapshot.
+  """
+  updatedAt: DateTime!
+
+  """
+  loanedAssets / totalAssets.
+  """
+  utilization: Float!
+}
+
+type PoolActivityEvent {
+  """
+  Assets deposited, the request's asset value at request time, or the amount claimed.
+  """
+  assets: BigInt!
+
+  """
+  `<type>:<row id>`
+  """
+  id: String!
+
+  """
+  Shares minted or burned; null for claims.
+  """
+  shares: BigInt
+  timestamp: DateTime!
+  txHash: Hash!
+  type: PoolActivityType!
+
+  """
+  Depositor (deposit owner), share owner (withdrawal request) or claim receiver.
+  """
+  walletAddress: Address!
+}
+
+type PoolActivityEventConnection {
+  edges: [PoolActivityEventEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type PoolActivityEventEdge {
+  cursor: String!
+  node: PoolActivityEvent!
+}
+
+enum PoolActivityType {
+  CLAIM
+  DEPOSIT
+  WITHDRAWAL_REQUEST
+}
+
+type PoolEarnings {
+  """
+  Interest paid by borrowers on loans repaid in the window (gross, before protocol fee).
+  """
+  borrowerInterest: BigInt!
+  days: Int!
+
+  """
+  Liquidation proceeds minus principal for liquidations in the window (can be negative).
+  """
+  liquidationResult: BigInt!
+  netToShareholders: BigInt!
+
+  """
+  Estimated at the current FeeManager fees.
+  """
+  poolFee: BigInt!
+  protocolFee: BigInt!
+
+  """
+  Principal-weighted APR of the loans repaid in the window; null when none.
+  """
+  weightedAprBps: Int
+}
+
+type PoolHistoryPoint {
+  assetsPerShare: BigInt!
+
+  """
+  Trailing-30-day APY at that point; null with under 7 days of history before it.
+  """
+  netApy: Float
+  timestamp: DateTime!
+  totalAssets: BigInt!
+  utilization: Float!
+}
+
+type PoolLoan {
+  """
+  When the pool's part ended (repayment, liquidation, foreclosure or refinance); null while ACTIVE.
+  """
+  endedAt: DateTime
+
+  """
+  `<source or lost source id>`
+  """
+  id: String!
+
+  """
+  Interest the pool got when it ended, before protocol fee; null while ACTIVE.
+  """
+  interest: BigInt
+
+  """
+  Principal / pool oracle floor at the loan's start; null when no oracle value precedes it.
+  """
+  loanToValueBps: Int
+
+  """
+  Null for a plain active loan.
+  """
+  outcome: PoolLoanOutcome
+
+  """
+  Asset paid to the pool when it ended (LoanPayment rows with destination = pool); null while ACTIVE.
+  """
+  received: BigInt
+  source: SourceLostSource!
+}
+
+type PoolLoanConnection {
+  edges: [PoolLoanEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type PoolLoanEdge {
+  cursor: String!
+  node: PoolLoan!
+}
+
+enum PoolLoanOutcome {
+  FORECLOSED
+  LIQUIDATED
+
+  """
+  Sent to auction, not settled yet (ACTIVE only).
+  """
+  LIQUIDATING
+
+  """
+  Refinanced away: the pool was paid out by the new lender.
+  """
+  REFINANCED
+  REPAID
+}
+
+enum PoolLoanStatus {
+  """
+  LOAN_INITIATED and LOAN_SENT_TO_AUCTION sources the pool lent.
+  """
+  ACTIVE
+
+  """
+  Repaid, liquidated, foreclosed, or refinanced away from the pool.
+  """
+  PAST
+}
+
+type PoolOfferTerm {
+  aprBps: Int!
+  collateralAddress: Address!
+  durationSeconds: Int!
+
+  """
+  Historical-floor factor as bps of the trailing floor.
+  """
+  historicalFloorLtvBps: Int!
+
+  """
+  Floor factor as bps of today's floor.
+  """
+  maxLtvBps: Int!
+
+  """
+  min(floor * floorFactor, trailingFloor * historicalFactor), capped at idleAssets; 0 unless status is LENDING.
+  """
+  maxPrincipal: BigInt!
+  status: PoolOfferTermStatus!
+
+  """
+  The traits a collateral must carry; [] = any NFT of the collection.
+  """
+  traits: [Trait!]!
+}
+
+type PoolOfferTermConnection {
+  edges: [PoolOfferTermEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type PoolOfferTermEdge {
+  cursor: String!
+  node: PoolOfferTerm!
+}
+
+type PoolOfferTermFacets {
+  """
+  Every duration the pool has a term for, ascending.
+  """
+  durationsSeconds: [Int!]!
+
+  """
+  Every trait some term requires, by key then value.
+  """
+  traits: [PoolOfferTermTrait!]!
+}
+
+enum PoolOfferTermStatus {
+  LENDING
+  NO_IDLE_CAPITAL
+  PAUSED
+  PRICE_DATA_STALE
+}
+
+type PoolOfferTermSummary {
+  maxAprBps: Int
+  maxDurationSeconds: Int
+  maxLtvBps: Int
+  minAprBps: Int
+  minDurationSeconds: Int
+  termCount: Int!
+}
+
+type PoolOfferTermTrait {
+  """
+  Terms that require this trait.
+  """
+  termCount: Int!
+  trait: Trait!
+}
+
+type PoolOracleMaxAge {
+  durationSeconds: Int!
+  floorMaxAgeSeconds: Int!
+  historicalFloorMaxAgeSeconds: Int!
+}
+
+type PoolOracleValue {
+  updatedAt: DateTime!
+  value: BigInt!
+}
+
+type PoolParameters {
+  loanBufferSeconds: Int!
+
+  """
+  FeeManager annual management fee on principal, charged when a loan ends for the time it was open (0.005 = 0.5% a year).
+  """
+  managementFee: Float!
+  maxDurationSeconds: Int!
+  maxWithdrawalQueues: Int!
+
+  """
+  Floor rate (offer handler min APR).
+  """
+  minAprBps: Int!
+  oracleMaxAges: [PoolOracleMaxAge!]!
+
+  """
+  FeeManager performance fee on interest net of protocol fee (0.1 = 10%).
+  """
+  performanceFee: Float!
+
+  """
+  MSL protocol fee on lender interest, from the latest loan data (2000 = 20%).
+  """
+  protocolFeeBps: Int!
+  withdrawalQueueCadenceSeconds: Int!
+}
+
+type PoolPosition {
+  costBasis: BigInt!
+
+  """
+  What the wallet's shares gained over their average cost: value - costBasis for the shares it holds, plus, for each withdrawal request it made, the assets the burned shares were valued at less their average cost. A ticket pays out as its batch's loans end, so a liquidation loss can leave it paying less than its request valued. Can be negative.
+  """
+  earned: BigInt!
+  poolAddress: Address!
+  shares: BigInt!
+
+  """
+  shares valued at the current assetsPerShare.
+  """
+  value: BigInt!
+  walletAddress: Address!
+
+  """
+  Tickets the wallet currently owns, newest first.
+  """
+  withdrawalPositions: [PoolWithdrawalPosition!]!
+}
+
+type PoolReturn {
+  """
+  Annualised compounded return over the window; null with under 7 days of history.
+  """
+  apy: Float
+
+  """
+  assetsPerShare(now) / assetsPerShare(window start) - 1.
+  """
+  periodReturn: Float
+  windowDays: Int!
+}
+
+type PoolWithdrawalPosition implements Node {
+  """
+  Asset value of the shares at request time (Withdraw event assets).
+  """
+  assetsAtRequest: BigInt!
+  available: BigInt!
+
+  """
+  `<blockchain>:<queue address>:<tokenId>`
+  """
+  id: String!
+  queue: PoolWithdrawalQueue!
+  requestedAt: DateTime!
+  shares: BigInt!
+  status: PoolWithdrawalPositionStatus!
+  tokenId: BigInt!
+  txHash: Hash!
+
+  """
+  Until when claims revert (WithdrawalQueue lockWithdrawals); null when the ticket was never locked.
+  """
+  unlockAt: DateTime
+  withdrawn: BigInt!
+}
+
+enum PoolWithdrawalPositionStatus {
+  """
+  Batch closed, nothing available now, loans still repaying.
+  """
+  AWAITING_REPAYMENTS
+
+  """
+  available > 0 and the ticket is not locked.
+  """
+  CLAIMABLE
+
+  """
+  Batch fully settled and everything withdrawn.
+  """
+  CLAIMED
+
+  """
+  available > 0, but the ticket's holder locked it until unlockAt: a claim reverts until then.
+  """
+  LOCKED
+
+  """
+  Batch not closed yet.
+  """
+  QUEUED
+}
+
+type PoolWithdrawalQueue implements Node {
+  address: Address!
+
+  """
+  When the batch was closed; null while pending.
+  """
+  closedAt: DateTime
+  deployedAt: DateTime!
+
+  """
+  deployedAt + cadence: the earliest time deployWithdrawalQueue() may close this batch.
+  """
+  earliestCloseAt: DateTime!
+
+  """
+  `<blockchain>:<queue address>`
+  """
+  id: String!
+
+  """
+  Batch number shown to users: 1 for the queue created with the pool.
+  """
+  sequenceNumber: Int!
+  totalShares: BigInt!
+
+  """
+  totalShares valued at the current assetsPerShare.
+  """
+  totalSharesValue: BigInt!
+
+  """
+  earliestCloseAt (or closedAt) + maxDuration + loanBuffer.
+  """
+  worstCaseSettlementAt: DateTime!
 }
 
 """
@@ -5429,16 +6104,39 @@ type Query {
   getMarketOverview(timeframe: MarketOverviewTimeframe!): MarketOverview!
   getNftByContractAddressAndTokenId(contractAddress: Address!, tokenId: BigInt!): NFT
   getNftBySlugAndTokenId(slug: String!, tokenId: BigInt!): NFT
-  getOrderCancelCalldata(model: OrderModel = null, orderIdInt64: Int64 = null): Hex!
+  getOrderCancelCalldata(
+    model: OrderModel = null
+    orderId: Int = null @deprecated(reason: "Use orderIdInt64 instead.")
+    orderIdInt64: Int64 = null
+  ): Hex!
   getOrderSaleCalldata(
     model: OrderModel = null
     nftId: Int = null
+    orderId: Int = null @deprecated(reason: "Use orderIdInt64 instead.")
     orderIdInt64: Int64 = null
     taker: Address = null
   ): Hex!
-  getOutstandingDebt(borrowers: [Address!]!, currencyAddresses: [Address!] = null): BigInt!
+  getOutstandingDebt(
+    borrowers: [Address!]!
+
+    """
+    Deprecated field. Use currency_addresses instead.
+    """
+    currencyAddress: Address = null @deprecated(reason: "Use currency_addresses instead.")
+    currencyAddresses: [Address!] = null
+  ): BigInt!
   getOutstandingLoanStatistics: OutstandingLoanStatistics!
   getPointsFromReferrals: Int!
+
+  """
+  One pool by its URL slug, e.g. "usdc" or "weth"; null when no pool has that slug.
+  """
+  getPoolBySlug(slug: String!): Pool
+
+  """
+  A wallet's share balance, cost basis and withdrawal tickets in one pool.
+  """
+  getPoolPosition(poolAddress: Address!, walletAddress: Address!): PoolPosition!
 
   """
   Accounts ranked by their portfolio valuation, highest first. An account is a user with its confirmed-linked wallets.
@@ -5480,6 +6178,11 @@ type Query {
     lenders: [Address!]!
   ): [RealizedProfitDay!]!
   getReferredWallets: Int!
+
+  """
+  A sale auction by id.
+  """
+  getSaleAuction(auctionId: Int!): SaleAuction
   getSaleManyOrdersCalldata(sales: [BidFulfillInput!]!): [FulfillManyBidOrdersCalldata!]!
   getSellAndRepayOrderSwapCalldata(
     expectedRate: Float!
@@ -5698,11 +6401,30 @@ type Query {
     sortBy: [AuctionSortInput!] = null
     statuses: [AuctionStatus!] = null
   ): AuctionConnection!
+
+  """
+  The viewer's auto-bid rules, across their linked wallets, newest first.
+  """
+  listAutoBidRules(
+    after: String
+    first: Int = null
+    statuses: [AutoBidRuleStatus!] = null
+  ): AutoBidRuleConnection!
   listBids(
     after: String
     auctionId: String = null
     auctionStatuses: [AuctionStatus!] = null
+
+    """
+    Deprecated field: use bidders instead.
+    """
+    bidder: String = null @deprecated(reason: "Use bidders instead.")
     bidders: [String!] = null
+
+    """
+    Deprecated field: use currency_addresses instead.
+    """
+    currencyAddress: Address = null @deprecated(reason: "Use currency_addresses instead.")
     currencyAddresses: [Address!] = null
     first: Int = null
     onlyLatest: Boolean! = false
@@ -5769,12 +6491,22 @@ type Query {
   ): TraitKeyOptionConnection!
   listCollectionTraitTypes(
     after: String
+
+    """
+    Deprecated field: use collection_ids instead.
+    """
+    collectionId: Int = null @deprecated(reason: "Use collection_ids instead.")
     collectionIds: [Int!] = null
     first: Int! = 40
     valueType: TraitValueType = null
   ): TraitTypeConnection!
   listCollectionTraitValues(
     after: String
+
+    """
+    Deprecated field: use collection_ids instead.
+    """
+    collectionId: Int = null @deprecated(reason: "Use collection_ids instead.")
     collectionIds: [Int!] = null
     first: Int! = 40
     higherTraitOffersOnly: Boolean! = false
@@ -5947,6 +6679,11 @@ type Query {
     after: String
     blockchains: [BlockchainEnum!] = null
     collectionIds: [Int!] = null
+
+    """
+    Deprecated field: use currency_addresses instead.
+    """
+    currencyAddress: Address = null @deprecated(reason: "Use currency_addresses instead.")
     currencyAddresses: [Address!] = null
     editionIds: [Int!] = null
     excludeSlugs: [String!] = null
@@ -5969,6 +6706,10 @@ type Query {
     currencyAddress: Address = null
     first: Int = null
     forTaker: Address = null
+    hidden: Boolean = null
+      @deprecated(
+        reason: "Listings can no longer be hidden; this filter only still matches listings hidden before that change."
+      )
     maker: Address = null
     nftId: Int = null
     sortBy: [OrderSortInput!] = null
@@ -6026,11 +6767,26 @@ type Query {
     """
     aroundNftId: Int = null
     blockchains: [BlockchainEnum!] = null
+
+    """
+    Deprecated field: use borrowers instead.
+    """
+    borrowerAddress: String = null @deprecated(reason: "Use borrowers instead.")
     borrowers: [String!] = null
     collections: [Int!] = null
     contractAddresses: [Address!] = null
+
+    """
+    Deprecated field: use currency_addresses instead.
+    """
+    currencyAddress: Address = null @deprecated(reason: "Use currency_addresses instead.")
     currencyAddresses: [Address!] = null
     excludeAddresses: [Address!] = null
+
+    """
+    Deprecated field: use exclude_addresses instead. Only considered if include_lost is False | None.
+    """
+    excludeOwn: Boolean = null @deprecated(reason: "Use exclude_addresses instead.")
     excludeSlugs: [String!] = null
     first: Int! = 10
 
@@ -6062,6 +6818,16 @@ type Query {
     statuses: [LoanStatusType!] = null
     terms: TermsFilter = null
     traits: [Int!] = null
+
+    """
+    A renegotiation request is a flag to mark that the borrower would like that someone renegotiate the loan.
+    """
+    withRenegRequestOnly: Boolean! = false @deprecated(reason: "Use request_statuses instead.")
+
+    """
+    A top up request is a flag to mark that the borrower would like someone to top up the loan.
+    """
+    withTopUpRequestOnly: Boolean! = false @deprecated(reason: "Use request_statuses instead.")
   ): MultiSourceLoanConnection!
   listNftDelegations(
     after: String
@@ -6095,7 +6861,17 @@ type Query {
     """
     Offer only filter.
     """
+    contractAddress: Address = null @deprecated(reason: "Use contract_addresses instead.")
+
+    """
+    Offer only filter.
+    """
     contractAddresses: [Address!] = null
+
+    """
+    Deprecated field: use currency_addresses instead.
+    """
+    currencyAddress: Address = null @deprecated(reason: "Use currency_addresses instead.")
     currencyAddresses: [Address!] = null
     first: Int = null
     hidden: Boolean = null
@@ -6104,6 +6880,11 @@ type Query {
     Renegotiation only filter.
     """
     isAddNewTranche: Boolean = null
+
+    """
+    Deprecated field: use lenders instead.
+    """
+    lenderAddress: String = null @deprecated(reason: "Use lenders instead.")
     lenders: [String!] = null
 
     """
@@ -6237,12 +7018,22 @@ type Query {
     """
     borrowerAddress: String = null
     collections: [Int!] = null
+
+    """
+    Deprecated field: use contractAddresses instead.
+    """
+    contractAddress: Address = null @deprecated(reason: "Use contractAddresses instead.")
     contractAddresses: [Address!] = null
     currencyAddress: Address = null
     editionIds: [Int!] = null
     excludeLenders: [Address!] = null
     first: Int = null
     hidden: Boolean = null
+
+    """
+    Deprecated field: use lenders instead.
+    """
+    lenderAddress: String = null @deprecated(reason: "Use lenders instead.")
     lenders: [String!] = null
     nfts: [Int!] = null
     onlyCollectionOffers: Boolean = false
@@ -6281,6 +7072,11 @@ type Query {
     ANY needs side BID and collectionIds or traitIds (from one collection); orderTypes narrows the bid types.
     """
     matchMode: OrderMatchMode! = ALL
+
+    """
+    Deprecated field: use nfts instead.
+    """
+    nft: OrderForNft = null @deprecated(reason: "Use nfts instead.")
     nfts: [OrderForNft!] = null
     onlyInvalid: Boolean = null
 
@@ -6307,6 +7103,43 @@ type Query {
     marketplace: MarketPlaceType = null
     operation: PlatformFeeOperationType!
   ): [PlatformFee!]!
+
+  """
+  Deposits, withdrawal requests and claims of a pool, newest first; types = null keeps all.
+  """
+  listPoolActivity(
+    after: String
+    first: Int! = 20
+    poolAddress: Address!
+    types: [PoolActivityType!] = null
+  ): PoolActivityEventConnection!
+
+  """
+  The pool's loans: ACTIVE newest-started first, PAST most recently ended first.
+  """
+  listPoolLoans(
+    after: String
+    first: Int! = 10
+    poolAddress: Address!
+    status: PoolLoanStatus! = ACTIVE
+  ): PoolLoanConnection!
+
+  """
+  The pool's standing offer terms, whole-collection terms first, then by trait key/value, then duration.
+  traitIds keeps terms requiring any of those traits; durationsSeconds keeps those durations.
+  """
+  listPoolOfferTerms(
+    after: String
+    durationsSeconds: [Int!] = null
+    first: Int! = 20
+    poolAddress: Address!
+    traitIds: [Int!] = null
+  ): PoolOfferTermConnection!
+
+  """
+  Every configured pool on every blockchain, ordered by net APY descending.
+  """
+  listPools: [Pool!]!
   listPopularSearches(
     first: Int! = 10
   ): [GlobalSearchV2ResultNFTGlobalSearchV2ResultCollectionGlobalSearchV2ResultArtistGlobalSearchV2ResultAccount!]!
@@ -6332,6 +7165,23 @@ type Query {
     statuses: [OfferStatus!] = null
     terms: RefinanceTermsFilter = null
   ): RenegotiationConnection!
+
+  """
+  Sale auctions, newest first unless sorted.
+  """
+  listSaleAuctions(
+    after: String
+    collections: [Int!] = null
+    first: Int = null
+
+    """
+    Only the auctions the viewer's account placed a maximum on, whatever became of it; nothing when signed out.
+    """
+    myBids: Boolean! = false
+    seller: Address = null
+    sortBy: SaleAuctionSortField = null
+    statuses: [SaleAuctionStatus!] = null
+  ): SaleAuctionConnection!
   listSales(
     after: String
     artists: [Int!] = null
@@ -6364,8 +7214,18 @@ type Query {
     blockchains: [BlockchainEnum!] = null
     collections: [Int!] = null
     contractAddresses: [Address!] = null
+
+    """
+    Deprecated field: use currency_addresses instead.
+    """
+    currencyAddress: Address = null @deprecated(reason: "Use currency_addresses instead.")
     currencyAddresses: [Address!] = null
     excludeAddresses: [Address!] = null
+
+    """
+    Deprecated field: use exclude_addresses instead. Only considered if include_lost is False | None.
+    """
+    excludeOwn: Boolean = null @deprecated(reason: "Use exclude_addresses instead.")
     excludeSlugs: [String!] = null
     first: Int! = 10
     hideEndLocked: Boolean = null
@@ -6375,6 +7235,11 @@ type Query {
     Include lost sources in the list. Lost sources are the lender/s that have lost a loan because of renegotiation or refinance. When a renegotiation or refinance happens, the sources compromised turn into lost sources and new sources appear.
     """
     includeLost: Boolean = null
+
+    """
+    Deprecated field: use lenders instead.
+    """
+    lenderAddress: String = null @deprecated(reason: "Use lenders instead.")
     lenders: [String!] = null
 
     """
@@ -6385,6 +7250,11 @@ type Query {
     sortBy: [SourceSortInput!] = null
     statuses: [LoanStatusType!] = null
     terms: TermsFilter = null
+
+    """
+    Deprecated
+    """
+    withdrawalQueues: [Int!] = null @deprecated(reason: "Deprecated")
   ): SourceLostSourceConnection!
   listUsers(after: String, first: Int! = 10, walletAddresses: [Address!]!): UserConnection!
 
@@ -6444,6 +7314,16 @@ type Query {
   Every notification event on every channel it reaches, as the viewer's account has it. The most recent choice any of its linked wallets made is the one in force.
   """
   notificationPreferences: [NotificationPreference!]!
+
+  """
+  The rung prices an auto-bid rule with this range would sign, lowest first: the collection's bid-step grid between minPrice and maxPrice, thinned to at most 16 rungs.
+  """
+  previewAutoBidLadder(
+    collectionId: Int!
+    currencyAddress: Address!
+    maxPrice: BigInt!
+    minPrice: BigInt!
+  ): [BigInt!]!
 
   """
   Evaluate an item quote before signing; publication rechecks under a transaction lock.
@@ -6685,6 +7565,164 @@ type Sale implements Activity & Event & Node {
   The USDC price of one unit of the sale's currency at the sale's timestamp: the price times it is the sale's USD value then. Null when no rate is recorded for either currency at that time.
   """
   usdcPriceAtTimestamp: Float
+}
+
+"""
+A self-serve English auction of one NFT. The seller's signed listing and the bids are Seaport orders the matching engine settles when the clock runs out.
+"""
+type SaleAuction implements Node {
+  bidCount: Int!
+
+  """
+  The ledger, newest first: every amount the auction displayed, typed by a bidder or placed for them by proxy. At most 200 per page; pass the last row's id as `beforeId` for the next, older page.
+  """
+  bids(beforeId: Int = null, first: Int! = 50): [SaleAuctionBid!]!
+  createdDate: DateTime!
+  currency: Currency!
+  currencyAddress: Address!
+  currentAmount: BigInt
+  durationSeconds: Int!
+  endTime: DateTime
+  extensionCount: Int!
+  feeBps: Int!
+  hammerAmount: BigInt
+  id: String!
+
+  """
+  Whether the viewer is the seller.
+  """
+  isSeller: Boolean!
+  kind: SaleAuctionKind!
+
+  """
+  The viewer's active maximum, if they bid.
+  """
+  myMaxBid: SaleAuctionMaxBid
+
+  """
+  The viewer's paddle on this auction, if they bid.
+  """
+  myPaddle: SaleAuctionPaddle
+
+  """
+  The lowest amount a bid is accepted at now.
+  """
+  nextMinimumBid: BigInt!
+  nft: NFT!
+  nftId: Int!
+  seller: Address!
+  settlementTxHash: Hash
+  startTime: DateTime
+  startingPrice: BigInt!
+  status: SaleAuctionStatus!
+
+  """
+  The winner's address, once the auction settled.
+  """
+  winner: Address
+
+  """
+  The winning paddle, once the auction settled.
+  """
+  winnerPaddle: SaleAuctionPaddle
+  withRoyalties: Boolean!
+}
+
+"""
+One displayed amount on an auction's ledger. The bidder's address is revealed once the auction settles; until then the paddle stands for them.
+"""
+type SaleAuctionBid implements Node {
+  amount: BigInt!
+  auctionId: Int!
+
+  """
+  Null until the auction settled.
+  """
+  bidder: Address
+  createdDate: DateTime!
+  id: String!
+
+  """
+  Whether the viewer's account placed it.
+  """
+  isMine: Boolean!
+  isProxy: Boolean!
+  paddle: SaleAuctionPaddle
+}
+
+"""
+What placing a bid changed.
+"""
+type SaleAuctionBidResult {
+  auction: SaleAuction!
+  bids: [SaleAuctionBid!]!
+  maxBid: SaleAuctionMaxBid!
+}
+
+union SaleAuctionBidResultSignatureRequest = SaleAuctionBidResult | SignatureRequest
+
+type SaleAuctionConnection {
+  edges: [SaleAuctionEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type SaleAuctionEdge {
+  cursor: String!
+  node: SaleAuction!
+}
+
+enum SaleAuctionKind {
+  SALE
+  SELL_AND_REPAY
+}
+
+"""
+A bidder's own silent maximum; never another bidder's.
+"""
+type SaleAuctionMaxBid implements Node {
+  createdDate: DateTime!
+  id: String!
+  maxAmount: BigInt!
+  status: SaleAuctionMaxBidStatus!
+}
+
+enum SaleAuctionMaxBidStatus {
+  ACTIVE
+  INVALID
+  SUPERSEDED
+  WON
+}
+
+"""
+The name a bidder shows as on one auction's ledger.
+"""
+type SaleAuctionPaddle implements Node {
+  id: String!
+  name: String!
+  number: Int!
+}
+
+union SaleAuctionSignatureRequest = SaleAuction | SignatureRequest
+
+"""
+How listSaleAuctions orders its page.
+"""
+enum SaleAuctionSortField {
+  ENDING_SOON
+  HIGHEST_BID
+  NEWEST
+}
+
+enum SaleAuctionStatus {
+  CANCELLED
+  ENDED
+  EXPIRED
+  FAILED
+  LIVE
+  OPEN
+  SETTLED
+  SETTLING
 }
 
 type SaleConnection {
@@ -7439,6 +8477,11 @@ type Subscription {
     """
     usersSide: EventSide! = ANY
   ): ActivityUpdate!
+
+  """
+  Stream the changes to the OpenSea bids the bids table of `nftIds` lists (an NFT and its wrappers): their item bids, their collections' collection bids and the trait bids of their traits. At most one update a second per collection, holding every bid that changed since the last one, or `resync` when the client should reload its bids instead. Multiple-trait bids are not streamed yet.
+  """
+  bidUpdates(nftIds: [Int!]!): BidUpdates!
 
   """
   Stream statistics of the active loans in `currencyAddresses`: one snapshot on subscribe, then a fresh one whenever a loan in those currencies is created, changes or is removed. Amounts are summed in raw units, so pass currencies that share decimals (for example WETH and RWETH).
