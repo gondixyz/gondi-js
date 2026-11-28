@@ -16,7 +16,14 @@ const ORDERS = [{ tokenId: 1n }] as unknown as SingleNftOrderInput[];
 const SIGNATURE = '0xsigned';
 const SIGNATURE_REQUEST = {
   __typename: 'SignatureRequest',
+  key: 'signature',
   typedData: { primaryType: 'BulkOrder' },
+};
+const CANCEL_SIGNATURE = '0xcancel';
+const CANCEL_SIGNATURE_REQUEST = {
+  __typename: 'SignatureRequest',
+  key: 'openSeaCancelSignature',
+  typedData: { primaryType: 'OrderHash' },
 };
 const PUBLISHED_ORDERS = [{ id: '1' }];
 const OPEN_SEA_LISTINGS = [{ tokenId: 1n, orderHash: '0xhash', error: null }];
@@ -48,6 +55,33 @@ describe('makeOrdersOnOpenSea', () => {
       orders: PUBLISHED_ORDERS,
       openSeaListings: OPEN_SEA_LISTINGS,
     });
+  });
+});
+
+describe('makeOrdersOnOpenSea for an item bid', () => {
+  beforeEach(() => {
+    publishBulkOrders
+      .mockReset()
+      .mockResolvedValueOnce(SIGNATURE_REQUEST)
+      .mockResolvedValueOnce(CANCEL_SIGNATURE_REQUEST)
+      .mockResolvedValueOnce(PUBLISHED);
+    signTypedData
+      .mockReset()
+      .mockResolvedValueOnce(SIGNATURE)
+      .mockResolvedValueOnce(CANCEL_SIGNATURE);
+  });
+
+  test('signs the OpenSea bid cancel the API asks for after the batch', async () => {
+    await gondi.makeOrdersOnOpenSea(ORDERS);
+
+    expect(publishBulkOrders.mock.calls[2]).toEqual([
+      {
+        orders: ORDERS,
+        listOnOpenSea: true,
+        signature: SIGNATURE,
+        openSeaCancelSignature: CANCEL_SIGNATURE,
+      },
+    ]);
   });
 });
 

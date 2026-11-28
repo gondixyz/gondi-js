@@ -623,6 +623,12 @@ export class Gondi {
    * `relistOrdersOnOpenSea` signs a failed listing again. An order's `openSeaPrice`, at least its
    * `price`, prices its OpenSea listing on its own, so the seller can receive there what they do
    * on GONDI after OpenSea's higher fees.
+   *
+   * A single public WETH bid on one ERC-721 item on Ethereum bids on OpenSea too, at its
+   * `openSeaPrice` on OpenSea's 0.01 WETH steps. The wallet then signs twice: the batch, and the
+   * cancel of the OpenSea bid, which GONDI sends to OpenSea once the NFT reaches the bidder from
+   * either venue or the GONDI bid is cancelled. Once one bid fills, GONDI stops co-signing the
+   * other. The bidder must have approved WETH to OpenSea's conduit.
    */
   async makeOrdersOnOpenSea(orders: SingleNftOrderInput[]) {
     return this.publishBulkOrders({ orders, listOnOpenSea: true });
@@ -678,18 +684,17 @@ export class Gondi {
     return this.apiClient.listOpenSeaListingResults({ orderIds });
   }
 
-  /** Publishes the batch, signing the typed data the API answers with when it asks for it. */
+  /**
+   * Publishes the batch, signing each typed data the API asks for into the input field its key
+   * names: the batch's `signature`, then, for an item bid that also bids on OpenSea, the
+   * `openSeaCancelSignature` GONDI sends to OpenSea once the bid closes.
+   */
   private async publishBulkOrders(bulkInput: BulkNftOrdersInput) {
-    let response = await this.apiClient.publishBulkOrders(bulkInput);
-
-    if (response.__typename === 'SignatureRequest') {
-      const signature = await this.wallet.signTypedData(response.typedData as TypedDataDefinition);
-      response = await this.apiClient.publishBulkOrders({ ...bulkInput, signature });
-    }
-
-    if (response.__typename !== 'BulkNFTOrdersResult') throw new Error('This should never happen');
-
-    return response;
+    return this.negotiate({
+      publish: (input) => this.apiClient.publishBulkOrders({ ...input }),
+      input: { ...bulkInput },
+      settled: ['BulkNFTOrdersResult'] as const,
+    });
   }
 
   /**
